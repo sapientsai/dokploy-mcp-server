@@ -12,7 +12,7 @@ dotenv.config();
 console.log('Environment loaded');
 console.log('CLIENT_ID:', process.env.CLIENT_ID ? 'Present (hidden)' : 'Missing');
 console.log('CLIENT_SECRET:', process.env.CLIENT_SECRET ? 'Present (hidden)' : 'Missing');
-console.log('TENANT_ID:', process.env.TENANT_ID ? 'Present (hidden)' : 'Missing');
+console.log('TENANT_ID:', process.env.TENANT_ID ? process.env.TENANT_ID : 'Not specified, using "organizations" (multi-tenant)');
 console.log('REDIRECT_URI:', process.env.REDIRECT_URI || `http://localhost:3000/callback`);
 
 // Get current file directory in ESM
@@ -23,11 +23,30 @@ const app = express();
 const port = 3000;
 const TOKEN_FILE_PATH = join(process.cwd(), 'tokens.json');
 
+// Determine the tenant ID to use:
+// - 'common' for both organization accounts and personal accounts
+// - 'organizations' for organization accounts only (multi-tenant)
+// - 'consumers' for personal accounts only
+// - A specific tenant ID for a single organization
+const tenantId = process.env.TENANT_ID || 'organizations';
+
+// Display authentication type
+if (tenantId === 'common') {
+  console.log('Authentication type: Both organization and personal accounts (common)');
+} else if (tenantId === 'organizations') {
+  console.log('Authentication type: Organizations only (multi-tenant)');
+} else if (tenantId === 'consumers') {
+  console.log('Authentication type: Personal accounts only');
+  console.log('WARNING: Microsoft To Do API has limitations for personal accounts (MailboxNotEnabledForRESTAPI error may occur)');
+} else {
+  console.log(`Authentication type: Single tenant (${tenantId})`);
+}
+
 // MSAL configuration for delegated permissions
 const msalConfig = {
   auth: {
     clientId: process.env.CLIENT_ID,
-    authority: `https://login.microsoftonline.com/${process.env.TENANT_ID}`,
+    authority: `https://login.microsoftonline.com/${tenantId}`,
     clientSecret: process.env.CLIENT_SECRET,
   },
   system: {
@@ -222,6 +241,51 @@ app.get('/silentLogin', async (req, res) => {
 // Setup the auth flow
 app.get('/', (req, res) => {
   console.log('Root route accessed, generating auth URL...');
+  
+  // Display information about potential issues for personal accounts
+  let authInfo = `
+    <html>
+    <head>
+      <title>Microsoft To Do MCP Authentication</title>
+      <style>
+        body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .warning { background-color: #fff3cd; border: 1px solid #ffeeba; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
+        .primary-button { background-color: #0078d4; color: white; border: none; padding: 10px 20px; border-radius: 4px; cursor: pointer; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <h1>Microsoft To Do MCP Authentication</h1>
+  `;
+  
+  // Add warning for personal accounts
+  if (tenantId === 'consumers' || tenantId === 'common') {
+    authInfo += `
+        <div class="warning">
+          <h3>⚠️ Important Note for Personal Microsoft Accounts</h3>
+          <p>The Microsoft Graph API has limitations for personal Microsoft accounts (outlook.com, hotmail.com, live.com, etc.). 
+          The To Do API is primarily designed for Microsoft 365 business accounts, not personal accounts.</p>
+          <p>If you use a personal Microsoft account, you may encounter a <strong>"MailboxNotEnabledForRESTAPI"</strong> error. 
+          This is a Microsoft service limitation, not an issue with this application's code or authentication setup.</p>
+        </div>
+    `;
+  }
+  
+  authInfo += `
+        <p>Click the button below to authenticate with Microsoft and grant access to your To Do tasks.</p>
+        <button class="primary-button" onclick="window.location.href='/auth'">Sign in with Microsoft</button>
+      </div>
+    </body>
+    </html>
+  `;
+  
+  res.send(authInfo);
+});
+
+// Setup the actual auth route
+app.get('/auth', (req, res) => {
+  console.log('Auth route accessed, generating auth URL...');
   const authCodeUrlParameters = {
     scopes: scopes,
     redirectUri: process.env.REDIRECT_URI || `http://localhost:${port}/callback`,
@@ -369,24 +433,71 @@ app.get('/callback', (req, res) => {
           `${refreshToken.substring(0, 10)}...${refreshToken.substring(refreshToken.length - 5)}` : 
           'Not provided';
         
+        // Check if the account is a personal account
+        const isPersonalAccount = response.account && 
+          (response.account.username.includes('@outlook.com') || 
+           response.account.username.includes('@hotmail.com') || 
+           response.account.username.includes('@live.com') ||
+           response.account.username.includes('@msn.com'));
+           
+        let warningMessage = '';
+        
+        if (isPersonalAccount) {
+          warningMessage = `
+            <div class="warning">
+              <h3>⚠️ Important Note for Personal Microsoft Accounts</h3>
+              <p>You are signed in with a personal Microsoft account (${response.account.username}).</p>
+              <p>The Microsoft Graph API has limitations for personal Microsoft accounts. The To Do API is primarily designed for Microsoft 365 business accounts, not personal accounts.</p>
+              <p>You may encounter a <strong>"MailboxNotEnabledForRESTAPI"</strong> error when trying to access To Do tasks. This is a Microsoft service limitation, not an issue with this application's code or authentication setup.</p>
+            </div>
+          `;
+        }
+        
         res.send(`
-          <h1>Authentication Successful!</h1>
-          <p>You can now close this window and use the Microsoft Todo MCP service.</p>
-          <p>Token details:</p>
-          <ul>
-            <li>Access Token: ${accessTokenDisplay}</li>
-            <li>Refresh Token: ${refreshTokenDisplay}</li>
-            <li>Token Type: ${response.tokenType || 'Not provided'}</li>
-            <li>Scopes: ${response.scopes ? response.scopes.join(', ') : 'Not provided'}</li>
-            <li>Expires: ${new Date(expiresAt).toLocaleString()}</li>
-          </ul>
-          <p>Debug Information:</p>
-          <pre>${JSON.stringify({
-            hasRefreshToken: !!refreshToken,
-            tokenType: response.tokenType,
-            scopes: response.scopes,
-            cacheHasRefreshTokens: cacheJson.RefreshTokens && Object.keys(cacheJson.RefreshTokens).length > 0
-          }, null, 2)}</pre>
+          <html>
+          <head>
+            <title>Authentication Successful</title>
+            <style>
+              body { font-family: Arial, sans-serif; margin: 40px; line-height: 1.6; }
+              .container { max-width: 800px; margin: 0 auto; }
+              .success { background-color: #d4edda; border: 1px solid #c3e6cb; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
+              .warning { background-color: #fff3cd; border: 1px solid #ffeeba; padding: 15px; border-radius: 4px; margin-bottom: 20px; }
+              .token-details { background-color: #f8f9fa; padding: 15px; border-radius: 4px; margin-top: 20px; }
+              .debug-info { margin-top: 30px; border-top: 1px solid #dee2e6; padding-top: 20px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="success">
+                <h1>Authentication Successful!</h1>
+                <p>You can now close this window and use the Microsoft Todo MCP service.</p>
+              </div>
+              
+              ${warningMessage}
+              
+              <div class="token-details">
+                <h3>Token Details:</h3>
+                <ul>
+                  <li>Access Token: ${accessTokenDisplay}</li>
+                  <li>Refresh Token: ${refreshTokenDisplay}</li>
+                  <li>Token Type: ${response.tokenType || 'Not provided'}</li>
+                  <li>Scopes: ${response.scopes ? response.scopes.join(', ') : 'Not provided'}</li>
+                  <li>Expires: ${new Date(expiresAt).toLocaleString()}</li>
+                </ul>
+              </div>
+              
+              <div class="debug-info">
+                <h3>Debug Information:</h3>
+                <pre>${JSON.stringify({
+                  hasRefreshToken: !!refreshToken,
+                  tokenType: response.tokenType,
+                  scopes: response.scopes,
+                  cacheHasRefreshTokens: cacheJson.RefreshTokens && Object.keys(cacheJson.RefreshTokens).length > 0
+                }, null, 2)}</pre>
+              </div>
+            </div>
+          </body>
+          </html>
         `);
       } catch (error) {
         console.error('Error saving token:', error);

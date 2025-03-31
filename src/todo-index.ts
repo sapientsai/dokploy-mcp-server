@@ -79,11 +79,47 @@ async function makeGraphRequest<T>(url: string, token: string, method = "GET", b
       options.body = JSON.stringify(body);
     }
 
+    console.error(`Making request to: ${url}`);
+    console.error(`Request options: ${JSON.stringify({
+      method,
+      headers: {
+        ...headers,
+        Authorization: 'Bearer [REDACTED]'
+      }
+    })}`);
+
     const response = await fetch(url, options);
+    
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      const errorText = await response.text();
+      console.error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+      
+      // Check for the specific MailboxNotEnabledForRESTAPI error
+      if (errorText.includes('MailboxNotEnabledForRESTAPI')) {
+        console.error(`
+=================================================================
+ERROR: MailboxNotEnabledForRESTAPI
+
+The Microsoft To Do API is not available for personal Microsoft accounts 
+(outlook.com, hotmail.com, live.com, etc.) through the Graph API.
+
+This is a limitation of the Microsoft Graph API, not an authentication issue.
+Microsoft only allows To Do API access for Microsoft 365 business accounts.
+
+You can still use Microsoft To Do through the web interface or mobile apps,
+but API access is restricted for personal accounts.
+=================================================================
+        `);
+        
+        throw new Error("Microsoft To Do API is not available for personal Microsoft accounts. See console for details.");
+      }
+      
+      throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
     }
-    return (await response.json()) as T;
+    
+    const data = await response.json();
+    console.error(`Response received: ${JSON.stringify(data).substring(0, 200)}...`);
+    return data as T;
   } catch (error) {
     console.error("Error making Graph API request:", error);
     return null;
@@ -159,6 +195,18 @@ async function getAccessToken(): Promise<string | null> {
       const now = Date.now();
       if (now > tokenData.expiresAt) {
         console.error(`Token is expired. Current time: ${now}, expires at: ${tokenData.expiresAt}`);
+        
+        // If we have a refresh token, try to refresh the access token
+        if (tokenData.refreshToken) {
+          console.error('Attempting to refresh token...');
+          const newTokenData = await refreshAccessToken(tokenData.refreshToken);
+          if (newTokenData) {
+            console.error('Token refreshed successfully');
+            return newTokenData.accessToken;
+          }
+          console.error('Token refresh failed');
+        }
+        
         return null;
       }
       
@@ -172,6 +220,61 @@ async function getAccessToken(): Promise<string | null> {
   } catch (error) {
     console.error("Error getting access token:", error);
     return null;
+  }
+}
+
+// Function to check if the account is a personal Microsoft account
+async function isPersonalMicrosoftAccount(): Promise<boolean> {
+  try {
+    const token = await getAccessToken();
+    if (!token) return false;
+    
+    // Make a request to get user info
+    const url = `${MS_GRAPH_BASE}/me`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        "Authorization": `Bearer ${token}`,
+        "Accept": "application/json"
+      }
+    });
+    
+    if (!response.ok) {
+      console.error(`Error getting user info: ${response.status}`);
+      return false;
+    }
+    
+    const userData = await response.json();
+    const email = userData.mail || userData.userPrincipalName || '';
+    
+    // Check if the email domain indicates a personal account
+    const personalDomains = ['outlook.com', 'hotmail.com', 'live.com', 'msn.com', 'passport.com'];
+    const domain = email.split('@')[1]?.toLowerCase();
+    
+    if (domain && personalDomains.some(d => domain.includes(d))) {
+      console.error(`
+=================================================================
+WARNING: Personal Microsoft Account Detected
+
+Your Microsoft account (${email}) appears to be a personal account.
+Microsoft To Do API access is typically not available for personal accounts
+through the Microsoft Graph API, only for Microsoft 365 business accounts.
+
+You may encounter the "MailboxNotEnabledForRESTAPI" error when trying to
+access To Do lists or tasks. This is a limitation of the Microsoft Graph API,
+not an issue with your authentication or this application.
+
+You can still use Microsoft To Do through the web interface or mobile apps,
+but API access is restricted for personal accounts.
+=================================================================
+      `);
+      return true;
+    }
+    
+    return false;
+  } catch (error) {
+    console.error("Error checking account type:", error);
+    return false;
   }
 }
 
@@ -196,12 +299,23 @@ server.tool(
     const isExpired = Date.now() > tokens.expiresAt;
     const expiryTime = new Date(tokens.expiresAt).toLocaleString();
     
+    // Check if it's a personal account
+    const isPersonal = await isPersonalMicrosoftAccount();
+    let accountMessage = "";
+    
+    if (isPersonal) {
+      accountMessage = "\n\n⚠️ WARNING: You are using a personal Microsoft account. " +
+        "Microsoft To Do API access is typically not available for personal accounts " +
+        "through the Microsoft Graph API. You may encounter 'MailboxNotEnabledForRESTAPI' errors. " +
+        "This is a Microsoft limitation, not an authentication issue.";
+    }
+    
     if (isExpired) {
       return {
         content: [
           {
             type: "text",
-            text: `Authentication expired at ${expiryTime}. Will attempt to refresh when you call any API.`,
+            text: `Authentication expired at ${expiryTime}. Will attempt to refresh when you call any API.${accountMessage}`,
           },
         ],
       };
@@ -210,7 +324,7 @@ server.tool(
         content: [
           {
             type: "text",
-            text: `Authenticated. Token expires at ${expiryTime}.`,
+            text: `Authenticated. Token expires at ${expiryTime}.${accountMessage}`,
           },
         ],
       };
@@ -1284,9 +1398,19 @@ server.tool(
 
 // Main function to start the server
 async function main() {
-  const transport = new StdioServerTransport();
-  await server.connect(transport);
-  console.error("Microsoft Todo MCP Server running on stdio");
+  try {
+    // Check if using a personal Microsoft account and show warning if needed
+    await isPersonalMicrosoftAccount();
+    
+    // Start the server
+    const transport = new StdioServerTransport();
+    await server.connect(transport);
+    
+    console.error("Server started and listening");
+  } catch (error) {
+    console.error("Error starting server:", error);
+    process.exit(1);
+  }
 }
 
 main().catch((error) => {
