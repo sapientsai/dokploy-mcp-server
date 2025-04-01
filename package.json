@@ -1,6 +1,7 @@
 {
-  "name": "todomcp",
+  "name": "@jhirono/todomcp",
   "version": "1.0.0",
+  "description": "Microsoft Todo MCP service for Claude and Cursor",
   "main": "build/todo-index.js",
   "dependencies": {
     "@azure/msal-node": "^1.18.0",
@@ -88,31 +89,43 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc && chmod 755 build/todo-index.js",
+    "build": "tsc && chmod +x build/cli.js build/todo-index.js build/create-mcp-config.js",
     "start": "node build/todo-index.js",
-    "auth": "node src/auth-server.js"
+    "cli": "node build/cli.js",
+    "auth": "node src/auth-server.js",
+    "dev": "npm run build && node build/cli.js",
+    "create-config": "node build/create-mcp-config.js"
   },
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jhirono/todoMCP.git"
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "mcp",
+    "cursor",
+    "claude",
+    "microsoft-todo",
+    "todo"
+  ],
+  "author": "jhirono",
   "license": "ISC",
   "bugs": {
     "url": "https://github.com/jhirono/todoMCP/issues"
   },
   "homepage": "https://github.com/jhirono/todoMCP#readme",
-  "description": "Microsoft Todo MCP service for Claude",
   "devDependencies": {
     "@types/node": "^22.13.11",
     "typescript": "^5.8.2"
   },
   "type": "module",
   "bin": {
-    "mstodo": "./build/todo-index.js"
+    "mstodo": "./build/cli.js",
+    "mstodo-config": "./build/create-mcp-config.js"
   },
   "files": [
     "build"
-  ]
+  ],
+  "publishConfig": {
+    "access": "public"
+  }
 }

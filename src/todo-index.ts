@@ -14,9 +14,6 @@ console.error('Current working directory:', process.cwd());
 // Microsoft Graph API endpoints
 const MS_GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 const USER_AGENT = "ms-todo-mcp/1.0";
-// Use absolute path for token file
-const TOKEN_FILE_PATH = '/Users/jhirono/Dev/todoMCP/tokens.json';
-console.error('Using token file path:', TOKEN_FILE_PATH);
 
 // Create server instance
 const server = new McpServer({
@@ -30,6 +27,16 @@ interface TokenData {
   refreshToken: string;
   expiresAt: number;
 }
+
+// Server configuration type
+interface ServerConfig {
+  accessToken?: string;
+  refreshToken?: string;
+  tokenFilePath?: string;
+}
+
+// Set default token file path - can be overridden
+let TOKEN_FILE_PATH = join(process.cwd(), 'tokens.json');
 
 // Helper to read tokens from file
 function readTokens(): TokenData | null {
@@ -59,6 +66,10 @@ function writeTokens(tokenData: TokenData): void {
     console.error('Failed to write tokens to file:', error);
   }
 }
+
+// Global token state
+let currentAccessToken: string | null = null;
+let currentRefreshToken: string | null = null;
 
 // Helper function for making Microsoft Graph API requests
 async function makeGraphRequest<T>(url: string, token: string, method = "GET", body?: any): Promise<T | null> {
@@ -163,6 +174,10 @@ async function refreshAccessToken(refreshToken: string): Promise<TokenData | nul
       expiresAt
     };
     
+    // Update global token state
+    currentAccessToken = tokenData.accessToken;
+    currentRefreshToken = tokenData.refreshToken;
+    
     // Save the new tokens
     writeTokens(tokenData);
     
@@ -178,45 +193,49 @@ async function getAccessToken(): Promise<string | null> {
   try {
     console.error('getAccessToken called');
     
+    // First check if we have a valid current access token in memory
+    if (currentAccessToken) {
+      return currentAccessToken;
+    }
+    
+    // Check for tokens in environment variables or file
     try {
-      // Read token directly from the absolute path
-      const tokenFilePath = '/Users/jhirono/Dev/todoMCP/tokens.json';
-      console.error(`Directly reading token from: ${tokenFilePath}`);
+      // Read token file
+      const tokenData = readTokens();
       
-      // Read file synchronously to avoid any async issues
-      const data = readFileSync(tokenFilePath, 'utf8');
-      console.error(`Read ${data.length} bytes from token file`);
-      
-      // Parse the token data
-      const tokenData = JSON.parse(data) as TokenData;
-      console.error(`Token parsed, expires at: ${new Date(tokenData.expiresAt).toLocaleString()}`);
-      
-      // Check if token is expired
-      const now = Date.now();
-      if (now > tokenData.expiresAt) {
-        console.error(`Token is expired. Current time: ${now}, expires at: ${tokenData.expiresAt}`);
-        
-        // If we have a refresh token, try to refresh the access token
-        if (tokenData.refreshToken) {
-          console.error('Attempting to refresh token...');
-          const newTokenData = await refreshAccessToken(tokenData.refreshToken);
-          if (newTokenData) {
-            console.error('Token refreshed successfully');
-            return newTokenData.accessToken;
+      if (tokenData) {
+        // Check if token is expired
+        const now = Date.now();
+        if (now > tokenData.expiresAt) {
+          console.error(`Token is expired. Current time: ${now}, expires at: ${tokenData.expiresAt}`);
+          
+          // If we have a refresh token, try to refresh the access token
+          if (tokenData.refreshToken || currentRefreshToken) {
+            console.error('Attempting to refresh token...');
+            const refreshTokenToUse = currentRefreshToken || tokenData.refreshToken;
+            const newTokenData = await refreshAccessToken(refreshTokenToUse);
+            if (newTokenData) {
+              console.error('Token refreshed successfully');
+              return newTokenData.accessToken;
+            }
+            console.error('Token refresh failed');
           }
-          console.error('Token refresh failed');
+          
+          return null;
         }
         
-        return null;
+        // Success - return the token and update current state
+        currentAccessToken = tokenData.accessToken;
+        currentRefreshToken = tokenData.refreshToken;
+        console.error(`Successfully retrieved valid token (${tokenData.accessToken.substring(0, 10)}...)`);
+        return tokenData.accessToken;
       }
-      
-      // Success - return the token
-      console.error(`Successfully retrieved valid token (${tokenData.accessToken.substring(0, 10)}...)`);
-      return tokenData.accessToken;
     } catch (readError) {
       console.error(`Direct token read error: ${readError}`);
       return null;
     }
+    
+    return null;
   } catch (error) {
     console.error("Error getting access token:", error);
     return null;
@@ -285,7 +304,7 @@ server.tool(
   {},
   async () => {
     const tokens = readTokens();
-    if (!tokens) {
+    if (!tokens && !currentAccessToken) {
       return {
         content: [
           {
@@ -296,8 +315,14 @@ server.tool(
       };
     }
     
-    const isExpired = Date.now() > tokens.expiresAt;
-    const expiryTime = new Date(tokens.expiresAt).toLocaleString();
+    const tokenData = tokens || { 
+      accessToken: currentAccessToken || "",
+      refreshToken: currentRefreshToken || "",
+      expiresAt: 0
+    };
+    
+    const isExpired = Date.now() > tokenData.expiresAt;
+    const expiryTime = new Date(tokenData.expiresAt).toLocaleString();
     
     // Check if it's a personal account
     const isPersonal = await isPersonalMicrosoftAccount();
@@ -1397,8 +1422,25 @@ server.tool(
 );
 
 // Main function to start the server
-async function main() {
+export async function startServer(config?: ServerConfig): Promise<void> {
   try {
+    // Set token file path if provided
+    if (config?.tokenFilePath) {
+      TOKEN_FILE_PATH = config.tokenFilePath;
+      console.error(`Token file path set to: ${TOKEN_FILE_PATH}`);
+    }
+    
+    // Set tokens if provided directly
+    if (config?.accessToken) {
+      currentAccessToken = config.accessToken;
+      console.error('Access token set from config');
+    }
+    
+    if (config?.refreshToken) {
+      currentRefreshToken = config.refreshToken;
+      console.error('Refresh token set from config');
+    }
+    
     // Check if using a personal Microsoft account and show warning if needed
     await isPersonalMicrosoftAccount();
     
@@ -1409,11 +1451,14 @@ async function main() {
     console.error("Server started and listening");
   } catch (error) {
     console.error("Error starting server:", error);
-    process.exit(1);
+    throw error;
   }
 }
 
-main().catch((error) => {
-  console.error("Fatal error in main():", error);
-  process.exit(1);
-}); 
+// Main entry point when executed directly
+if (import.meta.url === `file://${process.argv[1]}`) {
+  startServer().catch((error) => {
+    console.error("Fatal error in main():", error);
+    process.exit(1);
+  });
+} 

@@ -8,7 +8,7 @@ This MCP (Model Context Protocol) service allows you to interact with Microsoft 
 
 - Node.js 16 or higher
 - npm
-- A Microsoft account (Microsoft 365 business account recommended)
+- A Microsoft account
 - Azure App Registration (see setup below)
 
 ### 2. Installation
@@ -71,61 +71,36 @@ TENANT_ID=common
 TENANT_ID=00000000-0000-0000-0000-000000000000
 ```
 
-### 5. Authentication
+## Usage
 
-Run the authentication server:
+### Complete Workflow
 
-```bash
-npm run auth
-```
+Follow these simple steps to set up and use the MCP service:
 
-This will open a browser window for you to authenticate with Microsoft. Once authenticated, the tokens will be saved to `tokens.json`.
+1. **Authenticate to get tokens**
+   ```bash
+   npm run auth
+   ```
+   This will open a browser window for you to authenticate with Microsoft and create a `tokens.json` file.
 
-### 6. Build and Run
+2. **Create MCP config file**
+   ```bash
+   npm run create-config
+   ```
+   This creates an `mcp.json` file with your authentication tokens.
 
-Build the application:
+3. **Copy the MCP configuration file**
+   - **For Cursor**: Copy `mcp.json` to `.cursor/mcp.json` in your project directory
+   - **For Claude Desktop**: Copy the contents of `mcp.json` to your Claude configuration file (see paths below)
 
-```bash
-npm run build
-```
+4. **Start using with your AI assistant**
+   - In Cursor or Claude, you can now use Microsoft To Do commands directly
+   - Try commands like `auth status` or `list up todos` to get started
 
-Run the MCP server:
-
-```bash
-npm run start
-```
-
-## Using with Cursor
-
-To use this MCP with Cursor, the MCP configuration is already set up in the `.cursor/mcp.json` file. This configuration tells Cursor how to start and communicate with the MCP server.
-
-When you open this project in Cursor, it will automatically detect the MCP server and make it available for use.
-
-Alternatively, you can configure the MCP server globally by adding it to your global Cursor configuration file:
-
-1. Open your global Cursor configuration file:
-   - macOS: `~/.cursor/mcp.json`
-   - Windows: `%USERPROFILE%\.cursor\mcp.json`
-   - Linux: `~/.cursor/mcp.json`
-
-2. Add the following configuration:
-
-```json
-{
-  "mcpServers": {
-    "mstodo": {
-      "command": "npm",
-      "args": ["run", "start"],
-      "cwd": "/path/to/todoMCP",
-      "env": {
-        "NODE_ENV": "production"
-      }
-    }
-  }
-}
-```
-
-Replace `/path/to/todoMCP` with the actual path to this repository on your machine.
+The Claude Desktop configuration file is located at:
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json` 
+- **Linux**: `~/.config/Claude/claude_desktop_config.json`
 
 ## Available Tools
 
@@ -145,7 +120,6 @@ Replace `/path/to/todoMCP` with the actual path to this repository on your machi
 
 ## Limitations
 
-- Personal Microsoft accounts (outlook.com, hotmail.com, etc.) may experience the "MailboxNotEnabledForRESTAPI" error
 - The API requires proper authentication and permissions
 - Rate limits may apply according to Microsoft's policies
 
