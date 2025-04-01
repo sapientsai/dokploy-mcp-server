@@ -90,7 +90,7 @@ Follow these simple steps to set up and use the MCP service:
    This creates an `mcp.json` file with your authentication tokens.
 
 3. **Copy the MCP configuration file**
-   - **For Cursor**: Copy `mcp.json` to `.cursor/mcp.json` in your project directory
+   - **For Cursor**: Copy `mcp.json` to `.cursor/mcp.json` in your project directory for your project use, or global directory if you want to make it availabe across projects(I do this).
    - **For Claude Desktop**: Copy the contents of `mcp.json` to your Claude configuration file (see paths below)
 
 4. **Start using with your AI assistant**
