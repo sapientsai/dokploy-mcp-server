@@ -1,168 +1,154 @@
-# Microsoft Todo MCP Service for Claude
+# Microsoft To Do MCP
 
-This project provides a Model Context Protocol (MCP) service for Claude that allows you to interact with your Microsoft Todo tasks using natural language.
+This MCP (Model Context Protocol) service allows you to interact with Microsoft To Do tasks using an AI assistant.
 
-## Features
+## Setup Instructions
 
-### Task List Management (Top-level containers that organize tasks into categories)
-- View all your Microsoft Todo task lists
-- Create new task lists for better organization
-- Update existing task lists
-- Delete task lists you no longer need
+### 1. Prerequisites
 
-### Task Management
-- Get tasks from specific lists with filtering and sorting options
-- Create new tasks with rich details (due dates, priority, body text, etc.)
-- Update existing tasks to change any property
-- Delete tasks that are no longer needed
+- Node.js 16 or higher
+- npm
+- A Microsoft account
+- Azure App Registration (see setup below)
 
-### Checklist Item Management (Subtasks)
-- View checklist items (subtasks) for a task with completion status
-- Create new checklist items to break down tasks
-- Update checklist items to mark as complete or edit text
-- Delete checklist items when no longer needed
+### 2. Installation
 
-## Setup
+Clone the repository and install dependencies:
 
-1. Clone this repository
-2. Install dependencies:
-   ```
-   npm install
-   ```
-   
-### Setting up Azure App Registration
+```bash
+git clone https://github.com/yourusername/todoMCP.git
+cd todoMCP
+npm install
+```
 
-To use this MCP service, you need to register an application in the Azure portal to get the required credentials:
+### 3. Azure App Registration
 
-1. Go to [Azure App Registration Portal](https://portal.azure.com/#view/Microsoft_AAD_RegisteredApps/ApplicationsListBlade)
-2. Click on "New registration"
-3. Enter a name for your application (e.g., "Todo MCP for Claude")
-4. Under "Supported account types", select "Accounts in any organizational directory (Any Azure AD directory - Multitenant) and personal Microsoft accounts (e.g. Skype, Xbox)"
-5. Set the Redirect URI to "Web" and enter `http://localhost:3000/callback`
-6. Click "Register"
-7. Once registered, copy the "Application (client) ID" value - this will be your `CLIENT_ID`
-8. From the left menu, click on "Certificates & secrets"
-9. Under "Client secrets", click "New client secret"
-10. Add a description (e.g., "MCP Access") and select an expiration period
-11. Click "Add" and immediately copy the "Value" - this will be your `CLIENT_SECRET`
-12. From the left menu, click on "API permissions"
-13. Click "Add a permission" and select "Microsoft Graph"
-14. Select "Delegated permissions"
-15. Search for and select the following permissions:
-    - Tasks.ReadWrite
-    - Tasks.Read
-16. Click "Add permissions"
-17. Click "Grant admin consent" (if you have admin rights) or have your admin approve the permissions
+1. Go to the [Azure Portal](https://portal.azure.com)
+2. Navigate to "App registrations" and create a new registration
+3. Name your application (e.g., "To Do MCP")
+4. For "Supported account types", select one of the following based on your needs:
+   - **Accounts in this organizational directory only (Single tenant)** - For use within a single organization
+   - **Accounts in any organizational directory (Any Azure AD directory - Multitenant)** - For use across multiple organizations
+   - **Accounts in any organizational directory and personal Microsoft accounts** - For both work accounts and personal accounts
+5. Set the Redirect URI to `http://localhost:3000/callback`
+6. After creating the app, go to "Certificates & secrets" and create a new client secret
+7. Go to "API permissions" and add the following permissions:
+   - Microsoft Graph > Delegated permissions:
+     - Tasks.Read
+     - Tasks.ReadWrite
+     - User.Read
+8. Click "Grant admin consent" for these permissions
 
-3. Create a `.env` file using the provided `.env.example` template:
-   ```
-   # Microsoft Graph API Credentials
-   CLIENT_ID=your-client-id
-   CLIENT_SECRET=your-client-secret
-   TENANT_ID=consumers  # Use 'consumers' for personal Microsoft accounts
-   REDIRECT_URI=http://localhost:3000/callback
-   
-   # Token Storage Path (optional)
-   # TOKEN_FILE_PATH=/custom/path/to/tokens.json
-   ```
-4. Run the authentication server to get your token:
-   ```
-   npm run auth
-   ```
-   If your browser doesn't open automatically, manually navigate to:
-   ```
-   http://localhost:3000
-   ```
+### 4. Configuration
 
-5. Build the MCP service:
-   ```
-   npm run build
-   ```
-6. Update your Claude Desktop configuration to include this MCP service:
-   ```json
-   {
-       "mcpServers": {
-           "mstodo": {
-               "command": "node",
-               "args": [
-                   "/path/to/your/build/todo-index.js"
-               ]
-           }
-       }
-   }
-   ```
+Create a `.env` file in the root directory with the following information:
 
-   The Claude Desktop configuration file is located at:
-   - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-   - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json` 
-   - **Linux**: `~/.config/Claude/claude_desktop_config.json`
+```
+CLIENT_ID=your_client_id
+CLIENT_SECRET=your_client_secret
+TENANT_ID=your_tenant_setting
+REDIRECT_URI=http://localhost:3000/callback
+```
 
-   You can open it with the following commands:
+**TENANT_ID Options:**
+- `organizations` - For multi-tenant organizational accounts (default if not specified)
+- `consumers` - For personal Microsoft accounts only 
+- `common` - For both organizational and personal accounts
+- `your-specific-tenant-id` - For single-tenant configurations
 
-   **macOS**:
-   ```
-   open ~/Library/Application\ Support/Claude/claude_desktop_config.json
-   ```
+**Examples:**
+```
+# For multi-tenant organizational accounts (default)
+TENANT_ID=organizations
 
-   **Windows** (PowerShell):
-   ```
-   notepad $env:APPDATA\Claude\claude_desktop_config.json
-   ```
+# For personal Microsoft accounts
+TENANT_ID=consumers
 
-   **Linux**:
-   ```
-   xdg-open ~/.config/Claude/claude_desktop_config.json
-   ```
+# For both organizational and personal accounts
+TENANT_ID=common
+
+# For a specific organization tenant
+TENANT_ID=00000000-0000-0000-0000-000000000000
+```
 
 ## Usage
 
-You can interact with the Microsoft Todo MCP service using natural language in Claude. Here are some examples:
+### Complete Workflow
 
-### Task Management
+Follow these simple steps to set up and use the MCP service:
 
-**Viewing Tasks**
-- "Show me my todo items due this week"
-- "What tasks do I have in my Work list?"
-- "List all my high priority tasks"
-- "Show me tasks that are past due"
+1. **Authenticate to get tokens**
+   ```bash
+   npm run auth
+   ```
+   This will open a browser window for you to authenticate with Microsoft and create a `tokens.json` file.
 
-**Creating Tasks**
-- "Add a new task to buy groceries this weekend"
-- "Create a todo item to finish the quarterly report by next Friday"
-- "Add 'Call dentist to schedule appointment' to my Personal list"
-- "Create a task with high importance to submit project proposal by Tuesday"
+2. **Create MCP config file**
+   ```bash
+   npm run create-config
+   ```
+   This creates an `mcp.json` file with your authentication tokens.
 
-**Updating Tasks**
-- "Mark the 'Send email to client' task as complete"
-- "Change the due date of my report task to next Monday"
-- "Update the 'Team meeting' task to include agenda items in the description"
-- "Postpone my 'Review documents' task by two days"
+3. **Copy the MCP configuration file**
+   - **For Cursor**: Copy `mcp.json` to `.cursor/mcp.json` in your project directory for your project use, or global directory if you want to make it availabe across projects(I do this).
+   - **For Claude Desktop**: Copy the contents of `mcp.json` to your Claude configuration file (see paths below)
 
-**Managing Subtasks**
-- "Create a task to plan the company retreat and add subtasks for venue, catering, and activities"
-- "Break down my 'Launch website' task into logical steps"
-- "Add a subtask 'Buy milk' to my shopping list task"
-- "Show me all the subtasks for my project planning task"
+4. **Start using with your AI assistant**
+   - In Cursor or Claude, you can now use Microsoft To Do commands directly
+   - Try commands like `auth status` or `list up todos` to get started
 
-### Task List Management
+The Claude Desktop configuration file is located at:
+- **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json` 
+- **Linux**: `~/.config/Claude/claude_desktop_config.json`
 
-**Managing Lists**
-- "Show me all my todo lists"
-- "Create a new list called 'Home Renovation'"
-- "Rename my 'Work' list to 'Current Projects'"
-- "Delete my 'Temporary' task list"
+## Available Tools
 
-Claude will interpret these natural language requests and translate them into the appropriate Microsoft Todo MCP commands, handling the technical details for you.
+- `auth-status`: Check your authentication status
+- `get-task-lists`: Get all your To Do task lists
+- `create-task-list`: Create a new task list
+- `update-task-list`: Update an existing task list
+- `delete-task-list`: Delete a task list
+- `get-tasks`: Get all tasks in a list
+- `create-task`: Create a new task
+- `update-task`: Update an existing task
+- `delete-task`: Delete a task
+- `get-checklist-items`: Get checklist items for a task
+- `create-checklist-item`: Create a checklist item
+- `update-checklist-item`: Update a checklist item
+- `delete-checklist-item`: Delete a checklist item
 
-## Authentication
+## Limitations
 
-The service uses Microsoft's OAuth 2.0 for authentication. The token is stored locally in a `tokens.json` file and will be refreshed automatically when needed.
+- The API requires proper authentication and permissions
+- Rate limits may apply according to Microsoft's policies
 
-To re-authenticate, run:
+## Troubleshooting
+
+### Authentication Issues
+
+- **"MailboxNotEnabledForRESTAPI" error**: This typically means you're using a personal Microsoft account. Microsoft To Do API access is limited for personal accounts through the Graph API.
+  
+- **Token acquisition failures**: Make sure your `CLIENT_ID`, `CLIENT_SECRET`, and `TENANT_ID` are correct in your `.env` file.
+
+- **Permission issues**: Ensure you have granted admin consent for the required permissions in your Azure App registration.
+
+### Account Type Issues
+
+- **Work/School Accounts**: These typically work best with the To Do API. Use `TENANT_ID=organizations` or your specific tenant ID.
+
+- **Personal Accounts**: These have limited access to the To Do API. If you must use a personal account, try `TENANT_ID=consumers` or `TENANT_ID=common`.
+
+### Checking Authentication Status
+
+You can check your authentication status using the `auth-status` tool or by examining the expiration time in your tokens:
+
+```bash
+cat tokens.json | grep expiresAt
 ```
-npm run auth
-```
 
-## License
+To convert the timestamp to a readable date:
 
-This project is released under the MIT License. Feel free to modify and distribute it as needed. 
+```bash
+date -r $(echo "$(cat tokens.json | grep expiresAt | cut -d ":" -f2 | cut -d "," -f1) / 1000" | bc)
+``` 
