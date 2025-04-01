@@ -13,10 +13,22 @@ This MCP (Model Context Protocol) service allows you to interact with Microsoft 
 
 ### 2. Installation
 
-Clone the repository and install dependencies:
+There are two parts to installing this tool:
+1. Installing the package
+2. Setting up authentication (requires cloning the repository)
+
+#### Step 1: Install the Package
 
 ```bash
-git clone https://github.com/yourusername/todoMCP.git
+npm install -g @jhirono/todomcp
+```
+
+#### Step 2: Set Up Authentication
+
+Even if you install the package globally, you'll need to clone the repository to complete the authentication process:
+
+```bash
+git clone https://github.com/jhirono/todoMCP.git
 cd todoMCP
 npm install
 ```
@@ -75,26 +87,28 @@ TENANT_ID=00000000-0000-0000-0000-000000000000
 
 ### Complete Workflow
 
-Follow these simple steps to set up and use the MCP service:
-
-1. **Authenticate to get tokens**
+1. **Authenticate to get tokens** (must be done from the cloned repository)
    ```bash
    npm run auth
    ```
    This will open a browser window for you to authenticate with Microsoft and create a `tokens.json` file.
 
-2. **Create MCP config file**
+2. **Create MCP config file** (must be done from the cloned repository)
    ```bash
    npm run create-config
    ```
    This creates an `mcp.json` file with your authentication tokens.
 
-3. **Copy the MCP configuration file**
-   - **For Cursor**: Copy `mcp.json` to `.cursor/mcp.json` in your project directory for your project use, or global directory if you want to make it availabe across projects(I do this).
-   - **For Claude Desktop**: Copy the contents of `mcp.json` to your Claude configuration file (see paths below)
+3. **Set up the global MCP configuration**
+   ```bash
+   # Copy the mcp.json file to your global Cursor configuration directory
+   cp mcp.json ~/.cursor/mcp-servers.json
+   ```
+   
+   This makes the Microsoft To Do MCP available across all your Cursor projects.
 
 4. **Start using with your AI assistant**
-   - In Cursor or Claude, you can now use Microsoft To Do commands directly
+   - In Cursor, you can now use Microsoft To Do commands directly in any project
    - Try commands like `auth status` or `list up todos` to get started
 
 The Claude Desktop configuration file is located at:
