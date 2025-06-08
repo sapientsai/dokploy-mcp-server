@@ -7,7 +7,7 @@ export default defineConfig({
     'src/create-mcp-config.ts',
     'src/auth-server.ts'
   ],
-  outDir: 'build',
+  outDir: 'dist',
   format: ['esm'],
   target: 'node16',
   shims: true,

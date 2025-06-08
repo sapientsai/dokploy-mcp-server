@@ -2,7 +2,7 @@
   "name": "microsoft-todo-mcp-server",
   "version": "1.0.0",
   "description": "Microsoft Todo MCP service for Claude and Cursor. Fork of @jhirono/todomcp",
-  "main": "build/todo-index.js",
+  "main": "dist/todo-index.js",
   "dependencies": {
     "@azure/msal-node": "^1.18.0",
     "@modelcontextprotocol/sdk": "^1.7.0",
@@ -12,12 +12,12 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsup && chmod +x build/cli.js build/todo-index.js build/create-mcp-config.js build/auth-server.js",
-    "start": "node build/todo-index.js",
-    "cli": "node build/cli.js",
-    "auth": "node build/auth-server.js",
-    "dev": "pnpm run build && node build/cli.js",
-    "create-config": "node build/create-mcp-config.js",
+    "build": "tsup && chmod +x dist/cli.js dist/todo-index.js dist/create-mcp-config.js dist/auth-server.js",
+    "start": "node dist/todo-index.js",
+    "cli": "node dist/cli.js",
+    "auth": "node dist/auth-server.js",
+    "dev": "pnpm run build && node dist/cli.js",
+    "create-config": "node dist/create-mcp-config.js",
     "format": "prettier --write \"src/**/*.{ts,js,json}\" \"*.{json,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,js,json}\" \"*.{json,md}\"",
     "lint": "pnpm run format:check"
@@ -48,11 +48,11 @@
   },
   "type": "module",
   "bin": {
-    "mstodo": "./build/cli.js",
-    "mstodo-config": "./build/create-mcp-config.js"
+    "mstodo": "./dist/cli.js",
+    "mstodo-config": "./dist/create-mcp-config.js"
   },
   "files": [
-    "build"
+    "dist"
   ],
   "publishConfig": {
     "access": "public"
