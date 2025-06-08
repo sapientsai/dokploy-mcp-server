@@ -20,7 +20,8 @@
     "create-config": "node dist/create-mcp-config.js",
     "format": "prettier --write \"src/**/*.{ts,js,json}\" \"*.{json,md}\"",
     "format:check": "prettier --check \"src/**/*.{ts,js,json}\" \"*.{json,md}\"",
-    "lint": "pnpm run format:check"
+    "lint": "pnpm run format:check",
+    "typecheck": "tsc --noEmit"
   },
   "repository": {
     "type": "git",

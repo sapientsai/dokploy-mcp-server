@@ -1,5 +1,8 @@
 # Microsoft To Do MCP
 
+[![CI](https://github.com/jordanburke/microsoft-todo-mcp-server/actions/workflows/ci.yml/badge.svg)](https://github.com/jordanburke/microsoft-todo-mcp-server/actions/workflows/ci.yml)
+[![npm version](https://badge.fury.io/js/microsoft-todo-mcp-server.svg)](https://www.npmjs.com/package/microsoft-todo-mcp-server)
+
 This MCP (Model Context Protocol) service allows you to interact with Microsoft To Do tasks using an AI assistant.
 
 ## Setup Instructions
@@ -21,7 +24,7 @@ There are two parts to installing this tool:
 #### Step 1: Install the Package
 
 ```bash
-pnpm install -g @jordanburke/microsoft-todo-mcp-server
+pnpm install -g microsoft-todo-mcp-server
 ```
 
 #### Step 2: Set Up Authentication
