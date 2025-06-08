@@ -1,5 +1,5 @@
 {
-  "name": "@jordanburke/microsoft-todo-mcp-server",
+  "name": "microsoft-todo-mcp-server",
   "version": "1.0.0",
   "description": "Microsoft Todo MCP service for Claude and Cursor. Fork of @jhirono/todomcp",
   "main": "build/todo-index.js",

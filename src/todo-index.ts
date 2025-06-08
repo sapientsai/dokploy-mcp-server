@@ -13,7 +13,7 @@ console.error("Current working directory:", process.cwd())
 
 // Microsoft Graph API endpoints
 const MS_GRAPH_BASE = "https://graph.microsoft.com/v1.0"
-const USER_AGENT = "ms-todo-mcp/1.0"
+const USER_AGENT = "microsoft-todo-mcp-server/1.0"
 
 // Create server instance
 const server = new McpServer({

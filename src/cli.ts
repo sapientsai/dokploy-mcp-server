@@ -10,8 +10,8 @@ const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
 
 // Check for tokens in environment variables
-let accessToken = process.env.MSTODO_ACCESS_TOKEN
-let refreshToken = process.env.MSTODO_REFRESH_TOKEN
+let accessToken = process.env.MS_TODO_ACCESS_TOKEN
+let refreshToken = process.env.MS_TODO_REFRESH_TOKEN
 
 // Define token file path
 const TOKEN_FILE_PATH = process.env.MSTODO_TOKEN_FILE || path.join(process.cwd(), "tokens.json")

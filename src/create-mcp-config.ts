@@ -22,12 +22,12 @@ try {
   // Create the MCP config - only include the actual tokens
   const mcpConfig = {
     mcpServers: {
-      mstodo: {
+      microsoftTodo: {
         command: "npx",
-        args: ["--yes", "mstodo"],
+        args: ["--yes", "microsoft-todo-mcp-server"],
         env: {
-          MSTODO_ACCESS_TOKEN: tokenData.accessToken,
-          MSTODO_REFRESH_TOKEN: tokenData.refreshToken,
+          MS_TODO_ACCESS_TOKEN: tokenData.accessToken,
+          MS_TODO_REFRESH_TOKEN: tokenData.refreshToken,
         },
       },
     },
