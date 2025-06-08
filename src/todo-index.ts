@@ -1,112 +1,114 @@
-import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
-import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
-import { z } from "zod";
-import { readFileSync, writeFileSync, existsSync } from "fs";
-import { join } from "path";
-import dotenv from "dotenv";
+import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js"
+import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js"
+import { z } from "zod"
+import { readFileSync, writeFileSync, existsSync } from "fs"
+import { join } from "path"
+import dotenv from "dotenv"
 
 // Load environment variables
-dotenv.config();
+dotenv.config()
 
 // Log the current working directory
-console.error('Current working directory:', process.cwd());
+console.error("Current working directory:", process.cwd())
 
 // Microsoft Graph API endpoints
-const MS_GRAPH_BASE = "https://graph.microsoft.com/v1.0";
-const USER_AGENT = "ms-todo-mcp/1.0";
+const MS_GRAPH_BASE = "https://graph.microsoft.com/v1.0"
+const USER_AGENT = "ms-todo-mcp/1.0"
 
 // Create server instance
 const server = new McpServer({
   name: "mstodo",
   version: "1.0.0",
-});
+})
 
 // Token types
 interface TokenData {
-  accessToken: string;
-  refreshToken: string;
-  expiresAt: number;
+  accessToken: string
+  refreshToken: string
+  expiresAt: number
 }
 
 // Server configuration type
 interface ServerConfig {
-  accessToken?: string;
-  refreshToken?: string;
-  tokenFilePath?: string;
+  accessToken?: string
+  refreshToken?: string
+  tokenFilePath?: string
 }
 
 // Set default token file path - can be overridden
-let TOKEN_FILE_PATH = join(process.cwd(), 'tokens.json');
+let TOKEN_FILE_PATH = join(process.cwd(), "tokens.json")
 
 // Helper to read tokens from file
 function readTokens(): TokenData | null {
   try {
-    console.error(`Attempting to read tokens from: ${TOKEN_FILE_PATH}`);
+    console.error(`Attempting to read tokens from: ${TOKEN_FILE_PATH}`)
     if (!existsSync(TOKEN_FILE_PATH)) {
-      console.error('Token file does not exist');
-      return null;
+      console.error("Token file does not exist")
+      return null
     }
-    const data = readFileSync(TOKEN_FILE_PATH, 'utf8');
-    console.error('Token file content length:', data.length);
-    
-    const tokenData = JSON.parse(data) as TokenData;
-    console.error('Token parsed successfully, expires at:', new Date(tokenData.expiresAt).toLocaleString());
-    return tokenData;
+    const data = readFileSync(TOKEN_FILE_PATH, "utf8")
+    console.error("Token file content length:", data.length)
+
+    const tokenData = JSON.parse(data) as TokenData
+    console.error("Token parsed successfully, expires at:", new Date(tokenData.expiresAt).toLocaleString())
+    return tokenData
   } catch (error) {
-    console.error('Failed to read tokens from file:', error);
-    return null;
+    console.error("Failed to read tokens from file:", error)
+    return null
   }
 }
 
 // Helper to write tokens to file
 function writeTokens(tokenData: TokenData): void {
   try {
-    writeFileSync(TOKEN_FILE_PATH, JSON.stringify(tokenData, null, 2), 'utf8');
+    writeFileSync(TOKEN_FILE_PATH, JSON.stringify(tokenData, null, 2), "utf8")
   } catch (error) {
-    console.error('Failed to write tokens to file:', error);
+    console.error("Failed to write tokens to file:", error)
   }
 }
 
 // Global token state
-let currentAccessToken: string | null = null;
-let currentRefreshToken: string | null = null;
+let currentAccessToken: string | null = null
+let currentRefreshToken: string | null = null
 
 // Helper function for making Microsoft Graph API requests
 async function makeGraphRequest<T>(url: string, token: string, method = "GET", body?: any): Promise<T | null> {
   const headers = {
     "User-Agent": USER_AGENT,
-    "Accept": "application/json",
-    "Authorization": `Bearer ${token}`,
-    "Content-Type": "application/json"
-  };
+    Accept: "application/json",
+    Authorization: `Bearer ${token}`,
+    "Content-Type": "application/json",
+  }
 
   try {
-    const options: RequestInit = { 
-      method, 
-      headers 
-    };
-
-    if (body && (method === "POST" || method === "PATCH")) {
-      options.body = JSON.stringify(body);
+    const options: RequestInit = {
+      method,
+      headers,
     }
 
-    console.error(`Making request to: ${url}`);
-    console.error(`Request options: ${JSON.stringify({
-      method,
-      headers: {
-        ...headers,
-        Authorization: 'Bearer [REDACTED]'
-      }
-    })}`);
+    if (body && (method === "POST" || method === "PATCH")) {
+      options.body = JSON.stringify(body)
+    }
 
-    const response = await fetch(url, options);
-    
+    console.error(`Making request to: ${url}`)
+    console.error(
+      `Request options: ${JSON.stringify({
+        method,
+        headers: {
+          ...headers,
+          Authorization: "Bearer [REDACTED]",
+        },
+      })}`,
+    )
+
+    const response = await fetch(url, options)
+
     if (!response.ok) {
-      const errorText = await response.text();
-      console.error(`HTTP error! status: ${response.status}, body: ${errorText}`);
-      
+      const errorText = await response.text()
+      console.error(`HTTP error! status: ${response.status}, body: ${errorText}`)
+
       // Check for the specific MailboxNotEnabledForRESTAPI error
-      if (errorText.includes('MailboxNotEnabledForRESTAPI')) {
+      if (errorText.includes("MailboxNotEnabledForRESTAPI")) {
         console.error(`
 =================================================================
 ERROR: MailboxNotEnabledForRESTAPI
@@ -120,157 +122,159 @@ Microsoft only allows To Do API access for Microsoft 365 business accounts.
 You can still use Microsoft To Do through the web interface or mobile apps,
 but API access is restricted for personal accounts.
 =================================================================
-        `);
-        
-        throw new Error("Microsoft To Do API is not available for personal Microsoft accounts. See console for details.");
+        `)
+
+        throw new Error(
+          "Microsoft To Do API is not available for personal Microsoft accounts. See console for details.",
+        )
       }
-      
-      throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`);
+
+      throw new Error(`HTTP error! status: ${response.status}, body: ${errorText}`)
     }
-    
-    const data = await response.json();
-    console.error(`Response received: ${JSON.stringify(data).substring(0, 200)}...`);
-    return data as T;
+
+    const data = await response.json()
+    console.error(`Response received: ${JSON.stringify(data).substring(0, 200)}...`)
+    return data as T
   } catch (error) {
-    console.error("Error making Graph API request:", error);
-    return null;
+    console.error("Error making Graph API request:", error)
+    return null
   }
 }
 
 // Refresh token function
 async function refreshAccessToken(refreshToken: string): Promise<TokenData | null> {
-  const tokenEndpoint = `https://login.microsoftonline.com/consumers/oauth2/v2.0/token`;
-  
+  const tokenEndpoint = `https://login.microsoftonline.com/consumers/oauth2/v2.0/token`
+
   const formData = new URLSearchParams({
     client_id: process.env.CLIENT_ID || "",
     client_secret: process.env.CLIENT_SECRET || "",
     refresh_token: refreshToken,
     grant_type: "refresh_token",
-    scope: "Tasks.Read Tasks.ReadWrite Tasks.Read.Shared Tasks.ReadWrite.Shared"
-  });
+    scope: "Tasks.Read Tasks.ReadWrite Tasks.Read.Shared Tasks.ReadWrite.Shared",
+  })
 
   try {
     const response = await fetch(tokenEndpoint, {
       method: "POST",
       headers: {
-        "Content-Type": "application/x-www-form-urlencoded"
+        "Content-Type": "application/x-www-form-urlencoded",
       },
-      body: formData
-    });
+      body: formData,
+    })
 
     if (!response.ok) {
-      const errorText = await response.text();
-      throw new Error(`Token refresh failed: ${response.status} ${errorText}`);
+      const errorText = await response.text()
+      throw new Error(`Token refresh failed: ${response.status} ${errorText}`)
     }
 
-    const data = await response.json();
-    
+    const data = await response.json()
+
     // Calculate expiration time (subtract 5 minutes for safety margin)
-    const expiresAt = Date.now() + (data.expires_in * 1000) - (5 * 60 * 1000);
-    
+    const expiresAt = Date.now() + data.expires_in * 1000 - 5 * 60 * 1000
+
     const tokenData: TokenData = {
       accessToken: data.access_token,
       refreshToken: data.refresh_token || refreshToken, // Use new refresh token if provided
-      expiresAt
-    };
-    
+      expiresAt,
+    }
+
     // Update global token state
-    currentAccessToken = tokenData.accessToken;
-    currentRefreshToken = tokenData.refreshToken;
-    
+    currentAccessToken = tokenData.accessToken
+    currentRefreshToken = tokenData.refreshToken
+
     // Save the new tokens
-    writeTokens(tokenData);
-    
-    return tokenData;
+    writeTokens(tokenData)
+
+    return tokenData
   } catch (error) {
-    console.error("Error refreshing token:", error);
-    return null;
+    console.error("Error refreshing token:", error)
+    return null
   }
 }
 
 // Authentication helper using delegated flow with refresh token
 async function getAccessToken(): Promise<string | null> {
   try {
-    console.error('getAccessToken called');
-    
+    console.error("getAccessToken called")
+
     // First check if we have a valid current access token in memory
     if (currentAccessToken) {
-      return currentAccessToken;
+      return currentAccessToken
     }
-    
+
     // Check for tokens in environment variables or file
     try {
       // Read token file
-      const tokenData = readTokens();
-      
+      const tokenData = readTokens()
+
       if (tokenData) {
         // Check if token is expired
-        const now = Date.now();
+        const now = Date.now()
         if (now > tokenData.expiresAt) {
-          console.error(`Token is expired. Current time: ${now}, expires at: ${tokenData.expiresAt}`);
-          
+          console.error(`Token is expired. Current time: ${now}, expires at: ${tokenData.expiresAt}`)
+
           // If we have a refresh token, try to refresh the access token
           if (tokenData.refreshToken || currentRefreshToken) {
-            console.error('Attempting to refresh token...');
-            const refreshTokenToUse = currentRefreshToken || tokenData.refreshToken;
-            const newTokenData = await refreshAccessToken(refreshTokenToUse);
+            console.error("Attempting to refresh token...")
+            const refreshTokenToUse = currentRefreshToken || tokenData.refreshToken
+            const newTokenData = await refreshAccessToken(refreshTokenToUse)
             if (newTokenData) {
-              console.error('Token refreshed successfully');
-              return newTokenData.accessToken;
+              console.error("Token refreshed successfully")
+              return newTokenData.accessToken
             }
-            console.error('Token refresh failed');
+            console.error("Token refresh failed")
           }
-          
-          return null;
+
+          return null
         }
-        
+
         // Success - return the token and update current state
-        currentAccessToken = tokenData.accessToken;
-        currentRefreshToken = tokenData.refreshToken;
-        console.error(`Successfully retrieved valid token (${tokenData.accessToken.substring(0, 10)}...)`);
-        return tokenData.accessToken;
+        currentAccessToken = tokenData.accessToken
+        currentRefreshToken = tokenData.refreshToken
+        console.error(`Successfully retrieved valid token (${tokenData.accessToken.substring(0, 10)}...)`)
+        return tokenData.accessToken
       }
     } catch (readError) {
-      console.error(`Direct token read error: ${readError}`);
-      return null;
+      console.error(`Direct token read error: ${readError}`)
+      return null
     }
-    
-    return null;
+
+    return null
   } catch (error) {
-    console.error("Error getting access token:", error);
-    return null;
+    console.error("Error getting access token:", error)
+    return null
   }
 }
 
 // Function to check if the account is a personal Microsoft account
 async function isPersonalMicrosoftAccount(): Promise<boolean> {
   try {
-    const token = await getAccessToken();
-    if (!token) return false;
-    
+    const token = await getAccessToken()
+    if (!token) return false
+
     // Make a request to get user info
-    const url = `${MS_GRAPH_BASE}/me`;
+    const url = `${MS_GRAPH_BASE}/me`
     const response = await fetch(url, {
       method: "GET",
       headers: {
-        "Authorization": `Bearer ${token}`,
-        "Accept": "application/json"
-      }
-    });
-    
+        Authorization: `Bearer ${token}`,
+        Accept: "application/json",
+      },
+    })
+
     if (!response.ok) {
-      console.error(`Error getting user info: ${response.status}`);
-      return false;
+      console.error(`Error getting user info: ${response.status}`)
+      return false
     }
-    
-    const userData = await response.json();
-    const email = userData.mail || userData.userPrincipalName || '';
-    
+
+    const userData = await response.json()
+    const email = userData.mail || userData.userPrincipalName || ""
+
     // Check if the email domain indicates a personal account
-    const personalDomains = ['outlook.com', 'hotmail.com', 'live.com', 'msn.com', 'passport.com'];
-    const domain = email.split('@')[1]?.toLowerCase();
-    
-    if (domain && personalDomains.some(d => domain.includes(d))) {
+    const personalDomains = ["outlook.com", "hotmail.com", "live.com", "msn.com", "passport.com"]
+    const domain = email.split("@")[1]?.toLowerCase()
+
+    if (domain && personalDomains.some((d) => domain.includes(d))) {
       console.error(`
 =================================================================
 WARNING: Personal Microsoft Account Detected
@@ -286,14 +290,14 @@ not an issue with your authentication or this application.
 You can still use Microsoft To Do through the web interface or mobile apps,
 but API access is restricted for personal accounts.
 =================================================================
-      `);
-      return true;
+      `)
+      return true
     }
-    
-    return false;
+
+    return false
   } catch (error) {
-    console.error("Error checking account type:", error);
-    return false;
+    console.error("Error checking account type:", error)
+    return false
   }
 }
 
@@ -303,7 +307,7 @@ server.tool(
   "Check if you're authenticated with Microsoft Graph API. Shows current token status and expiration time, and indicates if the token needs to be refreshed.",
   {},
   async () => {
-    const tokens = readTokens();
+    const tokens = readTokens()
     if (!tokens && !currentAccessToken) {
       return {
         content: [
@@ -312,29 +316,30 @@ server.tool(
             text: "Not authenticated. Please run auth-server.js to authenticate with Microsoft.",
           },
         ],
-      };
+      }
     }
-    
-    const tokenData = tokens || { 
+
+    const tokenData = tokens || {
       accessToken: currentAccessToken || "",
       refreshToken: currentRefreshToken || "",
-      expiresAt: 0
-    };
-    
-    const isExpired = Date.now() > tokenData.expiresAt;
-    const expiryTime = new Date(tokenData.expiresAt).toLocaleString();
-    
+      expiresAt: 0,
+    }
+
+    const isExpired = Date.now() > tokenData.expiresAt
+    const expiryTime = new Date(tokenData.expiresAt).toLocaleString()
+
     // Check if it's a personal account
-    const isPersonal = await isPersonalMicrosoftAccount();
-    let accountMessage = "";
-    
+    const isPersonal = await isPersonalMicrosoftAccount()
+    let accountMessage = ""
+
     if (isPersonal) {
-      accountMessage = "\n\n⚠️ WARNING: You are using a personal Microsoft account. " +
+      accountMessage =
+        "\n\n⚠️ WARNING: You are using a personal Microsoft account. " +
         "Microsoft To Do API access is typically not available for personal accounts " +
         "through the Microsoft Graph API. You may encounter 'MailboxNotEnabledForRESTAPI' errors. " +
-        "This is a Microsoft limitation, not an authentication issue.";
+        "This is a Microsoft limitation, not an authentication issue."
     }
-    
+
     if (isExpired) {
       return {
         content: [
@@ -343,7 +348,7 @@ server.tool(
             text: `Authentication expired at ${expiryTime}. Will attempt to refresh when you call any API.${accountMessage}`,
           },
         ],
-      };
+      }
     } else {
       return {
         content: [
@@ -352,40 +357,40 @@ server.tool(
             text: `Authenticated. Token expires at ${expiryTime}.${accountMessage}`,
           },
         ],
-      };
+      }
     }
-  }
-);
+  },
+)
 
 interface TaskList {
-  id: string;
-  displayName: string;
-  isOwner?: boolean;
-  isShared?: boolean;
-  wellknownListName?: string; // 'none', 'defaultList', 'flaggedEmails', 'unknownFutureValue'
+  id: string
+  displayName: string
+  isOwner?: boolean
+  isShared?: boolean
+  wellknownListName?: string // 'none', 'defaultList', 'flaggedEmails', 'unknownFutureValue'
 }
 
 interface Task {
-  id: string;
-  title: string;
-  status: string;
-  importance: string;
+  id: string
+  title: string
+  status: string
+  importance: string
   dueDateTime?: {
-    dateTime: string;
-    timeZone: string;
-  };
+    dateTime: string
+    timeZone: string
+  }
   body?: {
-    content: string;
-    contentType: string;
-  };
-  categories?: string[];
+    content: string
+    contentType: string
+  }
+  categories?: string[]
 }
 
 interface ChecklistItem {
-  id: string;
-  displayName: string;
-  isChecked: boolean;
-  createdDateTime?: string;
+  id: string
+  displayName: string
+  isChecked: boolean
+  createdDateTime?: string
 }
 
 // Register tools
@@ -395,7 +400,7 @@ server.tool(
   {},
   async () => {
     try {
-      const token = await getAccessToken();
+      const token = await getAccessToken()
       if (!token) {
         return {
           content: [
@@ -404,13 +409,10 @@ server.tool(
               text: "Failed to authenticate with Microsoft API",
             },
           ],
-        };
+        }
       }
 
-      const response = await makeGraphRequest<{ value: TaskList[] }>(
-        `${MS_GRAPH_BASE}/me/todo/lists`,
-        token
-      );
+      const response = await makeGraphRequest<{ value: TaskList[] }>(`${MS_GRAPH_BASE}/me/todo/lists`, token)
 
       if (!response) {
         return {
@@ -420,10 +422,10 @@ server.tool(
               text: "Failed to retrieve task lists",
             },
           ],
-        };
+        }
       }
 
-      const lists = response.value || [];
+      const lists = response.value || []
       if (lists.length === 0) {
         return {
           content: [
@@ -432,28 +434,28 @@ server.tool(
               text: "No task lists found.",
             },
           ],
-        };
+        }
       }
 
       const formattedLists = lists.map((list) => {
         // Add well-known list name if applicable
-        let wellKnownInfo = "";
+        let wellKnownInfo = ""
         if (list.wellknownListName && list.wellknownListName !== "none") {
           if (list.wellknownListName === "defaultList") {
-            wellKnownInfo = " (Default Tasks List)";
+            wellKnownInfo = " (Default Tasks List)"
           } else if (list.wellknownListName === "flaggedEmails") {
-            wellKnownInfo = " (Flagged Emails)";
+            wellKnownInfo = " (Flagged Emails)"
           }
         }
-        
+
         // Add sharing info if applicable
-        let sharingInfo = "";
+        let sharingInfo = ""
         if (list.isShared) {
-          sharingInfo = list.isOwner ? " (Shared by you)" : " (Shared with you)";
+          sharingInfo = list.isOwner ? " (Shared by you)" : " (Shared with you)"
         }
-        
-        return `ID: ${list.id}\nName: ${list.displayName}${wellKnownInfo}${sharingInfo}\n---`;
-      });
+
+        return `ID: ${list.id}\nName: ${list.displayName}${wellKnownInfo}${sharingInfo}\n---`
+      })
 
       return {
         content: [
@@ -462,7 +464,7 @@ server.tool(
             text: `Your task lists:\n\n${formattedLists.join("\n")}`,
           },
         ],
-      };
+      }
     } catch (error) {
       return {
         content: [
@@ -471,20 +473,20 @@ server.tool(
             text: `Error fetching task lists: ${error}`,
           },
         ],
-      };
+      }
     }
-  }
-);
+  },
+)
 
 server.tool(
   "create-task-list",
   "Create a new task list (top-level container) in Microsoft Todo to help organize your tasks into categories or projects.",
   {
-    displayName: z.string().describe("Name of the new task list")
+    displayName: z.string().describe("Name of the new task list"),
   },
   async ({ displayName }) => {
     try {
-      const token = await getAccessToken();
+      const token = await getAccessToken()
       if (!token) {
         return {
           content: [
@@ -493,22 +495,17 @@ server.tool(
               text: "Failed to authenticate with Microsoft API",
             },
           ],
-        };
+        }
       }
 
       // Prepare the request body
       const requestBody = {
-        displayName
-      };
+        displayName,
+      }
 
       // Make the API request to create the task list
-      const response = await makeGraphRequest<TaskList>(
-        `${MS_GRAPH_BASE}/me/todo/lists`,
-        token,
-        "POST",
-        requestBody
-      );
-      
+      const response = await makeGraphRequest<TaskList>(`${MS_GRAPH_BASE}/me/todo/lists`, token, "POST", requestBody)
+
       if (!response) {
         return {
           content: [
@@ -517,7 +514,7 @@ server.tool(
               text: `Failed to create task list: ${displayName}`,
             },
           ],
-        };
+        }
       }
 
       return {
@@ -527,7 +524,7 @@ server.tool(
             text: `Task list created successfully!\nName: ${response.displayName}\nID: ${response.id}`,
           },
         ],
-      };
+      }
     } catch (error) {
       return {
         content: [
@@ -536,21 +533,21 @@ server.tool(
             text: `Error creating task list: ${error}`,
           },
         ],
-      };
+      }
     }
-  }
-);
+  },
+)
 
 server.tool(
   "update-task-list",
   "Update the name of an existing task list (top-level container) in Microsoft Todo.",
   {
     listId: z.string().describe("ID of the task list to update"),
-    displayName: z.string().describe("New name for the task list")
+    displayName: z.string().describe("New name for the task list"),
   },
   async ({ listId, displayName }) => {
     try {
-      const token = await getAccessToken();
+      const token = await getAccessToken()
       if (!token) {
         return {
           content: [
@@ -559,22 +556,22 @@ server.tool(
               text: "Failed to authenticate with Microsoft API",
             },
           ],
-        };
+        }
       }
 
       // Prepare the request body
       const requestBody = {
-        displayName
-      };
+        displayName,
+      }
 
       // Make the API request to update the task list
       const response = await makeGraphRequest<TaskList>(
         `${MS_GRAPH_BASE}/me/todo/lists/${listId}`,
         token,
         "PATCH",
-        requestBody
-      );
-      
+        requestBody,
+      )
+
       if (!response) {
         return {
           content: [
@@ -583,7 +580,7 @@ server.tool(
               text: `Failed to update task list with ID: ${listId}`,
             },
           ],
-        };
+        }
       }
 
       return {
@@ -593,7 +590,7 @@ server.tool(
             text: `Task list updated successfully!\nNew name: ${response.displayName}`,
           },
         ],
-      };
+      }
     } catch (error) {
       return {
         content: [
@@ -602,20 +599,20 @@ server.tool(
             text: `Error updating task list: ${error}`,
           },
         ],
-      };
+      }
     }
-  }
-);
+  },
+)
 
 server.tool(
   "delete-task-list",
   "Delete a task list (top-level container) from Microsoft Todo. This will remove the list and all tasks within it.",
   {
-    listId: z.string().describe("ID of the task list to delete")
+    listId: z.string().describe("ID of the task list to delete"),
   },
   async ({ listId }) => {
     try {
-      const token = await getAccessToken();
+      const token = await getAccessToken()
       if (!token) {
         return {
           content: [
@@ -624,20 +621,16 @@ server.tool(
               text: "Failed to authenticate with Microsoft API",
             },
           ],
-        };
+        }
       }
 
       // Make a DELETE request to the Microsoft Graph API
-      const url = `${MS_GRAPH_BASE}/me/todo/lists/${listId}`;
-      console.error(`Deleting task list: ${url}`);
-      
+      const url = `${MS_GRAPH_BASE}/me/todo/lists/${listId}`
+      console.error(`Deleting task list: ${url}`)
+
       // The DELETE method doesn't return a response body, so we expect null
-      await makeGraphRequest<null>(
-        url,
-        token,
-        "DELETE"
-      );
-      
+      await makeGraphRequest<null>(url, token, "DELETE")
+
       // If we get here, the delete was successful (204 No Content)
       return {
         content: [
@@ -646,7 +639,7 @@ server.tool(
             text: `Task list with ID: ${listId} was successfully deleted.`,
           },
         ],
-      };
+      }
     } catch (error) {
       return {
         content: [
@@ -655,10 +648,10 @@ server.tool(
             text: `Error deleting task list: ${error}`,
           },
         ],
-      };
+      }
     }
-  }
-);
+  },
+)
 
 server.tool(
   "get-tasks",
@@ -670,11 +663,11 @@ server.tool(
     orderby: z.string().optional().describe("Property to sort by (e.g., 'createdDateTime desc')"),
     top: z.number().optional().describe("Maximum number of tasks to retrieve"),
     skip: z.number().optional().describe("Number of tasks to skip"),
-    count: z.boolean().optional().describe("Whether to include a count of tasks")
+    count: z.boolean().optional().describe("Whether to include a count of tasks"),
   },
   async ({ listId, filter, select, orderby, top, skip, count }) => {
     try {
-      const token = await getAccessToken();
+      const token = await getAccessToken()
       if (!token) {
         return {
           content: [
@@ -683,30 +676,27 @@ server.tool(
               text: "Failed to authenticate with Microsoft API",
             },
           ],
-        };
+        }
       }
 
       // Build the query parameters
-      const queryParams = new URLSearchParams();
-      
-      if (filter) queryParams.append('$filter', filter);
-      if (select) queryParams.append('$select', select);
-      if (orderby) queryParams.append('$orderby', orderby);
-      if (top !== undefined) queryParams.append('$top', top.toString());
-      if (skip !== undefined) queryParams.append('$skip', skip.toString());
-      if (count !== undefined) queryParams.append('$count', count.toString());
-      
-      // Construct the URL with query parameters
-      const queryString = queryParams.toString();
-      const url = `${MS_GRAPH_BASE}/me/todo/lists/${listId}/tasks${queryString ? '?' + queryString : ''}`;
-      
-      console.error(`Making request to: ${url}`);
+      const queryParams = new URLSearchParams()
 
-      const response = await makeGraphRequest<{ value: Task[], '@odata.count'?: number }>(
-        url,
-        token
-      );
-      
+      if (filter) queryParams.append("$filter", filter)
+      if (select) queryParams.append("$select", select)
+      if (orderby) queryParams.append("$orderby", orderby)
+      if (top !== undefined) queryParams.append("$top", top.toString())
+      if (skip !== undefined) queryParams.append("$skip", skip.toString())
+      if (count !== undefined) queryParams.append("$count", count.toString())
+
+      // Construct the URL with query parameters
+      const queryString = queryParams.toString()
+      const url = `${MS_GRAPH_BASE}/me/todo/lists/${listId}/tasks${queryString ? "?" + queryString : ""}`
+
+      console.error(`Making request to: ${url}`)
+
+      const response = await makeGraphRequest<{ value: Task[]; "@odata.count"?: number }>(url, token)
+
       if (!response) {
         return {
           content: [
@@ -715,10 +705,10 @@ server.tool(
               text: `Failed to retrieve tasks for list: ${listId}`,
             },
           ],
-        };
+        }
       }
 
-      const tasks = response.value || [];
+      const tasks = response.value || []
       if (tasks.length === 0) {
         return {
           content: [
@@ -727,51 +717,52 @@ server.tool(
               text: `No tasks found in list with ID: ${listId}`,
             },
           ],
-        };
+        }
       }
 
       // Format the tasks based on available properties
       const formattedTasks = tasks.map((task) => {
         // Default format
-        let taskInfo = `ID: ${task.id}\nTitle: ${task.title}`;
-        
+        let taskInfo = `ID: ${task.id}\nTitle: ${task.title}`
+
         // Add status if available
         if (task.status) {
-          const status = task.status === "completed" ? "✓" : "○";
-          taskInfo = `${status} ${taskInfo}`;
+          const status = task.status === "completed" ? "✓" : "○"
+          taskInfo = `${status} ${taskInfo}`
         }
-        
+
         // Add due date if available
         if (task.dueDateTime) {
-          taskInfo += `\nDue: ${new Date(task.dueDateTime.dateTime).toLocaleDateString()}`;
+          taskInfo += `\nDue: ${new Date(task.dueDateTime.dateTime).toLocaleDateString()}`
         }
-        
+
         // Add importance if available
         if (task.importance) {
-          taskInfo += `\nImportance: ${task.importance}`;
+          taskInfo += `\nImportance: ${task.importance}`
         }
-        
+
         // Add categories if available
         if (task.categories && task.categories.length > 0) {
-          taskInfo += `\nCategories: ${task.categories.join(', ')}`;
+          taskInfo += `\nCategories: ${task.categories.join(", ")}`
         }
-        
+
         // Add body content if available and not empty
-        if (task.body && task.body.content && task.body.content.trim() !== '') {
-          const previewLength = 50;
-          const contentPreview = task.body.content.length > previewLength 
-            ? task.body.content.substring(0, previewLength) + '...' 
-            : task.body.content;
-          taskInfo += `\nDescription: ${contentPreview}`;
+        if (task.body && task.body.content && task.body.content.trim() !== "") {
+          const previewLength = 50
+          const contentPreview =
+            task.body.content.length > previewLength
+              ? task.body.content.substring(0, previewLength) + "..."
+              : task.body.content
+          taskInfo += `\nDescription: ${contentPreview}`
         }
-        
-        return `${taskInfo}\n---`;
-      });
+
+        return `${taskInfo}\n---`
+      })
 
       // Add count information if requested and available
-      let countInfo = '';
-      if (count && response['@odata.count'] !== undefined) {
-        countInfo = `Total count: ${response['@odata.count']}\n\n`;
+      let countInfo = ""
+      if (count && response["@odata.count"] !== undefined) {
+        countInfo = `Total count: ${response["@odata.count"]}\n\n`
       }
 
       return {
@@ -781,7 +772,7 @@ server.tool(
             text: `Tasks in list ${listId}:\n\n${countInfo}${formattedTasks.join("\n")}`,
           },
         ],
-      };
+      }
     } catch (error) {
       return {
         content: [
@@ -790,10 +781,10 @@ server.tool(
             text: `Error fetching tasks: ${error}`,
           },
         ],
-      };
+      }
     }
-  }
-);
+  },
+)
 
 server.tool(
   "create-task",
@@ -807,12 +798,26 @@ server.tool(
     importance: z.enum(["low", "normal", "high"]).optional().describe("Task importance"),
     isReminderOn: z.boolean().optional().describe("Whether to enable reminder for this task"),
     reminderDateTime: z.string().optional().describe("Reminder date and time in ISO format"),
-    status: z.enum(["notStarted", "inProgress", "completed", "waitingOnOthers", "deferred"]).optional().describe("Status of the task"),
-    categories: z.array(z.string()).optional().describe("Categories associated with the task")
+    status: z
+      .enum(["notStarted", "inProgress", "completed", "waitingOnOthers", "deferred"])
+      .optional()
+      .describe("Status of the task"),
+    categories: z.array(z.string()).optional().describe("Categories associated with the task"),
   },
-  async ({ listId, title, body, dueDateTime, startDateTime, importance, isReminderOn, reminderDateTime, status, categories }) => {
+  async ({
+    listId,
+    title,
+    body,
+    dueDateTime,
+    startDateTime,
+    importance,
+    isReminderOn,
+    reminderDateTime,
+    status,
+    categories,
+  }) => {
     try {
-      const token = await getAccessToken();
+      const token = await getAccessToken()
       if (!token) {
         return {
           content: [
@@ -821,64 +826,64 @@ server.tool(
               text: "Failed to authenticate with Microsoft API",
             },
           ],
-        };
+        }
       }
 
       // Construct the task body with all supported properties
-      const taskBody: any = { title };
-      
+      const taskBody: any = { title }
+
       // Add optional properties if provided
       if (body) {
         taskBody.body = {
           content: body,
-          contentType: "text"
-        };
+          contentType: "text",
+        }
       }
-      
+
       if (dueDateTime) {
         taskBody.dueDateTime = {
           dateTime: dueDateTime,
           timeZone: "UTC",
-        };
+        }
       }
-      
+
       if (startDateTime) {
         taskBody.startDateTime = {
           dateTime: startDateTime,
           timeZone: "UTC",
-        };
+        }
       }
-      
+
       if (importance) {
-        taskBody.importance = importance;
+        taskBody.importance = importance
       }
-      
+
       if (isReminderOn !== undefined) {
-        taskBody.isReminderOn = isReminderOn;
+        taskBody.isReminderOn = isReminderOn
       }
-      
+
       if (reminderDateTime) {
         taskBody.reminderDateTime = {
           dateTime: reminderDateTime,
           timeZone: "UTC",
-        };
+        }
       }
-      
+
       if (status) {
-        taskBody.status = status;
+        taskBody.status = status
       }
-      
+
       if (categories && categories.length > 0) {
-        taskBody.categories = categories;
+        taskBody.categories = categories
       }
 
       const response = await makeGraphRequest<Task>(
         `${MS_GRAPH_BASE}/me/todo/lists/${listId}/tasks`,
         token,
         "POST",
-        taskBody
-      );
-      
+        taskBody,
+      )
+
       if (!response) {
         return {
           content: [
@@ -887,7 +892,7 @@ server.tool(
               text: `Failed to create task in list: ${listId}`,
             },
           ],
-        };
+        }
       }
 
       return {
@@ -897,7 +902,7 @@ server.tool(
             text: `Task created successfully!\nID: ${response.id}\nTitle: ${response.title}`,
           },
         ],
-      };
+      }
     } catch (error) {
       return {
         content: [
@@ -906,10 +911,10 @@ server.tool(
             text: `Error creating task: ${error}`,
           },
         ],
-      };
+      }
     }
-  }
-);
+  },
+)
 
 server.tool(
   "update-task",
@@ -924,12 +929,27 @@ server.tool(
     importance: z.enum(["low", "normal", "high"]).optional().describe("New task importance"),
     isReminderOn: z.boolean().optional().describe("Whether to enable reminder for this task"),
     reminderDateTime: z.string().optional().describe("New reminder date and time in ISO format"),
-    status: z.enum(["notStarted", "inProgress", "completed", "waitingOnOthers", "deferred"]).optional().describe("New status of the task"),
-    categories: z.array(z.string()).optional().describe("New categories associated with the task")
+    status: z
+      .enum(["notStarted", "inProgress", "completed", "waitingOnOthers", "deferred"])
+      .optional()
+      .describe("New status of the task"),
+    categories: z.array(z.string()).optional().describe("New categories associated with the task"),
   },
-  async ({ listId, taskId, title, body, dueDateTime, startDateTime, importance, isReminderOn, reminderDateTime, status, categories }) => {
+  async ({
+    listId,
+    taskId,
+    title,
+    body,
+    dueDateTime,
+    startDateTime,
+    importance,
+    isReminderOn,
+    reminderDateTime,
+    status,
+    categories,
+  }) => {
     try {
-      const token = await getAccessToken();
+      const token = await getAccessToken()
       if (!token) {
         return {
           content: [
@@ -938,76 +958,76 @@ server.tool(
               text: "Failed to authenticate with Microsoft API",
             },
           ],
-        };
+        }
       }
 
       // Construct the task update body with all provided properties
-      const taskBody: any = {};
-      
+      const taskBody: any = {}
+
       // Add optional properties if provided
       if (title !== undefined) {
-        taskBody.title = title;
+        taskBody.title = title
       }
-      
+
       if (body !== undefined) {
         taskBody.body = {
           content: body,
-          contentType: "text"
-        };
+          contentType: "text",
+        }
       }
-      
+
       if (dueDateTime !== undefined) {
         if (dueDateTime === "") {
           // Remove the due date by setting it to null
-          taskBody.dueDateTime = null;
+          taskBody.dueDateTime = null
         } else {
           taskBody.dueDateTime = {
             dateTime: dueDateTime,
             timeZone: "UTC",
-          };
+          }
         }
       }
-      
+
       if (startDateTime !== undefined) {
         if (startDateTime === "") {
           // Remove the start date by setting it to null
-          taskBody.startDateTime = null;
+          taskBody.startDateTime = null
         } else {
           taskBody.startDateTime = {
             dateTime: startDateTime,
             timeZone: "UTC",
-          };
+          }
         }
       }
-      
+
       if (importance !== undefined) {
-        taskBody.importance = importance;
+        taskBody.importance = importance
       }
-      
+
       if (isReminderOn !== undefined) {
-        taskBody.isReminderOn = isReminderOn;
+        taskBody.isReminderOn = isReminderOn
       }
-      
+
       if (reminderDateTime !== undefined) {
         if (reminderDateTime === "") {
           // Remove the reminder date by setting it to null
-          taskBody.reminderDateTime = null;
+          taskBody.reminderDateTime = null
         } else {
           taskBody.reminderDateTime = {
             dateTime: reminderDateTime,
             timeZone: "UTC",
-          };
+          }
         }
       }
-      
+
       if (status !== undefined) {
-        taskBody.status = status;
+        taskBody.status = status
       }
-      
+
       if (categories !== undefined) {
-        taskBody.categories = categories;
+        taskBody.categories = categories
       }
-      
+
       // Make sure we have at least one property to update
       if (Object.keys(taskBody).length === 0) {
         return {
@@ -1017,16 +1037,16 @@ server.tool(
               text: "No properties provided for update. Please specify at least one property to change.",
             },
           ],
-        };
+        }
       }
 
       const response = await makeGraphRequest<Task>(
         `${MS_GRAPH_BASE}/me/todo/lists/${listId}/tasks/${taskId}`,
         token,
         "PATCH",
-        taskBody
-      );
-      
+        taskBody,
+      )
+
       if (!response) {
         return {
           content: [
@@ -1035,7 +1055,7 @@ server.tool(
               text: `Failed to update task with ID: ${taskId} in list: ${listId}`,
             },
           ],
-        };
+        }
       }
 
       return {
@@ -1045,7 +1065,7 @@ server.tool(
             text: `Task updated successfully!\nID: ${response.id}\nTitle: ${response.title}`,
           },
         ],
-      };
+      }
     } catch (error) {
       return {
         content: [
@@ -1054,21 +1074,21 @@ server.tool(
             text: `Error updating task: ${error}`,
           },
         ],
-      };
+      }
     }
-  }
-);
+  },
+)
 
 server.tool(
   "delete-task",
   "Delete a task from a Microsoft Todo list. This will remove the task and all its checklist items (subtasks).",
   {
     listId: z.string().describe("ID of the task list"),
-    taskId: z.string().describe("ID of the task to delete")
+    taskId: z.string().describe("ID of the task to delete"),
   },
   async ({ listId, taskId }) => {
     try {
-      const token = await getAccessToken();
+      const token = await getAccessToken()
       if (!token) {
         return {
           content: [
@@ -1077,20 +1097,16 @@ server.tool(
               text: "Failed to authenticate with Microsoft API",
             },
           ],
-        };
+        }
       }
 
       // Make a DELETE request to the Microsoft Graph API
-      const url = `${MS_GRAPH_BASE}/me/todo/lists/${listId}/tasks/${taskId}`;
-      console.error(`Deleting task: ${url}`);
-      
+      const url = `${MS_GRAPH_BASE}/me/todo/lists/${listId}/tasks/${taskId}`
+      console.error(`Deleting task: ${url}`)
+
       // The DELETE method doesn't return a response body, so we expect null
-      await makeGraphRequest<null>(
-        url,
-        token,
-        "DELETE"
-      );
-      
+      await makeGraphRequest<null>(url, token, "DELETE")
+
       // If we get here, the delete was successful (204 No Content)
       return {
         content: [
@@ -1099,7 +1115,7 @@ server.tool(
             text: `Task with ID: ${taskId} was successfully deleted from list: ${listId}`,
           },
         ],
-      };
+      }
     } catch (error) {
       return {
         content: [
@@ -1108,10 +1124,10 @@ server.tool(
             text: `Error deleting task: ${error}`,
           },
         ],
-      };
+      }
     }
-  }
-);
+  },
+)
 
 server.tool(
   "get-checklist-items",
@@ -1122,7 +1138,7 @@ server.tool(
   },
   async ({ listId, taskId }) => {
     try {
-      const token = await getAccessToken();
+      const token = await getAccessToken()
       if (!token) {
         return {
           content: [
@@ -1131,23 +1147,23 @@ server.tool(
               text: "Failed to authenticate with Microsoft API",
             },
           ],
-        };
+        }
       }
 
       // Fetch the task first to get its title
       const taskResponse = await makeGraphRequest<Task>(
         `${MS_GRAPH_BASE}/me/todo/lists/${listId}/tasks/${taskId}`,
-        token
-      );
-      
-      const taskTitle = taskResponse ? taskResponse.title : "Unknown Task";
+        token,
+      )
+
+      const taskTitle = taskResponse ? taskResponse.title : "Unknown Task"
 
       // Fetch the checklist items
       const response = await makeGraphRequest<{ value: ChecklistItem[] }>(
         `${MS_GRAPH_BASE}/me/todo/lists/${listId}/tasks/${taskId}/checklistItems`,
-        token
-      );
-      
+        token,
+      )
+
       if (!response) {
         return {
           content: [
@@ -1156,10 +1172,10 @@ server.tool(
               text: `Failed to retrieve checklist items for task: ${taskId}`,
             },
           ],
-        };
+        }
       }
 
-      const items = response.value || [];
+      const items = response.value || []
       if (items.length === 0) {
         return {
           content: [
@@ -1168,21 +1184,21 @@ server.tool(
               text: `No checklist items found for task "${taskTitle}" (ID: ${taskId})`,
             },
           ],
-        };
+        }
       }
 
       const formattedItems = items.map((item) => {
-        const status = item.isChecked ? "✓" : "○";
-        let itemInfo = `${status} ${item.displayName} (ID: ${item.id})`;
-        
+        const status = item.isChecked ? "✓" : "○"
+        let itemInfo = `${status} ${item.displayName} (ID: ${item.id})`
+
         // Add creation date if available
         if (item.createdDateTime) {
-          const createdDate = new Date(item.createdDateTime).toLocaleString();
-          itemInfo += `\nCreated: ${createdDate}`;
+          const createdDate = new Date(item.createdDateTime).toLocaleString()
+          itemInfo += `\nCreated: ${createdDate}`
         }
-        
-        return itemInfo;
-      });
+
+        return itemInfo
+      })
 
       return {
         content: [
@@ -1191,7 +1207,7 @@ server.tool(
             text: `Checklist items for task "${taskTitle}" (ID: ${taskId}):\n\n${formattedItems.join("\n\n")}`,
           },
         ],
-      };
+      }
     } catch (error) {
       return {
         content: [
@@ -1200,10 +1216,10 @@ server.tool(
             text: `Error fetching checklist items: ${error}`,
           },
         ],
-      };
+      }
     }
-  }
-);
+  },
+)
 
 server.tool(
   "create-checklist-item",
@@ -1212,11 +1228,11 @@ server.tool(
     listId: z.string().describe("ID of the task list"),
     taskId: z.string().describe("ID of the task"),
     displayName: z.string().describe("Text content of the checklist item"),
-    isChecked: z.boolean().optional().describe("Whether the item is checked off")
+    isChecked: z.boolean().optional().describe("Whether the item is checked off"),
   },
   async ({ listId, taskId, displayName, isChecked }) => {
     try {
-      const token = await getAccessToken();
+      const token = await getAccessToken()
       if (!token) {
         return {
           content: [
@@ -1225,16 +1241,16 @@ server.tool(
               text: "Failed to authenticate with Microsoft API",
             },
           ],
-        };
+        }
       }
 
       // Prepare the request body
       const requestBody: any = {
-        displayName
-      };
+        displayName,
+      }
 
       if (isChecked !== undefined) {
-        requestBody.isChecked = isChecked;
+        requestBody.isChecked = isChecked
       }
 
       // Make the API request to create the checklist item
@@ -1242,9 +1258,9 @@ server.tool(
         `${MS_GRAPH_BASE}/me/todo/lists/${listId}/tasks/${taskId}/checklistItems`,
         token,
         "POST",
-        requestBody
-      );
-      
+        requestBody,
+      )
+
       if (!response) {
         return {
           content: [
@@ -1253,7 +1269,7 @@ server.tool(
               text: `Failed to create checklist item for task: ${taskId}`,
             },
           ],
-        };
+        }
       }
 
       return {
@@ -1263,7 +1279,7 @@ server.tool(
             text: `Checklist item created successfully!\nContent: ${response.displayName}\nID: ${response.id}`,
           },
         ],
-      };
+      }
     } catch (error) {
       return {
         content: [
@@ -1272,10 +1288,10 @@ server.tool(
             text: `Error creating checklist item: ${error}`,
           },
         ],
-      };
+      }
     }
-  }
-);
+  },
+)
 
 server.tool(
   "update-checklist-item",
@@ -1285,11 +1301,11 @@ server.tool(
     taskId: z.string().describe("ID of the task"),
     checklistItemId: z.string().describe("ID of the checklist item to update"),
     displayName: z.string().optional().describe("New text content of the checklist item"),
-    isChecked: z.boolean().optional().describe("Whether the item is checked off")
+    isChecked: z.boolean().optional().describe("Whether the item is checked off"),
   },
   async ({ listId, taskId, checklistItemId, displayName, isChecked }) => {
     try {
-      const token = await getAccessToken();
+      const token = await getAccessToken()
       if (!token) {
         return {
           content: [
@@ -1298,20 +1314,20 @@ server.tool(
               text: "Failed to authenticate with Microsoft API",
             },
           ],
-        };
+        }
       }
 
       // Prepare the update body, including only the fields that are provided
-      const requestBody: any = {};
-      
+      const requestBody: any = {}
+
       if (displayName !== undefined) {
-        requestBody.displayName = displayName;
+        requestBody.displayName = displayName
       }
-      
+
       if (isChecked !== undefined) {
-        requestBody.isChecked = isChecked;
+        requestBody.isChecked = isChecked
       }
-      
+
       // Make sure we have at least one property to update
       if (Object.keys(requestBody).length === 0) {
         return {
@@ -1321,7 +1337,7 @@ server.tool(
               text: "No properties provided for update. Please specify either displayName or isChecked.",
             },
           ],
-        };
+        }
       }
 
       // Make the API request to update the checklist item
@@ -1329,9 +1345,9 @@ server.tool(
         `${MS_GRAPH_BASE}/me/todo/lists/${listId}/tasks/${taskId}/checklistItems/${checklistItemId}`,
         token,
         "PATCH",
-        requestBody
-      );
-      
+        requestBody,
+      )
+
       if (!response) {
         return {
           content: [
@@ -1340,11 +1356,11 @@ server.tool(
               text: `Failed to update checklist item with ID: ${checklistItemId}`,
             },
           ],
-        };
+        }
       }
 
-      const statusText = response.isChecked ? "Checked" : "Not checked";
-      
+      const statusText = response.isChecked ? "Checked" : "Not checked"
+
       return {
         content: [
           {
@@ -1352,7 +1368,7 @@ server.tool(
             text: `Checklist item updated successfully!\nContent: ${response.displayName}\nStatus: ${statusText}`,
           },
         ],
-      };
+      }
     } catch (error) {
       return {
         content: [
@@ -1361,10 +1377,10 @@ server.tool(
             text: `Error updating checklist item: ${error}`,
           },
         ],
-      };
+      }
     }
-  }
-);
+  },
+)
 
 server.tool(
   "delete-checklist-item",
@@ -1372,11 +1388,11 @@ server.tool(
   {
     listId: z.string().describe("ID of the task list"),
     taskId: z.string().describe("ID of the task"),
-    checklistItemId: z.string().describe("ID of the checklist item to delete")
+    checklistItemId: z.string().describe("ID of the checklist item to delete"),
   },
   async ({ listId, taskId, checklistItemId }) => {
     try {
-      const token = await getAccessToken();
+      const token = await getAccessToken()
       if (!token) {
         return {
           content: [
@@ -1385,20 +1401,16 @@ server.tool(
               text: "Failed to authenticate with Microsoft API",
             },
           ],
-        };
+        }
       }
 
       // Make a DELETE request to the Microsoft Graph API
-      const url = `${MS_GRAPH_BASE}/me/todo/lists/${listId}/tasks/${taskId}/checklistItems/${checklistItemId}`;
-      console.error(`Deleting checklist item: ${url}`);
-      
+      const url = `${MS_GRAPH_BASE}/me/todo/lists/${listId}/tasks/${taskId}/checklistItems/${checklistItemId}`
+      console.error(`Deleting checklist item: ${url}`)
+
       // The DELETE method doesn't return a response body, so we expect null
-      await makeGraphRequest<null>(
-        url,
-        token,
-        "DELETE"
-      );
-      
+      await makeGraphRequest<null>(url, token, "DELETE")
+
       // If we get here, the delete was successful (204 No Content)
       return {
         content: [
@@ -1407,7 +1419,7 @@ server.tool(
             text: `Checklist item with ID: ${checklistItemId} was successfully deleted from task: ${taskId}`,
           },
         ],
-      };
+      }
     } catch (error) {
       return {
         content: [
@@ -1416,49 +1428,49 @@ server.tool(
             text: `Error deleting checklist item: ${error}`,
           },
         ],
-      };
+      }
     }
-  }
-);
+  },
+)
 
 // Main function to start the server
 export async function startServer(config?: ServerConfig): Promise<void> {
   try {
     // Set token file path if provided
     if (config?.tokenFilePath) {
-      TOKEN_FILE_PATH = config.tokenFilePath;
-      console.error(`Token file path set to: ${TOKEN_FILE_PATH}`);
+      TOKEN_FILE_PATH = config.tokenFilePath
+      console.error(`Token file path set to: ${TOKEN_FILE_PATH}`)
     }
-    
+
     // Set tokens if provided directly
     if (config?.accessToken) {
-      currentAccessToken = config.accessToken;
-      console.error('Access token set from config');
+      currentAccessToken = config.accessToken
+      console.error("Access token set from config")
     }
-    
+
     if (config?.refreshToken) {
-      currentRefreshToken = config.refreshToken;
-      console.error('Refresh token set from config');
+      currentRefreshToken = config.refreshToken
+      console.error("Refresh token set from config")
     }
-    
+
     // Check if using a personal Microsoft account and show warning if needed
-    await isPersonalMicrosoftAccount();
-    
+    await isPersonalMicrosoftAccount()
+
     // Start the server
-    const transport = new StdioServerTransport();
-    await server.connect(transport);
-    
-    console.error("Server started and listening");
+    const transport = new StdioServerTransport()
+    await server.connect(transport)
+
+    console.error("Server started and listening")
   } catch (error) {
-    console.error("Error starting server:", error);
-    throw error;
+    console.error("Error starting server:", error)
+    throw error
   }
 }
 
 // Main entry point when executed directly
 if (import.meta.url === `file://${process.argv[1]}`) {
   startServer().catch((error) => {
-    console.error("Fatal error in main():", error);
-    process.exit(1);
-  });
-} 
+    console.error("Fatal error in main():", error)
+    process.exit(1)
+  })
+}

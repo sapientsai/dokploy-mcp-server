@@ -1,7 +1,7 @@
 {
-  "name": "@jhirono/todomcp",
+  "name": "@jordanburke/microsoft-todo-mcp-server",
   "version": "1.0.0",
-  "description": "Microsoft Todo MCP service for Claude and Cursor",
+  "description": "Microsoft Todo MCP service for Claude and Cursor. Fork of @jhirono/todomcp",
   "main": "build/todo-index.js",
   "dependencies": {
     "@azure/msal-node": "^1.18.0",
@@ -89,16 +89,19 @@
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "build": "tsc && chmod +x build/cli.js build/todo-index.js build/create-mcp-config.js",
+    "build": "tsup && chmod +x build/cli.js build/todo-index.js build/create-mcp-config.js build/auth-server.js",
     "start": "node build/todo-index.js",
     "cli": "node build/cli.js",
-    "auth": "node src/auth-server.js",
-    "dev": "npm run build && node build/cli.js",
-    "create-config": "node build/create-mcp-config.js"
+    "auth": "node build/auth-server.js",
+    "dev": "pnpm run build && node build/cli.js",
+    "create-config": "node build/create-mcp-config.js",
+    "format": "prettier --write \"src/**/*.{ts,js,json}\" \"*.{json,md}\"",
+    "format:check": "prettier --check \"src/**/*.{ts,js,json}\" \"*.{json,md}\"",
+    "lint": "pnpm run format:check"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jhirono/todoMCP.git"
+    "url": "git+https://github.com/jordanburke/microsoft-todo-mcp-server.git"
   },
   "keywords": [
     "mcp",
@@ -107,14 +110,17 @@
     "microsoft-todo",
     "todo"
   ],
-  "author": "jhirono",
-  "license": "ISC",
+  "author": "Jordan Burke <jordan.burke@gmail.com>",
+  "license": "MIT",
   "bugs": {
-    "url": "https://github.com/jhirono/todoMCP/issues"
+    "url": "https://github.com/jordanburke/microsoft-todo-mcp-server/issues"
   },
-  "homepage": "https://github.com/jhirono/todoMCP#readme",
+  "homepage": "https://github.com/jordanburke/microsoft-todo-mcp-server#readme",
   "devDependencies": {
+    "@types/express": "^5.0.3",
     "@types/node": "^22.13.11",
+    "prettier": "^3.5.3",
+    "tsup": "^8.0.0",
     "typescript": "^5.8.2"
   },
   "type": "module",

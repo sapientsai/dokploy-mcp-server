@@ -7,20 +7,21 @@ This MCP (Model Context Protocol) service allows you to interact with Microsoft 
 ### 1. Prerequisites
 
 - Node.js 16 or higher
-- npm
+- pnpm
 - A Microsoft account
 - Azure App Registration (see setup below)
 
 ### 2. Installation
 
 There are two parts to installing this tool:
+
 1. Installing the package
 2. Setting up authentication (requires cloning the repository)
 
 #### Step 1: Install the Package
 
 ```bash
-npm install -g @jhirono/todomcp
+pnpm install -g @jordanburke/microsoft-todo-mcp-server
 ```
 
 #### Step 2: Set Up Authentication
@@ -28,9 +29,9 @@ npm install -g @jhirono/todomcp
 Even if you install the package globally, you'll need to clone the repository to complete the authentication process:
 
 ```bash
-git clone https://github.com/jhirono/todoMCP.git
-cd todoMCP
-npm install
+git clone https://github.com/jordanburke/microsoft-todo-mcp-server.git
+cd microsoft-todo-mcp-server
+pnpm install
 ```
 
 ### 3. Azure App Registration
@@ -63,12 +64,14 @@ REDIRECT_URI=http://localhost:3000/callback
 ```
 
 **TENANT_ID Options:**
+
 - `organizations` - For multi-tenant organizational accounts (default if not specified)
-- `consumers` - For personal Microsoft accounts only 
+- `consumers` - For personal Microsoft accounts only
 - `common` - For both organizational and personal accounts
 - `your-specific-tenant-id` - For single-tenant configurations
 
 **Examples:**
+
 ```
 # For multi-tenant organizational accounts (default)
 TENANT_ID=organizations
@@ -88,23 +91,28 @@ TENANT_ID=00000000-0000-0000-0000-000000000000
 ### Complete Workflow
 
 1. **Authenticate to get tokens** (must be done from the cloned repository)
+
    ```bash
-   npm run auth
+   pnpm run auth
    ```
+
    This will open a browser window for you to authenticate with Microsoft and create a `tokens.json` file.
 
 2. **Create MCP config file** (must be done from the cloned repository)
+
    ```bash
-   npm run create-config
+   pnpm run create-config
    ```
+
    This creates an `mcp.json` file with your authentication tokens.
 
 3. **Set up the global MCP configuration**
+
    ```bash
    # Copy the mcp.json file to your global Cursor configuration directory
    cp mcp.json ~/.cursor/mcp-servers.json
    ```
-   
+
    This makes the Microsoft To Do MCP available across all your Cursor projects.
 
 4. **Start using with your AI assistant**
@@ -112,8 +120,9 @@ TENANT_ID=00000000-0000-0000-0000-000000000000
    - Try commands like `auth status` or `list up todos` to get started
 
 The Claude Desktop configuration file is located at:
+
 - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
-- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json` 
+- **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 - **Linux**: `~/.config/Claude/claude_desktop_config.json`
 
 ## Available Tools
@@ -142,7 +151,6 @@ The Claude Desktop configuration file is located at:
 ### Authentication Issues
 
 - **"MailboxNotEnabledForRESTAPI" error**: This typically means you're using a personal Microsoft account. Microsoft To Do API access is limited for personal accounts through the Graph API.
-  
 - **Token acquisition failures**: Make sure your `CLIENT_ID`, `CLIENT_SECRET`, and `TENANT_ID` are correct in your `.env` file.
 
 - **Permission issues**: Ensure you have granted admin consent for the required permissions in your Azure App registration.
@@ -165,4 +173,4 @@ To convert the timestamp to a readable date:
 
 ```bash
 date -r $(echo "$(cat tokens.json | grep expiresAt | cut -d ":" -f2 | cut -d "," -f1) / 1000" | bc)
-``` 
+```
