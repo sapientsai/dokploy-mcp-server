@@ -37,6 +37,7 @@ npx microsoft-todo-mcp-server
 ```
 
 The package provides three command aliases:
+
 - `microsoft-todo-mcp-server` - Full package name
 - `mstodo` - Short alias for the MCP server
 - `mstodo-config` - Configuration helper tool
@@ -153,6 +154,7 @@ This creates an `mcp.json` file with your authentication tokens.
 **For Claude Desktop:**
 
 Add to your configuration file:
+
 - **macOS**: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - **Windows**: `%APPDATA%\Claude\claude_desktop_config.json`
 - **Linux**: `~/.config/Claude/claude_desktop_config.json`
@@ -207,15 +209,18 @@ pnpm run typecheck    # TypeScript type checking
 The server provides 13 tools for comprehensive Microsoft To Do management:
 
 ### Authentication
+
 - **`auth-status`** - Check authentication status, token expiration, and account type
 
 ### Task Lists (Top-level Containers)
+
 - **`get-task-lists`** - Retrieve all task lists with metadata (default, shared, etc.)
 - **`create-task-list`** - Create a new task list
 - **`update-task-list`** - Rename an existing task list
 - **`delete-task-list`** - Delete a task list and all its contents
 
 ### Tasks (Main Todo Items)
+
 - **`get-tasks`** - Get tasks from a list with filtering, sorting, and pagination
   - Supports OData query parameters: `$filter`, `$select`, `$orderby`, `$top`, `$skip`, `$count`
 - **`create-task`** - Create a new task with full property support
@@ -224,6 +229,7 @@ The server provides 13 tools for comprehensive Microsoft To Do management:
 - **`delete-task`** - Delete a task and all its checklist items
 
 ### Checklist Items (Subtasks)
+
 - **`get-checklist-items`** - Get subtasks for a specific task
 - **`create-checklist-item`** - Add a new subtask to a task
 - **`update-checklist-item`** - Update subtask text or completion status
@@ -232,12 +238,14 @@ The server provides 13 tools for comprehensive Microsoft To Do management:
 ## Architecture
 
 ### Project Structure
+
 - **MCP Server** (`src/todo-index.ts`) - Core server implementing the MCP protocol
 - **CLI Wrapper** (`src/cli.ts`) - Executable entry point with token management
 - **Auth Server** (`src/auth-server.ts`) - Express server for OAuth 2.0 flow
 - **Config Generator** (`src/create-mcp-config.ts`) - Helper to create MCP configurations
 
 ### Technical Details
+
 - **Microsoft Graph API**: Uses v1.0 endpoints
 - **Authentication**: MSAL (Microsoft Authentication Library) with PKCE flow
 - **Token Management**: Automatic refresh 5 minutes before expiration
@@ -247,11 +255,13 @@ The server provides 13 tools for comprehensive Microsoft To Do management:
 ## Limitations & Known Issues
 
 ### Personal Microsoft Accounts
+
 - **MailboxNotEnabledForRESTAPI Error**: Personal Microsoft accounts (outlook.com, hotmail.com, live.com) have limited access to the To Do API through Microsoft Graph
 - This is a Microsoft service limitation, not an issue with this application
 - Work/school accounts have full API access
 
 ### API Limitations
+
 - Rate limits apply according to Microsoft's policies
 - Some features may be unavailable for personal accounts
 - Shared lists have limited functionality
@@ -261,23 +271,27 @@ The server provides 13 tools for comprehensive Microsoft To Do management:
 ### Authentication Issues
 
 **Token acquisition failures**
+
 - Verify `CLIENT_ID`, `CLIENT_SECRET`, and `TENANT_ID` in your `.env` file
 - Ensure redirect URI matches exactly: `http://localhost:3000/callback`
 - Check Azure App permissions are granted with admin consent
 
 **Permission issues**
+
 - Ensure all required Graph API permissions are added and consented
 - For organizational accounts, admin consent may be required
 
 ### Account Type Configuration
 
 **Work/School Accounts**
+
 ```env
 TENANT_ID=organizations  # Multi-tenant
 # Or use your specific tenant ID
 ```
 
 **Personal Accounts**
+
 ```env
 TENANT_ID=consumers  # Personal only
 # Or TENANT_ID=common for both types
@@ -286,6 +300,7 @@ TENANT_ID=consumers  # Personal only
 ### Debugging
 
 **Check authentication status:**
+
 ```bash
 # Using the MCP tool
 # In your AI assistant: "Check auth status"
@@ -298,6 +313,7 @@ date -d @$(($(cat tokens.json | jq -r '.expiresAt') / 1000))
 ```
 
 **Enable verbose logging:**
+
 ```bash
 # The server logs to stderr for debugging
 mstodo 2> debug.log
@@ -306,6 +322,7 @@ mstodo 2> debug.log
 ## Contributing
 
 Contributions are welcome! Please:
+
 1. Fork the repository
 2. Create a feature branch
 3. Run `pnpm run lint` and `pnpm run typecheck` before submitting
