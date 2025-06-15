@@ -1,6 +1,6 @@
 {
   "name": "microsoft-todo-mcp-server",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Microsoft Todo MCP service for Claude and Cursor. Fork of @jhirono/todomcp",
   "main": "dist/todo-index.js",
   "dependencies": {
@@ -49,6 +49,7 @@
   },
   "type": "module",
   "bin": {
+    "microsoft-todo-mcp-server": "./dist/cli.js",
     "mstodo": "./dist/cli.js",
     "mstodo-config": "./dist/create-mcp-config.js"
   },
