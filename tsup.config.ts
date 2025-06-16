@@ -5,7 +5,9 @@ export default defineConfig({
     'src/todo-index.ts',
     'src/cli.ts',
     'src/create-mcp-config.ts',
-    'src/auth-server.ts'
+    'src/auth-server.ts',
+    'src/setup.ts',
+    'src/token-manager.ts'
   ],
   outDir: 'dist',
   format: ['esm'],

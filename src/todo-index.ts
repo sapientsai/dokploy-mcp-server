@@ -4,6 +4,7 @@ import { z } from "zod"
 import { readFileSync, writeFileSync, existsSync } from "fs"
 import { join } from "path"
 import dotenv from "dotenv"
+import { tokenManager } from "./token-manager.js"
 
 // Load environment variables
 dotenv.config()
@@ -20,56 +21,6 @@ const server = new McpServer({
   name: "mstodo",
   version: "1.0.0",
 })
-
-// Token types
-interface TokenData {
-  accessToken: string
-  refreshToken: string
-  expiresAt: number
-}
-
-// Server configuration type
-interface ServerConfig {
-  accessToken?: string
-  refreshToken?: string
-  tokenFilePath?: string
-}
-
-// Set default token file path - can be overridden
-let TOKEN_FILE_PATH = join(process.cwd(), "tokens.json")
-
-// Helper to read tokens from file
-function readTokens(): TokenData | null {
-  try {
-    console.error(`Attempting to read tokens from: ${TOKEN_FILE_PATH}`)
-    if (!existsSync(TOKEN_FILE_PATH)) {
-      console.error("Token file does not exist")
-      return null
-    }
-    const data = readFileSync(TOKEN_FILE_PATH, "utf8")
-    console.error("Token file content length:", data.length)
-
-    const tokenData = JSON.parse(data) as TokenData
-    console.error("Token parsed successfully, expires at:", new Date(tokenData.expiresAt).toLocaleString())
-    return tokenData
-  } catch (error) {
-    console.error("Failed to read tokens from file:", error)
-    return null
-  }
-}
-
-// Helper to write tokens to file
-function writeTokens(tokenData: TokenData): void {
-  try {
-    writeFileSync(TOKEN_FILE_PATH, JSON.stringify(tokenData, null, 2), "utf8")
-  } catch (error) {
-    console.error("Failed to write tokens to file:", error)
-  }
-}
-
-// Global token state
-let currentAccessToken: string | null = null
-let currentRefreshToken: string | null = null
 
 // Helper function for making Microsoft Graph API requests
 async function makeGraphRequest<T>(url: string, token: string, method = "GET", body?: any): Promise<T | null> {
@@ -101,7 +52,18 @@ async function makeGraphRequest<T>(url: string, token: string, method = "GET", b
       })}`,
     )
 
-    const response = await fetch(url, options)
+    let response = await fetch(url, options)
+
+    // If we get a 401, try to refresh the token and retry once
+    if (response.status === 401) {
+      console.error('Got 401, attempting token refresh...')
+      const newToken = await getAccessToken() // This will trigger refresh
+      if (newToken && newToken !== token) {
+        // Retry with new token
+        headers.Authorization = `Bearer ${newToken}`
+        response = await fetch(url, { ...options, headers })
+      }
+    }
 
     if (!response.ok) {
       const errorText = await response.text()
@@ -141,109 +103,32 @@ but API access is restricted for personal accounts.
   }
 }
 
-// Refresh token function
-async function refreshAccessToken(refreshToken: string): Promise<TokenData | null> {
-  const tokenEndpoint = `https://login.microsoftonline.com/consumers/oauth2/v2.0/token`
-
-  const formData = new URLSearchParams({
-    client_id: process.env.CLIENT_ID || "",
-    client_secret: process.env.CLIENT_SECRET || "",
-    refresh_token: refreshToken,
-    grant_type: "refresh_token",
-    scope: "Tasks.Read Tasks.ReadWrite Tasks.Read.Shared Tasks.ReadWrite.Shared",
-  })
-
-  try {
-    const response = await fetch(tokenEndpoint, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-      },
-      body: formData,
-    })
-
-    if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`Token refresh failed: ${response.status} ${errorText}`)
-    }
-
-    const data = await response.json()
-
-    // Calculate expiration time (subtract 5 minutes for safety margin)
-    const expiresAt = Date.now() + data.expires_in * 1000 - 5 * 60 * 1000
-
-    const tokenData: TokenData = {
-      accessToken: data.access_token,
-      refreshToken: data.refresh_token || refreshToken, // Use new refresh token if provided
-      expiresAt,
-    }
-
-    // Update global token state
-    currentAccessToken = tokenData.accessToken
-    currentRefreshToken = tokenData.refreshToken
-
-    // Save the new tokens
-    writeTokens(tokenData)
-
-    return tokenData
-  } catch (error) {
-    console.error("Error refreshing token:", error)
-    return null
-  }
-}
-
-// Authentication helper using delegated flow with refresh token
+// Authentication helper using delegated flow with token manager
 async function getAccessToken(): Promise<string | null> {
   try {
     console.error("getAccessToken called")
-
-    // First check if we have a valid current access token in memory
-    if (currentAccessToken) {
-      return currentAccessToken
+    
+    // Use the token manager to get tokens (handles all sources and refresh)
+    const tokens = await tokenManager.getTokens()
+    
+    if (tokens) {
+      console.error(`Successfully retrieved valid token`)
+      return tokens.accessToken
     }
-
-    // Check for tokens in environment variables or file
-    try {
-      // Read token file
-      const tokenData = readTokens()
-
-      if (tokenData) {
-        // Check if token is expired
-        const now = Date.now()
-        if (now > tokenData.expiresAt) {
-          console.error(`Token is expired. Current time: ${now}, expires at: ${tokenData.expiresAt}`)
-
-          // If we have a refresh token, try to refresh the access token
-          if (tokenData.refreshToken || currentRefreshToken) {
-            console.error("Attempting to refresh token...")
-            const refreshTokenToUse = currentRefreshToken || tokenData.refreshToken
-            const newTokenData = await refreshAccessToken(refreshTokenToUse)
-            if (newTokenData) {
-              console.error("Token refreshed successfully")
-              return newTokenData.accessToken
-            }
-            console.error("Token refresh failed")
-          }
-
-          return null
-        }
-
-        // Success - return the token and update current state
-        currentAccessToken = tokenData.accessToken
-        currentRefreshToken = tokenData.refreshToken
-        console.error(`Successfully retrieved valid token (${tokenData.accessToken.substring(0, 10)}...)`)
-        return tokenData.accessToken
-      }
-    } catch (readError) {
-      console.error(`Direct token read error: ${readError}`)
-      return null
-    }
-
+    
+    console.error('No valid tokens available')
     return null
   } catch (error) {
     console.error("Error getting access token:", error)
     return null
   }
+}
+
+// Server configuration type
+interface ServerConfig {
+  accessToken?: string
+  refreshToken?: string
+  tokenFilePath?: string
 }
 
 // Function to check if the account is a personal Microsoft account
@@ -307,26 +192,21 @@ server.tool(
   "Check if you're authenticated with Microsoft Graph API. Shows current token status and expiration time, and indicates if the token needs to be refreshed.",
   {},
   async () => {
-    const tokens = readTokens()
-    if (!tokens && !currentAccessToken) {
+    const tokens = await tokenManager.getTokens()
+    
+    if (!tokens) {
       return {
         content: [
           {
             type: "text",
-            text: "Not authenticated. Please run auth-server.js to authenticate with Microsoft.",
+            text: "Not authenticated. Please run 'npx microsoft-todo-mcp-server setup' to authenticate with Microsoft.",
           },
         ],
       }
     }
 
-    const tokenData = tokens || {
-      accessToken: currentAccessToken || "",
-      refreshToken: currentRefreshToken || "",
-      expiresAt: 0,
-    }
-
-    const isExpired = Date.now() > tokenData.expiresAt
-    const expiryTime = new Date(tokenData.expiresAt).toLocaleString()
+    const isExpired = Date.now() > tokens.expiresAt
+    const expiryTime = new Date(tokens.expiresAt).toLocaleString()
 
     // Check if it's a personal account
     const isPersonal = await isPersonalMicrosoftAccount()
@@ -1436,23 +1316,9 @@ server.tool(
 // Main function to start the server
 export async function startServer(config?: ServerConfig): Promise<void> {
   try {
-    // Set token file path if provided
-    if (config?.tokenFilePath) {
-      TOKEN_FILE_PATH = config.tokenFilePath
-      console.error(`Token file path set to: ${TOKEN_FILE_PATH}`)
-    }
-
-    // Set tokens if provided directly
-    if (config?.accessToken) {
-      currentAccessToken = config.accessToken
-      console.error("Access token set from config")
-    }
-
-    if (config?.refreshToken) {
-      currentRefreshToken = config.refreshToken
-      console.error("Refresh token set from config")
-    }
-
+    // Note: Token management is now handled by the TokenManager class
+    // Config options are kept for backward compatibility but not used
+    
     // Check if using a personal Microsoft account and show warning if needed
     await isPersonalMicrosoftAccount()
 
