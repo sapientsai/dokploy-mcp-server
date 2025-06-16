@@ -56,7 +56,7 @@ async function makeGraphRequest<T>(url: string, token: string, method = "GET", b
 
     // If we get a 401, try to refresh the token and retry once
     if (response.status === 401) {
-      console.error('Got 401, attempting token refresh...')
+      console.error("Got 401, attempting token refresh...")
       const newToken = await getAccessToken() // This will trigger refresh
       if (newToken && newToken !== token) {
         // Retry with new token
@@ -107,16 +107,16 @@ but API access is restricted for personal accounts.
 async function getAccessToken(): Promise<string | null> {
   try {
     console.error("getAccessToken called")
-    
+
     // Use the token manager to get tokens (handles all sources and refresh)
     const tokens = await tokenManager.getTokens()
-    
+
     if (tokens) {
       console.error(`Successfully retrieved valid token`)
       return tokens.accessToken
     }
-    
-    console.error('No valid tokens available')
+
+    console.error("No valid tokens available")
     return null
   } catch (error) {
     console.error("Error getting access token:", error)
@@ -193,7 +193,7 @@ server.tool(
   {},
   async () => {
     const tokens = await tokenManager.getTokens()
-    
+
     if (!tokens) {
       return {
         content: [
@@ -1318,7 +1318,7 @@ export async function startServer(config?: ServerConfig): Promise<void> {
   try {
     // Note: Token management is now handled by the TokenManager class
     // Config options are kept for backward compatibility but not used
-    
+
     // Check if using a personal Microsoft account and show warning if needed
     await isPersonalMicrosoftAccount()
 

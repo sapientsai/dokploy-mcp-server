@@ -18,19 +18,20 @@ interface StoredTokenData extends TokenData {
 export class TokenManager {
   private tokenFilePath: string
   private currentTokens: StoredTokenData | null = null
-  
+
   constructor() {
     // Store tokens in a consistent location across platforms
-    const configDir = process.platform === 'win32' 
-      ? join(process.env.APPDATA || join(homedir(), 'AppData', 'Roaming'), 'microsoft-todo-mcp')
-      : join(homedir(), '.config', 'microsoft-todo-mcp')
-    
+    const configDir =
+      process.platform === "win32"
+        ? join(process.env.APPDATA || join(homedir(), "AppData", "Roaming"), "microsoft-todo-mcp")
+        : join(homedir(), ".config", "microsoft-todo-mcp")
+
     // Create directory if it doesn't exist
     if (!existsSync(configDir)) {
-      require('fs').mkdirSync(configDir, { recursive: true })
+      require("fs").mkdirSync(configDir, { recursive: true })
     }
-    
-    this.tokenFilePath = join(configDir, 'tokens.json')
+
+    this.tokenFilePath = join(configDir, "tokens.json")
     console.error(`Token file path: ${this.tokenFilePath}`)
   }
 
@@ -41,9 +42,9 @@ export class TokenManager {
       const envTokens: TokenData = {
         accessToken: process.env.MS_TODO_ACCESS_TOKEN,
         refreshToken: process.env.MS_TODO_REFRESH_TOKEN,
-        expiresAt: Date.now() + 3600 * 1000 // Assume 1 hour if not specified
+        expiresAt: Date.now() + 3600 * 1000, // Assume 1 hour if not specified
       }
-      
+
       // Check if expired
       if (Date.now() > envTokens.expiresAt) {
         // Try to refresh
@@ -58,9 +59,9 @@ export class TokenManager {
     // 2. Check stored token file
     if (existsSync(this.tokenFilePath)) {
       try {
-        const data = readFileSync(this.tokenFilePath, 'utf8')
+        const data = readFileSync(this.tokenFilePath, "utf8")
         this.currentTokens = JSON.parse(data)
-        
+
         if (this.currentTokens) {
           // Check if expired
           if (Date.now() > this.currentTokens.expiresAt) {
@@ -73,23 +74,23 @@ export class TokenManager {
           return this.currentTokens
         }
       } catch (error) {
-        console.error('Error reading token file:', error)
+        console.error("Error reading token file:", error)
       }
     }
 
     // 3. Check legacy token file location
-    const legacyPath = join(process.cwd(), 'tokens.json')
+    const legacyPath = join(process.cwd(), "tokens.json")
     if (existsSync(legacyPath)) {
       try {
-        const data = readFileSync(legacyPath, 'utf8')
+        const data = readFileSync(legacyPath, "utf8")
         const tokens = JSON.parse(data)
-        
+
         // Migrate to new location
         this.saveTokens(tokens)
-        
+
         return tokens
       } catch (error) {
-        console.error('Error reading legacy token file:', error)
+        console.error("Error reading legacy token file:", error)
       }
     }
 
@@ -101,27 +102,27 @@ export class TokenManager {
       // Get client credentials from stored tokens or environment
       const clientId = this.currentTokens?.clientId || process.env.CLIENT_ID
       const clientSecret = this.currentTokens?.clientSecret || process.env.CLIENT_SECRET
-      const tenantId = this.currentTokens?.tenantId || process.env.TENANT_ID || 'organizations'
-      
+      const tenantId = this.currentTokens?.tenantId || process.env.TENANT_ID || "organizations"
+
       if (!clientId || !clientSecret) {
-        console.error('Missing client credentials for token refresh')
+        console.error("Missing client credentials for token refresh")
         return null
       }
 
       const tokenEndpoint = `https://login.microsoftonline.com/${tenantId}/oauth2/v2.0/token`
-      
+
       const formData = new URLSearchParams({
         client_id: clientId,
         client_secret: clientSecret,
         refresh_token: refreshToken,
-        grant_type: 'refresh_token',
-        scope: 'offline_access Tasks.Read Tasks.ReadWrite Tasks.Read.Shared Tasks.ReadWrite.Shared User.Read'
+        grant_type: "refresh_token",
+        scope: "offline_access Tasks.Read Tasks.ReadWrite Tasks.Read.Shared Tasks.ReadWrite.Shared User.Read",
       })
 
       const response = await fetch(tokenEndpoint, {
-        method: 'POST',
+        method: "POST",
         headers: {
-          'Content-Type': 'application/x-www-form-urlencoded',
+          "Content-Type": "application/x-www-form-urlencoded",
         },
         body: formData,
       })
@@ -129,32 +130,32 @@ export class TokenManager {
       if (!response.ok) {
         const errorText = await response.text()
         console.error(`Token refresh failed: ${errorText}`)
-        
+
         // If refresh fails, prompt for re-authentication
         this.promptForReauth()
         return null
       }
 
       const data = await response.json()
-      
+
       const newTokens: StoredTokenData = {
         accessToken: data.access_token,
         refreshToken: data.refresh_token || refreshToken,
-        expiresAt: Date.now() + (data.expires_in * 1000) - (5 * 60 * 1000), // 5 min buffer
+        expiresAt: Date.now() + data.expires_in * 1000 - 5 * 60 * 1000, // 5 min buffer
         clientId,
         clientSecret,
-        tenantId
+        tenantId,
       }
 
       // Save the refreshed tokens
       this.saveTokens(newTokens)
-      
+
       // Also update Claude config if possible
       await this.updateClaudeConfig(newTokens)
-      
+
       return newTokens
     } catch (error) {
-      console.error('Error refreshing token:', error)
+      console.error("Error refreshing token:", error)
       this.promptForReauth()
       return null
     }
@@ -162,38 +163,39 @@ export class TokenManager {
 
   saveTokens(tokens: StoredTokenData): void {
     this.currentTokens = tokens
-    writeFileSync(this.tokenFilePath, JSON.stringify(tokens, null, 2), 'utf8')
+    writeFileSync(this.tokenFilePath, JSON.stringify(tokens, null, 2), "utf8")
   }
 
   // Update Claude config automatically
   async updateClaudeConfig(tokens: TokenData): Promise<void> {
     try {
-      const claudeConfigPath = process.platform === 'win32'
-        ? join(process.env.APPDATA || '', 'Claude', 'claude_desktop_config.json')
-        : process.platform === 'darwin'
-        ? join(homedir(), 'Library', 'Application Support', 'Claude', 'claude_desktop_config.json')
-        : join(homedir(), '.config', 'Claude', 'claude_desktop_config.json')
+      const claudeConfigPath =
+        process.platform === "win32"
+          ? join(process.env.APPDATA || "", "Claude", "claude_desktop_config.json")
+          : process.platform === "darwin"
+            ? join(homedir(), "Library", "Application Support", "Claude", "claude_desktop_config.json")
+            : join(homedir(), ".config", "Claude", "claude_desktop_config.json")
 
       if (!existsSync(claudeConfigPath)) {
         return
       }
 
-      const config = JSON.parse(readFileSync(claudeConfigPath, 'utf8'))
-      
+      const config = JSON.parse(readFileSync(claudeConfigPath, "utf8"))
+
       // Update the microsoft-todo server config
-      if (config.mcpServers && config.mcpServers['microsoft-todo']) {
-        config.mcpServers['microsoft-todo'].env = {
-          ...config.mcpServers['microsoft-todo'].env,
+      if (config.mcpServers && config.mcpServers["microsoft-todo"]) {
+        config.mcpServers["microsoft-todo"].env = {
+          ...config.mcpServers["microsoft-todo"].env,
           MS_TODO_ACCESS_TOKEN: tokens.accessToken,
-          MS_TODO_REFRESH_TOKEN: tokens.refreshToken
+          MS_TODO_REFRESH_TOKEN: tokens.refreshToken,
         }
-        
+
         // Write back the updated config
-        writeFileSync(claudeConfigPath, JSON.stringify(config, null, 2), 'utf8')
-        console.error('Updated Claude config with new tokens')
+        writeFileSync(claudeConfigPath, JSON.stringify(config, null, 2), "utf8")
+        console.error("Updated Claude config with new tokens")
       }
     } catch (error) {
-      console.error('Could not update Claude config:', error)
+      console.error("Could not update Claude config:", error)
     }
   }
 

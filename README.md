@@ -134,6 +134,7 @@ pnpm run setup
 ```
 
 This will guide you through:
+
 1. Azure app registration (if needed)
 2. Authentication with Microsoft
 3. Automatic token storage

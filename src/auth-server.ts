@@ -442,7 +442,7 @@ app.get("/callback", async (req: Request, res: Response) => {
       // Add client credentials for automatic refresh
       clientId: process.env.CLIENT_ID,
       clientSecret: process.env.CLIENT_SECRET,
-      tenantId: tenantId
+      tenantId: tenantId,
     }
 
     fs.writeFileSync(TOKEN_FILE_PATH, JSON.stringify(tokenData, null, 2), "utf8")
