@@ -259,6 +259,14 @@ interface Task {
     dateTime: string
     timeZone: string
   }
+  completedDateTime?: {
+    dateTime: string
+    timeZone: string
+  }
+  reminderDateTime?: {
+    dateTime: string
+    timeZone: string
+  }
   body?: {
     content: string
     contentType: string
@@ -351,6 +359,272 @@ server.tool(
           {
             type: "text",
             text: `Error fetching task lists: ${error}`,
+          },
+        ],
+      }
+    }
+  },
+)
+
+// Enhanced organized view of task lists
+server.tool(
+  "get-task-lists-organized", 
+  "Get all task lists organized into logical folders/categories based on naming patterns, emoji prefixes, and sharing status. Provides a hierarchical view similar to folder organization.",
+  {
+    includeIds: z.boolean().optional().describe("Include list IDs in output (default: false)"),
+    groupBy: z.enum(['category', 'shared', 'type']).optional().describe("Grouping strategy - 'category' (default), 'shared', or 'type'")
+  },
+  async ({ includeIds, groupBy }) => {
+    try {
+      const token = await getAccessToken()
+      if (!token) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: "Failed to authenticate with Microsoft API",
+            },
+          ],
+        }
+      }
+
+      const response = await makeGraphRequest<{ value: TaskList[] }>(`${MS_GRAPH_BASE}/me/todo/lists`, token)
+
+      if (!response) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: "Failed to retrieve task lists",
+            },
+          ],
+        }
+      }
+
+      const lists = response.value || []
+      if (lists.length === 0) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: "No task lists found.",
+            },
+          ],
+        }
+      }
+
+      // Group by shared status
+      if (groupBy === 'shared') {
+        const sharedLists = lists.filter(l => l.isShared)
+        const personalLists = lists.filter(l => !l.isShared)
+        
+        let output = "📂 Microsoft To Do Lists - By Sharing Status\n"
+        output += "=" .repeat(50) + "\n\n"
+        
+        output += `👥 Shared Lists (${sharedLists.length})\n`
+        sharedLists.forEach(list => {
+          const ownership = list.isOwner ? "Shared by you" : "Shared with you"
+          output += `   ├─ ${list.displayName} [${ownership}]\n`
+        })
+        
+        output += `\n🔒 Personal Lists (${personalLists.length})\n`
+        personalLists.forEach(list => {
+          output += `   ├─ ${list.displayName}\n`
+        })
+        
+        return { content: [{ type: "text", text: output }] }
+      }
+
+      // Helper function to organize lists
+      const organizeLists = (lists: TaskList[]): { [category: string]: TaskList[] } => {
+        const organized: { [category: string]: TaskList[] } = {}
+        
+        // Patterns for categorizing lists
+        const patterns = {
+          archived: /\(([^)]+)\s*-\s*Archived\)$/i,
+          archive: /^📦\s*Archive/i,
+          shopping: /^🛒/,
+          property: /^🏡/,
+          family: /^👪/,
+          seasonal: /^(🎄|🎉)/,
+          work: /^(Work|SBIR)/i,
+          travel: /^(🚗|Rangeley)/i,
+          reading: /^📰/,
+        }
+        
+        lists.forEach(list => {
+          let placed = false
+          
+          // Check archived pattern
+          const archiveMatch = list.displayName.match(patterns.archived)
+          if (archiveMatch) {
+            const category = `📦 Archived - ${archiveMatch[1]}`
+            if (!organized[category]) organized[category] = []
+            organized[category].push(list)
+            placed = true
+          }
+          // Check archive prefix
+          else if (patterns.archive.test(list.displayName)) {
+            if (!organized['📦 Archives']) organized['📦 Archives'] = []
+            organized['📦 Archives'].push(list)
+            placed = true
+          }
+          // Check shopping lists
+          else if (patterns.shopping.test(list.displayName)) {
+            if (!organized['🛒 Shopping Lists']) organized['🛒 Shopping Lists'] = []
+            organized['🛒 Shopping Lists'].push(list)
+            placed = true
+          }
+          // Check property lists
+          else if (patterns.property.test(list.displayName)) {
+            if (!organized['🏡 Properties']) organized['🏡 Properties'] = []
+            organized['🏡 Properties'].push(list)
+            placed = true
+          }
+          // Check family lists
+          else if (patterns.family.test(list.displayName)) {
+            if (!organized['👪 Family']) organized['👪 Family'] = []
+            organized['👪 Family'].push(list)
+            placed = true
+          }
+          // Check seasonal lists
+          else if (patterns.seasonal.test(list.displayName)) {
+            if (!organized['🎉 Seasonal & Events']) organized['🎉 Seasonal & Events'] = []
+            organized['🎉 Seasonal & Events'].push(list)
+            placed = true
+          }
+          // Check work lists
+          else if (patterns.work.test(list.displayName)) {
+            if (!organized['💼 Work']) organized['💼 Work'] = []
+            organized['💼 Work'].push(list)
+            placed = true
+          }
+          // Check travel lists
+          else if (patterns.travel.test(list.displayName)) {
+            if (!organized['🚗 Travel & Rangeley']) organized['🚗 Travel & Rangeley'] = []
+            organized['🚗 Travel & Rangeley'].push(list)
+            placed = true
+          }
+          // Check reading lists
+          else if (patterns.reading.test(list.displayName)) {
+            if (!organized['📚 Reading']) organized['📚 Reading'] = []
+            organized['📚 Reading'].push(list)
+            placed = true
+          }
+          // Special lists
+          else if (list.wellknownListName && list.wellknownListName !== 'none') {
+            if (!organized['⭐ Special Lists']) organized['⭐ Special Lists'] = []
+            organized['⭐ Special Lists'].push(list)
+            placed = true
+          }
+          // Shared lists (only if not already placed)
+          else if (list.isShared && !placed) {
+            if (!organized['👥 Shared Lists']) organized['👥 Shared Lists'] = []
+            organized['👥 Shared Lists'].push(list)
+            placed = true
+          }
+          // Everything else
+          else {
+            if (!organized['📋 Other Lists']) organized['📋 Other Lists'] = []
+            organized['📋 Other Lists'].push(list)
+          }
+        })
+        
+        return organized
+      }
+
+      // Default: organize by category
+      const organized = organizeLists(lists)
+      
+      let output = "📂 Microsoft To Do Lists - Organized View\n"
+      output += "=" .repeat(50) + "\n\n"
+      
+      // Sort categories for consistent display
+      const sortedCategories = Object.keys(organized).sort((a, b) => {
+        // Priority order for categories
+        const priority: { [key: string]: number } = {
+          '⭐ Special Lists': 1,
+          '👥 Shared Lists': 2,
+          '💼 Work': 3,
+          '👪 Family': 4,
+          '🏡 Properties': 5,
+          '🛒 Shopping Lists': 6,
+          '🚗 Travel & Rangeley': 7,
+          '🎉 Seasonal & Events': 8,
+          '📚 Reading': 9,
+          '📋 Other Lists': 10,
+          '📦 Archives': 11,
+        }
+        
+        // Check if categories start with "📦 Archived -"
+        const aIsArchived = a.startsWith('📦 Archived -')
+        const bIsArchived = b.startsWith('📦 Archived -')
+        
+        if (aIsArchived && !bIsArchived) return 1
+        if (!aIsArchived && bIsArchived) return -1
+        if (aIsArchived && bIsArchived) return a.localeCompare(b)
+        
+        const aPriority = priority[a] || 999
+        const bPriority = priority[b] || 999
+        
+        if (aPriority !== bPriority) return aPriority - bPriority
+        return a.localeCompare(b)
+      })
+      
+      sortedCategories.forEach(category => {
+        const categoryLists = organized[category]
+        output += `${category} (${categoryLists.length})\n`
+        
+        categoryLists.forEach((list, index) => {
+          const isLast = index === categoryLists.length - 1
+          const prefix = isLast ? "└─" : "├─"
+          
+          let listInfo = `${prefix} ${list.displayName}`
+          
+          // Add metadata
+          const metadata = []
+          if (list.wellknownListName === 'defaultList') metadata.push("Default")
+          if (list.wellknownListName === 'flaggedEmails') metadata.push("Flagged Emails")
+          if (list.isShared && list.isOwner) metadata.push("Shared by you")
+          if (list.isShared && !list.isOwner) metadata.push("Shared with you")
+          
+          if (metadata.length > 0) {
+            listInfo += ` [${metadata.join(", ")}]`
+          }
+          
+          output += `   ${listInfo}\n`
+          
+          if (!isLast) {
+            output += "   │\n"
+          }
+        })
+        
+        output += "\n"
+      })
+      
+      // Add summary
+      const totalLists = Object.values(organized).reduce((sum, l) => sum + l.length, 0)
+      const totalCategories = Object.keys(organized).length
+      
+      output += "-" .repeat(50) + "\n"
+      output += `Summary: ${totalLists} lists in ${totalCategories} categories\n`
+
+      if (includeIds) {
+        // Add a section with IDs
+        output += "\n\n📋 List IDs Reference:\n" + "-".repeat(50) + "\n"
+        lists.forEach(list => {
+          output += `${list.displayName}: ${list.id}\n`
+        })
+      }
+      
+      return { content: [{ type: "text", text: output }] }
+
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error fetching organized task lists: ${error}`,
           },
         ],
       }
@@ -1306,6 +1580,332 @@ server.tool(
           {
             type: "text",
             text: `Error deleting checklist item: ${error}`,
+          },
+        ],
+      }
+    }
+  },
+)
+
+// Bulk archive completed tasks
+server.tool(
+  "archive-completed-tasks",
+  "Move completed tasks older than a specified number of days from one list to another (archive) list. Useful for cleaning up active lists while preserving historical tasks.",
+  {
+    sourceListId: z.string().describe("ID of the source list to archive tasks from"),
+    targetListId: z.string().describe("ID of the target archive list"),
+    olderThanDays: z.number().min(0).default(90).describe("Archive tasks completed more than this many days ago (default: 90)"),
+    dryRun: z.boolean().optional().default(false).describe("If true, only preview what would be archived without making changes")
+  },
+  async ({ sourceListId, targetListId, olderThanDays, dryRun }) => {
+    try {
+      const token = await getAccessToken()
+      if (!token) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: "Failed to authenticate with Microsoft API",
+            },
+          ],
+        }
+      }
+
+      // Calculate cutoff date
+      const cutoffDate = new Date()
+      cutoffDate.setDate(cutoffDate.getDate() - olderThanDays)
+
+      // Get all completed tasks from source list
+      const tasksResponse = await makeGraphRequest<{ value: Task[] }>(
+        `${MS_GRAPH_BASE}/me/todo/lists/${sourceListId}/tasks?$filter=status eq 'completed'`,
+        token
+      )
+
+      if (!tasksResponse || !tasksResponse.value) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: "Failed to retrieve tasks from source list",
+            },
+          ],
+        }
+      }
+
+      // Filter tasks older than cutoff
+      const tasksToArchive = tasksResponse.value.filter(task => {
+        if (!task.completedDateTime?.dateTime) return false
+        const completedDate = new Date(task.completedDateTime.dateTime)
+        return completedDate < cutoffDate
+      })
+
+      if (tasksToArchive.length === 0) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: `No completed tasks found older than ${olderThanDays} days.`,
+            },
+          ],
+        }
+      }
+
+      if (dryRun) {
+        // Preview mode - just show what would be archived
+        let preview = `📋 Archive Preview\n`
+        preview += `Would archive ${tasksToArchive.length} tasks completed before ${cutoffDate.toLocaleDateString()}\n\n`
+        
+        tasksToArchive.forEach(task => {
+          const completedDate = task.completedDateTime?.dateTime 
+            ? new Date(task.completedDateTime.dateTime).toLocaleDateString()
+            : 'Unknown'
+          preview += `- ${task.title} (completed: ${completedDate})\n`
+        })
+        
+        return { content: [{ type: "text", text: preview }] }
+      }
+
+      // Actually archive the tasks
+      let successCount = 0
+      let failedTasks: string[] = []
+
+      for (const task of tasksToArchive) {
+        try {
+          // Create task in target list
+          const createResponse = await makeGraphRequest(
+            `${MS_GRAPH_BASE}/me/todo/lists/${targetListId}/tasks`,
+            token,
+            "POST",
+            {
+              title: task.title,
+              status: "completed",
+              body: task.body,
+              importance: task.importance,
+              completedDateTime: task.completedDateTime,
+              dueDateTime: task.dueDateTime,
+              reminderDateTime: task.reminderDateTime,
+              categories: task.categories,
+            }
+          )
+
+          if (createResponse) {
+            // Delete from source list
+            await makeGraphRequest(
+              `${MS_GRAPH_BASE}/me/todo/lists/${sourceListId}/tasks/${task.id}`,
+              token,
+              "DELETE"
+            )
+            successCount++
+          } else {
+            failedTasks.push(task.title)
+          }
+        } catch (error) {
+          failedTasks.push(task.title)
+        }
+      }
+
+      let result = `📦 Archive Complete\n`
+      result += `Successfully archived ${successCount} of ${tasksToArchive.length} tasks\n`
+      result += `Tasks completed before ${cutoffDate.toLocaleDateString()} were moved.\n`
+      
+      if (failedTasks.length > 0) {
+        result += `\n⚠️ Failed to archive ${failedTasks.length} tasks:\n`
+        failedTasks.forEach(title => {
+          result += `- ${title}\n`
+        })
+      }
+
+      return { content: [{ type: "text", text: result }] }
+
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error archiving tasks: ${error}`,
+          },
+        ],
+      }
+    }
+  },
+)
+
+// Test tool to explore Graph API for hidden properties
+server.tool(
+  "test-graph-api-exploration",
+  "Test various Graph API queries to discover hidden properties or endpoints for folder/group organization in Microsoft To Do.",
+  {
+    testType: z.enum(['odata-select', 'odata-expand', 'headers', 'extensions', 'all']).describe("Type of test to run")
+  },
+  async ({ testType }) => {
+    try {
+      const token = await getAccessToken()
+      if (!token) {
+        return {
+          content: [
+            {
+              type: "text",
+              text: "Failed to authenticate with Microsoft API",
+            },
+          ],
+        }
+      }
+
+      let results = "🔍 Graph API Exploration Results\n" + "=".repeat(50) + "\n\n"
+
+      // Test 1: Try with $select=* to get all properties
+      if (testType === 'odata-select' || testType === 'all') {
+        results += "📊 Test 1: Using $select=* to retrieve all properties\n"
+        try {
+          const response = await makeGraphRequest<any>(
+            `${MS_GRAPH_BASE}/me/todo/lists?$select=*`,
+            token
+          )
+          if (response && response.value && response.value.length > 0) {
+            const firstList = response.value[0]
+            const properties = Object.keys(firstList)
+            results += `Found ${properties.length} properties: ${properties.join(', ')}\n`
+            
+            // Show full first list as example
+            results += "\nExample list object:\n"
+            results += JSON.stringify(firstList, null, 2).substring(0, 1000) + "...\n"
+          }
+        } catch (error) {
+          results += `Error: ${error}\n`
+        }
+        results += "\n"
+      }
+
+      // Test 2: Try various $expand options
+      if (testType === 'odata-expand' || testType === 'all') {
+        results += "📊 Test 2: Using $expand to retrieve related data\n"
+        const expandOptions = [
+          'extensions',
+          'singleValueExtendedProperties', 
+          'multiValueExtendedProperties',
+          'openExtensions',
+          'parent',
+          'children',
+          'folder',
+          'parentFolder',
+          'group',
+          'category'
+        ]
+        
+        for (const expand of expandOptions) {
+          try {
+            const response = await makeGraphRequest<any>(
+              `${MS_GRAPH_BASE}/me/todo/lists?$expand=${expand}&$top=1`,
+              token
+            )
+            if (response && response.value) {
+              results += `✓ $expand=${expand}: Success - `
+              if (response.value.length > 0 && response.value[0][expand]) {
+                results += `Found data!\n`
+                results += JSON.stringify(response.value[0][expand], null, 2).substring(0, 500) + "...\n"
+              } else {
+                results += `No additional data returned\n`
+              }
+            }
+          } catch (error: any) {
+            results += `✗ $expand=${expand}: ${error.message || 'Failed'}\n`
+          }
+        }
+        results += "\n"
+      }
+
+      // Test 3: Check response headers for additional info
+      if (testType === 'headers' || testType === 'all') {
+        results += "📊 Test 3: Checking response headers\n"
+        try {
+          const response = await fetch(`${MS_GRAPH_BASE}/me/todo/lists`, {
+            headers: {
+              'Authorization': `Bearer ${token}`,
+              'Accept': 'application/json',
+              'Prefer': 'return=representation'
+            }
+          })
+          
+          results += "Response headers:\n"
+          response.headers.forEach((value, key) => {
+            results += `${key}: ${value}\n`
+          })
+        } catch (error) {
+          results += `Error: ${error}\n`
+        }
+        results += "\n"
+      }
+
+      // Test 4: Try extensions endpoint
+      if (testType === 'extensions' || testType === 'all') {
+        results += "📊 Test 4: Checking for extensions\n"
+        try {
+          const listsResponse = await makeGraphRequest<{ value: TaskList[] }>(
+            `${MS_GRAPH_BASE}/me/todo/lists?$top=1`,
+            token
+          )
+          
+          if (listsResponse && listsResponse.value && listsResponse.value.length > 0) {
+            const listId = listsResponse.value[0].id
+            
+            // Try to get extensions
+            try {
+              const extResponse = await makeGraphRequest<any>(
+                `${MS_GRAPH_BASE}/me/todo/lists/${listId}/extensions`,
+                token
+              )
+              results += `Extensions found: ${JSON.stringify(extResponse, null, 2)}\n`
+            } catch (error: any) {
+              results += `No extensions endpoint: ${error.message}\n`
+            }
+          }
+        } catch (error) {
+          results += `Error: ${error}\n`
+        }
+        results += "\n"
+      }
+
+      // Test 5: Check if there's a separate folders or groups endpoint
+      if (testType === 'all') {
+        results += "📊 Test 5: Checking for folder/group endpoints\n"
+        const endpoints = [
+          '/me/todo/folders',
+          '/me/todo/groups', 
+          '/me/todo/listGroups',
+          '/me/todo/listFolders',
+          '/me/todo/categories'
+        ]
+        
+        for (const endpoint of endpoints) {
+          try {
+            const response = await makeGraphRequest<any>(
+              `${MS_GRAPH_BASE}${endpoint}`,
+              token
+            )
+            results += `✓ ${endpoint}: Found! Response: ${JSON.stringify(response).substring(0, 200)}...\n`
+          } catch (error: any) {
+            results += `✗ ${endpoint}: Not found (${error.message || 'Failed'})\n`
+          }
+        }
+      }
+
+      results += "\n" + "=".repeat(50) + "\n"
+      results += "Analysis complete. Check results above for any discovered properties or endpoints."
+
+      return {
+        content: [
+          {
+            type: "text",
+            text: results,
+          },
+        ],
+      }
+    } catch (error) {
+      return {
+        content: [
+          {
+            type: "text",
+            text: `Error during Graph API exploration: ${error}`,
           },
         ],
       }

@@ -7,7 +7,7 @@ A Model Context Protocol (MCP) server that enables AI assistants like Claude and
 
 ## Features
 
-- **13 MCP Tools**: Complete task management functionality including lists, tasks, and checklist items
+- **15 MCP Tools**: Complete task management functionality including lists, tasks, checklist items, and organization features
 - **Seamless Authentication**: Automatic token refresh with zero manual intervention
 - **OAuth 2.0 Authentication**: Secure authentication with automatic token refresh
 - **Microsoft Graph API Integration**: Direct integration with Microsoft's official API
@@ -121,25 +121,6 @@ export MS_TODO_REFRESH_TOKEN=your_refresh_token
 
 ## Usage
 
-### Quick Setup (New in v1.1.0)
-
-For a seamless setup experience, use the new setup command:
-
-```bash
-# If installed globally
-npx microsoft-todo-mcp-server setup
-
-# Or if running locally
-pnpm run setup
-```
-
-This will guide you through:
-
-1. Azure app registration (if needed)
-2. Authentication with Microsoft
-3. Automatic token storage
-4. Claude config update (optional)
-
 ### Complete Setup Workflow
 
 #### Step 1: Authenticate with Microsoft
@@ -185,13 +166,14 @@ Add to your configuration file:
     "microsoftTodo": {
       "command": "npx",
       "args": ["--yes", "microsoft-todo-mcp-server"],
-      "env": {}
+      "env": {
+        "MS_TODO_ACCESS_TOKEN": "your_access_token",
+        "MS_TODO_REFRESH_TOKEN": "your_refresh_token"
+      }
     }
   }
 }
 ```
-
-Note: Starting from v1.1.0, you no longer need to include tokens in the config. They are automatically managed.
 
 **For Cursor:**
 
