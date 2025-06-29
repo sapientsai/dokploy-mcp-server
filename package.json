@@ -28,6 +28,7 @@
     "check:fix": "pnpm run format && pnpm run typecheck",
     "ci": "pnpm run check && pnpm run build",
     "precommit": "pnpm run check:fix && pnpm run build",
+    "prepublishOnly": "pnpm run ci",
     "postinstall": "echo 'Run: npx microsoft-todo-mcp-server setup' to configure"
   },
   "repository": {
