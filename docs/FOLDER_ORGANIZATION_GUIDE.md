@@ -11,10 +11,12 @@ While the Microsoft Graph API doesn't expose folder/group information for To Do 
 Get all task lists organized into logical folders/categories based on naming patterns, emoji prefixes, and sharing status.
 
 **Parameters:**
+
 - `includeIds` (optional): Include list IDs in output (default: false)
 - `groupBy` (optional): Grouping strategy - 'category' (default), 'shared', or 'type'
 
 **Example Usage:**
+
 ```bash
 # Get organized view
 get-task-lists-organized
@@ -27,6 +29,7 @@ get-task-lists-organized --groupBy shared
 ```
 
 **Organization Categories:**
+
 - ⭐ **Special Lists**: Default task list and flagged emails
 - 👥 **Shared Lists**: Lists shared with others
 - 💼 **Work**: Lists starting with "Work" or "SBIR"
@@ -44,12 +47,14 @@ get-task-lists-organized --groupBy shared
 Move completed tasks older than a specified number of days from one list to another (archive) list.
 
 **Parameters:**
+
 - `sourceListId`: ID of the source list to archive tasks from
 - `targetListId`: ID of the target archive list
 - `olderThanDays`: Archive tasks completed more than this many days ago (default: 90)
 - `dryRun`: If true, only preview what would be archived without making changes
 
 **Example Usage:**
+
 ```bash
 # Preview what would be archived
 archive-completed-tasks --sourceListId "SOURCE_ID" --targetListId "TARGET_ID" --dryRun true
@@ -66,6 +71,7 @@ archive-completed-tasks --sourceListId "SOURCE_ID" --targetListId "TARGET_ID" --
 To take full advantage of the organized view, consider using these naming patterns:
 
 ### Emoji Prefixes
+
 - 🛒 for shopping lists (Amazon, Grocery, Target)
 - 🏡 for property-related lists
 - 👪 for family lists
@@ -75,9 +81,11 @@ To take full advantage of the organized view, consider using these naming patter
 - 📦 for archive lists
 
 ### Archive Pattern
+
 For archived lists from specific contexts, use: `Original Name (Context - Archived)`
 
 Examples:
+
 - "Home Hardware (Gore - Archived)"
 - "Household Projects (Gore - Archived)"
 
@@ -102,6 +110,7 @@ If Microsoft adds folder support to the Graph API, consider:
 ## Technical Implementation
 
 The organization logic uses:
+
 - Regular expressions to detect naming patterns
 - Priority-based sorting for consistent category display
 - Hierarchical tree display with Unicode box drawing characters
