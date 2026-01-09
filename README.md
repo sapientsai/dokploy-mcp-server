@@ -194,5 +194,3 @@ MIT
 ## Acknowledgments
 
 - [OpenFDA](https://open.fda.gov/) - FDA open data API
-- [FastMCP](https://github.com/jordanburke/fastmcp) - MCP server framework
-- Based on [OpenFDA-MCP-Server](https://github.com/Augmented-Nature/OpenFDA-MCP-Server) concept

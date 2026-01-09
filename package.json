@@ -13,10 +13,10 @@
   ],
   "author": "jordan.burke@gmail.com",
   "license": "MIT",
-  "homepage": "https://github.com/jordanburke/openfda-mcp-server",
+  "homepage": "https://github.com/sapientsai/openfda-mcp-server",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jordanburke/openfda-mcp-server"
+    "url": "https://github.com/sapientsai/openfda-mcp-server"
   },
   "scripts": {
     "validate": "ts-builds validate",
