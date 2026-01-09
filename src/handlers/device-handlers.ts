@@ -212,6 +212,7 @@ export async function handleSearchDeviceClassifications(
 
 // Device Adverse Events (MDR) Handler
 export type DeviceAdverseEventsParams = {
+  reportNumber?: string
   deviceName?: string
   brandName?: string
   manufacturerName?: string
@@ -274,6 +275,26 @@ export async function handleSearchDeviceAdverseEvents(
   loggers.tools("searchDeviceAdverseEvents", params)
 
   try {
+    // If reportNumber is provided, do a direct lookup
+    if (params.reportNumber) {
+      const searchParams: SearchParams = {
+        search: `report_number:"${escapeSearchTerm(params.reportNumber)}"`,
+        limit: 1,
+      }
+
+      const response = await fdaAPIClient.searchDeviceAdverseEvents(searchParams)
+      const results = response.results ?? []
+
+      return {
+        success: true,
+        data: results.map(formatDeviceAdverseEvent),
+        totalResults: response.meta?.results?.total,
+        displayedResults: results.length,
+        searchParams,
+        apiUsage: fdaAPIClient.getRateLimitInfo(),
+      }
+    }
+
     const searchTerms: Array<{ field: string; value?: string }> = [
       { field: "device.generic_name", value: params.deviceName },
       { field: "device.brand_name", value: params.brandName },

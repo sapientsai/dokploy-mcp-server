@@ -49,6 +49,7 @@ function truncateText(text: string | undefined, maxLength = 200): string | undef
 
 // Drug Adverse Events Handler
 export type DrugAdverseEventsParams = {
+  safetyReportId?: string
   drugName?: string
   reaction?: string
   manufacturer?: string
@@ -111,6 +112,26 @@ export async function handleSearchDrugAdverseEvents(
   loggers.tools("searchDrugAdverseEvents", params)
 
   try {
+    // If safetyReportId is provided, do a direct lookup
+    if (params.safetyReportId) {
+      const searchParams: SearchParams = {
+        search: `safetyreportid:"${escapeSearchTerm(params.safetyReportId)}"`,
+        limit: 1,
+      }
+
+      const response = await fdaAPIClient.searchDrugAdverseEvents(searchParams)
+      const results = response.results ?? []
+
+      return {
+        success: true,
+        data: results.map(formatDrugAdverseEvent),
+        totalResults: response.meta?.results?.total,
+        displayedResults: results.length,
+        searchParams,
+        apiUsage: fdaAPIClient.getRateLimitInfo(),
+      }
+    }
+
     const searchTerms: Array<{ field: string; value?: string }> = [
       { field: "patient.drug.medicinalproduct", value: params.drugName },
       { field: "patient.reaction.reactionmeddrapt", value: params.reaction },
@@ -152,34 +173,70 @@ export async function handleSearchDrugAdverseEvents(
 
 // Drug Labels Handler
 export type DrugLabelsParams = {
+  setId?: string
   drugName?: string
   indication?: string
   activeIngredient?: string
   route?: string
+  hasBoxedWarning?: boolean
+  sections?: string[]
   limit?: number
   skip?: number
 }
 
 type FormattedDrugLabel = {
+  setId: string | undefined
   brandName: string | undefined
   genericName: string | undefined
   manufacturer: string | undefined
   activeIngredients: string[]
+  boxedWarning: string | undefined
   indications: string | undefined
   warnings: string | undefined
+  contraindications: string | undefined
+  adverseReactions: string | undefined
+  drugInteractions: string | undefined
   dosageAndAdministration: string | undefined
+  clinicalPharmacology: string | undefined
+  mechanismOfAction: string | undefined
+  pharmacokinetics: string | undefined
+  overdosage: string | undefined
+  description: string | undefined
+  howSupplied: string | undefined
+  storageAndHandling: string | undefined
   route: string[]
 }
 
-function formatDrugLabel(label: DrugLabel): FormattedDrugLabel {
+function formatDrugLabel(label: DrugLabel, sections?: string[]): FormattedDrugLabel {
+  // Helper to conditionally include section based on sections filter
+  const includeSection = (sectionName: string) => !sections || sections.includes(sectionName)
+
   return {
+    setId: label.set_id,
     brandName: label.openfda?.brand_name?.[0],
     genericName: label.openfda?.generic_name?.[0],
     manufacturer: label.openfda?.manufacturer_name?.[0],
     activeIngredients: label.openfda?.substance_name?.slice(0, 5) ?? [],
-    indications: truncateText(label.indications_and_usage?.[0]),
-    warnings: truncateText(label.warnings?.[0]),
-    dosageAndAdministration: truncateText(label.dosage_and_administration?.[0]),
+    boxedWarning: includeSection("boxed_warning") ? truncateText(label.boxed_warning?.[0], 500) : undefined,
+    indications: includeSection("indications_and_usage") ? truncateText(label.indications_and_usage?.[0]) : undefined,
+    warnings: includeSection("warnings") ? truncateText(label.warnings?.[0]) : undefined,
+    contraindications: includeSection("contraindications") ? truncateText(label.contraindications?.[0]) : undefined,
+    adverseReactions: includeSection("adverse_reactions") ? truncateText(label.adverse_reactions?.[0]) : undefined,
+    drugInteractions: includeSection("drug_interactions") ? truncateText(label.drug_interactions?.[0]) : undefined,
+    dosageAndAdministration: includeSection("dosage_and_administration")
+      ? truncateText(label.dosage_and_administration?.[0])
+      : undefined,
+    clinicalPharmacology: includeSection("clinical_pharmacology")
+      ? truncateText(label.clinical_pharmacology?.[0])
+      : undefined,
+    mechanismOfAction: includeSection("mechanism_of_action") ? truncateText(label.mechanism_of_action?.[0]) : undefined,
+    pharmacokinetics: includeSection("pharmacokinetics") ? truncateText(label.pharmacokinetics?.[0]) : undefined,
+    overdosage: includeSection("overdosage") ? truncateText(label.overdosage?.[0]) : undefined,
+    description: includeSection("description") ? truncateText(label.description?.[0]) : undefined,
+    howSupplied: includeSection("how_supplied") ? truncateText(label.how_supplied?.[0]) : undefined,
+    storageAndHandling: includeSection("storage_and_handling")
+      ? truncateText(label.storage_and_handling?.[0])
+      : undefined,
     route: label.openfda?.route?.slice(0, 3) ?? [],
   }
 }
@@ -188,6 +245,26 @@ export async function handleSearchDrugLabels(params: DrugLabelsParams): Promise<
   loggers.tools("searchDrugLabels", params)
 
   try {
+    // If setId is provided, do a direct lookup
+    if (params.setId) {
+      const searchParams: SearchParams = {
+        search: `set_id:"${escapeSearchTerm(params.setId)}"`,
+        limit: 1,
+      }
+
+      const response = await fdaAPIClient.searchDrugLabels(searchParams)
+      const results = response.results ?? []
+
+      return {
+        success: true,
+        data: results.map((label) => formatDrugLabel(label, params.sections)),
+        totalResults: response.meta?.results?.total,
+        displayedResults: results.length,
+        searchParams,
+        apiUsage: fdaAPIClient.getRateLimitInfo(),
+      }
+    }
+
     const searchTerms: Array<{ field: string; value?: string }> = [
       { field: "openfda.brand_name", value: params.drugName },
       { field: "indications_and_usage", value: params.indication },
@@ -197,8 +274,13 @@ export async function handleSearchDrugLabels(params: DrugLabelsParams): Promise<
 
     const searchQuery = buildSearchQuery(searchTerms)
 
+    // Build boxed warning existence query
+    const boxedWarningQuery = params.hasBoxedWarning ? "_exists_:boxed_warning" : undefined
+
+    const fullQuery = [searchQuery, boxedWarningQuery].filter(Boolean).join("+AND+")
+
     const searchParams: SearchParams = {
-      search: searchQuery || undefined,
+      search: fullQuery || undefined,
       limit: params.limit,
       skip: params.skip,
     }
@@ -208,7 +290,7 @@ export async function handleSearchDrugLabels(params: DrugLabelsParams): Promise<
 
     return {
       success: true,
-      data: results.map(formatDrugLabel),
+      data: results.map((label) => formatDrugLabel(label, params.sections)),
       totalResults: response.meta?.results?.total,
       displayedResults: results.length,
       searchParams,

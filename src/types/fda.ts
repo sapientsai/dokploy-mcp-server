@@ -137,6 +137,7 @@ export type DrugLabel = {
   purpose?: string[]
   indications_and_usage?: string[]
   warnings?: string[]
+  boxed_warning?: string[]
   do_not_use?: string[]
   ask_doctor?: string[]
   ask_doctor_or_pharmacist?: string[]

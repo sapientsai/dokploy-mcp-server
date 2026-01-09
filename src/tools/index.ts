@@ -20,6 +20,10 @@ const dateRangeSchema = {
 // Drug Tool Schemas
 
 export const searchDrugAdverseEventsSchema = z.object({
+  safetyReportId: z
+    .string()
+    .optional()
+    .describe("Unique safety report ID for retrieving a specific adverse event report"),
   drugName: z.string().optional().describe("Drug or product name to search"),
   reaction: z.string().optional().describe("Adverse reaction to search (e.g., 'headache', 'nausea')"),
   manufacturer: z.string().optional().describe("Drug manufacturer name"),
@@ -28,11 +32,39 @@ export const searchDrugAdverseEventsSchema = z.object({
   ...paginationSchema,
 })
 
+// Available label sections for filtering
+export const labelSections = [
+  "indications_and_usage",
+  "dosage_and_administration",
+  "contraindications",
+  "warnings",
+  "warnings_and_cautions",
+  "adverse_reactions",
+  "drug_interactions",
+  "clinical_pharmacology",
+  "mechanism_of_action",
+  "pharmacokinetics",
+  "overdosage",
+  "description",
+  "how_supplied",
+  "storage_and_handling",
+  "boxed_warning",
+] as const
+
 export const searchDrugLabelsSchema = z.object({
+  setId: z.string().optional().describe("Unique label identifier (set_id) for retrieving a specific drug label"),
   drugName: z.string().optional().describe("Drug brand or generic name"),
   indication: z.string().optional().describe("Medical indication or use case"),
   activeIngredient: z.string().optional().describe("Active ingredient/substance name"),
   route: z.string().optional().describe("Route of administration (e.g., 'oral', 'intravenous')"),
+  hasBoxedWarning: z
+    .boolean()
+    .optional()
+    .describe("Filter for drugs with boxed warnings (most serious safety warnings)"),
+  sections: z
+    .array(z.enum(labelSections))
+    .optional()
+    .describe("Specific label sections to return (e.g., ['indications_and_usage', 'warnings', 'adverse_reactions'])"),
   ...paginationSchema,
 })
 
@@ -94,6 +126,10 @@ export const searchDeviceClassificationsSchema = z.object({
 })
 
 export const searchDeviceAdverseEventsSchema = z.object({
+  reportNumber: z
+    .string()
+    .optional()
+    .describe("MDR report number for retrieving a specific device adverse event report"),
   deviceName: z.string().optional().describe("Device generic name"),
   brandName: z.string().optional().describe("Device brand name"),
   manufacturerName: z.string().optional().describe("Device manufacturer name"),
@@ -139,3 +175,4 @@ export type SearchDevice510KParams = z.infer<typeof searchDevice510KSchema>
 export type SearchDeviceClassificationsParams = z.infer<typeof searchDeviceClassificationsSchema>
 export type SearchDeviceAdverseEventsParams = z.infer<typeof searchDeviceAdverseEventsSchema>
 export type SearchDeviceEnforcementParams = z.infer<typeof searchDeviceEnforcementSchema>
+export type LabelSection = (typeof labelSections)[number]

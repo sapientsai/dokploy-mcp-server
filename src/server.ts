@@ -58,6 +58,7 @@ export function createOpenFDAServer(options: ServerOptions = {}): FastMCP {
     description:
       "Search FDA Adverse Event Reporting System (FAERS) for drug safety reports. " +
       "Find adverse events by drug name, reaction type, manufacturer, date range, and seriousness. " +
+      "Retrieve a specific report by safetyReportId. " +
       "Returns patient demographics, drug details, and reported reactions.",
     parameters: searchDrugAdverseEventsSchema,
     execute: async (args) => {
@@ -71,8 +72,9 @@ export function createOpenFDAServer(options: ServerOptions = {}): FastMCP {
     name: "search_drug_labels",
     description:
       "Search FDA drug labeling (SPL) information including prescribing information, " +
-      "indications, warnings, dosage, and active ingredients. " +
-      "Find label information by drug name, indication, ingredient, or route.",
+      "indications, warnings, boxed warnings, dosage, and active ingredients. " +
+      "Retrieve a specific label by setId. Filter for drugs with boxed warnings using hasBoxedWarning. " +
+      "Request specific sections (e.g., indications_and_usage, adverse_reactions, boxed_warning) to limit response.",
     parameters: searchDrugLabelsSchema,
     execute: async (args) => {
       loggers.tools("Executing search_drug_labels", args)
@@ -172,6 +174,7 @@ export function createOpenFDAServer(options: ServerOptions = {}): FastMCP {
     description:
       "Search FDA Medical Device Report (MDR) database for device adverse events. " +
       "Find adverse events by device name, brand, manufacturer, event type (Injury/Death/Malfunction), and date. " +
+      "Retrieve a specific MDR report by reportNumber. " +
       "Returns device details, event descriptions, and patient outcomes.",
     parameters: searchDeviceAdverseEventsSchema,
     execute: async (args) => {
