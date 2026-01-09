@@ -2,90 +2,93 @@
 
 This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
 
-## Project Overview
+## Overview
 
-This is a TypeScript library template designed to be cloned/forked for creating new npm packages. It uses the `ts-builds` toolchain for standardized build scripts and dual module format support (CommonJS + ES modules).
-
-**Template Usage**: See STANDARDIZATION_GUIDE.md for applying this pattern to other TypeScript projects.
+This is an MCP (Model Context Protocol) server that provides access to U.S. FDA public datasets including drugs, medical devices, adverse events, recalls, and more. Built with TypeScript and FastMCP.
 
 ## Development Commands
 
-All commands delegate to `ts-builds` for consistency across projects:
+All commands delegate to `ts-builds` for consistency:
 
 ```bash
 pnpm validate        # Main command: format + lint + test + build (use before commits)
 
 pnpm format          # Format code with Prettier
-pnpm format:check    # Check formatting only
-
 pnpm lint            # Fix ESLint issues
-pnpm lint:check      # Check ESLint issues only
-
 pnpm test            # Run tests once
-pnpm test:watch      # Run tests in watch mode
-pnpm test:coverage   # Run tests with coverage
-
 pnpm build           # Production build (outputs to dist/)
 pnpm dev             # Development build with watch mode
 
-pnpm typecheck       # Check TypeScript types
-```
-
-### Running a Single Test
-
-```bash
-pnpm test -- --testNamePattern="pattern"    # Filter by test name
-pnpm test -- test/specific.spec.ts          # Run specific file
+pnpm serve:test      # Run server locally (stdio mode)
+pnpm serve:test:http # Run server locally (HTTP mode)
 ```
 
 ## Architecture
 
-### Build System: ts-builds + tsdown
+### Build System
 
-- **ts-builds**: Centralized toolchain package providing all build scripts
-- **tsdown**: Underlying bundler (successor to tsup) configured via `ts-builds/tsdown`
-- **Configuration**: `tsdown.config.ts` imports default config from ts-builds
-- **TypeScript**: `tsconfig.json` extends `ts-builds/tsconfig`
-- **Prettier**: Uses `ts-builds/prettier` shared config
+- **ts-builds**: Centralized toolchain for all build scripts
+- **tsdown**: Bundler (successor to tsup)
+- **Vitest**: Test framework
 
-### Output Format
+### Project Structure
 
-- **dist/**: Production builds containing:
-  - `index.cjs` - CommonJS format
-  - `index.mjs` - ES modules format
-  - `index.d.mts` - TypeScript declarations
-- **lib/**: Development builds (also published)
-
-### Package Exports
-
-```json
-{
-  "main": "./dist/index.cjs",
-  "module": "./dist/index.mjs",
-  "types": "./dist/index.d.mts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.mts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs"
-    }
-  }
-}
+```
+src/
+├── index.ts              # CLI entry point (Commander.js)
+├── server.ts             # FastMCP server creation with all 10 tools
+├── lib.ts                # Library exports for programmatic use
+├── types/
+│   └── fda.ts            # FDA API type definitions
+├── handlers/
+│   ├── drug-handlers.ts  # Drug query handlers (6 tools)
+│   └── device-handlers.ts # Device query handlers (4 tools)
+├── tools/
+│   └── index.ts          # Zod schemas for all tools
+└── utils/
+    ├── api-client.ts     # FDA API HTTP client
+    └── logger.ts         # Debug logger setup
 ```
 
-### Testing: Vitest
+### MCP Tools
 
-- Tests located in `test/*.spec.ts`
-- Uses Vitest with configuration from ts-builds
-- Coverage via v8 provider
+**Drug Tools (6):**
 
-## Key Files
+- `search_drug_adverse_events` - FAERS database
+- `search_drug_labels` - SPL labeling information
+- `search_drug_ndc` - National Drug Code directory
+- `search_drug_recalls` - Enforcement/recall reports
+- `search_drugs_at_fda` - Approved drug applications
+- `search_drug_shortages` - Current shortages
 
-- `src/index.ts` - Main library entry point
-- `test/*.spec.ts` - Test files
-- `tsdown.config.ts` - Build config (imports from ts-builds)
-- `tsconfig.json` - TypeScript config (extends ts-builds)
-- `.claude/skills/typescript-standards/` - Claude Code skill for applying these standards
+**Device Tools (4):**
+
+- `search_device_510k` - 510(k) clearances
+- `search_device_classifications` - Device classifications
+- `search_device_adverse_events` - MDR reports
+- `search_device_recalls` - Device enforcement reports
+
+### Key Patterns
+
+- **Handlers**: Each endpoint has a dedicated handler that builds queries, calls the API, and formats results
+- **Zod Schemas**: All tool parameters validated with Zod
+- **Rate Limiting**: API client is aware of FDA rate limits (40/min without key, 240/min with key)
+- **Error Handling**: All handlers return `FDAToolResponse<T>` with success/error status
+
+## Environment Variables
+
+| Variable          | Description                                        |
+| ----------------- | -------------------------------------------------- |
+| `OPENFDA_API_KEY` | Optional FDA API key for higher rate limits        |
+| `DEBUG`           | Enable debug logging (e.g., `DEBUG=openfda-mcp:*`) |
+
+## Testing
+
+```bash
+pnpm test              # Run all tests
+pnpm test:watch        # Watch mode
+pnpm test:coverage     # Coverage report
+```
 
 ## Publishing
 
@@ -94,4 +97,4 @@ npm version patch|minor|major
 npm publish --access public
 ```
 
-The `prepublishOnly` hook automatically runs `pnpm validate` before publishing.
+The `prepublishOnly` hook automatically runs `pnpm validate`.

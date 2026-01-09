@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "openfda": {
+      "command": "npx",
+      "args": ["-y", "openfda-mcp-server"],
+      "env": {
+        "OPENFDA_API_KEY": ""
+      }
+    }
+  }
+}
