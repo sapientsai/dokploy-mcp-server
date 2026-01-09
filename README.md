@@ -106,6 +106,42 @@ openfda-mcp-server
 openfda-mcp-server --transport http --port 3000
 ```
 
+## Docker
+
+### Quick Start
+
+```bash
+# Build and run with docker-compose
+docker-compose up -d
+
+# Or build manually
+docker build -t openfda-mcp-server .
+docker run -p 3000:3000 -e OPENFDA_API_KEY=your-key openfda-mcp-server
+```
+
+### Docker Compose
+
+```yaml
+services:
+  openfda-mcp:
+    image: openfda-mcp-server:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - OPENFDA_API_KEY=${OPENFDA_API_KEY:-}
+```
+
+### Environment Variables
+
+Pass environment variables to the container:
+
+```bash
+docker run -p 3000:3000 \
+  -e OPENFDA_API_KEY=your-api-key \
+  -e DEBUG=openfda-mcp:* \
+  openfda-mcp-server
+```
+
 ## Development
 
 ```bash
