@@ -1,38 +1,29 @@
 {
-  "name": "-template",
-  "version": "8.0.0",
-  "description": "A basic template for creating a TypeScript library and Publishing it to NPM.",
+  "name": "dokploy-mcp-server",
+  "version": "0.1.0",
+  "description": "A comprehensive Model Context Protocol (MCP) server for Dokploy - deploy apps, manage containers, databases, domains, and servers.",
   "keywords": [
-    "typescript",
-    "template",
-    "tsdown",
-    "npm"
+    "mcp",
+    "dokploy",
+    "devops",
+    "deployment",
+    "docker",
+    "model-context-protocol",
+    "claude",
+    "ai-assistant",
+    "fastmcp",
+    "self-hosted",
+    "paas"
   ],
-  "author": "jordan.burke@gmail.com",
+  "author": "Jordan Burke <jordan.burke@gmail.com>",
   "license": "MIT",
-  "homepage": "https://github.com/jordanburke/typescript-library-template",
+  "homepage": "https://github.com/jordanburke/dokploy-mcp-server#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jordanburke/typescript-library-template"
+    "url": "git+https://github.com/jordanburke/dokploy-mcp-server.git"
   },
-  "scripts": {
-    "validate": "ts-builds validate",
-    "format": "ts-builds format",
-    "format:check": "ts-builds format:check",
-    "lint": "ts-builds lint",
-    "lint:check": "ts-builds lint:check",
-    "typecheck": "ts-builds typecheck",
-    "test": "ts-builds test",
-    "test:watch": "ts-builds test:watch",
-    "test:coverage": "ts-builds test:coverage",
-    "build": "ts-builds build",
-    "dev": "ts-builds dev",
-    "prepublishOnly": "pnpm validate"
-  },
-  "devDependencies": {
-    "@types/node": "^24.10.13",
-    "ts-builds": "^2.3.3",
-    "tsdown": "^0.20.3"
+  "bugs": {
+    "url": "https://github.com/jordanburke/dokploy-mcp-server/issues"
   },
   "type": "module",
   "main": "./dist/index.js",
@@ -45,10 +36,41 @@
       "default": "./dist/index.js"
     }
   },
+  "bin": {
+    "dokploy-mcp-server": "dist/bin.js"
+  },
   "files": [
-    "lib",
-    "dist"
+    "dist/",
+    "README.md",
+    "LICENSE"
   ],
+  "scripts": {
+    "validate": "ts-builds validate",
+    "format": "ts-builds format",
+    "format:check": "ts-builds format:check",
+    "lint": "ts-builds lint",
+    "lint:check": "ts-builds lint:check",
+    "typecheck": "ts-builds typecheck",
+    "test": "ts-builds test",
+    "test:watch": "ts-builds test:watch",
+    "test:coverage": "ts-builds test:coverage",
+    "build": "NODE_ENV=production ts-builds build",
+    "dev": "ts-builds dev",
+    "prepublishOnly": "pnpm validate",
+    "inspect": "pnpm build && npx @modelcontextprotocol/inspector dist/index.js",
+    "start": "pnpm build && node dist/bin.js",
+    "serve": "pnpm build && node dist/index.js"
+  },
   "prettier": "ts-builds/prettier",
+  "dependencies": {
+    "dotenv": "^17.2.3",
+    "fastmcp": "^3.31.0",
+    "zod": "^4.3.6"
+  },
+  "devDependencies": {
+    "@types/node": "^24.10.13",
+    "ts-builds": "^2.3.3",
+    "tsdown": "^0.20.3"
+  },
   "packageManager": "pnpm@10.28.2+sha512.41872f037ad22f7348e3b1debbaf7e867cfd448f2726d9cf74c08f19507c31d2c8e7a11525b983febc2df640b5438dee6023ebb1f84ed43cc2d654d2bc326264"
 }
