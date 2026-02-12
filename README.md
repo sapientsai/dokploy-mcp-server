@@ -1,5 +1,7 @@
 # dokploy-mcp-server
 
+[![npm version](https://img.shields.io/npm/v/dokploy-mcp-server)](https://www.npmjs.com/package/dokploy-mcp-server)
+
 A comprehensive [Model Context Protocol (MCP)](https://modelcontextprotocol.io/) server for [Dokploy](https://dokploy.com/) - the open-source, self-hosted PaaS. Deploy apps, manage containers, databases, domains, and servers through AI assistants like Claude.
 
 ## Why This Server?
@@ -12,7 +14,7 @@ The [official Dokploy MCP](https://github.com/Dokploy/mcp) covers only ~5 of 42 
 | -------------- | ------------------- | ----------------------------- |
 | Projects       | 6 tools             | 1 tool (6 actions)            |
 | Applications   | 26 tools            | 1 tool (18 actions)           |
-| Compose        | -                   | 1 tool (11 actions)           |
+| Compose        | -                   | 1 tool (15 actions)           |
 | Deployments    | -                   | 1 tool (2 actions)            |
 | Docker         | -                   | 1 tool (4 actions)            |
 | Domains        | 9 tools             | 1 tool (8 actions)            |
@@ -107,11 +109,11 @@ Actions: `create | get | update | move | deploy | start | stop | delete | markRu
 
 Full application lifecycle. Most actions require `applicationId`. `create` requires `name` + `environmentId`. `deploy` supports `redeploy` flag. `readMonitoring` requires `appName`.
 
-### `dokploy_compose` (11 actions)
+### `dokploy_compose` (15 actions)
 
-Actions: `create | get | update | delete | deploy | start | stop | move | loadServices | loadMounts | getDefaultCommand`
+Actions: `create | get | update | delete | deploy | start | stop | move | loadServices | loadMounts | getDefaultCommand | cancelDeployment | cleanQueues | killBuild | refreshToken`
 
-Docker Compose management. Most actions require `composeId`. `create` requires `name` + `environmentId`. `loadMounts` requires `serviceName`.
+Docker Compose management. Most actions require `composeId`. `create` requires `name` + `environmentId`. `loadMounts` requires `serviceName`. `cancelDeployment`/`cleanQueues`/`killBuild`/`refreshToken` require `composeId`.
 
 ### `dokploy_database` (13 actions)
 
@@ -205,3 +207,7 @@ pnpm inspect      # Open MCP Inspector
 ## License
 
 MIT
+
+---
+
+**Sponsored by <a href="https://sapientsai.com/"><img src="https://sapientsai.com/images/logo.svg" alt="SapientsAI" width="20" style="vertical-align: middle;"> SapientsAI</a>** — Building agentic AI for businesses

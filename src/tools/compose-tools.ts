@@ -17,13 +17,17 @@ const ACTIONS = [
   "loadServices",
   "loadMounts",
   "getDefaultCommand",
+  "cancelDeployment",
+  "cleanQueues",
+  "killBuild",
+  "refreshToken",
 ] as const
 
 export function registerComposeTools(server: FastMCP) {
   server.addTool({
     name: "dokploy_compose",
     description:
-      "Manage Docker Compose services. create: name+environmentId. get/delete/start/stop/getDefaultCommand: composeId. update: composeId+fields. deploy: composeId, redeploy?. move: composeId+targetEnvironmentId. loadServices: composeId. loadMounts: composeId+serviceName.",
+      "Manage Docker Compose services. create: name+environmentId. get/delete/start/stop/getDefaultCommand: composeId. update: composeId+fields. deploy: composeId, redeploy?. move: composeId+targetEnvironmentId. loadServices: composeId. loadMounts: composeId+serviceName. cancelDeployment/cleanQueues/killBuild/refreshToken: composeId.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       composeId: z.string().optional(),
@@ -116,6 +120,13 @@ export function registerComposeTools(server: FastMCP) {
         case "getDefaultCommand": {
           const command = await client.get<string>("compose.getDefaultCommand", { composeId: args.composeId! })
           return `Default command: ${command}`
+        }
+        case "cancelDeployment":
+        case "cleanQueues":
+        case "killBuild":
+        case "refreshToken": {
+          await client.post(`compose.${args.action}`, { composeId: args.composeId! })
+          return `Compose ${args.composeId}: ${args.action} completed.`
         }
       }
     },
