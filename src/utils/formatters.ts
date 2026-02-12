@@ -10,6 +10,7 @@ import type {
   DokployProject,
   DokployServer,
 } from "../types"
+import { DB_TYPES } from "../types"
 
 function formatDate(dateStr?: string): string {
   if (!dateStr) return "N/A"
@@ -31,11 +32,42 @@ function statusIcon(status: string): string {
   return `[${status.toUpperCase()}]`
 }
 
+function formatEnvironmentServices(env: DokployEnvironment): string {
+  const lines: string[] = []
+
+  if (env.applications?.length) {
+    for (const app of env.applications) {
+      lines.push(`    - App: **${app.name}** ${statusIcon(app.applicationStatus)} (ID: ${app.applicationId})`)
+    }
+  }
+  if (env.compose?.length) {
+    for (const c of env.compose) {
+      lines.push(`    - Compose: **${c.name}** ${statusIcon(c.composeStatus)} (ID: ${c.composeId})`)
+    }
+  }
+  for (const dbType of DB_TYPES) {
+    const dbs = env[dbType]
+    if (dbs?.length) {
+      for (const db of dbs) {
+        lines.push(`    - ${dbType}: **${db.name}** ${statusIcon(db.applicationStatus)} (ID: ${db.databaseId})`)
+      }
+    }
+  }
+
+  return lines.join("\n")
+}
+
 export function formatProject(project: DokployProject): string {
-  const envCount = project.environments?.length ?? 0
+  const envs = project.environments ?? []
+  const envLines = envs.map((env) => {
+    const services = formatEnvironmentServices(env)
+    const header = `  - **${env.name}** (ID: ${env.environmentId})`
+    return services ? `${header}\n${services}` : header
+  })
+
   return `- **${project.name}** (ID: ${project.projectId})
   Description: ${project.description || "None"}
-  Environments: ${envCount}
+  Environments: ${envs.length}${envLines.length ? "\n" + envLines.join("\n") : ""}
   Created: ${formatDate(project.createdAt)}`
 }
 
@@ -45,10 +77,11 @@ export function formatProjectList(projects: DokployProject[]): string {
 }
 
 export function formatEnvironment(env: DokployEnvironment): string {
+  const services = formatEnvironmentServices(env)
   return `- **${env.name}** (ID: ${env.environmentId})
   Description: ${env.description || "None"}
   Project: ${env.projectId}
-  Created: ${formatDate(env.createdAt)}`
+  Created: ${formatDate(env.createdAt)}${services ? "\n" + services : ""}`
 }
 
 export function formatEnvironmentList(envs: DokployEnvironment[]): string {
