@@ -10,7 +10,8 @@ const ACTIONS = ["list", "killProcess"] as const
 export function registerDeploymentTools(server: FastMCP) {
   server.addTool({
     name: "dokploy_deployment",
-    description: "Manage deployments. list: applicationId|composeId|serverId|type+id. killProcess: deploymentId.",
+    description:
+      "Manage deployments. list: applicationId|composeId|serverId|type+id. killProcess: deploymentId. Note: no log retrieval API exists; deployment data includes logPath for reference only.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       deploymentId: z.string().optional(),

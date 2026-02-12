@@ -11,7 +11,7 @@ export function registerDockerTools(server: FastMCP) {
   server.addTool({
     name: "dokploy_docker",
     description:
-      "Docker management. getContainers: serverId?. restartContainer: containerId. getConfig: containerId, serverId?. findContainers: appName+method(match|label|stack|service), serverId?.",
+      "Docker container management. getContainers: list all containers, serverId?. restartContainer: containerId. getConfig: containerId (required, not appName), serverId?. findContainers: appName+method(match|label|stack|service), serverId?.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       containerId: z.string().optional(),
@@ -43,6 +43,7 @@ export function registerDockerTools(server: FastMCP) {
           return `# Container Config\n\n\`\`\`json\n${JSON.stringify(config, null, 2)}\n\`\`\``
         }
         case "findContainers": {
+          if (!args.method) throw new Error("findContainers requires method (match|label|stack|service)")
           const endpointMap: Record<string, string> = {
             match: "docker.getContainersByAppNameMatch",
             label: "docker.getContainersByAppLabel",
