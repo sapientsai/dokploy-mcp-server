@@ -101,7 +101,7 @@ Each tool uses an `action` enum to select the operation. Parameters are optional
 
 Actions: `list | get | create | update | remove | duplicate`
 
-Manage projects. `list` returns all projects. `get` requires `projectId`. `create` requires `name`. `update` requires `projectId` + fields. `remove` requires `projectId`. `duplicate` requires `sourceEnvironmentId` + `name`.
+Manage projects. `list` and `get` return nested environments with their applications, composes, and databases (with names, IDs, and status), so you can discover service IDs without extra calls. `create` requires `name`. `update` requires `projectId` + fields. `remove` requires `projectId`. `duplicate` requires `sourceEnvironmentId` + `name`.
 
 ### `dokploy_application` (18 actions)
 

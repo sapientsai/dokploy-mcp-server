@@ -11,14 +11,13 @@ export function registerProjectTools(server: FastMCP) {
   server.addTool({
     name: "dokploy_project",
     description:
-      "Manage projects. list: all. get: projectId. create: name. update: projectId+fields. remove: projectId. duplicate: sourceEnvironmentId+name.",
+      "Manage projects. list: all (includes nested environments with applications, composes, databases). get: projectId (same nested detail). create: name. update: projectId+fields. remove: projectId. duplicate: sourceEnvironmentId+name.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       projectId: z.string().optional(),
       name: z.string().optional(),
       description: z.string().optional(),
       sourceEnvironmentId: z.string().optional(),
-      includeServices: z.boolean().optional(),
       duplicateInSameProject: z.boolean().optional(),
     }),
     execute: async (args) => {
@@ -57,7 +56,6 @@ export function registerProjectTools(server: FastMCP) {
             sourceEnvironmentId: args.sourceEnvironmentId!,
             name: args.name!,
             ...(args.description && { description: args.description }),
-            ...(args.includeServices !== undefined && { includeServices: args.includeServices }),
             ...(args.duplicateInSameProject !== undefined && { duplicateInSameProject: args.duplicateInSameProject }),
           })
           return `Environment duplicated as "${args.name}".`

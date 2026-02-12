@@ -24,6 +24,13 @@ export type DokployEnvironment = {
   description?: string
   projectId: string
   createdAt?: string
+  applications?: DokployApplication[]
+  compose?: DokployCompose[]
+  postgres?: DokployDatabase[]
+  mysql?: DokployDatabase[]
+  mariadb?: DokployDatabase[]
+  mongo?: DokployDatabase[]
+  redis?: DokployDatabase[]
 }
 
 export type DokployApplication = {
