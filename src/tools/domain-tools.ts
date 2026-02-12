@@ -5,154 +5,103 @@ import { getDokployClient } from "../client/dokploy-client"
 import type { DokployDomain } from "../types"
 import { formatDomain, formatDomainList } from "../utils/formatters"
 
+const ACTIONS = ["create", "list", "get", "update", "delete", "generate", "canGenerateTraefikMe", "validate"] as const
+
 export function registerDomainTools(server: FastMCP) {
   server.addTool({
-    name: "dokploy_domain_create",
-    description: "Create a domain for an application or compose service",
+    name: "dokploy_domain",
+    description:
+      "Manage domains. create: host+applicationId|composeId. list: applicationId|composeId. get: domainId. update: domainId+host. delete: domainId. generate: appName. canGenerateTraefikMe: serverId?. validate: domain.",
     parameters: z.object({
-      host: z.string().describe("Domain hostname (e.g., app.example.com)"),
-      applicationId: z.string().optional().describe("Application ID (for application domains)"),
-      composeId: z.string().optional().describe("Compose service ID (for compose domains)"),
-      serviceName: z.string().optional().describe("Service name within a compose service"),
-      path: z.string().optional().describe("URL path prefix"),
-      port: z.number().optional().describe("Target port"),
-      https: z.boolean().optional().describe("Enable HTTPS"),
-      certificateType: z.string().optional().describe("Certificate type (letsencrypt, none)"),
-      domainType: z.string().optional().describe("Domain type"),
+      action: z.enum(ACTIONS),
+      domainId: z.string().optional(),
+      host: z.string().optional(),
+      applicationId: z.string().optional(),
+      composeId: z.string().optional(),
+      serviceName: z.string().optional(),
+      path: z.string().optional(),
+      port: z.number().optional(),
+      https: z.boolean().optional(),
+      certificateType: z.string().optional(),
+      domainType: z.string().optional(),
+      appName: z.string().optional(),
+      serverId: z.string().optional(),
+      domain: z.string().optional(),
+      serverIp: z.string().optional(),
     }),
     execute: async (args) => {
       const client = getDokployClient()
-      const body: Record<string, unknown> = { host: args.host }
-      for (const [key, value] of Object.entries(args)) {
-        if (key !== "host" && value !== undefined) body[key] = value
+
+      switch (args.action) {
+        case "create": {
+          const body: Record<string, unknown> = { host: args.host! }
+          const optionalFields = [
+            "applicationId",
+            "composeId",
+            "serviceName",
+            "path",
+            "port",
+            "https",
+            "certificateType",
+            "domainType",
+          ] as const
+          for (const key of optionalFields) {
+            if (args[key] !== undefined) body[key] = args[key]
+          }
+          const domain = await client.post<DokployDomain>("domain.create", body)
+          return `# Domain Created\n\n${formatDomain(domain)}`
+        }
+        case "list": {
+          let domains: DokployDomain[]
+          if (args.applicationId) {
+            domains = await client.get<DokployDomain[]>("domain.byApplicationId", {
+              applicationId: args.applicationId,
+            })
+          } else if (args.composeId) {
+            domains = await client.get<DokployDomain[]>("domain.byComposeId", { composeId: args.composeId })
+          } else {
+            throw new Error("Provide applicationId or composeId")
+          }
+          return formatDomainList(domains)
+        }
+        case "get": {
+          const domain = await client.get<DokployDomain>("domain.one", { domainId: args.domainId! })
+          return `# Domain Details\n\n${formatDomain(domain)}`
+        }
+        case "update": {
+          const body: Record<string, unknown> = { domainId: args.domainId!, host: args.host! }
+          const optionalFields = ["path", "port", "https", "certificateType"] as const
+          for (const key of optionalFields) {
+            if (args[key] !== undefined) body[key] = args[key]
+          }
+          await client.post("domain.update", body)
+          return `Domain ${args.domainId} updated.`
+        }
+        case "delete": {
+          await client.post("domain.delete", { domainId: args.domainId! })
+          return `Domain ${args.domainId} deleted.`
+        }
+        case "generate": {
+          const result = await client.post<unknown>("domain.generateDomain", {
+            appName: args.appName!,
+            ...(args.serverId && { serverId: args.serverId }),
+          })
+          return `# Generated Domain\n\n\`\`\`json\n${JSON.stringify(result, null, 2)}\n\`\`\``
+        }
+        case "canGenerateTraefikMe": {
+          const result = await client.get<boolean>("domain.canGenerateTraefikMeDomains", {
+            ...(args.serverId && { serverId: args.serverId }),
+          })
+          return `Traefik.me: ${result ? "Available" : "Not available"}`
+        }
+        case "validate": {
+          const result = await client.post<unknown>("domain.validateDomain", {
+            domain: args.domain!,
+            ...(args.serverIp && { serverIp: args.serverIp }),
+          })
+          return `# DNS Validation: ${args.domain}\n\n\`\`\`json\n${JSON.stringify(result, null, 2)}\n\`\`\``
+        }
       }
-      const domain = await client.post<DokployDomain>("domain.create", body)
-      return `# Domain Created\n\n${formatDomain(domain)}`
-    },
-  })
-
-  server.addTool({
-    name: "dokploy_domain_listByApplication",
-    description: "List all domains for an application",
-    parameters: z.object({
-      applicationId: z.string().describe("The application ID"),
-    }),
-    execute: async (args) => {
-      const client = getDokployClient()
-      const domains = await client.get<DokployDomain[]>("domain.byApplicationId", {
-        applicationId: args.applicationId,
-      })
-      return formatDomainList(domains)
-    },
-  })
-
-  server.addTool({
-    name: "dokploy_domain_listByCompose",
-    description: "List all domains for a Docker Compose service",
-    parameters: z.object({
-      composeId: z.string().describe("The compose service ID"),
-    }),
-    execute: async (args) => {
-      const client = getDokployClient()
-      const domains = await client.get<DokployDomain[]>("domain.byComposeId", { composeId: args.composeId })
-      return formatDomainList(domains)
-    },
-  })
-
-  server.addTool({
-    name: "dokploy_domain_get",
-    description: "Get details for a specific domain",
-    parameters: z.object({
-      domainId: z.string().describe("The domain ID"),
-    }),
-    execute: async (args) => {
-      const client = getDokployClient()
-      const domain = await client.get<DokployDomain>("domain.one", { domainId: args.domainId })
-      return `# Domain Details\n\n${formatDomain(domain)}`
-    },
-  })
-
-  server.addTool({
-    name: "dokploy_domain_update",
-    description: "Update a domain's configuration",
-    parameters: z.object({
-      domainId: z.string().describe("The domain ID"),
-      host: z.string().describe("Domain hostname"),
-      path: z.string().optional().describe("URL path prefix"),
-      port: z.number().optional().describe("Target port"),
-      https: z.boolean().optional().describe("Enable HTTPS"),
-      certificateType: z.string().optional().describe("Certificate type"),
-    }),
-    execute: async (args) => {
-      const client = getDokployClient()
-      const body: Record<string, unknown> = { domainId: args.domainId, host: args.host }
-      for (const [key, value] of Object.entries(args)) {
-        if (key !== "domainId" && key !== "host" && value !== undefined) body[key] = value
-      }
-      await client.post("domain.update", body)
-      return `Domain ${args.domainId} updated.`
-    },
-  })
-
-  server.addTool({
-    name: "dokploy_domain_delete",
-    description: "Delete a domain",
-    parameters: z.object({
-      domainId: z.string().describe("The domain ID to delete"),
-    }),
-    execute: async (args) => {
-      const client = getDokployClient()
-      await client.post("domain.delete", { domainId: args.domainId })
-      return `Domain ${args.domainId} deleted.`
-    },
-  })
-
-  server.addTool({
-    name: "dokploy_domain_generateDomain",
-    description: "Auto-generate a domain for an application (e.g., using traefik.me)",
-    parameters: z.object({
-      appName: z.string().describe("The internal application name"),
-      serverId: z.string().optional().describe("Server ID"),
-    }),
-    execute: async (args) => {
-      const client = getDokployClient()
-      const result = await client.post<unknown>("domain.generateDomain", {
-        appName: args.appName,
-        ...(args.serverId && { serverId: args.serverId }),
-      })
-      return `# Generated Domain\n\n\`\`\`json\n${JSON.stringify(result, null, 2)}\n\`\`\``
-    },
-  })
-
-  server.addTool({
-    name: "dokploy_domain_canGenerateTraefikMe",
-    description: "Check if traefik.me domains can be generated for a server",
-    parameters: z.object({
-      serverId: z.string().optional().describe("Server ID to check"),
-    }),
-    execute: async (args) => {
-      const client = getDokployClient()
-      const result = await client.get<boolean>("domain.canGenerateTraefikMeDomains", {
-        ...(args.serverId && { serverId: args.serverId }),
-      })
-      return `Traefik.me domain generation: ${result ? "Available" : "Not available"}`
-    },
-  })
-
-  server.addTool({
-    name: "dokploy_domain_validate",
-    description: "Validate that a domain's DNS is properly configured",
-    parameters: z.object({
-      domain: z.string().describe("The domain to validate"),
-      serverIp: z.string().optional().describe("Expected server IP"),
-    }),
-    execute: async (args) => {
-      const client = getDokployClient()
-      const result = await client.post<unknown>("domain.validateDomain", {
-        domain: args.domain,
-        ...(args.serverIp && { serverIp: args.serverIp }),
-      })
-      return `# Domain Validation: ${args.domain}\n\n\`\`\`json\n${JSON.stringify(result, null, 2)}\n\`\`\``
     },
   })
 }

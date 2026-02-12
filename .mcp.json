@@ -1,0 +1,12 @@
+{
+  "mcpServers": {
+    "dokploy": {
+      "command": "node",
+      "args": ["dist/bin.js"],
+      "env": {
+        "DOKPLOY_URL": "${DOKPLOY_URL}",
+        "DOKPLOY_API_KEY": "${DOKPLOY_API_KEY}"
+      }
+    }
+  }
+}

@@ -1,6 +1,6 @@
 {
   "name": "dokploy-mcp-server",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A comprehensive Model Context Protocol (MCP) server for Dokploy - deploy apps, manage containers, databases, domains, and servers.",
   "keywords": [
     "mcp",
