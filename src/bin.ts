@@ -30,7 +30,7 @@ Environment Variables:
   PORT                  HTTP port when using httpStream (default: 3000)
   HOST                  HTTP host when using httpStream (default: 0.0.0.0)
 
-For more information, visit: https://github.com/jordanburke/dokploy-mcp-server
+For more information, visit: https://github.com/sapientsai/dokploy-mcp-server
 `)
   process.exit(0)
 }
