@@ -6,7 +6,7 @@ A comprehensive [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)
 
 ## Why This Server?
 
-The [official Dokploy MCP](https://github.com/Dokploy/mcp) covers only ~5 of 42 API categories. This server provides **12 tools** (one per category with action enums) covering the full DevOps lifecycle with minimal token usage.
+The [official Dokploy MCP](https://github.com/Dokploy/mcp) covers only ~5 of 42 API categories. This server provides **13 tools** (one per category with action enums) covering the full DevOps lifecycle with minimal token usage.
 
 ### Feature Comparison
 
@@ -24,11 +24,12 @@ The [official Dokploy MCP](https://github.com/Dokploy/mcp) covers only ~5 of 42 
 | Backups        | -                   | 1 tool (6 actions)            |
 | Environments   | -                   | 1 tool (6 actions)            |
 | Infrastructure | -                   | 1 tool (8 actions)            |
-| **Total**      | **67 tools**        | **12 tools**                  |
+| SSH Keys       | -                   | 1 tool (4 actions)            |
+| **Total**      | **67 tools**        | **13 tools**                  |
 
 Key advantages:
 
-- **Minimal token usage** - 12 tools instead of 67+, dramatically reducing context consumption
+- **Minimal token usage** - 13 tools instead of 67+, dramatically reducing context consumption
 - **Unified database tool** - One tool handles all 5 database types (postgres, mysql, mariadb, mongo, redis) via `dbType` + `action` params
 - **Full API coverage** - Docker Compose, containers, servers, deployments, backups, certificates, ports, and basic auth
 - **Action-based design** - Each tool has an `action` enum parameter; other params are optional based on action
@@ -93,7 +94,7 @@ docker run -e DOKPLOY_URL=https://dokploy.example.com \
 | `PORT`            | No       | `3000`    | HTTP port (httpStream mode only)         |
 | `HOST`            | No       | `0.0.0.0` | HTTP host (httpStream mode only)         |
 
-## Tools (12)
+## Tools (13)
 
 Each tool uses an `action` enum to select the operation. Parameters are optional and used based on the chosen action.
 
@@ -162,6 +163,12 @@ Container management. `findContainers` requires `appName` + `method` (match|labe
 Actions: `createPort | deletePort | createAuth | deleteAuth | listCerts | getCert | createCert | removeCert`
 
 Ports, basic auth, and SSL certificates.
+
+### `dokploy_ssh_key` (4 actions)
+
+Actions: `create | list | remove | generate`
+
+SSH key management for git-based deployments. `create` requires `name` + `privateKey` + `publicKey`. `remove` requires `sshKeyId`. `generate` uses `type` (rsa|ed25519).
 
 ### `dokploy_settings` (5 actions)
 

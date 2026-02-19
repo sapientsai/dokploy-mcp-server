@@ -27,7 +27,7 @@ export function registerComposeTools(server: FastMCP) {
   server.addTool({
     name: "dokploy_compose",
     description:
-      "Manage Docker Compose services. create: name+environmentId. get/delete/start/stop/getDefaultCommand: composeId. update: composeId+fields. deploy: composeId, redeploy?. move: composeId+targetEnvironmentId. loadServices: composeId. loadMounts: composeId+serviceName. cancelDeployment/cleanQueues/killBuild/refreshToken: composeId.",
+      "Manage Docker Compose services. create: name+environmentId. get/delete/start/stop/getDefaultCommand: composeId. update: composeId+fields (including git source: sourceType, customGitUrl, customGitBranch, customGitSSHKeyId, repository, branch, owner, composePath). deploy: composeId, redeploy?. move: composeId+targetEnvironmentId. loadServices: composeId. loadMounts: composeId+serviceName. cancelDeployment/cleanQueues/killBuild/refreshToken: composeId.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       composeId: z.string().optional(),
@@ -39,6 +39,14 @@ export function registerComposeTools(server: FastMCP) {
       serverId: z.string().optional(),
       env: z.string().optional(),
       command: z.string().optional(),
+      sourceType: z.string().optional().describe("git, github, raw, docker"),
+      customGitUrl: z.string().optional().describe("Custom git repository URL"),
+      customGitBranch: z.string().optional().describe("Custom git branch"),
+      customGitSSHKeyId: z.string().optional().describe("SSH key ID for private git repos"),
+      repository: z.string().optional().describe("GitHub repository (owner/repo format)"),
+      branch: z.string().optional().describe("GitHub branch"),
+      owner: z.string().optional().describe("GitHub owner/organization"),
+      composePath: z.string().optional().describe("Path to compose file in repo"),
       deleteVolumes: z.boolean().optional(),
       redeploy: z.boolean().optional(),
       title: z.string().optional(),
@@ -68,7 +76,21 @@ export function registerComposeTools(server: FastMCP) {
         }
         case "update": {
           const body: Record<string, unknown> = { composeId: args.composeId! }
-          const updateFields = ["name", "description", "composeFile", "env", "command"] as const
+          const updateFields = [
+            "name",
+            "description",
+            "composeFile",
+            "env",
+            "command",
+            "sourceType",
+            "customGitUrl",
+            "customGitBranch",
+            "customGitSSHKeyId",
+            "repository",
+            "branch",
+            "owner",
+            "composePath",
+          ] as const
           for (const key of updateFields) {
             if (args[key] !== undefined) body[key] = args[key]
           }
