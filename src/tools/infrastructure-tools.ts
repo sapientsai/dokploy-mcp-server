@@ -1,7 +1,7 @@
 import type { FastMCP } from "fastmcp"
 import { z } from "zod"
 
-import { getDokployClient } from "../client/dokploy-client"
+import { getDokployClient, getOrganizationId } from "../client/dokploy-client"
 import type { DokployCertificate, DokployPort, DokploySecurity } from "../types"
 
 const ACTIONS = [
@@ -19,7 +19,7 @@ export function registerInfrastructureTools(server: FastMCP) {
   server.addTool({
     name: "dokploy_infrastructure",
     description:
-      "Manage ports, auth, certs. createPort: applicationId+publishedPort+targetPort. deletePort: portId. createAuth: applicationId+username+password. deleteAuth: securityId. listCerts: all. getCert: certificateId. createCert: name+certificateData+privateKey+organizationId. removeCert: certificateId.",
+      "Manage ports, auth, certs. createPort: applicationId+publishedPort+targetPort. deletePort: portId. createAuth: applicationId+username+password. deleteAuth: securityId. listCerts: all. getCert: certificateId. createCert: name+certificateData+privateKey. removeCert: certificateId.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       applicationId: z.string().optional(),
@@ -35,7 +35,6 @@ export function registerInfrastructureTools(server: FastMCP) {
       name: z.string().optional(),
       certificateData: z.string().optional().describe("PEM format"),
       privateKey: z.string().optional().describe("PEM format"),
-      organizationId: z.string().optional(),
       autoRenew: z.boolean().optional(),
       serverId: z.string().optional(),
     }),
@@ -84,11 +83,12 @@ export function registerInfrastructureTools(server: FastMCP) {
           return `# Certificate: ${cert.name}\n\n- ID: ${cert.certificateId}\n- Auto-renew: ${cert.autoRenew ?? "N/A"}`
         }
         case "createCert": {
+          const organizationId = await getOrganizationId()
           const body: Record<string, unknown> = {
             name: args.name!,
             certificateData: args.certificateData!,
             privateKey: args.privateKey!,
-            organizationId: args.organizationId!,
+            organizationId,
           }
           if (args.autoRenew !== undefined) body.autoRenew = args.autoRenew
           if (args.serverId) body.serverId = args.serverId

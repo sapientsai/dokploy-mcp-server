@@ -1,7 +1,7 @@
 import type { FastMCP } from "fastmcp"
 import { z } from "zod"
 
-import { getDokployClient } from "../client/dokploy-client"
+import { getDokployClient, getOrganizationId } from "../client/dokploy-client"
 import type { DokploySshKey } from "../types"
 import { formatSshKey, formatSshKeyList } from "../utils/formatters"
 
@@ -11,7 +11,7 @@ export function registerSshKeyTools(server: FastMCP) {
   server.addTool({
     name: "dokploy_ssh_key",
     description:
-      "Manage SSH keys. create: name+privateKey+publicKey+organizationId (from project.list), description?. list: no params. get: sshKeyId. update: sshKeyId, name?, description?, lastUsedAt?. remove: sshKeyId. generate: type (rsa or ed25519).",
+      "Manage SSH keys. create: name+privateKey+publicKey, description?. list: no params. get: sshKeyId. update: sshKeyId, name?, description?, lastUsedAt?. remove: sshKeyId. generate: type (rsa or ed25519).",
     parameters: z.object({
       action: z.enum(ACTIONS),
       sshKeyId: z.string().optional(),
@@ -19,7 +19,6 @@ export function registerSshKeyTools(server: FastMCP) {
       description: z.string().optional(),
       privateKey: z.string().optional(),
       publicKey: z.string().optional(),
-      organizationId: z.string().optional().describe("Required for create action"),
       lastUsedAt: z.string().optional().describe("ISO date string for update action"),
       type: z.enum(["rsa", "ed25519"]).optional().describe("Key type for generate action"),
     }),
@@ -28,11 +27,12 @@ export function registerSshKeyTools(server: FastMCP) {
 
       switch (args.action) {
         case "create": {
+          const organizationId = await getOrganizationId()
           const sshKey = await client.post<DokploySshKey>("sshKey.create", {
             name: args.name!,
             privateKey: args.privateKey!,
             publicKey: args.publicKey!,
-            organizationId: args.organizationId!,
+            organizationId,
             ...(args.description && { description: args.description }),
           })
           return `# SSH Key Created\n\n${formatSshKey(sshKey)}`
