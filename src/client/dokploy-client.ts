@@ -85,7 +85,16 @@ export function getDokployClient(): DokployClient {
 
 export async function getOrganizationId(): Promise<string> {
   if (cachedOrganizationId) return cachedOrganizationId
-  const admin = await getDokployClient().get<{ organizationId: string }>("admin.one")
-  cachedOrganizationId = admin.organizationId
+  const client = getDokployClient()
+  try {
+    const admin = await client.get<{ organizationId: string }>("admin.one")
+    cachedOrganizationId = admin.organizationId
+  } catch {
+    const projects = await client.get<Array<{ organizationId: string }>>("project.all")
+    if (projects.length === 0) {
+      throw new Error("Cannot resolve organizationId: no projects found and admin.one not accessible")
+    }
+    cachedOrganizationId = projects[0].organizationId
+  }
   return cachedOrganizationId
 }

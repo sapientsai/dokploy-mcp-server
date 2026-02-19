@@ -58,8 +58,10 @@ export function registerSshKeyTools(server: FastMCP) {
           return `SSH key ${args.sshKeyId} removed.`
         }
         case "generate": {
+          const organizationId = await getOrganizationId()
           const result = await client.post<DokploySshKey>("sshKey.generate", {
             type: args.type ?? "ed25519",
+            organizationId,
           })
           return `# SSH Key Generated\n\n${formatSshKey(result)}`
         }
