@@ -39,7 +39,7 @@ export function registerComposeTools(server: FastMCP) {
       serverId: z.string().optional(),
       env: z.string().optional(),
       command: z.string().optional(),
-      sourceType: z.string().optional().describe("git, github, raw, docker"),
+      sourceType: z.string().optional().describe("git, github, gitlab, bitbucket, gitea, raw"),
       customGitUrl: z.string().optional().describe("Custom git repository URL"),
       customGitBranch: z.string().optional().describe("Custom git branch"),
       customGitSSHKeyId: z.string().optional().describe("SSH key ID for private git repos"),
@@ -47,6 +47,8 @@ export function registerComposeTools(server: FastMCP) {
       branch: z.string().optional().describe("GitHub branch"),
       owner: z.string().optional().describe("GitHub owner/organization"),
       composePath: z.string().optional().describe("Path to compose file in repo"),
+      autoDeploy: z.boolean().optional().describe("Enable auto-deploy on git push"),
+      appName: z.string().optional().describe("Internal app name"),
       deleteVolumes: z.boolean().optional(),
       redeploy: z.boolean().optional(),
       title: z.string().optional(),
@@ -90,6 +92,8 @@ export function registerComposeTools(server: FastMCP) {
             "branch",
             "owner",
             "composePath",
+            "autoDeploy",
+            "appName",
           ] as const
           for (const key of updateFields) {
             if (args[key] !== undefined) body[key] = args[key]

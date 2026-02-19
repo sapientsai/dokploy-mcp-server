@@ -62,7 +62,7 @@ src/
 │   ├── backup-tools.ts         # 1 tool (6 actions) - backup scheduling/triggers
 │   ├── environment-tools.ts    # 1 tool (6 actions) - project environments
 │   ├── infrastructure-tools.ts # 1 tool (8 actions) - ports, certs, basic auth
-│   └── ssh-key-tools.ts        # 1 tool (4 actions) - SSH key management
+│   └── ssh-key-tools.ts        # 1 tool (6 actions) - SSH key management
 ├── types.ts                    # TypeScript types + DB type constants
 └── utils/
     └── formatters.ts           # Markdown output formatters
