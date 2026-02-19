@@ -60,6 +60,13 @@ export type DokployCompose = {
   composeType?: string
   composeStatus: string
   sourceType?: string
+  customGitUrl?: string
+  customGitBranch?: string
+  customGitSSHKeyId?: string
+  repository?: string
+  branch?: string
+  owner?: string
+  composePath?: string
   environmentId: string
   createdAt?: string
 }
@@ -99,6 +106,15 @@ export type DokployServer = {
   username: string
   sshKeyId: string
   serverType: string
+  createdAt?: string
+}
+
+export type DokploySshKey = {
+  sshKeyId: string
+  name: string
+  description?: string
+  privateKey?: string
+  publicKey?: string
   createdAt?: string
 }
 

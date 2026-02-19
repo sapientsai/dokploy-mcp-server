@@ -9,6 +9,7 @@ import type {
   DokployEnvironment,
   DokployProject,
   DokployServer,
+  DokploySshKey,
 } from "../types"
 import { DB_TYPES } from "../types"
 
@@ -181,4 +182,17 @@ export function formatBackup(backup: DokployBackup): string {
   Type: ${backup.databaseType}
   Destination: ${backup.destinationId}
   Keep Latest: ${backup.keepLatestCount ?? "unlimited"}`
+}
+
+export function formatSshKey(sshKey: DokploySshKey): string {
+  const pubKeyPreview = sshKey.publicKey ? sshKey.publicKey.substring(0, 40) + "..." : "N/A"
+  return `- **${sshKey.name}** (ID: ${sshKey.sshKeyId})
+  Description: ${sshKey.description || "None"}
+  Public Key: ${pubKeyPreview}
+  Created: ${formatDate(sshKey.createdAt)}`
+}
+
+export function formatSshKeyList(sshKeys: DokploySshKey[]): string {
+  if (sshKeys.length === 0) return "No SSH keys found."
+  return `# SSH Keys (${sshKeys.length})\n\n${sshKeys.map(formatSshKey).join("\n\n")}`
 }

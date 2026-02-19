@@ -15,6 +15,7 @@ import {
   registerProjectTools,
   registerServerTools,
   registerSettingsTools,
+  registerSshKeyTools,
 } from "./tools"
 
 dotenv.config()
@@ -59,7 +60,8 @@ Available capabilities:
 - Backups: schedule, trigger manual backups, list backup files
 - Environments: create, duplicate, manage project environments
 - Infrastructure: ports, certificates, basic auth security
-- Settings: health checks, version info, cleanup, reload services`,
+- Settings: health checks, version info, cleanup, reload services
+- SSH Keys: create, list, remove, generate SSH keys for git-based deployments`,
 })
 
 registerProjectTools(server)
@@ -74,6 +76,7 @@ registerDatabaseTools(server)
 registerBackupTools(server)
 registerEnvironmentTools(server)
 registerInfrastructureTools(server)
+registerSshKeyTools(server)
 
 async function main() {
   try {
