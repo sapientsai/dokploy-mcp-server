@@ -66,9 +66,11 @@ export class DokployClient {
 }
 
 let client: DokployClient | undefined
+let cachedOrganizationId: string | undefined
 
 export function initializeDokployClient(baseUrl: string, apiKey: string): DokployClient {
   client = new DokployClient(baseUrl, apiKey)
+  cachedOrganizationId = undefined
   return client
 }
 
@@ -79,4 +81,11 @@ export function getDokployClient(): DokployClient {
     )
   }
   return client
+}
+
+export async function getOrganizationId(): Promise<string> {
+  if (cachedOrganizationId) return cachedOrganizationId
+  const admin = await getDokployClient().get<{ organizationId: string }>("admin.one")
+  cachedOrganizationId = admin.organizationId
+  return cachedOrganizationId
 }
