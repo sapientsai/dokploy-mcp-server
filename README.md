@@ -24,7 +24,7 @@ The [official Dokploy MCP](https://github.com/Dokploy/mcp) covers only ~5 of 42 
 | Backups        | -                   | 1 tool (6 actions)            |
 | Environments   | -                   | 1 tool (6 actions)            |
 | Infrastructure | -                   | 1 tool (8 actions)            |
-| SSH Keys       | -                   | 1 tool (4 actions)            |
+| SSH Keys       | -                   | 1 tool (6 actions)            |
 | **Total**      | **67 tools**        | **13 tools**                  |
 
 Key advantages:
@@ -164,11 +164,11 @@ Actions: `createPort | deletePort | createAuth | deleteAuth | listCerts | getCer
 
 Ports, basic auth, and SSL certificates.
 
-### `dokploy_ssh_key` (4 actions)
+### `dokploy_ssh_key` (6 actions)
 
-Actions: `create | list | remove | generate`
+Actions: `create | list | get | update | remove | generate`
 
-SSH key management for git-based deployments. `create` requires `name` + `privateKey` + `publicKey`. `remove` requires `sshKeyId`. `generate` uses `type` (rsa|ed25519).
+SSH key management for git-based deployments. `create` requires `name` + `privateKey` + `publicKey` + `organizationId`. `get` requires `sshKeyId`. `update` requires `sshKeyId`, optional `name`, `description`, `lastUsedAt`. `remove` requires `sshKeyId`. `generate` uses `type` (rsa|ed25519).
 
 ### `dokploy_settings` (5 actions)
 

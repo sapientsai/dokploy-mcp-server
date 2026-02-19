@@ -69,6 +69,7 @@ export type DokployCompose = {
   composePath?: string
   environmentId: string
   createdAt?: string
+  autoDeploy?: boolean
 }
 
 export type DokployDeployment = {
@@ -116,6 +117,7 @@ export type DokploySshKey = {
   privateKey?: string
   publicKey?: string
   createdAt?: string
+  lastUsedAt?: string
 }
 
 export type DokployDatabase = {
