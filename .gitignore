@@ -1,5 +1,6 @@
 .idea
 *.iml
+.worktrees
 lib
 dist
 
