@@ -3,7 +3,7 @@
  * FastMCP server implementation with FDA tools
  */
 
-import { FastMCP } from "@jordanburke/fastmcp"
+import { FastMCP } from "fastmcp"
 
 import {
   handleSearchDevice510K,

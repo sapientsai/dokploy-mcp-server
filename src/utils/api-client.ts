@@ -109,7 +109,7 @@ export class FDAAPIClient {
       if (error instanceof Error) {
         throw error
       }
-      throw new Error(`Failed to fetch from FDA API: ${String(error)}`)
+      throw new Error(`Failed to fetch from FDA API: ${String(error)}`, { cause: error })
     }
   }
 
