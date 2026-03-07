@@ -35,10 +35,11 @@
     "prepublishOnly": "pnpm validate"
   },
   "dependencies": {
-    "fastmcp": "^3.34.0",
     "commander": "^14.0.3",
     "debug": "^4.4.3",
-    "zod": "^3.25.76"
+    "fastmcp": "^3.34.0",
+    "functype": "^0.49.0",
+    "zod": "^4.3.6"
   },
   "devDependencies": {
     "@types/debug": "^4.1.12",
