@@ -48,18 +48,11 @@ export class BulkDataClient {
     if (lines.length < 2) return []
 
     const headers = lines[0].split("~").map((h) => h.trim())
-    const results: T[] = []
 
-    for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split("~")
-      const record: Record<string, string> = {}
-      for (let j = 0; j < headers.length; j++) {
-        record[headers[j]] = (values[j] ?? "").trim()
-      }
-      results.push(record as T)
-    }
-
-    return results
+    return lines.slice(1).map((line) => {
+      const values = line.split("~")
+      return Object.fromEntries(headers.map((h, j) => [h, (values[j] ?? "").trim()])) as T
+    })
   }
 
   parseCSV<T extends Record<string, string>>(text: string): T[] {
@@ -67,51 +60,37 @@ export class BulkDataClient {
     if (lines.length < 2) return []
 
     const headers = this.parseCSVLine(lines[0])
-    const results: T[] = []
 
-    for (let i = 1; i < lines.length; i++) {
-      const values = this.parseCSVLine(lines[i])
-      const record: Record<string, string> = {}
-      for (let j = 0; j < headers.length; j++) {
-        record[headers[j]] = (values[j] ?? "").trim()
-      }
-      results.push(record as T)
-    }
-
-    return results
+    return lines.slice(1).map((line) => {
+      const values = this.parseCSVLine(line)
+      return Object.fromEntries(headers.map((h, j) => [h, (values[j] ?? "").trim()])) as T
+    })
   }
 
   private parseCSVLine(line: string): string[] {
-    const result: string[] = []
-    let current = ""
-    let inQuotes = false
+    type ParseState = { readonly fields: readonly string[]; readonly current: string; readonly inQuotes: boolean }
 
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i]
-      if (inQuotes) {
+    const initial: ParseState = { fields: [], current: "", inQuotes: false }
+
+    const final = Array.from(line).reduce<ParseState>((state, char, i) => {
+      if (state.inQuotes) {
         if (char === '"') {
           if (i + 1 < line.length && line[i + 1] === '"') {
-            current += '"'
-            i++
-          } else {
-            inQuotes = false
+            return state // skip — next iteration handles the escaped quote
           }
-        } else {
-          current += char
+          if (i > 0 && line[i - 1] === '"') {
+            return { ...state, current: `${state.current}"` } // second char of escaped quote
+          }
+          return { ...state, inQuotes: false }
         }
-      } else {
-        if (char === '"') {
-          inQuotes = true
-        } else if (char === ",") {
-          result.push(current.trim())
-          current = ""
-        } else {
-          current += char
-        }
+        return { ...state, current: state.current + char }
       }
-    }
-    result.push(current.trim())
-    return result
+      if (char === '"') return { ...state, inQuotes: true }
+      if (char === ",") return { fields: [...state.fields, state.current.trim()], current: "", inQuotes: false }
+      return { ...state, current: state.current + char }
+    }, initial)
+
+    return [...final.fields, final.current.trim()]
   }
 
   async getOrangeBookData(): Promise<OrangeBookData> {
@@ -125,16 +104,18 @@ export class BulkDataClient {
     const files = unzipSync(zipData)
 
     const decoder = new TextDecoder("utf-8")
-    let products: OrangeBookProduct[] = []
-    let patents: OrangeBookPatent[] = []
-    let exclusivities: OrangeBookExclusivity[] = []
 
-    for (const [filename, content] of Object.entries(files)) {
-      const lowerName = filename.toLowerCase()
-      const text = decoder.decode(content)
+    const fileEntries = Object.entries(files).map(([filename, content]) => ({
+      name: filename.toLowerCase(),
+      text: decoder.decode(content),
+    }))
 
-      if (lowerName.includes("products")) {
-        products = this.parseTildeDelimited<Record<string, string>>(text).map((r) => ({
+    const productsFile = fileEntries.find((f) => f.name.includes("products"))
+    const patentFile = fileEntries.find((f) => f.name.includes("patent"))
+    const exclusivityFile = fileEntries.find((f) => f.name.includes("exclusivity"))
+
+    const products: OrangeBookProduct[] = productsFile
+      ? this.parseTildeDelimited<Record<string, string>>(productsFile.text).map((r) => ({
           ingredient: r["Ingredient"] ?? r["ingredient"] ?? "",
           dfRoute: r["DF;Route"] ?? r["df;route"] ?? r["DF_Route"] ?? "",
           tradeName: r["Trade_Name"] ?? r["trade_name"] ?? "",
@@ -149,9 +130,11 @@ export class BulkDataClient {
           type: r["Type"] ?? r["type"] ?? "",
           applicantFullName: r["Applicant_Full_Name"] ?? r["applicant_full_name"] ?? "",
         }))
-        loggers.bulk(`Parsed ${products.length} Orange Book products`)
-      } else if (lowerName.includes("patent")) {
-        patents = this.parseTildeDelimited<Record<string, string>>(text).map((r) => ({
+      : []
+    loggers.bulk(`Parsed ${products.length} Orange Book products`)
+
+    const patents: OrangeBookPatent[] = patentFile
+      ? this.parseTildeDelimited<Record<string, string>>(patentFile.text).map((r) => ({
           applType: r["Appl_Type"] ?? r["appl_type"] ?? "",
           applNo: r["Appl_No"] ?? r["appl_no"] ?? "",
           productNo: r["Product_No"] ?? r["product_no"] ?? "",
@@ -163,18 +146,19 @@ export class BulkDataClient {
           delistFlag: r["Delist_Flag"] ?? r["delist_flag"] ?? "",
           submissionDate: r["Submission_Date"] ?? r["submission_date"] ?? "",
         }))
-        loggers.bulk(`Parsed ${patents.length} Orange Book patents`)
-      } else if (lowerName.includes("exclusivity")) {
-        exclusivities = this.parseTildeDelimited<Record<string, string>>(text).map((r) => ({
+      : []
+    loggers.bulk(`Parsed ${patents.length} Orange Book patents`)
+
+    const exclusivities: OrangeBookExclusivity[] = exclusivityFile
+      ? this.parseTildeDelimited<Record<string, string>>(exclusivityFile.text).map((r) => ({
           applType: r["Appl_Type"] ?? r["appl_type"] ?? "",
           applNo: r["Appl_No"] ?? r["appl_no"] ?? "",
           productNo: r["Product_No"] ?? r["product_no"] ?? "",
           exclusivityCode: r["Exclusivity_Code"] ?? r["exclusivity_code"] ?? "",
           exclusivityDate: r["Exclusivity_Date"] ?? r["exclusivity_date"] ?? "",
         }))
-        loggers.bulk(`Parsed ${exclusivities.length} Orange Book exclusivities`)
-      }
-    }
+      : []
+    loggers.bulk(`Parsed ${exclusivities.length} Orange Book exclusivities`)
 
     const data: OrangeBookData = { products, patents, exclusivities }
 

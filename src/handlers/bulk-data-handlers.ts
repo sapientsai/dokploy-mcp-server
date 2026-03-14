@@ -3,7 +3,7 @@
  * Query handlers for FDA Orange Book and Purple Book data
  */
 
-import type { FDAToolResponse, OrangeBookExclusivity, OrangeBookPatent, OrangeBookProduct } from "../types/fda.js"
+import type { FDAToolResponse, OrangeBookExclusivity } from "../types/fda.js"
 import { bulkDataClient } from "../utils/bulk-data-client.js"
 import { loggers } from "../utils/logger.js"
 
@@ -16,6 +16,28 @@ function matchesFilter(value: string, filter: string | undefined): boolean {
 // Join key for Orange Book records
 function obJoinKey(record: { applType: string; applNo: string; productNo: string }): string {
   return `${record.applType}-${record.applNo}-${record.productNo}`
+}
+
+// Build a counting map from an array using a key function
+function buildCountMap<T>(items: readonly T[], keyFn: (item: T) => string): Map<string, number> {
+  return items.reduce((map, item) => {
+    const key = keyFn(item)
+    return map.set(key, (map.get(key) ?? 0) + 1)
+  }, new Map<string, number>())
+}
+
+// Build a lookup map from an array using a key function
+function buildLookupMap<T>(items: readonly T[], keyFn: (item: T) => string): Map<string, T> {
+  return new Map(items.map((item) => [keyFn(item), item]))
+}
+
+// Build a grouped map from an array using a key function
+function buildGroupMap<T>(items: readonly T[], keyFn: (item: T) => string): Map<string, T[]> {
+  return items.reduce((map, item) => {
+    const key = keyFn(item)
+    const existing = map.get(key) ?? []
+    return map.set(key, [...existing, item])
+  }, new Map<string, T[]>())
 }
 
 // Default pagination values
@@ -82,20 +104,9 @@ export async function handleSearchOrangeBook(
   try {
     const { products, patents, exclusivities } = await bulkDataClient.getOrangeBookData()
 
-    // Build patent/exclusivity count maps
-    const patentCounts = new Map<string, number>()
-    for (const p of patents) {
-      const key = obJoinKey(p)
-      patentCounts.set(key, (patentCounts.get(key) ?? 0) + 1)
-    }
+    const patentCounts = buildCountMap(patents, obJoinKey)
+    const exclusivityCounts = buildCountMap(exclusivities, obJoinKey)
 
-    const exclusivityCounts = new Map<string, number>()
-    for (const e of exclusivities) {
-      const key = obJoinKey(e)
-      exclusivityCounts.set(key, (exclusivityCounts.get(key) ?? 0) + 1)
-    }
-
-    // Filter products
     const filtered = products.filter((p) => {
       if (!matchesFilter(p.tradeName, params.drugName) && !matchesFilter(p.ingredient, params.drugName)) return false
       if (!matchesFilter(p.applicant, params.applicant) && !matchesFilter(p.applicantFullName, params.applicant))
@@ -177,22 +188,9 @@ export async function handleSearchOrangeBookPatents(
   try {
     const { products, patents, exclusivities } = await bulkDataClient.getOrangeBookData()
 
-    // Build product lookup by join key
-    const productMap = new Map<string, OrangeBookProduct>()
-    for (const p of products) {
-      productMap.set(obJoinKey(p), p)
-    }
+    const productMap = buildLookupMap(products, obJoinKey)
+    const exclusivityMap = buildGroupMap(exclusivities, obJoinKey)
 
-    // Build exclusivity lookup by join key
-    const exclusivityMap = new Map<string, OrangeBookExclusivity[]>()
-    for (const e of exclusivities) {
-      const key = obJoinKey(e)
-      const existing = exclusivityMap.get(key) ?? []
-      existing.push(e)
-      exclusivityMap.set(key, existing)
-    }
-
-    // Filter patents
     const filtered = patents.filter((pat) => {
       if (params.patentNo && pat.patentNo !== params.patentNo) return false
       if (params.applNo && pat.applNo !== params.applNo) return false
@@ -369,22 +367,10 @@ export async function handleSearchDrugPatentExpiry(
 
     const { products, patents, exclusivities } = await bulkDataClient.getOrangeBookData()
 
-    // Build product lookup
-    const productMap = new Map<string, OrangeBookProduct>()
-    for (const p of products) {
-      productMap.set(obJoinKey(p), p)
-    }
-
-    // Build exclusivity lookup
-    const exclusivityMap = new Map<string, OrangeBookExclusivity[]>()
-    if (includeExclusivity) {
-      for (const e of exclusivities) {
-        const key = obJoinKey(e)
-        const existing = exclusivityMap.get(key) ?? []
-        existing.push(e)
-        exclusivityMap.set(key, existing)
-      }
-    }
+    const productMap = buildLookupMap(products, obJoinKey)
+    const exclusivityMap = includeExclusivity
+      ? buildGroupMap(exclusivities, obJoinKey)
+      : new Map<string, OrangeBookExclusivity[]>()
 
     // Filter patents by drug name / applNo
     const filteredPatents = patents.filter((pat) => {
@@ -398,10 +384,10 @@ export async function handleSearchDrugPatentExpiry(
       return true
     })
 
-    const entries: PatentExpiryEntry[] = filteredPatents.map((pat) => {
+    const orangeEntries: PatentExpiryEntry[] = filteredPatents.map((pat) => {
       const key = obJoinKey(pat)
       const product = productMap.get(key)
-      const excl = includeExclusivity ? (exclusivityMap.get(key) ?? []) : []
+      const excl = exclusivityMap.get(key) ?? []
 
       return {
         source: "Orange Book",
@@ -418,39 +404,9 @@ export async function handleSearchDrugPatentExpiry(
     })
 
     // Optionally add Purple Book entries that match
-    if (includePurpleBook) {
-      try {
-        const purpleEntries = await bulkDataClient.getPurpleBookData()
-        const filteredPurple = purpleEntries.filter((e) => {
-          if (params.drugName) {
-            if (!matchesFilter(e.proprietaryName, params.drugName) && !matchesFilter(e.properName, params.drugName))
-              return false
-          }
-          if (params.applNo && e.blaNumber !== params.applNo) return false
-          return true
-        })
+    const purpleEntries: PatentExpiryEntry[] = includePurpleBook ? await getPurpleBookPatentEntries(params) : []
 
-        for (const pe of filteredPurple) {
-          entries.push({
-            source: "Purple Book",
-            tradeName: pe.proprietaryName,
-            ingredient: pe.properName,
-            applNo: pe.blaNumber,
-            patentNo: "",
-            patentExpireDate: "",
-            drugSubstanceFlag: "",
-            drugProductFlag: "",
-            patentUseCode: "",
-            exclusivities: [],
-          })
-        }
-      } catch (error) {
-        loggers.bulk(`Purple Book data unavailable: ${error instanceof Error ? error.message : String(error)}`)
-      }
-    }
-
-    // Sort by earliest expiry date (non-empty dates first)
-    entries.sort((a, b) => {
+    const entries = [...orangeEntries, ...purpleEntries].sort((a, b) => {
       if (!a.patentExpireDate && !b.patentExpireDate) return 0
       if (!a.patentExpireDate) return 1
       if (!b.patentExpireDate) return -1
@@ -471,5 +427,35 @@ export async function handleSearchDrugPatentExpiry(
       success: false,
       error: error instanceof Error ? error.message : String(error),
     }
+  }
+}
+
+async function getPurpleBookPatentEntries(params: DrugPatentExpiryParams): Promise<PatentExpiryEntry[]> {
+  try {
+    const purpleEntries = await bulkDataClient.getPurpleBookData()
+    return purpleEntries
+      .filter((e) => {
+        if (params.drugName) {
+          if (!matchesFilter(e.proprietaryName, params.drugName) && !matchesFilter(e.properName, params.drugName))
+            return false
+        }
+        if (params.applNo && e.blaNumber !== params.applNo) return false
+        return true
+      })
+      .map((pe) => ({
+        source: "Purple Book",
+        tradeName: pe.proprietaryName,
+        ingredient: pe.properName,
+        applNo: pe.blaNumber,
+        patentNo: "",
+        patentExpireDate: "",
+        drugSubstanceFlag: "",
+        drugProductFlag: "",
+        patentUseCode: "",
+        exclusivities: [],
+      }))
+  } catch (error) {
+    loggers.bulk(`Purple Book data unavailable: ${error instanceof Error ? error.message : String(error)}`)
+    return []
   }
 }
