@@ -44,7 +44,7 @@ function buildSearchQuery(terms: Array<{ field: string; value?: string }>): stri
 // Format truncated text
 function truncateText(text: string | undefined, maxLength = 200): string | undefined {
   if (!text) return undefined
-  return text.length > maxLength ? text.substring(0, maxLength) + "..." : text
+  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text
 }
 
 // Drug Adverse Events Handler

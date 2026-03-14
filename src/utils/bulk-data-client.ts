@@ -43,7 +43,7 @@ export class BulkDataClient {
     return new Uint8Array(buffer)
   }
 
-  parseTildeDelimited<T extends Record<string, string>>(text: string): T[] {
+  parseTildeDelimited<T extends Record<string, string | undefined>>(text: string): T[] {
     const lines = text.split("\n").filter((line) => line.trim() !== "")
     if (lines.length < 2) return []
 
@@ -55,7 +55,7 @@ export class BulkDataClient {
     })
   }
 
-  parseCSV<T extends Record<string, string>>(text: string): T[] {
+  parseCSV<T extends Record<string, string | undefined>>(text: string): T[] {
     const lines = text.split("\n").filter((line) => line.trim() !== "")
     if (lines.length < 2) return []
 
@@ -115,7 +115,7 @@ export class BulkDataClient {
     const exclusivityFile = fileEntries.find((f) => f.name.includes("exclusivity"))
 
     const products: OrangeBookProduct[] = productsFile
-      ? this.parseTildeDelimited<Record<string, string>>(productsFile.text).map((r) => ({
+      ? this.parseTildeDelimited<Record<string, string | undefined>>(productsFile.text).map((r) => ({
           ingredient: r["Ingredient"] ?? r["ingredient"] ?? "",
           dfRoute: r["DF;Route"] ?? r["df;route"] ?? r["DF_Route"] ?? "",
           tradeName: r["Trade_Name"] ?? r["trade_name"] ?? "",
@@ -134,7 +134,7 @@ export class BulkDataClient {
     loggers.bulk(`Parsed ${products.length} Orange Book products`)
 
     const patents: OrangeBookPatent[] = patentFile
-      ? this.parseTildeDelimited<Record<string, string>>(patentFile.text).map((r) => ({
+      ? this.parseTildeDelimited<Record<string, string | undefined>>(patentFile.text).map((r) => ({
           applType: r["Appl_Type"] ?? r["appl_type"] ?? "",
           applNo: r["Appl_No"] ?? r["appl_no"] ?? "",
           productNo: r["Product_No"] ?? r["product_no"] ?? "",
@@ -150,7 +150,7 @@ export class BulkDataClient {
     loggers.bulk(`Parsed ${patents.length} Orange Book patents`)
 
     const exclusivities: OrangeBookExclusivity[] = exclusivityFile
-      ? this.parseTildeDelimited<Record<string, string>>(exclusivityFile.text).map((r) => ({
+      ? this.parseTildeDelimited<Record<string, string | undefined>>(exclusivityFile.text).map((r) => ({
           applType: r["Appl_Type"] ?? r["appl_type"] ?? "",
           applNo: r["Appl_No"] ?? r["appl_no"] ?? "",
           productNo: r["Product_No"] ?? r["product_no"] ?? "",
@@ -186,7 +186,7 @@ export class BulkDataClient {
       throw new Error(`Failed to fetch Purple Book data: ${response.status} ${response.statusText}`)
     }
 
-    const rawEntries = (await response.json()) as Array<Record<string, string>>
+    const rawEntries = (await response.json()) as Array<Record<string, string | undefined>>
     loggers.bulk(`Received ${rawEntries.length} Purple Book entries from API`)
 
     const entries: PurpleBookEntry[] = rawEntries.map((r) => ({
