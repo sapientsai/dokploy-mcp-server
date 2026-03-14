@@ -25,7 +25,8 @@ function formatDate(dateStr?: string): string {
   }
 }
 
-function statusIcon(status: string): string {
+function statusIcon(status: string | undefined | null): string {
+  if (!status) return "[UNKNOWN]"
   const s = status.toLowerCase()
   if (s === "running" || s === "done" || s === "idle") return "[RUNNING]"
   if (s === "error" || s === "failed") return "[ERROR]"
@@ -91,13 +92,27 @@ export function formatEnvironmentList(envs: DokployEnvironment[]): string {
 }
 
 export function formatApplication(app: DokployApplication): string {
+  const gitSource = [
+    app.repository && `  Repository: ${app.owner ? `${app.owner}/` : ""}${app.repository}`,
+    app.branch && `  Branch: ${app.branch}`,
+    app.customGitUrl && `  Custom Git URL: ${app.customGitUrl}`,
+    app.customGitBranch && `  Custom Git Branch: ${app.customGitBranch}`,
+    app.githubId && `  GitHub ID: ${app.githubId}`,
+    app.dockerImage && `  Docker Image: ${app.dockerImage}`,
+    app.dockerfile && `  Dockerfile: ${app.dockerfile}`,
+  ]
+    .filter(Boolean)
+    .join("\n")
+
+  const envSection = app.env ? `\n  Env Variables:\n\`\`\`\n${app.env}\n\`\`\`` : ""
+
   return `- **${app.name}** ${statusIcon(app.applicationStatus)} (ID: ${app.applicationId})
   App Name: ${app.appName}
   Description: ${app.description || "None"}
   Build Type: ${app.buildType || "N/A"}
   Source: ${app.sourceType || "N/A"}
-  Auto Deploy: ${app.autoDeploy ?? "N/A"}
-  Created: ${formatDate(app.createdAt)}`
+${gitSource ? gitSource + "\n" : ""}  Auto Deploy: ${app.autoDeploy ?? "N/A"}
+  Created: ${formatDate(app.createdAt)}${envSection}`
 }
 
 export function formatDeployment(dep: DokployDeployment): string {
@@ -113,12 +128,14 @@ export function formatDeploymentList(deployments: DokployDeployment[]): string {
 }
 
 export function formatCompose(compose: DokployCompose): string {
+  const envSection = compose.env ? `\n  Env Variables:\n\`\`\`\n${compose.env}\n\`\`\`` : ""
+
   return `- **${compose.name}** ${statusIcon(compose.composeStatus)} (ID: ${compose.composeId})
   App Name: ${compose.appName}
   Description: ${compose.description || "None"}
   Type: ${compose.composeType || "N/A"}
   Source: ${compose.sourceType || "N/A"}
-  Created: ${formatDate(compose.createdAt)}`
+  Created: ${formatDate(compose.createdAt)}${envSection}`
 }
 
 export function formatDomain(domain: DokployDomain): string {

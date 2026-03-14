@@ -60,8 +60,8 @@ Available capabilities:
 - Backups: schedule, trigger manual backups, list backup files
 - Environments: create, duplicate, manage project environments
 - Infrastructure: ports, certificates, basic auth security
-- Settings: health checks, version info, cleanup, reload services
-- SSH Keys: create, list, remove, generate SSH keys for git-based deployments`,
+- SSH Keys: create, list, update, remove, generate SSH keys for server access and git-based deployments
+- Settings: health checks, version info, cleanup, reload services`,
 })
 
 registerProjectTools(server)

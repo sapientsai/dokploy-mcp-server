@@ -42,7 +42,7 @@ export function registerApplicationTools(server: FastMCP) {
   server.addTool({
     name: "dokploy_application",
     description:
-      "Manage applications. create: name+environmentId. get: applicationId. update: applicationId+fields. move: applicationId+targetEnvironmentId. deploy: applicationId, redeploy?. start/stop/delete/markRunning/refreshToken/cleanQueues/killBuild/cancelDeployment: applicationId. reload: applicationId+appName. saveEnvironment: applicationId+env. saveBuildType: applicationId+buildType. traefikConfig: applicationId, traefikConfig? (omit to read). readMonitoring: appName.",
+      "Manage applications. create: name+environmentId. get: applicationId (returns env vars, git source, build config). update: applicationId+fields (supports sourceType, repository, owner, branch, customGitUrl, customGitBranch, githubId, dockerImage, etc.). move: applicationId+targetEnvironmentId. deploy: applicationId, redeploy? (note: first deploy on new services may fail — retry immediately). start/stop/delete/markRunning/refreshToken/cleanQueues/killBuild/cancelDeployment: applicationId. reload: applicationId+appName. saveEnvironment: applicationId+env (KEY=VALUE pairs, one per line). saveBuildType: applicationId+buildType. traefikConfig: applicationId, traefikConfig? (omit to read). readMonitoring: appName.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       applicationId: z.string().optional(),
@@ -61,7 +61,19 @@ export function registerApplicationTools(server: FastMCP) {
       replicas: z.number().optional(),
       autoDeploy: z.boolean().optional(),
       appName: z.string().optional(),
-      env: z.string().optional().describe("KEY=VALUE pairs, newline separated"),
+      sourceType: z.enum(["github", "git", "docker", "raw"]).optional().describe("Source type for the application"),
+      repository: z.string().optional().describe("GitHub repository name"),
+      owner: z.string().optional().describe("GitHub org/user"),
+      branch: z.string().optional().describe("Branch name"),
+      customGitUrl: z.string().optional().describe("Custom git repository URL (for sourceType: git)"),
+      customGitBranch: z.string().optional().describe("Branch for custom git source"),
+      githubId: z.string().optional().describe("GitHub App provider ID for private repo access"),
+      env: z
+        .string()
+        .optional()
+        .describe(
+          "Environment variables as KEY=VALUE pairs, one per line. Example: 'DB_HOST=localhost\\nDB_PORT=5432'",
+        ),
       buildArgs: z.string().optional(),
       createEnvFile: z.boolean().optional(),
       buildType: z.string().optional(),
@@ -101,6 +113,13 @@ export function registerApplicationTools(server: FastMCP) {
             "cpuLimit",
             "replicas",
             "autoDeploy",
+            "sourceType",
+            "repository",
+            "owner",
+            "branch",
+            "customGitUrl",
+            "customGitBranch",
+            "githubId",
           ] as const
           for (const key of updateFields) {
             if (args[key] !== undefined) body[key] = args[key]
@@ -122,7 +141,7 @@ export function registerApplicationTools(server: FastMCP) {
             ...(args.title && { title: args.title }),
             ...(args.deployDescription && { description: args.deployDescription }),
           })
-          return `${args.redeploy ? "Redeployment" : "Deployment"} triggered for application ${args.applicationId}.`
+          return `${args.redeploy ? "Redeployment" : "Deployment"} triggered for application ${args.applicationId}.\n\nNote: First deployments on new services may fail on Dokploy. If this fails, try deploying again immediately.`
         }
         case "start":
         case "stop":

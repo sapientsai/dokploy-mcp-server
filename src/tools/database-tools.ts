@@ -59,7 +59,12 @@ export function registerDatabaseTools(server: FastMCP) {
       targetEnvironmentId: z.string().optional(),
       appName: z.string().optional(),
       applicationStatus: z.string().optional().describe("idle, running, done, or error"),
-      env: z.string().optional().describe("KEY=VALUE, newline separated"),
+      env: z
+        .string()
+        .optional()
+        .describe(
+          "Environment variables as KEY=VALUE pairs, one per line. Example: 'DB_HOST=localhost\\nDB_PORT=5432'",
+        ),
       externalPort: z.number().optional(),
     }),
     execute: async (args) => {

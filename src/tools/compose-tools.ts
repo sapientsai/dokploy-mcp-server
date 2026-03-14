@@ -27,7 +27,7 @@ export function registerComposeTools(server: FastMCP) {
   server.addTool({
     name: "dokploy_compose",
     description:
-      "Manage Docker Compose services. create: name+environmentId. get/delete/start/stop/getDefaultCommand: composeId. update: composeId+fields (including git source: sourceType, customGitUrl, customGitBranch, customGitSSHKeyId, repository, branch, owner, composePath). deploy: composeId, redeploy?. move: composeId+targetEnvironmentId. loadServices: composeId. loadMounts: composeId+serviceName. cancelDeployment/cleanQueues/killBuild/refreshToken: composeId.",
+      "Manage Docker Compose services. create: name+environmentId. get: composeId (returns env vars). update: composeId+fields (supports sourceType, composeFile for raw/inline, git source fields, autoDeploy). delete/start/stop/getDefaultCommand: composeId. deploy: composeId, redeploy? (note: first deploy on new services may fail — retry immediately). move: composeId+targetEnvironmentId. loadServices: composeId (must deploy first). loadMounts: composeId+serviceName. saveEnvironment: composeId+env (KEY=VALUE pairs, one per line). cancelDeployment/cleanQueues/killBuild/refreshToken: composeId.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       composeId: z.string().optional(),
@@ -35,9 +35,17 @@ export function registerComposeTools(server: FastMCP) {
       environmentId: z.string().optional(),
       description: z.string().optional(),
       composeType: z.string().optional().describe("docker-compose or stack"),
-      composeFile: z.string().optional(),
+      composeFile: z
+        .string()
+        .optional()
+        .describe("Docker Compose YAML content (for sourceType: raw, set this to the inline compose file)"),
       serverId: z.string().optional(),
-      env: z.string().optional(),
+      env: z
+        .string()
+        .optional()
+        .describe(
+          "Environment variables as KEY=VALUE pairs, one per line. Example: 'DB_HOST=localhost\\nDB_PORT=5432'",
+        ),
       command: z.string().optional(),
       sourceType: z.string().optional().describe("git, github, gitlab, bitbucket, gitea, raw"),
       customGitUrl: z.string().optional().describe("Custom git repository URL"),
@@ -115,7 +123,7 @@ export function registerComposeTools(server: FastMCP) {
             ...(args.title && { title: args.title }),
             ...(args.deployDescription && { description: args.deployDescription }),
           })
-          return `${args.redeploy ? "Redeployment" : "Deployment"} triggered for compose ${args.composeId}.`
+          return `${args.redeploy ? "Redeployment" : "Deployment"} triggered for compose ${args.composeId}.\n\nNote: First deployments on new services may fail on Dokploy. If this fails, try deploying again immediately.`
         }
         case "start":
         case "stop": {
@@ -130,11 +138,19 @@ export function registerComposeTools(server: FastMCP) {
           return `Compose ${args.composeId} moved to environment ${args.targetEnvironmentId}.`
         }
         case "loadServices": {
-          const services = await client.get<unknown>("compose.loadServices", {
-            composeId: args.composeId!,
-            ...(args.type && { type: args.type }),
-          })
-          return `# Compose Services\n\n\`\`\`json\n${JSON.stringify(services, null, 2)}\n\`\`\``
+          try {
+            const services = await client.get<unknown>("compose.loadServices", {
+              composeId: args.composeId!,
+              ...(args.type && { type: args.type }),
+            })
+            return `# Compose Services\n\n\`\`\`json\n${JSON.stringify(services, null, 2)}\n\`\`\``
+          } catch (error) {
+            const msg = error instanceof Error ? error.message : String(error)
+            if (msg.includes("404") || msg.includes("NOT_FOUND") || msg.includes("not found")) {
+              return "No services loaded yet. Deploy the compose service first, then call loadServices."
+            }
+            throw error
+          }
         }
         case "loadMounts": {
           const mounts = await client.get<unknown>("compose.loadMountsByService", {

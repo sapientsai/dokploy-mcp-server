@@ -11,7 +11,7 @@ export function registerDockerTools(server: FastMCP) {
   server.addTool({
     name: "dokploy_docker",
     description:
-      "Docker container management. getContainers: list all containers, serverId?. restartContainer: containerId. getConfig: containerId (required, not appName), serverId?. findContainers: appName+method(match|label|stack|service), serverId?.",
+      "Docker container management. Actions: getContainers (list all containers, serverId?), restartContainer (containerId), getConfig (containerId, serverId?), findContainers (appName+method: match|label|stack|service, serverId?).",
     parameters: z.object({
       action: z.enum(ACTIONS),
       containerId: z.string().optional(),
@@ -36,11 +36,19 @@ export function registerDockerTools(server: FastMCP) {
           return `Container ${args.containerId} restarted.`
         }
         case "getConfig": {
-          const config = await client.get<unknown>("docker.getConfig", {
-            containerId: args.containerId!,
-            ...(args.serverId && { serverId: args.serverId }),
-          })
-          return `# Container Config\n\n\`\`\`json\n${JSON.stringify(config, null, 2)}\n\`\`\``
+          try {
+            const config = await client.post<unknown>("docker.getConfig", {
+              containerId: args.containerId!,
+              ...(args.serverId && { serverId: args.serverId }),
+            })
+            return `# Container Config\n\n\`\`\`json\n${JSON.stringify(config, null, 2)}\n\`\`\``
+          } catch (error) {
+            const msg = error instanceof Error ? error.message : String(error)
+            if (msg.includes("400")) {
+              return `Failed to get config for container ${args.containerId}. Ensure the containerId is a valid Docker container ID (not a name). You can find container IDs using getContainers action.`
+            }
+            throw error
+          }
         }
         case "findContainers": {
           if (!args.method) throw new Error("findContainers requires method (match|label|stack|service)")

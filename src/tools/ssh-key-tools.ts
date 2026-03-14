@@ -11,7 +11,7 @@ export function registerSshKeyTools(server: FastMCP) {
   server.addTool({
     name: "dokploy_ssh_key",
     description:
-      "Manage SSH keys. create: name+privateKey+publicKey, description?. list: no params. get: sshKeyId. update: sshKeyId, name?, description?, lastUsedAt?. remove: sshKeyId. generate: type (rsa or ed25519).",
+      "Manage SSH keys. create: name+privateKey+publicKey, description?. list: no params. get: sshKeyId. update: sshKeyId, name?, description?, lastUsedAt?. remove: sshKeyId. generate: type (rsa or ed25519). Note: organizationId is resolved automatically from the API key.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       sshKeyId: z.string().optional(),

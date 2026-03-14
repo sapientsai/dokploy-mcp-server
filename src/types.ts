@@ -44,6 +44,11 @@ export type DokployApplication = {
   dockerImage?: string
   repository?: string
   branch?: string
+  owner?: string
+  customGitUrl?: string
+  customGitBranch?: string
+  githubId?: string
+  dockerfile?: string
   environmentId: string
   createdAt?: string
   autoDeploy?: boolean
@@ -70,6 +75,7 @@ export type DokployCompose = {
   environmentId: string
   createdAt?: string
   autoDeploy?: boolean
+  env?: string
 }
 
 export type DokployDeployment = {

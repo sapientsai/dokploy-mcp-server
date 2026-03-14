@@ -11,7 +11,7 @@ export function registerDomainTools(server: FastMCP) {
   server.addTool({
     name: "dokploy_domain",
     description:
-      "Manage domains. create: host+applicationId|composeId. list: applicationId|composeId. get: domainId. update: domainId+host. delete: domainId. generate: appName. canGenerateTraefikMe: serverId?. validate: domain.",
+      "Manage domains. create: host+applicationId|composeId(+serviceName for compose). list: applicationId|composeId. get: domainId. update: domainId+host (include composeId+serviceName for compose domains). delete: domainId. generate: appName. canGenerateTraefikMe: serverId?. validate: domain.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       domainId: z.string().optional(),
@@ -70,7 +70,16 @@ export function registerDomainTools(server: FastMCP) {
         }
         case "update": {
           const body: Record<string, unknown> = { domainId: args.domainId!, host: args.host! }
-          const optionalFields = ["path", "port", "https", "certificateType"] as const
+          const optionalFields = [
+            "applicationId",
+            "composeId",
+            "serviceName",
+            "path",
+            "port",
+            "https",
+            "certificateType",
+            "domainType",
+          ] as const
           for (const key of optionalFields) {
             if (args[key] !== undefined) body[key] = args[key]
           }
