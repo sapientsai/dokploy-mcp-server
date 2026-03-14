@@ -36,17 +36,19 @@ pnpm serve:test:http # Run server locally (HTTP mode)
 ```
 src/
 ├── index.ts              # CLI entry point (Commander.js)
-├── server.ts             # FastMCP server creation with all 10 tools
+├── server.ts             # FastMCP server creation with all 14 tools
 ├── lib.ts                # Library exports for programmatic use
 ├── types/
 │   └── fda.ts            # FDA API type definitions
 ├── handlers/
 │   ├── drug-handlers.ts  # Drug query handlers (6 tools)
-│   └── device-handlers.ts # Device query handlers (4 tools)
+│   ├── device-handlers.ts # Device query handlers (4 tools)
+│   └── bulk-data-handlers.ts # Orange Book & Purple Book handlers (4 tools)
 ├── tools/
 │   └── index.ts          # Zod schemas for all tools
 └── utils/
     ├── api-client.ts     # FDA API HTTP client
+    ├── bulk-data-client.ts # Orange Book/Purple Book download, parse, cache
     └── logger.ts         # Debug logger setup
 ```
 
@@ -67,6 +69,13 @@ src/
 - `search_device_classifications` - Device classifications
 - `search_device_adverse_events` - MDR reports
 - `search_device_recalls` - Device enforcement reports
+
+**Bulk Data Tools (4):**
+
+- `search_fda_orange_book` - Approved drug products with therapeutic equivalence (Orange Book)
+- `search_fda_orange_book_patents` - Patent info for drug products (Orange Book)
+- `search_fda_purple_book` - Licensed biological products (Purple Book)
+- `search_fda_drug_patent_expiry` - Unified patent expiry + exclusivity view
 
 ### Key Patterns
 

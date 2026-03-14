@@ -8,6 +8,16 @@ export { createOpenFDAServer, type ServerOptions } from "./server.js"
 
 // Handler exports
 export {
+  type DrugPatentExpiryParams,
+  handleSearchDrugPatentExpiry,
+  handleSearchOrangeBook,
+  handleSearchOrangeBookPatents,
+  handleSearchPurpleBook,
+  type OrangeBookPatentsParams,
+  type OrangeBookSearchParams,
+  type PurpleBookSearchParams,
+} from "./handlers/bulk-data-handlers.js"
+export {
   type Device510KParams,
   type DeviceAdverseEventsParams,
   type DeviceClassificationParams,
@@ -38,6 +48,9 @@ export { toolSchemas } from "./tools/index.js"
 // API client export
 export { FDAAPIClient, fdaAPIClient } from "./utils/api-client.js"
 
+// Bulk data client export
+export { BulkDataClient, bulkDataClient } from "./utils/bulk-data-client.js"
+
 // Type exports
 export type {
   Device510K,
@@ -53,6 +66,10 @@ export type {
   FDAResponse,
   FDAToolResponse,
   OpenFDAFields,
+  OrangeBookExclusivity,
+  OrangeBookPatent,
+  OrangeBookProduct,
+  PurpleBookEntry,
   SearchParams,
 } from "./types/fda.js"
 

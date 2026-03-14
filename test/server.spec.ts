@@ -19,8 +19,8 @@ describe("OpenFDA MCP Server", () => {
 })
 
 describe("Tool Schemas", () => {
-  it("should have all 10 tool schemas defined", () => {
-    expect(Object.keys(toolSchemas)).toHaveLength(10)
+  it("should have all 14 tool schemas defined", () => {
+    expect(Object.keys(toolSchemas)).toHaveLength(14)
   })
 
   it("should validate drug adverse events schema", () => {
@@ -64,5 +64,30 @@ describe("Tool Schemas", () => {
     }
     const result = toolSchemas.searchDeviceClassifications.safeParse(invalidParams)
     expect(result.success).toBe(false)
+  })
+
+  it("should validate orange book schema", () => {
+    const result = toolSchemas.searchOrangeBook.safeParse({ drugName: "lipitor", teCode: "AB" })
+    expect(result.success).toBe(true)
+  })
+
+  it("should validate orange book patents schema", () => {
+    const result = toolSchemas.searchOrangeBookPatents.safeParse({ patentNo: "5273995" })
+    expect(result.success).toBe(true)
+  })
+
+  it("should validate purple book schema", () => {
+    const result = toolSchemas.searchPurpleBook.safeParse({ licenseType: "351(k)", biosimilar: true })
+    expect(result.success).toBe(true)
+  })
+
+  it("should reject invalid purple book license type", () => {
+    const result = toolSchemas.searchPurpleBook.safeParse({ licenseType: "invalid" })
+    expect(result.success).toBe(false)
+  })
+
+  it("should validate drug patent expiry schema with defaults", () => {
+    const result = toolSchemas.searchDrugPatentExpiry.safeParse({ drugName: "lipitor" })
+    expect(result.success).toBe(true)
   })
 })

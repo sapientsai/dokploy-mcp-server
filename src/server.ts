@@ -6,6 +6,12 @@
 import { FastMCP } from "fastmcp"
 
 import {
+  handleSearchDrugPatentExpiry,
+  handleSearchOrangeBook,
+  handleSearchOrangeBookPatents,
+  handleSearchPurpleBook,
+} from "./handlers/bulk-data-handlers.js"
+import {
   handleSearchDevice510K,
   handleSearchDeviceAdverseEvents,
   handleSearchDeviceClassifications,
@@ -28,8 +34,12 @@ import {
   searchDrugEnforcementSchema,
   searchDrugLabelsSchema,
   searchDrugNDCSchema,
+  searchDrugPatentExpirySchema,
   searchDrugsFDASchema,
   searchDrugShortagesSchema,
+  searchOrangeBookPatentsSchema,
+  searchOrangeBookSchema,
+  searchPurpleBookSchema,
 } from "./tools/index.js"
 import { loggers } from "./utils/logger.js"
 
@@ -198,7 +208,68 @@ export function createOpenFDAServer(options: ServerOptions = {}): FastMCP {
     },
   })
 
-  loggers.core("OpenFDA MCP server configured with 10 tools")
+  // Register Bulk Data Tools (Orange Book & Purple Book)
+
+  server.addTool({
+    name: "search_fda_orange_book",
+    description:
+      "Search FDA Orange Book for approved drug products with therapeutic equivalence evaluations. " +
+      "Find drugs by trade name, ingredient, applicant, application number, or TE code. " +
+      "Returns product details, patent counts, and exclusivity counts. " +
+      "Data is downloaded from FDA bulk files and cached for 24 hours.",
+    parameters: searchOrangeBookSchema,
+    execute: async (args) => {
+      loggers.tools("Executing search_fda_orange_book", args)
+      const result = await handleSearchOrangeBook(args)
+      return JSON.stringify(result, null, 2)
+    },
+  })
+
+  server.addTool({
+    name: "search_fda_orange_book_patents",
+    description:
+      "Search FDA Orange Book patent data for drug products. " +
+      "Find patents by drug name, application number, or patent number. " +
+      "Returns patent details including expiry dates, substance/product/use flags, and associated exclusivities.",
+    parameters: searchOrangeBookPatentsSchema,
+    execute: async (args) => {
+      loggers.tools("Executing search_fda_orange_book_patents", args)
+      const result = await handleSearchOrangeBookPatents(args)
+      return JSON.stringify(result, null, 2)
+    },
+  })
+
+  server.addTool({
+    name: "search_fda_purple_book",
+    description:
+      "Search FDA Purple Book for licensed biological products. " +
+      "Find biologics by product name, applicant, BLA number, license type (351(a)/351(k)), " +
+      "biosimilar status, or interchangeability. " +
+      "Returns product details, licensing status, and reference product information.",
+    parameters: searchPurpleBookSchema,
+    execute: async (args) => {
+      loggers.tools("Executing search_fda_purple_book", args)
+      const result = await handleSearchPurpleBook(args)
+      return JSON.stringify(result, null, 2)
+    },
+  })
+
+  server.addTool({
+    name: "search_fda_drug_patent_expiry",
+    description:
+      "Unified patent expiry and exclusivity view across FDA Orange Book and optionally Purple Book. " +
+      "Search by drug name or application number. " +
+      "Returns patents sorted by earliest expiry date with associated exclusivity data. " +
+      "Set includePurpleBook=true to also include biologics data.",
+    parameters: searchDrugPatentExpirySchema,
+    execute: async (args) => {
+      loggers.tools("Executing search_fda_drug_patent_expiry", args)
+      const result = await handleSearchDrugPatentExpiry(args)
+      return JSON.stringify(result, null, 2)
+    },
+  })
+
+  loggers.core("OpenFDA MCP server configured with 14 tools")
 
   return server
 }

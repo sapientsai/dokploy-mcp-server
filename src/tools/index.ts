@@ -150,6 +150,48 @@ export const searchDeviceEnforcementSchema = z.object({
   ...paginationSchema,
 })
 
+// Bulk Data Tool Schemas (Orange Book & Purple Book)
+
+export const searchOrangeBookSchema = z.object({
+  drugName: z.string().optional().describe("Drug trade name or ingredient to search"),
+  applicant: z.string().optional().describe("Applicant/company name"),
+  applNo: z.string().optional().describe("FDA application number"),
+  teCode: z.string().optional().describe("Therapeutic equivalence code (e.g., 'AB', 'BX')"),
+  ...paginationSchema,
+})
+
+export const searchOrangeBookPatentsSchema = z.object({
+  drugName: z.string().optional().describe("Drug trade name or ingredient to search"),
+  applNo: z.string().optional().describe("FDA application number"),
+  patentNo: z.string().optional().describe("Patent number"),
+  ...paginationSchema,
+})
+
+export const searchPurpleBookSchema = z.object({
+  productName: z.string().optional().describe("Product proprietary or proper name to search"),
+  applicant: z.string().optional().describe("Applicant/company name"),
+  blaNumber: z.string().optional().describe("Biologics License Application (BLA) number"),
+  licenseType: z
+    .enum(["351(a)", "351(k)"])
+    .optional()
+    .describe("License type: 351(a) for originator, 351(k) for biosimilar"),
+  biosimilar: z.boolean().optional().describe("Filter for biosimilar products"),
+  interchangeable: z.boolean().optional().describe("Filter for interchangeable products"),
+  ...paginationSchema,
+})
+
+export const searchDrugPatentExpirySchema = z.object({
+  drugName: z.string().optional().describe("Drug trade name or ingredient to search"),
+  applNo: z.string().optional().describe("FDA application number"),
+  includeExclusivity: z.boolean().optional().default(true).describe("Include exclusivity data (default: true)"),
+  includePurpleBook: z
+    .boolean()
+    .optional()
+    .default(false)
+    .describe("Include Purple Book biologics data (default: false)"),
+  ...paginationSchema,
+})
+
 // Export all schemas for use in tool registration
 export const toolSchemas = {
   searchDrugAdverseEvents: searchDrugAdverseEventsSchema,
@@ -162,6 +204,10 @@ export const toolSchemas = {
   searchDeviceClassifications: searchDeviceClassificationsSchema,
   searchDeviceAdverseEvents: searchDeviceAdverseEventsSchema,
   searchDeviceEnforcement: searchDeviceEnforcementSchema,
+  searchOrangeBook: searchOrangeBookSchema,
+  searchOrangeBookPatents: searchOrangeBookPatentsSchema,
+  searchPurpleBook: searchPurpleBookSchema,
+  searchDrugPatentExpiry: searchDrugPatentExpirySchema,
 }
 
 // Export inferred types
@@ -175,4 +221,8 @@ export type SearchDevice510KParams = z.infer<typeof searchDevice510KSchema>
 export type SearchDeviceClassificationsParams = z.infer<typeof searchDeviceClassificationsSchema>
 export type SearchDeviceAdverseEventsParams = z.infer<typeof searchDeviceAdverseEventsSchema>
 export type SearchDeviceEnforcementParams = z.infer<typeof searchDeviceEnforcementSchema>
+export type SearchOrangeBookParams = z.infer<typeof searchOrangeBookSchema>
+export type SearchOrangeBookPatentsParams = z.infer<typeof searchOrangeBookPatentsSchema>
+export type SearchPurpleBookParams = z.infer<typeof searchPurpleBookSchema>
+export type SearchDrugPatentExpiryParams = z.infer<typeof searchDrugPatentExpirySchema>
 export type LabelSection = (typeof labelSections)[number]

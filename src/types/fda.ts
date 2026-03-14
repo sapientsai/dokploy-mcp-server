@@ -444,4 +444,69 @@ export type FDAToolResponse<T> = {
     authenticated: boolean
     rateLimit: string
   }
+  dataSource?: {
+    name: string
+    lastUpdated: string
+    url: string
+  }
+}
+
+// Orange Book Types
+
+export type OrangeBookProduct = {
+  ingredient: string
+  dfRoute: string
+  tradeName: string
+  applicant: string
+  applType: string
+  applNo: string
+  productNo: string
+  teCode: string
+  approvalDate: string
+  rld: string
+  rs: string
+  type: string
+  applicantFullName: string
+}
+
+export type OrangeBookPatent = {
+  applType: string
+  applNo: string
+  productNo: string
+  patentNo: string
+  patentExpireDate: string
+  drugSubstanceFlag: string
+  drugProductFlag: string
+  patentUseCode: string
+  delistFlag: string
+  submissionDate: string
+}
+
+export type OrangeBookExclusivity = {
+  applType: string
+  applNo: string
+  productNo: string
+  exclusivityCode: string
+  exclusivityDate: string
+}
+
+// Purple Book Types
+
+export type PurpleBookEntry = {
+  blaNumber: string
+  proprietaryName: string
+  properName: string
+  applicant: string
+  blaType: string
+  strength: string
+  dosageForm: string
+  route: string
+  productPresentation: string
+  status: string
+  licensingStatus: string
+  referenceProductBla: string
+  referenceProductProprietaryName: string
+  biosimilar: boolean
+  interchangeable: boolean
+  approvalDate: string
 }

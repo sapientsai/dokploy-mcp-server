@@ -13,4 +13,5 @@ export const loggers = {
   tools: debug("openfda-mcp:tools"),
   main: debug("openfda-mcp:main"),
   fastmcp: debug("openfda-mcp:fastmcp"),
+  bulk: debug("openfda-mcp:bulk"),
 }
