@@ -59,7 +59,10 @@
     "prepublishOnly": "pnpm validate",
     "inspect": "pnpm build && npx @modelcontextprotocol/inspector dist/index.js",
     "start": "pnpm build && node dist/bin.js",
-    "serve": "pnpm build && node dist/index.js"
+    "serve": "pnpm build && node dist/index.js",
+    "openapi:fetch": "tsx scripts/fetch-openapi.ts",
+    "openapi:generate": "openapi-typescript openapi.json -o src/generated/dokploy-api.ts --export-type -t",
+    "openapi:update": "pnpm openapi:fetch && pnpm openapi:generate && pnpm format"
   },
   "prettier": "ts-builds/prettier",
   "dependencies": {
@@ -69,8 +72,10 @@
   },
   "devDependencies": {
     "@types/node": "^24.12.0",
+    "openapi-typescript": "^7.13.0",
     "ts-builds": "^2.5.2",
-    "tsdown": "^0.20.3"
+    "tsdown": "^0.20.3",
+    "tsx": "^4.21.0"
   },
   "packageManager": "pnpm@10.32.1+sha512.a706938f0e89ac1456b6563eab4edf1d1faf3368d1191fc5c59790e96dc918e4456ab2e67d613de1043d2e8c81f87303e6b40d4ffeca9df15ef1ad567348f2be"
 }
