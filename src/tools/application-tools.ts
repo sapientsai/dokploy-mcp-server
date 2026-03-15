@@ -2,6 +2,7 @@ import type { FastMCP } from "fastmcp"
 import { z } from "zod"
 
 import { getDokployClient } from "../client/dokploy-client"
+import type { RequestBody } from "../generated"
 import type { DokployApplication } from "../types"
 import { formatApplication } from "../utils/formatters"
 
@@ -93,7 +94,7 @@ export function registerApplicationTools(server: FastMCP) {
             environmentId: args.environmentId!,
             ...(args.description && { description: args.description }),
             ...(args.serverId && { serverId: args.serverId }),
-          })
+          } satisfies RequestBody<"application-create">)
           return `# Application Created\n\n${formatApplication(app)}`
         }
         case "get": {
@@ -124,14 +125,14 @@ export function registerApplicationTools(server: FastMCP) {
           for (const key of updateFields) {
             if (args[key] !== undefined) body[key] = args[key]
           }
-          await client.post("application.update", body)
+          await client.post("application.update", body as RequestBody<"application-update">)
           return `Application ${args.applicationId} updated.`
         }
         case "move": {
           await client.post("application.move", {
             applicationId: args.applicationId!,
             targetEnvironmentId: args.targetEnvironmentId!,
-          })
+          } satisfies RequestBody<"application-move">)
           return `Application ${args.applicationId} moved to environment ${args.targetEnvironmentId}.`
         }
         case "deploy": {
@@ -160,7 +161,7 @@ export function registerApplicationTools(server: FastMCP) {
           await client.post("application.reload", {
             applicationId: args.applicationId!,
             appName: args.appName!,
-          })
+          } satisfies RequestBody<"application-reload">)
           return `Application ${args.applicationId} reloaded.`
         }
         case "saveEnvironment": {
@@ -188,7 +189,7 @@ export function registerApplicationTools(server: FastMCP) {
             await client.post("application.updateTraefikConfig", {
               applicationId: args.applicationId!,
               traefikConfig: args.traefikConfig,
-            })
+            } satisfies RequestBody<"application-updateTraefikConfig">)
             return `Traefik config updated for application ${args.applicationId}.`
           }
           const config = await client.get<string>("application.readTraefikConfig", {

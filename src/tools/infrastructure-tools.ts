@@ -2,6 +2,7 @@ import type { FastMCP } from "fastmcp"
 import { z } from "zod"
 
 import { getDokployClient, getOrganizationId } from "../client/dokploy-client"
+import type { RequestBody } from "../generated"
 import type { DokployCertificate, DokployPort, DokploySecurity } from "../types"
 
 const ACTIONS = [
@@ -53,7 +54,7 @@ export function registerInfrastructureTools(server: FastMCP) {
           return `Port mapping created: ${port.publishedPort} -> ${port.targetPort} (ID: ${port.portId})`
         }
         case "deletePort": {
-          await client.post("port.delete", { portId: args.portId! })
+          await client.post("port.delete", { portId: args.portId! } satisfies RequestBody<"port-delete">)
           return `Port mapping ${args.portId} deleted.`
         }
         case "createAuth": {
@@ -65,7 +66,9 @@ export function registerInfrastructureTools(server: FastMCP) {
           return `Basic auth created for application ${args.applicationId} (ID: ${security.securityId})`
         }
         case "deleteAuth": {
-          await client.post("security.delete", { securityId: args.securityId! })
+          await client.post("security.delete", {
+            securityId: args.securityId!,
+          } satisfies RequestBody<"security-delete">)
           return `Security credentials ${args.securityId} deleted.`
         }
         case "listCerts": {
@@ -96,7 +99,9 @@ export function registerInfrastructureTools(server: FastMCP) {
           return `Certificate "${cert.name}" created (ID: ${cert.certificateId}).`
         }
         case "removeCert": {
-          await client.post("certificates.remove", { certificateId: args.certificateId! })
+          await client.post("certificates.remove", {
+            certificateId: args.certificateId!,
+          } satisfies RequestBody<"certificates-remove">)
           return `Certificate ${args.certificateId} removed.`
         }
       }

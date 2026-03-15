@@ -2,6 +2,7 @@ import type { FastMCP } from "fastmcp"
 import { z } from "zod"
 
 import { getDokployClient } from "../client/dokploy-client"
+import type { RequestBody } from "../generated"
 import type { DatabaseType, DokployDatabase } from "../types"
 import { DB_ID_FIELDS, DB_TYPES } from "../types"
 import { formatDatabase } from "../utils/formatters"
@@ -103,7 +104,7 @@ export function registerDatabaseTools(server: FastMCP) {
           for (const key of updateFields) {
             if (args[key] !== undefined) body[key] = args[key]
           }
-          await client.post(`${dbType}.update`, body)
+          await client.post(`${dbType}.update`, body as RequestBody<"postgres-update">)
           return `Database ${args.databaseId} (${dbType}) updated.`
         }
         case "move": {

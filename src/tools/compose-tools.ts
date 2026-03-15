@@ -2,6 +2,7 @@ import type { FastMCP } from "fastmcp"
 import { z } from "zod"
 
 import { getDokployClient } from "../client/dokploy-client"
+import type { RequestBody } from "../generated"
 import type { DokployCompose } from "../types"
 import { formatCompose } from "../utils/formatters"
 
@@ -106,14 +107,14 @@ export function registerComposeTools(server: FastMCP) {
           for (const key of updateFields) {
             if (args[key] !== undefined) body[key] = args[key]
           }
-          await client.post("compose.update", body)
+          await client.post("compose.update", body as RequestBody<"compose-update">)
           return `Compose ${args.composeId} updated.`
         }
         case "delete": {
           await client.post("compose.delete", {
             composeId: args.composeId!,
             deleteVolumes: args.deleteVolumes ?? false,
-          })
+          } satisfies RequestBody<"compose-delete">)
           return `Compose ${args.composeId} deleted.`
         }
         case "deploy": {

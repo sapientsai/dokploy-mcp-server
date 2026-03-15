@@ -2,6 +2,7 @@ import type { FastMCP } from "fastmcp"
 import { z } from "zod"
 
 import { getDokployClient } from "../client/dokploy-client"
+import type { RequestBody } from "../generated"
 import type { DokployBackup } from "../types"
 import { formatBackup } from "../utils/formatters"
 
@@ -83,7 +84,7 @@ export function registerBackupTools(server: FastMCP) {
           return `Backup ${args.backupId} updated.`
         }
         case "remove": {
-          await client.post("backup.remove", { backupId: args.backupId! })
+          await client.post("backup.remove", { backupId: args.backupId! } satisfies RequestBody<"backup-remove">)
           return `Backup ${args.backupId} removed.`
         }
         case "listFiles": {

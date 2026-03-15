@@ -2,6 +2,7 @@ import type { FastMCP } from "fastmcp"
 import { z } from "zod"
 
 import { getDokployClient } from "../client/dokploy-client"
+import type { RequestBody } from "../generated"
 import type { DokployProject } from "../types"
 import { formatProject, formatProjectList } from "../utils/formatters"
 
@@ -36,7 +37,7 @@ export function registerProjectTools(server: FastMCP) {
           const project = await client.post<DokployProject>("project.create", {
             name: args.name!,
             ...(args.description && { description: args.description }),
-          })
+          } satisfies RequestBody<"project-create">)
           return `# Project Created\n\n${formatProject(project)}`
         }
         case "update": {
@@ -48,7 +49,7 @@ export function registerProjectTools(server: FastMCP) {
           return `Project ${args.projectId} updated.`
         }
         case "remove": {
-          await client.post("project.remove", { projectId: args.projectId! })
+          await client.post("project.remove", { projectId: args.projectId! } satisfies RequestBody<"project-remove">)
           return `Project ${args.projectId} removed.`
         }
         case "duplicate": {

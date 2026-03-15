@@ -2,6 +2,7 @@ import type { FastMCP } from "fastmcp"
 import { z } from "zod"
 
 import { getDokployClient } from "../client/dokploy-client"
+import type { RequestBody } from "../generated"
 import type { DokployDomain } from "../types"
 import { formatDomain, formatDomainList } from "../utils/formatters"
 
@@ -87,7 +88,7 @@ export function registerDomainTools(server: FastMCP) {
           return `Domain ${args.domainId} updated.`
         }
         case "delete": {
-          await client.post("domain.delete", { domainId: args.domainId! })
+          await client.post("domain.delete", { domainId: args.domainId! } satisfies RequestBody<"domain-delete">)
           return `Domain ${args.domainId} deleted.`
         }
         case "generate": {
