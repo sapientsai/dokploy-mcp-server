@@ -76,6 +76,7 @@ export function registerApplicationTools(server: FastMCP) {
           "Environment variables as KEY=VALUE pairs, one per line. Example: 'DB_HOST=localhost\\nDB_PORT=5432'",
         ),
       buildArgs: z.string().optional(),
+      buildSecrets: z.string().optional(),
       createEnvFile: z.boolean().optional(),
       buildType: z.string().optional(),
       dockerfile: z.string().optional(),
@@ -169,7 +170,8 @@ export function registerApplicationTools(server: FastMCP) {
             applicationId: args.applicationId!,
             createEnvFile: args.createEnvFile ?? false,
             ...(args.env !== undefined && { env: args.env }),
-            ...(args.buildArgs !== undefined && { buildArgs: args.buildArgs }),
+            buildArgs: args.buildArgs ?? "",
+            buildSecrets: args.buildSecrets ?? "",
           })
           return `Environment saved for application ${args.applicationId}.`
         }
