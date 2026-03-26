@@ -14,8 +14,8 @@ importers:
         specifier: ^3.34.0
         version: 3.34.0
       functype:
-        specifier: ^0.51.0
-        version: 0.51.0
+        specifier: ^0.52.0
+        version: 0.52.0
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -1523,6 +1523,11 @@ packages:
   functype@0.51.0:
     resolution:
       { integrity: sha512-FtEtvMg/LscT3j36Ri2Ug6bQdpaDPnmaHLSTJojhcen81aM0kO4EpyoH/gNuX2gbdyolRdnXL8KyCPhv59yXNg== }
+    hasBin: true
+
+  functype@0.52.0:
+    resolution:
+      { integrity: sha512-YZsnpniDXTJdPeIYPsrMB4XN1unz2P/iZogqvujEHOTCX5vlTZIfc2fsINDOIdFrv1vYuEayhNs4apw5fX/KEQ== }
     hasBin: true
 
   fuse.js@7.1.0:
@@ -3780,6 +3785,8 @@ snapshots:
       functype: 0.51.0
 
   functype@0.51.0: {}
+
+  functype@0.52.0: {}
 
   fuse.js@7.1.0: {}
 

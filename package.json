@@ -1,6 +1,6 @@
 {
   "name": "rescuetime-mcp-server",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "A Model Context Protocol (MCP) server for RescueTime - access productivity data, focus sessions, highlights, and activity tracking.",
   "keywords": [
     "mcp",
@@ -16,13 +16,13 @@
   ],
   "author": "Jordan Burke <jordan.burke@gmail.com>",
   "license": "MIT",
-  "homepage": "https://github.com/jordanburke/rescuetime-mcp-server#readme",
+  "homepage": "https://github.com/sapientsai/rescuetime-mcp-server",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jordanburke/rescuetime-mcp-server.git"
+    "url": "https://github.com/sapientsai/rescuetime-mcp-server"
   },
   "bugs": {
-    "url": "https://github.com/jordanburke/rescuetime-mcp-server/issues"
+    "url": "https://github.com/sapientsai/rescuetime-mcp-server/issues"
   },
   "scripts": {
     "validate": "ts-builds validate",
@@ -44,7 +44,7 @@
   "bin": {
     "rescuetime-mcp-server": "dist/bin.js"
   },
-  "mcpName": "io.github.jordanburke/rescuetime-mcp-server",
+  "mcpName": "io.github.sapientsai/rescuetime-mcp-server",
   "type": "module",
   "main": "./dist/index.js",
   "module": "./dist/index.js",
@@ -66,7 +66,7 @@
   "dependencies": {
     "dotenv": "^17.3.1",
     "fastmcp": "^3.34.0",
-    "functype": "^0.51.0",
+    "functype": "^0.52.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
