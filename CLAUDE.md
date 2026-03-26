@@ -4,93 +4,90 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a TypeScript library template designed to be cloned/forked for creating new npm packages. It uses the `ts-builds` toolchain for standardized build scripts with ESM output.
+RescueTime MCP Server — a Model Context Protocol server providing AI assistants access to RescueTime productivity data. Built with FastMCP, functype (IO, Option, Either, Try), and Zod.
 
-**Template Usage**: See STANDARDIZATION_GUIDE.md for applying this pattern to other TypeScript projects.
+**Key patterns**: functype IO<never, Error, T> for lazy composable API effects, Option<T> for singleton client, Try for safe formatting, result.fold() at tool boundaries.
 
 ## Development Commands
 
-All commands delegate to `ts-builds` for consistency across projects:
-
 ```bash
-pnpm validate        # Main command: format + lint + test + build (use before commits)
-
-pnpm format          # Format code with Prettier
-pnpm format:check    # Check formatting only
-
-pnpm lint            # Fix ESLint issues
-pnpm lint:check      # Check ESLint issues only
-
+pnpm validate        # Main command: format + lint + typecheck + test + build
 pnpm test            # Run tests once
 pnpm test:watch      # Run tests in watch mode
-pnpm test:coverage   # Run tests with coverage
-
 pnpm build           # Production build (outputs to dist/)
-pnpm dev             # Development build with watch mode
-
-pnpm typecheck       # Check TypeScript types
+pnpm inspect         # Build + launch MCP Inspector for interactive testing
+pnpm start           # Build + run CLI
+pnpm serve           # Build + run as Node process
 ```
 
 ### Running a Single Test
 
 ```bash
-pnpm test -- --testNamePattern="pattern"    # Filter by test name
-pnpm test -- test/specific.spec.ts          # Run specific file
+pnpm test -- --testNamePattern="pattern"
+pnpm test -- test/specific.spec.ts
 ```
 
 ## Architecture
 
-### Build System: ts-builds + tsdown
+```
+src/
+  index.ts                        # FastMCP server setup, tool registration
+  bin.ts                          # CLI entry point (stdio transport)
+  types.ts                        # All domain types (readonly, immutable)
+  errors.ts                       # Sealed error union types (_kind discriminator)
+  client/
+    rescuetime-client.ts          # Singleton client, IO-based API methods
+  tools/
+    index.ts                      # Barrel export
+    analytics-tools.ts            # get_activity_data, get_daily_summary, get_productivity_score
+    focus-tools.ts                # start_focus_session, end_focus_session, get_focus_sessions
+    highlight-tools.ts            # get_highlights, post_highlight
+    offline-tools.ts              # log_offline_time
+  utils/
+    formatters.ts                 # Markdown output formatters
+```
 
-- **ts-builds**: Centralized toolchain package providing all build scripts
-- **tsdown**: Underlying bundler configured via `ts-builds/tsdown`
-- **Configuration**: `tsdown.config.ts` imports default config from ts-builds
+### Key Patterns
+
+- **Client singleton**: `Option<RescueTimeClient>` with `initializeClient()` / `getClient()`
+- **API calls**: Return `IO<never, Error, T>` via `IO.tryPromise()` — lazy until `.run()`
+- **Tool boundary**: `await io.run()` then `result.fold(throwErr, formatOutput)`
+- **Error types**: Sealed union `AppError = ApiError | ConfigError | RateLimitError` with `_kind`
+- **Formatting**: Array-join pattern with `.map()` for functional style
+
+### Build System
+
+- **ts-builds + tsdown**: Custom config with dual entry (index + bin), **VERSION** define
 - **TypeScript**: `tsconfig.json` extends `ts-builds/tsconfig`
-- **Prettier**: Uses `ts-builds/prettier` shared config
+- **ESLint**: `eslint-config-functype` for FP patterns
+- **Output**: `dist/index.js` + `dist/bin.js` (ESM)
 
-### Output Format
+## Environment Variables
 
-- **dist/**: Production builds containing:
-  - `index.js` - ES module format
-  - `index.d.ts` - TypeScript declarations
-- **lib/**: Development builds (also published)
+| Variable             | Required | Description                              |
+| -------------------- | -------- | ---------------------------------------- |
+| `RESCUETIME_API_KEY` | Yes      | API key from rescuetime.com/anapi/manage |
+| `TRANSPORT_TYPE`     | No       | `stdio` (default) or `httpStream`        |
+| `PORT`               | No       | HTTP port (default: 3000)                |
 
-### Package Exports
+## MCP Tools (9 total)
 
-```json
-{
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
-    }
-  }
-}
-```
+| Tool                     | Description                                                     |
+| ------------------------ | --------------------------------------------------------------- |
+| `get_activity_data`      | Query activity data with filters (date, category, productivity) |
+| `get_daily_summary`      | Last 2 weeks of daily productivity summaries                    |
+| `get_productivity_score` | Single-day productivity pulse and breakdown                     |
+| `start_focus_session`    | Start focus mode (blocks distracting apps)                      |
+| `end_focus_session`      | End current focus session                                       |
+| `get_focus_sessions`     | Recent focus session history                                    |
+| `get_highlights`         | Get logged highlights/accomplishments                           |
+| `post_highlight`         | Log a new highlight                                             |
+| `log_offline_time`       | Log offline activities (meetings, breaks)                       |
 
-### Testing: Vitest
+## RescueTime API Notes
 
-- Tests located in `test/*.spec.ts`
-- Uses Vitest with configuration from ts-builds
-- Coverage via v8 provider
-
-## Key Files
-
-- `src/index.ts` - Main library entry point
-- `test/*.spec.ts` - Test files
-- `tsdown.config.ts` - Build config (imports from ts-builds)
-- `tsconfig.json` - TypeScript config (extends ts-builds)
-- `.claude/skills/ts-builds-template/` - Claude Code skill for bootstrapping libraries from this template
-
-## Publishing
-
-```bash
-npm version patch|minor|major
-npm publish --access public
-```
-
-The `prepublishOnly` hook automatically runs `pnpm validate` before publishing.
+- **Auth**: API key via query param + form-encoded POST body
+- **Rate limits**: 60 req/min, 1000 req/hr
+- **Data sync**: Premium 3min, Lite 30min
+- **Focus sessions**: Duration must be multiple of 5 or -1 (end of day)
+- **Highlights/Alerts**: Premium features
