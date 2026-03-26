@@ -90,5 +90,6 @@ src/
 - **Auth**: API key via query param + form-encoded POST body
 - **Rate limits**: 60 req/min, 1000 req/hr
 - **Data sync**: Premium 3min, Lite 30min
-- **Focus sessions**: Duration must be multiple of 5 or -1 (end of day)
-- **Highlights/Alerts**: Premium features
+- **Focus sessions**: Duration must be multiple of 5 (5-480) or -1 (end of day)
+- **Offline time**: Requires both start_time and end_time (ISO 8601). Max 4 hours, past only.
+- **Highlights**: Post always succeeds, feed may have sync delay

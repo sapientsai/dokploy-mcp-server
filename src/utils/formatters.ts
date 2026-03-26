@@ -143,7 +143,11 @@ export function formatHighlights(highlights: readonly Highlight[]): string {
 }
 
 function formatSessionEntry(s: FocusSessionEvent): string {
-  return `- **${s.created_at}** — Duration: ${s.duration} minutes`
+  const durationText = Option(s.duration).fold(
+    () => "",
+    (d) => ` — Duration: ${d} minutes`,
+  )
+  return `- **${s.created_at}**${durationText}`
 }
 
 export function formatFocusSessions(

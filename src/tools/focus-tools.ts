@@ -13,9 +13,17 @@ export function registerFocusTools(server: FastMCP): void {
   server.addTool({
     name: "start_focus_session",
     description:
-      "Start a RescueTime Focus Session. This blocks distracting websites and apps. Duration must be a multiple of 5 minutes, or -1 for until end of day. Note: the desktop app syncs on a 1-minute interval.",
+      "Start a RescueTime Focus Session that blocks distracting websites and apps. The desktop app syncs on a 1-minute interval, so there may be a brief delay before blocking takes effect. Common durations: 25 (pomodoro), 60, 90, 120 minutes.",
     parameters: z.object({
-      duration: z.number().describe("Duration in minutes. Must be a multiple of 5, or -1 for until end of day."),
+      duration: z
+        .number()
+        .int()
+        .refine((n) => n === -1 || (n >= 5 && n % 5 === 0 && n <= 480), {
+          message: "Duration must be -1 (until end of day) or a multiple of 5 between 5 and 480 minutes",
+        })
+        .describe(
+          "Duration in minutes. Must be a multiple of 5 (e.g., 25, 60, 90), or -1 for until end of day. Max 480 minutes (8 hours).",
+        ),
     }),
     execute: async (args) =>
       IO.fromEither(unwrapClient())
@@ -29,7 +37,8 @@ export function registerFocusTools(server: FastMCP): void {
 
   server.addTool({
     name: "end_focus_session",
-    description: "End the current RescueTime Focus Session. Unblocks distracting websites and apps.",
+    description:
+      "End the current RescueTime Focus Session early. Unblocks distracting websites and apps. Only useful if a focus session is currently active.",
     parameters: z.object({}),
     execute: async () =>
       IO.fromEither(unwrapClient())
@@ -40,7 +49,7 @@ export function registerFocusTools(server: FastMCP): void {
 
   server.addTool({
     name: "get_focus_sessions",
-    description: "Get recent focus session history, including both started and ended sessions.",
+    description: "Get recent focus session history, including both started and completed sessions with timestamps.",
     parameters: z.object({}),
     execute: async () =>
       IO.fromEither(unwrapClient())

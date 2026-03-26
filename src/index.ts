@@ -28,14 +28,21 @@ const server = new FastMCP({
   version: VERSION,
   instructions: `RescueTime MCP Server — provides access to RescueTime productivity data.
 
-Available capabilities:
-- Query activity data by date range, category, productivity level
-- Get daily productivity summaries and scores
-- Start/end focus sessions to block distracting apps
-- Log highlights (accomplishments) and offline time
+## Tool Selection Guide
+- **"How productive was I?"** → get_productivity_score (single day) or get_daily_summary (last 2 weeks)
+- **"What did I work on?"** → get_activity_data with restrict_kind="activity" or "category"
+- **"How much time on X?"** → get_activity_data with restrict_thing="X"
+- **"Time breakdown by productivity"** → get_activity_data with restrict_kind="productivity"
+- **"Help me focus"** → start_focus_session (blocks distracting apps)
+- **"Log what I did"** → post_highlight (accomplishment) or log_offline_time (meeting/break)
 
-Rate limits: 60 requests/minute, 1,000 requests/hour.
-Data sync: Premium accounts sync every 3 minutes, Lite every 30 minutes.`,
+## Important Constraints
+- All dates use YYYY-MM-DD format. All times use ISO 8601 with timezone.
+- get_daily_summary returns the last 2 weeks only — no date params.
+- get_productivity_score filters from get_daily_summary, so only the last 2 weeks are available.
+- Focus session duration must be a multiple of 5 minutes, or -1 for end of day.
+- Offline time requires both start_time and end_time (no duration param). Max 4 hours. Past only.
+- Rate limits: 60 requests/minute, 1,000 requests/hour.`,
 })
 
 // Register all tools

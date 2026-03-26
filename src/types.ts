@@ -91,7 +91,7 @@ export type PostHighlightParams = {
 
 export type FocusSessionEvent = {
   readonly id: number
-  readonly duration: number
+  readonly duration?: number
   readonly created_at: string
 }
 
@@ -99,8 +99,7 @@ export type FocusSessionEvent = {
 
 export type OfflineTimeParams = {
   readonly start_time: string
-  readonly end_time?: string
-  readonly duration?: number
+  readonly end_time: string
   readonly activity_name: string
   readonly activity_details?: string
 }

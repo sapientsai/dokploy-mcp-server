@@ -122,9 +122,9 @@ Log time spent away from the computer (meetings, breaks, etc.).
 
 **Parameters:**
 
-- `start_time` — ISO 8601 format
-- `end_time` or `duration` — End time or duration in seconds (max 4 hours)
-- `activity_name` — Activity description
+- `start_time` — ISO 8601 format with timezone (e.g., `2026-03-26T09:00:00-04:00`)
+- `end_time` — ISO 8601 format with timezone. Max 4 hours after start.
+- `activity_name` — Short name (e.g., "Team Meeting", "Lunch Break")
 - `activity_details` — Additional details (optional)
 
 ## RescueTime API Notes
@@ -155,3 +155,7 @@ Built with [FastMCP](https://github.com/punkpeye/fastmcp), [functype](https://gi
 ## License
 
 MIT
+
+---
+
+**Sponsored by <a href="https://sapientsai.com/"><img src="https://sapientsai.com/images/logo.svg" alt="SapientsAI" width="20" style="vertical-align: middle;"> SapientsAI</a>** — Building agentic AI for businesses

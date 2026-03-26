@@ -107,17 +107,12 @@ export class RescueTimeClient {
     return this.getJson<readonly Highlight[]>("/anapi/highlights_feed")
   }
 
-  postHighlight(params: PostHighlightParams): IO<never, Error, Highlight> {
+  postHighlight(params: PostHighlightParams): IO<never, Error, undefined> {
     return this.post("/anapi/highlights_post", {
-      highlight_date: params.highlight_date,
+      highlight_date: params.highlight_date ?? new Date().toISOString().slice(0, 10),
       description: params.description,
       source: params.source,
-    }).flatMap((r) =>
-      IO.tryPromise({
-        try: () => r.json() as Promise<Highlight>,
-        catch: toError,
-      }),
-    )
+    }).map(() => undefined)
   }
 
   // === Focus Sessions ===
@@ -144,7 +139,6 @@ export class RescueTimeClient {
     return this.post("/anapi/offline_time_post", {
       start_time: params.start_time,
       end_time: params.end_time,
-      duration: params.duration,
       activity_name: params.activity_name,
       activity_details: params.activity_details,
     }).map(() => undefined)

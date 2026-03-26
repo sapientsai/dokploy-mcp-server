@@ -34,12 +34,13 @@ export function registerHighlightTools(server: FastMCP): void {
     execute: async (args) =>
       IO.gen(function* () {
         const client = yield* IO.fromEither(unwrapClient())
-        const highlight = yield* client.postHighlight({
+        yield* client.postHighlight({
           description: args.description,
           highlight_date: args.highlight_date,
           source: args.source ?? "mcp-server",
         })
-        return `Highlight logged for ${highlight.date}: "${highlight.description}"`
+        const date = args.highlight_date ?? new Date().toISOString().slice(0, 10)
+        return `Highlight logged for ${date}: "${args.description}"`
       }).runOrThrow(),
   })
 }
