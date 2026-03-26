@@ -1,112 +1,157 @@
-## ts-builds-template
+# RescueTime MCP Server
 
-[![Node.js CI](https://github.com/jordanburke/ts-builds-template/actions/workflows/node.js.yml/badge.svg)](https://github.com/jordanburke/ts-builds-template/actions/workflows/node.js.yml)
-[![npm version](https://img.shields.io/npm/v/ts-builds-template.svg)](https://www.npmjs.com/package/ts-builds-template)
+A Model Context Protocol (MCP) server for RescueTime - access productivity data, focus sessions, highlights, and activity tracking.
 
-A modern TypeScript library template with standardized build scripts and tooling.
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 ## Features
 
-- **Modern Build System**: [ts-builds](https://github.com/jordanburke/ts-builds) + [tsdown](https://tsdown.dev/) for fast bundling
-- **Testing**: [Vitest](https://vitest.dev/) with coverage reporting
-- **Code Quality**: ESLint + Prettier with automatic formatting and fixing
-- **ESM Output**: ES module output with proper TypeScript declarations
-- **Standardized Scripts**: Consistent commands via ts-builds across all projects
+| Category       | Tools                    | Description                                                                                       |
+| -------------- | ------------------------ | ------------------------------------------------------------------------------------------------- |
+| **Analytics**  | `get_activity_data`      | Query activity data with flexible filters (date range, category, productivity level, device type) |
+|                | `get_daily_summary`      | Last 2 weeks of daily productivity summaries with pulse scores                                    |
+|                | `get_productivity_score` | Single-day productivity pulse and detailed breakdown                                              |
+| **Focus**      | `start_focus_session`    | Start focus mode (blocks distracting apps and sites)                                              |
+|                | `end_focus_session`      | End the current focus session                                                                     |
+|                | `get_focus_sessions`     | Recent focus session history                                                                      |
+| **Highlights** | `get_highlights`         | Get logged highlights/accomplishments (Premium)                                                   |
+|                | `post_highlight`         | Log a new highlight                                                                               |
+| **Offline**    | `log_offline_time`       | Log offline activities (meetings, breaks, up to 4 hours)                                          |
 
 ## Quick Start
 
-1. **Use this template** to create a new repository
-2. **Clone your new repository**
-3. **Install dependencies**: `pnpm install`
-4. **Start developing**: `pnpm dev` (builds with watch mode)
-5. **Before committing**: `pnpm validate` (format + lint + test + build)
-
-## Development Commands
-
-### Pre-Checkin Command
+### Option 1: NPX (No install required)
 
 ```bash
-pnpm validate  # Main command: format, lint, test, and build everything
+RESCUETIME_API_KEY=your_key npx rescuetime-mcp-server
 ```
 
-### Individual Commands
+Or add to your MCP config (Claude Desktop, Cursor, etc.):
+
+```json
+{
+  "mcpServers": {
+    "rescuetime": {
+      "command": "npx",
+      "args": ["rescuetime-mcp-server"],
+      "env": {
+        "RESCUETIME_API_KEY": "your_api_key_here"
+      }
+    }
+  }
+}
+```
+
+### Option 2: Claude Code
 
 ```bash
-# Formatting
-pnpm format        # Format code with Prettier
-pnpm format:check  # Check formatting without writing
-
-# Linting
-pnpm lint          # Fix ESLint issues
-pnpm lint:check    # Check ESLint issues without fixing
-
-# Testing
-pnpm test          # Run tests once
-pnpm test:watch    # Run tests in watch mode
-pnpm test:coverage # Run tests with coverage report
-
-# Building
-pnpm build         # Production build
-pnpm dev           # Development mode with watch
-
-# Type Checking
-pnpm typecheck     # Check TypeScript types
+claude mcp add --transport stdio rescuetime -- npx rescuetime-mcp-server
 ```
 
-## Publishing
+Then set your API key in your environment or `.env` file.
 
-The template automatically runs `pnpm validate` before publishing via the `prepublishOnly` script.
+### Option 3: Install globally
 
 ```bash
-npm version patch|minor|major
-npm publish --access public
+npm install -g rescuetime-mcp-server
+RESCUETIME_API_KEY=your_key rescuetime-mcp-server
 ```
 
-## Project Structure
+## Getting Your API Key
 
-```
-src/
-├── index.ts          # Main library entry point
-test/
-├── *.spec.ts         # Test files
-dist/                 # Built output (ES module + types)
-```
+1. Go to [https://www.rescuetime.com/anapi/manage](https://www.rescuetime.com/anapi/manage)
+2. Create a new API key
+3. Set it as the `RESCUETIME_API_KEY` environment variable
 
-## Tooling
+## Environment Variables
 
-- **Build**: [ts-builds](https://github.com/jordanburke/ts-builds) - Centralized TypeScript toolchain
-- **Bundler**: [tsdown](https://tsdown.dev/) - Fast TypeScript bundler (successor to tsup)
-- **Test**: [Vitest](https://vitest.dev/) - Fast unit test framework
-- **Lint**: [ESLint](https://eslint.org/) with TypeScript support
-- **Format**: [Prettier](https://prettier.io/) with ESLint integration
-- **Package Manager**: [pnpm](https://pnpm.io/) for fast, efficient installs
+| Variable             | Required | Description                                     |
+| -------------------- | -------- | ----------------------------------------------- |
+| `RESCUETIME_API_KEY` | Yes      | RescueTime API key                              |
+| `TRANSPORT_TYPE`     | No       | `stdio` (default) or `httpStream`               |
+| `PORT`               | No       | HTTP port when using httpStream (default: 3000) |
 
-## Claude Code Skill
+## Tool Details
 
-This repository includes a Claude Code skill for bootstrapping new TypeScript libraries from this template:
+### get_activity_data
 
-**Location**: `.claude/skills/ts-builds-template/`
+Query activity data with flexible filters. Returns time spent on activities, categories, or productivity levels.
 
-**Usage**: When using Claude Code, the skill provides guidance for:
+**Parameters:**
 
-- Cloning and customizing this template for a new library
-- Understanding the project structure and dev workflow
-- Publishing to npm
+- `perspective` — `rank` (default), `interval`, or `member`
+- `resolution` — `month`, `week`, `day` (default), `hour`, or `minute`
+- `restrict_kind` — `activity` (default), `category`, `productivity`, `document`, `efficiency`, or `overview`
+- `restrict_begin` / `restrict_end` — Date range (YYYY-MM-DD)
+- `restrict_thing` — Filter to specific activity or category name
+- `restrict_source_type` — `computers`, `mobile`, or `offline`
 
-**Installation** (for use in other projects):
+### get_daily_summary
+
+Returns the last 2 weeks of daily productivity rollups. Each day includes:
+
+- **Productivity Pulse** (0-100 score)
+- Time breakdowns by productivity level (Very Productive through Very Distracting)
+- Category percentages (Software Development, Communication, etc.)
+
+### get_productivity_score
+
+Get the detailed productivity breakdown for a specific date (defaults to today).
+
+### start_focus_session
+
+Start a RescueTime Focus Session that blocks distracting websites and apps.
+
+**Parameters:**
+
+- `duration` — Minutes (must be a multiple of 5, or -1 for until end of day)
+
+### post_highlight
+
+Log an accomplishment or milestone. Premium feature.
+
+**Parameters:**
+
+- `description` — Highlight text (max 255 characters)
+- `highlight_date` — Date (YYYY-MM-DD, defaults to today)
+- `source` — Source label (defaults to "mcp-server")
+
+### log_offline_time
+
+Log time spent away from the computer (meetings, breaks, etc.).
+
+**Parameters:**
+
+- `start_time` — ISO 8601 format
+- `end_time` or `duration` — End time or duration in seconds (max 4 hours)
+- `activity_name` — Activity description
+- `activity_details` — Additional details (optional)
+
+## RescueTime API Notes
+
+- **Rate limits**: 60 requests/minute, 1,000 requests/hour
+- **Data sync**: Premium accounts sync every 3 minutes, Lite every 30 minutes
+- **Highlights & Alerts**: Premium features
+- **Offline time**: Max 4 hours per entry, no future dates
+
+## Development
 
 ```bash
-# Copy the skill to your Claude Code skills directory
-cp -r .claude/skills/ts-builds-template ~/.claude/skills/
+pnpm install
+pnpm validate        # format + lint + typecheck + test + build
+pnpm inspect         # Build + launch MCP Inspector for interactive testing
+pnpm dev             # Development build with watch mode
 ```
 
-**Related Skills**: For tooling configuration, migration guides, and standardizing existing projects, see the [ts-builds](https://github.com/jordanburke/ts-builds) skill.
+### Architecture
 
-**References**:
+Built with [FastMCP](https://github.com/punkpeye/fastmcp), [functype](https://github.com/jordanburke/functype) (IO, Option, Either, Try), and [Zod](https://zod.dev/).
 
-- [CLAUDE.md](./CLAUDE.md) - Development guidance for this project
-- [.claude/skills/ts-builds-template/](./.claude/skills/ts-builds-template/) - Complete skill documentation
+- **IO effects**: API calls return `IO<never, Error, T>` — lazy, composable, with built-in retry/timeout
+- **IO.gen do-notation**: Complex tool handlers use generator-based do-notation for readable effect composition
+- **Option singleton**: Client lifecycle managed via `Option<RescueTimeClient>`
+- **Sealed errors**: `ApiError | ConfigError | RateLimitError` with `_kind` discriminator
 
----
+## License
 
-_This template is based on the earlier work of https://github.com/orabazu/tsup-library-template but updated with modern tooling and standardized scripts._
+MIT

@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 RescueTime MCP Server — a Model Context Protocol server providing AI assistants access to RescueTime productivity data. Built with FastMCP, functype (IO, Option, Either, Try), and Zod.
 
-**Key patterns**: functype IO<never, Error, T> for lazy composable API effects, Option<T> for singleton client, Try for safe formatting, result.fold() at tool boundaries.
+**Key patterns**: functype `IO<never, Error, T>` for lazy composable API effects with `IO.gen` do-notation, `Option<T>` for singleton client, `Try` for safe formatting, `.runOrThrow()` at tool boundaries.
 
 ## Development Commands
 
@@ -50,8 +50,9 @@ src/
 ### Key Patterns
 
 - **Client singleton**: `Option<RescueTimeClient>` with `initializeClient()` / `getClient()`
-- **API calls**: Return `IO<never, Error, T>` via `IO.tryPromise()` — lazy until `.run()`
-- **Tool boundary**: `await io.run()` then `result.fold(throwErr, formatOutput)`
+- **API calls**: Return `IO<never, Error, T>` via `IO.tryPromise()` + `IO.fromEither()` — lazy until `.run()`
+- **Tool boundary**: `IO.gen(function* () { ... }).runOrThrow()` — do-notation with no explicit throws
+- **Client unwrap**: `getClient().toEither(err)` → `IO.fromEither()` — stays in the IO pipeline
 - **Error types**: Sealed union `AppError = ApiError | ConfigError | RateLimitError` with `_kind`
 - **Formatting**: Array-join pattern with `.map()` for functional style
 
