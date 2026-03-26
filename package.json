@@ -31,8 +31,8 @@
   },
   "devDependencies": {
     "@types/node": "^24.12.0",
-    "ts-builds": "^2.5.1",
-    "tsdown": "^0.21.2"
+    "ts-builds": "^2.6.2",
+    "tsdown": "^0.21.5"
   },
   "type": "module",
   "main": "./dist/index.js",
