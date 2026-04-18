@@ -1,0 +1,145 @@
+import { beforeEach, describe, expect, it, vi } from "vitest"
+
+import { registerServerTools } from "../src/tools/server-tools"
+import { captureTool } from "./support/tool-harness"
+
+const { getMock, postMock } = vi.hoisted(() => ({
+  getMock: vi.fn(),
+  postMock: vi.fn(),
+}))
+
+vi.mock("../src/client/dokploy-client", () => ({
+  getDokployClient: () => ({ get: getMock, post: postMock }),
+}))
+
+type ServerArgs = {
+  action: string
+  serverId?: string
+  name?: string
+  ipAddress?: string
+  port?: number
+  username?: string
+  sshKeyId?: string
+  serverType?: string
+  description?: string
+  url?: string
+  token?: string
+  dataPoints?: string
+}
+
+const tool = captureTool<ServerArgs>(registerServerTools)
+
+beforeEach(() => {
+  getMock.mockReset()
+  postMock.mockReset()
+})
+
+describe("dokploy_server", () => {
+  it("list calls server.all", async () => {
+    getMock.mockResolvedValue([])
+    await tool.execute({ action: "list" })
+    expect(getMock).toHaveBeenCalledWith("server.all")
+  })
+
+  it("get calls server.one", async () => {
+    getMock.mockResolvedValue({
+      serverId: "s1",
+      name: "n",
+      ipAddress: "1.1.1.1",
+      port: 22,
+      username: "u",
+      sshKeyId: "k",
+      serverType: "swarm",
+    })
+    await tool.execute({ action: "get", serverId: "s1" })
+    expect(getMock).toHaveBeenCalledWith("server.one", { serverId: "s1" })
+  })
+
+  it("create posts server.create with all required fields", async () => {
+    postMock.mockResolvedValue({
+      serverId: "s1",
+      name: "edge",
+      ipAddress: "1.2.3.4",
+      port: 22,
+      username: "root",
+      sshKeyId: "k1",
+      serverType: "swarm",
+    })
+    await tool.execute({
+      action: "create",
+      name: "edge",
+      ipAddress: "1.2.3.4",
+      port: 22,
+      username: "root",
+      sshKeyId: "k1",
+      serverType: "swarm",
+      description: "edge node",
+    })
+    expect(postMock).toHaveBeenCalledWith("server.create", {
+      name: "edge",
+      ipAddress: "1.2.3.4",
+      port: 22,
+      username: "root",
+      sshKeyId: "k1",
+      serverType: "swarm",
+      description: "edge node",
+    })
+  })
+
+  it("update posts server.update with all fields", async () => {
+    postMock.mockResolvedValue(undefined)
+    await tool.execute({
+      action: "update",
+      serverId: "s1",
+      name: "edge",
+      ipAddress: "1.2.3.4",
+      port: 22,
+      username: "root",
+      sshKeyId: "k1",
+      serverType: "swarm",
+    })
+    expect(postMock).toHaveBeenCalledWith("server.update", {
+      serverId: "s1",
+      name: "edge",
+      ipAddress: "1.2.3.4",
+      port: 22,
+      username: "root",
+      sshKeyId: "k1",
+      serverType: "swarm",
+    })
+  })
+
+  it("remove posts server.remove", async () => {
+    postMock.mockResolvedValue(undefined)
+    await tool.execute({ action: "remove", serverId: "s1" })
+    expect(postMock).toHaveBeenCalledWith("server.remove", { serverId: "s1" })
+  })
+
+  it("count GETs server.count and returns total", async () => {
+    getMock.mockResolvedValue(3)
+    const result = (await tool.execute({ action: "count" })) as string
+    expect(getMock).toHaveBeenCalledWith("server.count")
+    expect(result).toBe("Total servers: 3")
+  })
+
+  it("publicIp GETs server.publicIp", async () => {
+    getMock.mockResolvedValue("1.2.3.4")
+    const result = (await tool.execute({ action: "publicIp" })) as string
+    expect(result).toBe("Public IP: 1.2.3.4")
+  })
+
+  it("getMetrics passes url+token+optional dataPoints", async () => {
+    getMock.mockResolvedValue({ cpu: [] })
+    await tool.execute({
+      action: "getMetrics",
+      url: "http://metrics",
+      token: "tok",
+      dataPoints: "60",
+    })
+    expect(getMock).toHaveBeenCalledWith("server.getServerMetrics", {
+      url: "http://metrics",
+      token: "tok",
+      dataPoints: "60",
+    })
+  })
+})
