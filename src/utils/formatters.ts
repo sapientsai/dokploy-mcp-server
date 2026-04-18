@@ -14,6 +14,15 @@ import type {
 } from "../types"
 import { DB_ID_FIELDS, DB_TYPES } from "../types"
 
+/**
+ * Return `fallback` when the value is nullish OR an empty string. Used for display
+ * fields where the Dokploy API returns `""` for missing values as often as it returns
+ * `null` (e.g. project.description observed as `""` on `project.one` responses).
+ */
+function orElse(value: string | null | undefined, fallback: string): string {
+  return value == null || value === "" ? fallback : value
+}
+
 function resolveDbId(db: DokployDatabase, dbType: DatabaseType): string {
   const idField = DB_ID_FIELDS[dbType] as keyof DokployDatabase
   return (db[idField] as string | undefined) ?? db.databaseId ?? "unknown"
@@ -76,7 +85,7 @@ export function formatProject(project: DokployProject): string {
   })
 
   return `- **${project.name}** (ID: ${project.projectId})
-  Description: ${project.description || "None"}
+  Description: ${orElse(project.description, "None")}
   Environments: ${envs.length}${envLines.length ? `\n${envLines.join("\n")}` : ""}
   Created: ${formatDate(project.createdAt)}`
 }
@@ -89,7 +98,7 @@ export function formatProjectList(projects: DokployProject[]): string {
 export function formatEnvironment(env: DokployEnvironment): string {
   const services = formatEnvironmentServices(env)
   return `- **${env.name}** (ID: ${env.environmentId})
-  Description: ${env.description || "None"}
+  Description: ${orElse(env.description, "None")}
   Project: ${env.projectId}
   Created: ${formatDate(env.createdAt)}${services ? `\n${services}` : ""}`
 }
@@ -116,17 +125,17 @@ export function formatApplication(app: DokployApplication): string {
 
   return `- **${app.name}** ${statusIcon(app.applicationStatus)} (ID: ${app.applicationId})
   App Name: ${app.appName}
-  Description: ${app.description || "None"}
-  Build Type: ${app.buildType || "N/A"}
-  Source: ${app.sourceType || "N/A"}
+  Description: ${orElse(app.description, "None")}
+  Build Type: ${orElse(app.buildType, "N/A")}
+  Source: ${orElse(app.sourceType, "N/A")}
 ${gitSource ? `${gitSource}\n` : ""}  Auto Deploy: ${app.autoDeploy ?? "N/A"}
   Created: ${formatDate(app.createdAt)}${envSection}`
 }
 
 export function formatDeployment(dep: DokployDeployment): string {
-  return `- ${statusIcon(dep.status)} **${dep.title || "Deployment"}** (ID: ${dep.deploymentId})
+  return `- ${statusIcon(dep.status)} **${orElse(dep.title, "Deployment")}** (ID: ${dep.deploymentId})
   Status: ${dep.status}
-  Description: ${dep.description || "None"}
+  Description: ${orElse(dep.description, "None")}
   Created: ${formatDate(dep.createdAt)}`
 }
 
@@ -140,20 +149,20 @@ export function formatCompose(compose: DokployCompose): string {
 
   return `- **${compose.name}** ${statusIcon(compose.composeStatus)} (ID: ${compose.composeId})
   App Name: ${compose.appName}
-  Description: ${compose.description || "None"}
-  Type: ${compose.composeType || "N/A"}
-  Source: ${compose.sourceType || "N/A"}
+  Description: ${orElse(compose.description, "None")}
+  Type: ${orElse(compose.composeType, "N/A")}
+  Source: ${orElse(compose.sourceType, "N/A")}
   Created: ${formatDate(compose.createdAt)}${envSection}`
 }
 
 export function formatDomain(domain: DokployDomain): string {
   const protocol = domain.https ? "https" : "http"
-  return `- **${protocol}://${domain.host}${domain.path || ""}** (ID: ${domain.domainId})
+  return `- **${protocol}://${domain.host}${domain.path ?? ""}** (ID: ${domain.domainId})
   Port: ${domain.port ?? "default"}
   HTTPS: ${domain.https}
-  Certificate: ${domain.certificateType || "None"}
-  Type: ${domain.domainType || "N/A"}
-  Service: ${domain.serviceName || "N/A"}`
+  Certificate: ${orElse(domain.certificateType, "None")}
+  Type: ${orElse(domain.domainType, "N/A")}
+  Service: ${orElse(domain.serviceName, "N/A")}`
 }
 
 export function formatDomainList(domains: DokployDomain[]): string {
@@ -163,7 +172,7 @@ export function formatDomainList(domains: DokployDomain[]): string {
 
 export function formatServer(server: DokployServer): string {
   return `- **${server.name}** (ID: ${server.serverId})
-  Description: ${server.description || "None"}
+  Description: ${orElse(server.description, "None")}
   IP: ${server.ipAddress}:${server.port}
   User: ${server.username}
   Type: ${server.serverType}
@@ -183,19 +192,20 @@ export function formatDatabase(db: DokployDatabase, dbType: string): string {
   return `- **${name}** ${statusIcon(db.applicationStatus)} (ID: ${id})
   Type: ${dbType}
   App Name: ${db.appName ?? "N/A"}
-  Description: ${db.description || "None"}
-  Database Name: ${db.databaseName || "N/A"}
-  Image: ${db.dockerImage || "default"}
+  Description: ${orElse(db.description, "None")}
+  Database Name: ${orElse(db.databaseName, "N/A")}
+  Image: ${orElse(db.dockerImage, "default")}
   External Port: ${db.externalPort ?? "None"}
   Created: ${formatDate(db.createdAt)}`
 }
 
 export function formatContainer(container: DokployContainer): string {
-  return `- **${container.name}** [${container.state?.toUpperCase() || "UNKNOWN"}]
+  const state = orElse(container.state, "unknown").toUpperCase()
+  return `- **${container.name}** [${state}]
   ID: ${container.containerId}
   Image: ${container.image}
   Status: ${container.status}
-  Ports: ${container.ports || "None"}`
+  Ports: ${orElse(container.ports, "None")}`
 }
 
 export function formatContainerList(containers: DokployContainer[]): string {
@@ -216,7 +226,7 @@ export function formatBackup(backup: DokployBackup): string {
 export function formatSshKey(sshKey: DokploySshKey): string {
   const pubKeyPreview = sshKey.publicKey ? `${sshKey.publicKey.substring(0, 40)}...` : "N/A"
   return `- **${sshKey.name}** (ID: ${sshKey.sshKeyId})
-  Description: ${sshKey.description || "None"}
+  Description: ${orElse(sshKey.description, "None")}
   Public Key: ${pubKeyPreview}
   Created: ${formatDate(sshKey.createdAt)}`
 }

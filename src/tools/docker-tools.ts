@@ -1,13 +1,13 @@
-import type { FastMCP } from "fastmcp"
 import { z } from "zod"
 
 import { getDokployClient } from "../client/dokploy-client"
 import type { DokployContainer } from "../types"
 import { formatContainerList } from "../utils/formatters"
+import type { ToolServer } from "./types"
 
 const ACTIONS = ["getContainers", "restartContainer", "getConfig", "findContainers"] as const
 
-export function registerDockerTools(server: FastMCP) {
+export function registerDockerTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_docker",
     description:

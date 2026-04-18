@@ -1,14 +1,14 @@
-import type { FastMCP } from "fastmcp"
 import { z } from "zod"
 
 import { getDokployClient } from "../client/dokploy-client"
 import type { RequestBody } from "../generated"
 import type { DokployProject } from "../types"
 import { formatProject, formatProjectList } from "../utils/formatters"
+import type { ToolServer } from "./types"
 
 const ACTIONS = ["list", "get", "create", "update", "remove", "duplicate"] as const
 
-export function registerProjectTools(server: FastMCP) {
+export function registerProjectTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_project",
     description:

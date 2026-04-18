@@ -1,14 +1,14 @@
-import type { FastMCP } from "fastmcp"
 import { z } from "zod"
 
 import { getDokployClient } from "../client/dokploy-client"
 import type { RequestBody } from "../generated"
 import type { DokployBackup } from "../types"
 import { formatBackup } from "../utils/formatters"
+import type { ToolServer } from "./types"
 
 const ACTIONS = ["create", "get", "update", "remove", "listFiles", "manualBackup"] as const
 
-export function registerBackupTools(server: FastMCP) {
+export function registerBackupTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_backup",
     description:

@@ -1,3 +1,8 @@
-import baseConfig from "ts-builds/eslint"
+import baseConfig from "ts-builds/eslint-functype"
 
-export default [...baseConfig]
+export default [
+  {
+    ignores: ["src/generated/**", "dist/**", "node_modules/**", "coverage/**"],
+  },
+  ...baseConfig,
+]

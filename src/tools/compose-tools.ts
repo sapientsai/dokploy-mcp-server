@@ -1,10 +1,10 @@
-import type { FastMCP } from "fastmcp"
 import { z } from "zod"
 
 import { getDokployClient } from "../client/dokploy-client"
 import type { RequestBody } from "../generated"
 import type { DokployCompose } from "../types"
 import { formatCompose } from "../utils/formatters"
+import type { ToolServer } from "./types"
 
 const ACTIONS = [
   "create",
@@ -24,7 +24,7 @@ const ACTIONS = [
   "refreshToken",
 ] as const
 
-export function registerComposeTools(server: FastMCP) {
+export function registerComposeTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_compose",
     description:

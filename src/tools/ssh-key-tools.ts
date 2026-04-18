@@ -1,13 +1,13 @@
-import type { FastMCP } from "fastmcp"
 import { z } from "zod"
 
 import { getDokployClient, getOrganizationId } from "../client/dokploy-client"
 import type { DokploySshKey } from "../types"
 import { formatSshKey, formatSshKeyList } from "../utils/formatters"
+import type { ToolServer } from "./types"
 
 const ACTIONS = ["create", "list", "get", "update", "remove", "generate"] as const
 
-export function registerSshKeyTools(server: FastMCP) {
+export function registerSshKeyTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_ssh_key",
     description:

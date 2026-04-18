@@ -1,13 +1,13 @@
-import type { FastMCP } from "fastmcp"
 import { z } from "zod"
 
 import { getDokployClient } from "../client/dokploy-client"
 import type { DokployEnvironment } from "../types"
 import { formatEnvironment, formatEnvironmentList } from "../utils/formatters"
+import type { ToolServer } from "./types"
 
 const ACTIONS = ["create", "get", "list", "update", "remove", "duplicate"] as const
 
-export function registerEnvironmentTools(server: FastMCP) {
+export function registerEnvironmentTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_environment",
     description:

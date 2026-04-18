@@ -1,10 +1,10 @@
-import type { FastMCP } from "fastmcp"
 import { z } from "zod"
 
 import { getDokployClient } from "../client/dokploy-client"
 import type { RequestBody } from "../generated"
 import type { DokployApplication } from "../types"
 import { formatApplication } from "../utils/formatters"
+import type { ToolServer } from "./types"
 
 const ACTIONS = [
   "create",
@@ -27,19 +27,17 @@ const ACTIONS = [
   "readMonitoring",
 ] as const
 
-const SIMPLE_ACTIONS = [
-  "start",
-  "stop",
-  "delete",
-  "markRunning",
-  "refreshToken",
-  "cleanQueues",
-  "killBuild",
-  "cancelDeployment",
-] as const
-type SimpleAction = (typeof SIMPLE_ACTIONS)[number]
+type SimpleAction =
+  | "start"
+  | "stop"
+  | "delete"
+  | "markRunning"
+  | "refreshToken"
+  | "cleanQueues"
+  | "killBuild"
+  | "cancelDeployment"
 
-export function registerApplicationTools(server: FastMCP) {
+export function registerApplicationTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_application",
     description:
@@ -179,8 +177,8 @@ export function registerApplicationTools(server: FastMCP) {
           await client.post("application.saveBuildType", {
             applicationId: args.applicationId!,
             buildType: args.buildType!,
-            dockerContextPath: args.dockerContextPath || ".",
-            dockerBuildStage: args.dockerBuildStage || "",
+            dockerContextPath: args.dockerContextPath ?? ".",
+            dockerBuildStage: args.dockerBuildStage ?? "",
             ...(args.dockerfile && { dockerfile: args.dockerfile }),
             ...(args.publishDirectory && { publishDirectory: args.publishDirectory }),
           })
