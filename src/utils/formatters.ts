@@ -69,7 +69,7 @@ export function formatProject(project: DokployProject): string {
 
   return `- **${project.name}** (ID: ${project.projectId})
   Description: ${project.description || "None"}
-  Environments: ${envs.length}${envLines.length ? "\n" + envLines.join("\n") : ""}
+  Environments: ${envs.length}${envLines.length ? `\n${envLines.join("\n")}` : ""}
   Created: ${formatDate(project.createdAt)}`
 }
 
@@ -83,7 +83,7 @@ export function formatEnvironment(env: DokployEnvironment): string {
   return `- **${env.name}** (ID: ${env.environmentId})
   Description: ${env.description || "None"}
   Project: ${env.projectId}
-  Created: ${formatDate(env.createdAt)}${services ? "\n" + services : ""}`
+  Created: ${formatDate(env.createdAt)}${services ? `\n${services}` : ""}`
 }
 
 export function formatEnvironmentList(envs: DokployEnvironment[]): string {
@@ -111,7 +111,7 @@ export function formatApplication(app: DokployApplication): string {
   Description: ${app.description || "None"}
   Build Type: ${app.buildType || "N/A"}
   Source: ${app.sourceType || "N/A"}
-${gitSource ? gitSource + "\n" : ""}  Auto Deploy: ${app.autoDeploy ?? "N/A"}
+${gitSource ? `${gitSource}\n` : ""}  Auto Deploy: ${app.autoDeploy ?? "N/A"}
   Created: ${formatDate(app.createdAt)}${envSection}`
 }
 
@@ -202,7 +202,7 @@ export function formatBackup(backup: DokployBackup): string {
 }
 
 export function formatSshKey(sshKey: DokploySshKey): string {
-  const pubKeyPreview = sshKey.publicKey ? sshKey.publicKey.substring(0, 40) + "..." : "N/A"
+  const pubKeyPreview = sshKey.publicKey ? `${sshKey.publicKey.substring(0, 40)}...` : "N/A"
   return `- **${sshKey.name}** (ID: ${sshKey.sshKeyId})
   Description: ${sshKey.description || "None"}
   Public Key: ${pubKeyPreview}
