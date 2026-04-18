@@ -14,8 +14,11 @@ importers:
         specifier: ^4.0.0
         version: 4.0.0
       functype:
-        specifier: ^0.57.0
-        version: 0.57.0
+        specifier: ^0.60.0
+        version: 0.60.0
+      functype-log:
+        specifier: ^0.60.0
+        version: 0.60.0(functype@0.60.0)
       zod:
         specifier: ^4.3.6
         version: 4.3.6
@@ -405,6 +408,31 @@ packages:
   "@jridgewell/trace-mapping@0.3.9":
     resolution:
       { integrity: sha512-3Belt6tdc8bPgAtbcmdtNJlirVoTmEb5e2gC94PnkwEW9jI6CAHUeoG85tjWP5WquqfavoMtMwiG4P926ZKKuQ== }
+
+  "@loglayer/context-manager@2.0.2":
+    resolution:
+      { integrity: sha512-IVt/iqACGw2GnucKOpyJ69MbGQSRzsArOwsTNMuOAfzm36zTphGIH4K7g7lhRvcd2jY0dZzvWA6tCqannpgXXg== }
+    engines: { node: ">=18" }
+
+  "@loglayer/log-level-manager@2.0.2":
+    resolution:
+      { integrity: sha512-hq6hjkXzrYyz0DwYUqizP0hS3jhPl5S/7U33Cd0EPbfLmDjYWzzcM0mQKUdtBi6qNX4DAPpag3oBGytB2zmghg== }
+    engines: { node: ">=18" }
+
+  "@loglayer/plugin@3.0.2":
+    resolution:
+      { integrity: sha512-ghIYpuPw/Q0jdlr7ErkaySfsSCsIigwIb1lvR5qhZrz3oEqGotDFZzhgU1YeO7BacA042ygv/xww3Ip3ROokeg== }
+    engines: { node: ">=18" }
+
+  "@loglayer/shared@4.1.0":
+    resolution:
+      { integrity: sha512-hGSWhLhMF9L7sB0rXippvKhku9D9dT8imZ5OFpa4VHAVnclY0DQ+3wIPE37rzu0QAiBbyR3/HH03Q1Cgik8zYA== }
+    engines: { node: ">=18" }
+
+  "@loglayer/transport@3.0.2":
+    resolution:
+      { integrity: sha512-5t0lj/ibQQxGPpghNta8u10zl8owU0my/i2fHF/LdcCAtpw/IHblmpKSgOzdH9XE19Ub/i0VYj0JrFrFv8/NXw== }
+    engines: { node: ">=18" }
 
   "@modelcontextprotocol/sdk@1.29.0":
     resolution:
@@ -1568,6 +1596,13 @@ packages:
     resolution:
       { integrity: sha512-7XHNxH7qX9xG5mIwxkhumTox/MIRNcOgDrxWsMt2pAr23WHp6MrRlN7FBSFpCpr+oVO0F744iUgR82nJMfG2SA== }
 
+  functype-log@0.60.0:
+    resolution:
+      { integrity: sha512-RjCp9YKJH/4vBTLofcFo3BOvCUaxeBrKaT89JqoMC0w29pGBwH4+9JKFkE0LXLvbL9N6lOa7BGi/0lbwBf4aiw== }
+    engines: { node: ">=18.17.0" }
+    peerDependencies:
+      functype: ">=0.60.0"
+
   functype-os@0.4.2:
     resolution:
       { integrity: sha512-WV5g41M8L8XLrAN0fg9+jJVrOJrF36Tur43LOCKb8YPY6W72aGW6Xycpt6fiWECtWRD0+4+m1m2X3QPYwQf+Vg== }
@@ -1578,6 +1613,11 @@ packages:
   functype@0.57.0:
     resolution:
       { integrity: sha512-+5216a7shOrX3pz7+sNKqfjhFApspnyAec15B5NkTVenqvuxX375EPY5nl6w1i8CCDO5kmj4Op47pPr6fudtXQ== }
+    hasBin: true
+
+  functype@0.60.0:
+    resolution:
+      { integrity: sha512-AkgKkqfiEjQnw8f+ENq/KXH3Jcb775azrFkaLhRu3acvwmzRAwBpkcTes28yMiakESXFtiqCdszX+sq+Rylg4A== }
     hasBin: true
 
   fuse.js@7.3.0:
@@ -1887,6 +1927,11 @@ packages:
     resolution:
       { integrity: sha512-iPZK6eYjbxRu3uB4/WZ3EsEIMJFMqAoopl3R+zuq0UjcAm/MO6KCweDgPfP3elTztoKP3KtnVHxTn2NHBSDVUw== }
     engines: { node: ">=10" }
+
+  loglayer@9.1.0:
+    resolution:
+      { integrity: sha512-KFCtoydUtfshszDMIEMa180MMT4jDgBz7FkkO0r3mLDzOkfqGUCbtH9DRszK/pEPrG7999FXfBsyv4DNhvmrag== }
+    engines: { node: ">=18" }
 
   lru-cache@11.3.5:
     resolution:
@@ -3008,6 +3053,24 @@ snapshots:
       "@jridgewell/resolve-uri": 3.1.2
       "@jridgewell/sourcemap-codec": 1.5.5
 
+  "@loglayer/context-manager@2.0.2":
+    dependencies:
+      "@loglayer/shared": 4.1.0
+
+  "@loglayer/log-level-manager@2.0.2":
+    dependencies:
+      "@loglayer/shared": 4.1.0
+
+  "@loglayer/plugin@3.0.2":
+    dependencies:
+      "@loglayer/shared": 4.1.0
+
+  "@loglayer/shared@4.1.0": {}
+
+  "@loglayer/transport@3.0.2":
+    dependencies:
+      "@loglayer/shared": 4.1.0
+
   "@modelcontextprotocol/sdk@1.29.0(zod@4.3.6)":
     dependencies:
       "@hono/node-server": 1.19.14(hono@4.12.14)
@@ -3957,11 +4020,18 @@ snapshots:
 
   function-bind@1.1.2: {}
 
+  functype-log@0.60.0(functype@0.60.0):
+    dependencies:
+      functype: 0.60.0
+      loglayer: 9.1.0
+
   functype-os@0.4.2(functype@0.57.0):
     dependencies:
       functype: 0.57.0
 
   functype@0.57.0: {}
+
+  functype@0.60.0: {}
 
   fuse.js@7.3.0: {}
 
@@ -4194,6 +4264,14 @@ snapshots:
   locate-path@6.0.0:
     dependencies:
       p-locate: 5.0.0
+
+  loglayer@9.1.0:
+    dependencies:
+      "@loglayer/context-manager": 2.0.2
+      "@loglayer/log-level-manager": 2.0.2
+      "@loglayer/plugin": 3.0.2
+      "@loglayer/shared": 4.1.0
+      "@loglayer/transport": 3.0.2
 
   lru-cache@11.3.5: {}
 
