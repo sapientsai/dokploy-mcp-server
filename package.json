@@ -68,7 +68,8 @@
   "dependencies": {
     "dotenv": "^17.4.2",
     "fastmcp": "^4.0.0",
-    "functype": "^0.57.0",
+    "functype": "^0.60.0",
+    "functype-log": "^0.60.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
