@@ -1,9 +1,9 @@
-import type { FastMCP } from "fastmcp"
 import { z } from "zod"
 
 import { getDokployClient, getOrganizationId } from "../client/dokploy-client"
 import type { RequestBody } from "../generated"
 import type { DokployCertificate, DokployPort, DokploySecurity } from "../types"
+import type { ToolServer } from "./types"
 
 const ACTIONS = [
   "createPort",
@@ -16,7 +16,7 @@ const ACTIONS = [
   "removeCert",
 ] as const
 
-export function registerInfrastructureTools(server: FastMCP) {
+export function registerInfrastructureTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_infrastructure",
     description:

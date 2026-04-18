@@ -1,5 +1,9 @@
+import { PinoTransport } from "@loglayer/transport-pino"
 import dotenv from "dotenv"
-import { FastMCP } from "fastmcp"
+import { logLayerAdapter, toDirectLogger } from "functype-log"
+import { LogLayer } from "loglayer"
+import pino from "pino"
+import { createLogLayerTelemetry, createServer } from "somamcp"
 
 import { initializeDokployClient } from "./client/dokploy-client"
 import {
@@ -43,9 +47,15 @@ function setupDokployClient() {
   console.error(`[Setup] Dokploy client initialized for ${baseUrl}`)
 }
 
-const server = new FastMCP({
+// Pino writes to stderr (fd 2) so stdio (used by MCP) stays clean for the JSON-RPC channel.
+const pinoLogger = pino({ level: process.env.LOG_LEVEL ?? "info" }, pino.destination(2))
+const logger = new LogLayer({ transport: new PinoTransport({ logger: pinoLogger }) })
+const telemetry = createLogLayerTelemetry(toDirectLogger(logLayerAdapter(logger)))
+
+const server = createServer({
   name: "dokploy-mcp-server",
   version: VERSION,
+  telemetry,
   instructions: `A comprehensive Dokploy MCP server for managing deployments, applications, databases, domains, and infrastructure.
 
 Available capabilities:
@@ -79,12 +89,14 @@ registerInfrastructureTools(server)
 registerSshKeyTools(server)
 
 async function main() {
+  // Bootstrap path: failures here are fatal (process.exit), so Either doesn't buy recovery.
+  // eslint-disable-next-line functype/prefer-either -- top-level bootstrap; exit-on-failure is the only sensible behavior.
   try {
     setupDokployClient()
 
     const useHttp = process.env.TRANSPORT_TYPE === "httpStream" || process.env.TRANSPORT_TYPE === "http"
-    const port = parseInt(process.env.PORT || "3000")
-    const host = process.env.HOST || "0.0.0.0"
+    const port = parseInt(process.env.PORT ?? "3000")
+    const host = process.env.HOST ?? "0.0.0.0"
 
     if (useHttp) {
       console.error(`[Setup] Starting HTTP server on ${host}:${port}`)

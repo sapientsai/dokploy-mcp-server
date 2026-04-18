@@ -1,13 +1,13 @@
-import type { FastMCP } from "fastmcp"
 import { z } from "zod"
 
 import { getDokployClient } from "../client/dokploy-client"
 import type { DokployServer } from "../types"
 import { formatServer, formatServerList } from "../utils/formatters"
+import type { ToolServer } from "./types"
 
 const ACTIONS = ["list", "get", "create", "update", "remove", "count", "publicIp", "getMetrics"] as const
 
-export function registerServerTools(server: FastMCP) {
+export function registerServerTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_server",
     description:

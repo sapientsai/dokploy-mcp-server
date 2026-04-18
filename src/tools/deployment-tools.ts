@@ -1,13 +1,13 @@
-import type { FastMCP } from "fastmcp"
 import { z } from "zod"
 
 import { getDokployClient } from "../client/dokploy-client"
 import type { DokployDeployment } from "../types"
 import { formatDeploymentList } from "../utils/formatters"
+import type { ToolServer } from "./types"
 
 const ACTIONS = ["list", "getLog", "killProcess"] as const
 
-export function registerDeploymentTools(server: FastMCP) {
+export function registerDeploymentTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_deployment",
     description:

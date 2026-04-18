@@ -2,9 +2,7 @@
 
 declare const __VERSION__: string
 
-if (!process.env.TRANSPORT_TYPE) {
-  process.env.TRANSPORT_TYPE = "stdio"
-}
+process.env.TRANSPORT_TYPE ??= "stdio"
 
 const args = process.argv.slice(2)
 
@@ -39,4 +37,7 @@ async function main() {
   await import("./index.js")
 }
 
-main().then()
+main().catch((error: unknown) => {
+  console.error("[Error] Failed to start server:", error)
+  process.exit(1)
+})

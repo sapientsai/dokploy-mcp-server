@@ -1,14 +1,14 @@
-import type { FastMCP } from "fastmcp"
 import { z } from "zod"
 
 import { getDokployClient } from "../client/dokploy-client"
 import type { RequestBody } from "../generated"
 import type { DokployDomain } from "../types"
 import { formatDomain, formatDomainList } from "../utils/formatters"
+import type { ToolServer } from "./types"
 
 const ACTIONS = ["create", "list", "get", "update", "delete", "generate", "canGenerateTraefikMe", "validate"] as const
 
-export function registerDomainTools(server: FastMCP) {
+export function registerDomainTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_domain",
     description:

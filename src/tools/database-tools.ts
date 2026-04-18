@@ -1,4 +1,3 @@
-import type { FastMCP } from "fastmcp"
 import { z } from "zod"
 
 import { getDokployClient } from "../client/dokploy-client"
@@ -6,6 +5,7 @@ import type { RequestBody } from "../generated"
 import type { DatabaseType, DokployDatabase } from "../types"
 import { DB_ID_FIELDS, DB_TYPES } from "../types"
 import { formatDatabase } from "../utils/formatters"
+import type { ToolServer } from "./types"
 
 const dbTypeSchema = z.enum(DB_TYPES).describe("postgres, mysql, mariadb, mongo, or redis")
 
@@ -33,10 +33,9 @@ const ACTIONS = [
   "saveExternalPort",
 ] as const
 
-const SIMPLE_ACTIONS = ["start", "stop", "deploy", "rebuild", "remove"] as const
-type SimpleAction = (typeof SIMPLE_ACTIONS)[number]
+type SimpleAction = "start" | "stop" | "deploy" | "rebuild" | "remove"
 
-export function registerDatabaseTools(server: FastMCP) {
+export function registerDatabaseTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_database",
     description:
