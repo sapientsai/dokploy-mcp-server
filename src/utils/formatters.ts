@@ -1,4 +1,5 @@
 import type {
+  DatabaseType,
   DokployApplication,
   DokployBackup,
   DokployCompose,
@@ -11,7 +12,12 @@ import type {
   DokployServer,
   DokploySshKey,
 } from "../types"
-import { DB_TYPES } from "../types"
+import { DB_ID_FIELDS, DB_TYPES } from "../types"
+
+function resolveDbId(db: DokployDatabase, dbType: DatabaseType): string {
+  const idField = DB_ID_FIELDS[dbType] as keyof DokployDatabase
+  return (db[idField] as string | undefined) ?? db.databaseId ?? "unknown"
+}
 
 function formatDate(dateStr?: string): string {
   if (!dateStr) return "N/A"
@@ -51,7 +57,9 @@ function formatEnvironmentServices(env: DokployEnvironment): string {
     const dbs = env[dbType]
     if (dbs?.length) {
       for (const db of dbs) {
-        lines.push(`    - ${dbType}: **${db.name}** ${statusIcon(db.applicationStatus)} (ID: ${db.databaseId})`)
+        const name = db.name ?? dbType
+        const id = resolveDbId(db, dbType)
+        lines.push(`    - ${dbType}: **${name}** ${statusIcon(db.applicationStatus)} (ID: ${id})`)
       }
     }
   }
@@ -168,9 +176,13 @@ export function formatServerList(servers: DokployServer[]): string {
 }
 
 export function formatDatabase(db: DokployDatabase, dbType: string): string {
-  return `- **${db.name}** ${statusIcon(db.applicationStatus)} (ID: ${db.databaseId})
+  const name = db.name ?? dbType
+  const id = DB_TYPES.includes(dbType as DatabaseType)
+    ? resolveDbId(db, dbType as DatabaseType)
+    : (db.databaseId ?? "unknown")
+  return `- **${name}** ${statusIcon(db.applicationStatus)} (ID: ${id})
   Type: ${dbType}
-  App Name: ${db.appName}
+  App Name: ${db.appName ?? "N/A"}
   Description: ${db.description || "None"}
   Database Name: ${db.databaseName || "N/A"}
   Image: ${db.dockerImage || "default"}

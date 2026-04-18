@@ -161,6 +161,28 @@ describe("formatProjectList", () => {
     expect(formatProjectList([])).toBe("No projects found.")
   })
 
+  it("handles project.all minimal DB shape (only postgresId, no name/status)", () => {
+    // Real project.all endpoint strips DBs down to just their type-specific ID.
+    // Formatter must surface the ID rather than rendering 'undefined'.
+    const result = formatProjectList([
+      {
+        projectId: "p1",
+        name: "data",
+        environments: [
+          {
+            environmentId: "env-1",
+            name: "production",
+            projectId: "p1",
+            postgres: [{ postgresId: "pg-123" } as unknown as never],
+          },
+        ],
+      },
+    ])
+    expect(result).toContain("ID: pg-123")
+    expect(result).not.toContain("ID: undefined")
+    expect(result).not.toContain("**undefined**")
+  })
+
   it("includes count header and each project", () => {
     const result = formatProjectList([
       { projectId: "p1", name: "Project 1" },
@@ -462,6 +484,36 @@ describe("formatDatabase", () => {
     expect(result).toContain(`Type: ${dbType}`)
     expect(result).toContain("PrimaryDB")
     expect(result).toContain("[RUNNING]")
+  })
+
+  it("resolves ID from type-specific field (postgresId) when databaseId absent", () => {
+    // Matches the real Dokploy project.one response shape.
+    const result = formatDatabase(
+      {
+        postgresId: "pg-real-1",
+        name: "postgres",
+        appName: "data-postgres",
+        applicationStatus: "done",
+        environmentId: "env-1",
+      } as unknown as DokployDatabase,
+      "postgres",
+    )
+    expect(result).toContain("ID: pg-real-1")
+    expect(result).toContain("postgres")
+    expect(result).toContain("[RUNNING]")
+  })
+
+  it.each([
+    ["mysql", "mysqlId"],
+    ["mariadb", "mariadbId"],
+    ["mongo", "mongoId"],
+    ["redis", "redisId"],
+  ])("resolves ID from type-specific %s → %s field", (dbType, idField) => {
+    const result = formatDatabase(
+      { [idField]: `${dbType}-real`, name: dbType, applicationStatus: "done" } as unknown as DokployDatabase,
+      dbType,
+    )
+    expect(result).toContain(`ID: ${dbType}-real`)
   })
 
   it("renders defaults for missing optional fields", () => {
