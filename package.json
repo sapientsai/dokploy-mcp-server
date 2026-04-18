@@ -66,14 +66,14 @@
   },
   "prettier": "ts-builds/prettier",
   "dependencies": {
-    "dotenv": "^17.3.1",
-    "fastmcp": "^3.34.0",
+    "dotenv": "^17.4.2",
+    "fastmcp": "^3.35.0",
     "zod": "^4.3.6"
   },
   "devDependencies": {
-    "@types/node": "^24.12.0",
+    "@types/node": "^24.12.2",
     "openapi-typescript": "^7.13.0",
-    "ts-builds": "^2.5.2",
+    "ts-builds": "^2.7.0",
     "tsdown": "^0.20.3",
     "tsx": "^4.21.0"
   },
