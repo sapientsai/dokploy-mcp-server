@@ -1,15 +1,17 @@
+import { IO } from "functype"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
+import { HttpError } from "../src/client/errors"
 import { registerDockerTools } from "../src/tools/docker-tools"
 import { captureTool } from "./support/tool-harness"
 
-const { getMock, postMock } = vi.hoisted(() => ({
-  getMock: vi.fn(),
-  postMock: vi.fn(),
+const { getIOMock, postIOMock } = vi.hoisted(() => ({
+  getIOMock: vi.fn(),
+  postIOMock: vi.fn(),
 }))
 
 vi.mock("../src/client/dokploy-client", () => ({
-  getDokployClient: () => ({ get: getMock, post: postMock }),
+  getDokployClient: () => ({ getIO: getIOMock, postIO: postIOMock }),
 }))
 
 type DockerArgs = {
@@ -25,51 +27,52 @@ type DockerArgs = {
 const tool = captureTool<DockerArgs>(registerDockerTools)
 
 beforeEach(() => {
-  getMock.mockReset()
-  postMock.mockReset()
+  getIOMock.mockReset()
+  postIOMock.mockReset()
+  getIOMock.mockImplementation(() => IO.succeed(undefined))
+  postIOMock.mockImplementation(() => IO.succeed(undefined))
 })
 
 describe("dokploy_docker getContainers", () => {
   it("calls docker.getContainers without serverId by default", async () => {
-    getMock.mockResolvedValue([])
+    getIOMock.mockReturnValueOnce(IO.succeed([]))
     await tool.execute({ action: "getContainers" })
-    expect(getMock).toHaveBeenCalledWith("docker.getContainers", {})
+    expect(getIOMock).toHaveBeenCalledWith("docker.getContainers", {})
   })
 
   it("passes serverId when provided", async () => {
-    getMock.mockResolvedValue([])
+    getIOMock.mockReturnValueOnce(IO.succeed([]))
     await tool.execute({ action: "getContainers", serverId: "srv-1" })
-    expect(getMock).toHaveBeenCalledWith("docker.getContainers", { serverId: "srv-1" })
+    expect(getIOMock).toHaveBeenCalledWith("docker.getContainers", { serverId: "srv-1" })
   })
 })
 
 describe("dokploy_docker restartContainer", () => {
   it("posts docker.restartContainer", async () => {
-    postMock.mockResolvedValue(undefined)
     await tool.execute({ action: "restartContainer", containerId: "c1" })
-    expect(postMock).toHaveBeenCalledWith("docker.restartContainer", { containerId: "c1" })
+    expect(postIOMock).toHaveBeenCalledWith("docker.restartContainer", { containerId: "c1" })
   })
 })
 
 describe("dokploy_docker getConfig", () => {
   it("posts docker.getConfig with optional serverId", async () => {
-    postMock.mockResolvedValue({ Id: "c1" })
+    postIOMock.mockReturnValueOnce(IO.succeed({ Id: "c1" }))
     await tool.execute({ action: "getConfig", containerId: "c1", serverId: "srv-1" })
-    expect(postMock).toHaveBeenCalledWith("docker.getConfig", {
+    expect(postIOMock).toHaveBeenCalledWith("docker.getConfig", {
       containerId: "c1",
       serverId: "srv-1",
     })
   })
 
   it("returns helpful message on 400", async () => {
-    postMock.mockRejectedValue(new Error("400 Bad Request"))
+    postIOMock.mockReturnValueOnce(IO.fail(HttpError("POST", "docker.getConfig", 400, "Bad Request", "")))
     const result = (await tool.execute({ action: "getConfig", containerId: "c1" })) as string
     expect(result).toContain("Ensure the containerId is a valid Docker container ID")
   })
 
   it("re-throws non-400 errors", async () => {
-    postMock.mockRejectedValue(new Error("500 Internal"))
-    await expect(tool.execute({ action: "getConfig", containerId: "c1" })).rejects.toThrow("500 Internal")
+    postIOMock.mockReturnValueOnce(IO.fail(HttpError("POST", "docker.getConfig", 500, "Internal", "boom")))
+    await expect(tool.execute({ action: "getConfig", containerId: "c1" })).rejects.toThrow(/500/)
   })
 })
 
@@ -80,13 +83,13 @@ describe("dokploy_docker findContainers", () => {
     ["stack", "docker.getStackContainersByAppName"],
     ["service", "docker.getServiceContainersByAppName"],
   ] as const)("%s method hits %s endpoint", async (method, endpoint) => {
-    getMock.mockResolvedValue([])
+    getIOMock.mockReturnValueOnce(IO.succeed([]))
     await tool.execute({ action: "findContainers", method, appName: "my-app" })
-    expect(getMock).toHaveBeenCalledWith(endpoint, { appName: "my-app" })
+    expect(getIOMock).toHaveBeenCalledWith(endpoint, { appName: "my-app" })
   })
 
   it("includes appType only for match method", async () => {
-    getMock.mockResolvedValue([])
+    getIOMock.mockReturnValueOnce(IO.succeed([]))
     await tool.execute({
       action: "findContainers",
       method: "match",
@@ -94,14 +97,14 @@ describe("dokploy_docker findContainers", () => {
       appType: "application",
       type: "ignored-for-match",
     })
-    expect(getMock).toHaveBeenCalledWith("docker.getContainersByAppNameMatch", {
+    expect(getIOMock).toHaveBeenCalledWith("docker.getContainersByAppNameMatch", {
       appName: "my-app",
       appType: "application",
     })
   })
 
   it("includes type only for label method", async () => {
-    getMock.mockResolvedValue([])
+    getIOMock.mockReturnValueOnce(IO.succeed([]))
     await tool.execute({
       action: "findContainers",
       method: "label",
@@ -109,7 +112,7 @@ describe("dokploy_docker findContainers", () => {
       type: "stack",
       appType: "ignored-for-label",
     })
-    expect(getMock).toHaveBeenCalledWith("docker.getContainersByAppLabel", {
+    expect(getIOMock).toHaveBeenCalledWith("docker.getContainersByAppLabel", {
       appName: "my-app",
       type: "stack",
     })

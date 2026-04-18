@@ -1,11 +1,84 @@
+import type { IO as IOType } from "functype"
+import { IO, Match } from "functype"
 import { z } from "zod"
 
+import type { DokployClient } from "../client/dokploy-client"
 import { getDokployClient, getOrganizationId } from "../client/dokploy-client"
+import type { ApiError } from "../client/errors"
+import { formatApiError, NetworkError } from "../client/errors"
 import type { DokploySshKey } from "../types"
 import { formatSshKey, formatSshKeyList } from "../utils/formatters"
 import type { ToolServer } from "./types"
 
 const ACTIONS = ["create", "list", "get", "update", "remove", "generate"] as const
+
+type SshKeyArgs = {
+  action: (typeof ACTIONS)[number]
+  sshKeyId?: string
+  name?: string
+  description?: string
+  privateKey?: string
+  publicKey?: string
+  lastUsedAt?: string
+  type?: "rsa" | "ed25519"
+}
+
+function resolveOrganizationIdIO(resolve: () => Promise<string>): IOType<never, ApiError, string> {
+  return IO.tryPromise({
+    try: resolve,
+    catch: (cause): ApiError => NetworkError("GET", "organizationId", cause),
+  })
+}
+
+export function buildSshKeyProgram(
+  client: Pick<DokployClient, "getIO" | "postIO">,
+  args: SshKeyArgs,
+  resolveOrganizationId: () => Promise<string> = getOrganizationId,
+): IOType<never, ApiError, string> {
+  return Match(args.action)
+    .case("create", () =>
+      resolveOrganizationIdIO(resolveOrganizationId).flatMap((organizationId) =>
+        client
+          .postIO<DokploySshKey>("sshKey.create", {
+            name: args.name!,
+            privateKey: args.privateKey!,
+            publicKey: args.publicKey!,
+            organizationId,
+            ...(args.description && { description: args.description }),
+          })
+          .map((sshKey) => `# SSH Key Created\n\n${formatSshKey(sshKey)}`),
+      ),
+    )
+    .case("list", () => client.getIO<DokploySshKey[]>("sshKey.all").map(formatSshKeyList))
+    .case("get", () =>
+      client
+        .getIO<DokploySshKey>("sshKey.one", { sshKeyId: args.sshKeyId! })
+        .map((sshKey) => `# SSH Key Details\n\n${formatSshKey(sshKey)}`),
+    )
+    .case("update", () => {
+      const body: Record<string, unknown> = { sshKeyId: args.sshKeyId! }
+      if (args.name !== undefined) body.name = args.name
+      if (args.description !== undefined) body.description = args.description
+      if (args.lastUsedAt !== undefined) body.lastUsedAt = args.lastUsedAt
+      return client.postIO<unknown>("sshKey.update", body).map(() => `SSH key ${args.sshKeyId} updated.`)
+    })
+    .case("remove", () =>
+      client
+        .postIO<unknown>("sshKey.remove", { sshKeyId: args.sshKeyId! })
+        .map(() => `SSH key ${args.sshKeyId} removed.`),
+    )
+    .case("generate", () =>
+      resolveOrganizationIdIO(resolveOrganizationId).flatMap((organizationId) =>
+        client
+          .postIO<DokploySshKey>("sshKey.generate", {
+            type: args.type ?? "ed25519",
+            organizationId,
+          })
+          .map((sshKey) => `# SSH Key Generated\n\n${formatSshKey(sshKey)}`),
+      ),
+    )
+    .exhaustive() as IOType<never, ApiError, string>
+}
 
 export function registerSshKeyTools(server: ToolServer) {
   server.addTool({
@@ -23,49 +96,10 @@ export function registerSshKeyTools(server: ToolServer) {
       type: z.enum(["rsa", "ed25519"]).optional().describe("Key type for generate action"),
     }),
     execute: async (args) => {
-      const client = getDokployClient()
-
-      switch (args.action) {
-        case "create": {
-          const organizationId = await getOrganizationId()
-          const sshKey = await client.post<DokploySshKey>("sshKey.create", {
-            name: args.name!,
-            privateKey: args.privateKey!,
-            publicKey: args.publicKey!,
-            organizationId,
-            ...(args.description && { description: args.description }),
-          })
-          return `# SSH Key Created\n\n${formatSshKey(sshKey)}`
-        }
-        case "list": {
-          const sshKeys = await client.get<DokploySshKey[]>("sshKey.all")
-          return formatSshKeyList(sshKeys)
-        }
-        case "get": {
-          const sshKey = await client.get<DokploySshKey>("sshKey.one", { sshKeyId: args.sshKeyId! })
-          return `# SSH Key Details\n\n${formatSshKey(sshKey)}`
-        }
-        case "update": {
-          const body: Record<string, unknown> = { sshKeyId: args.sshKeyId! }
-          if (args.name !== undefined) body.name = args.name
-          if (args.description !== undefined) body.description = args.description
-          if (args.lastUsedAt !== undefined) body.lastUsedAt = args.lastUsedAt
-          await client.post("sshKey.update", body)
-          return `SSH key ${args.sshKeyId} updated.`
-        }
-        case "remove": {
-          await client.post("sshKey.remove", { sshKeyId: args.sshKeyId! })
-          return `SSH key ${args.sshKeyId} removed.`
-        }
-        case "generate": {
-          const organizationId = await getOrganizationId()
-          const result = await client.post<DokploySshKey>("sshKey.generate", {
-            type: args.type ?? "ed25519",
-            organizationId,
-          })
-          return `# SSH Key Generated\n\n${formatSshKey(result)}`
-        }
-      }
+      const either = await buildSshKeyProgram(getDokployClient(), args).run()
+      if (either.isRight()) return either.value
+      // eslint-disable-next-line functype/prefer-either -- intentional boundary throw for SomaMCP error classification.
+      throw new Error(formatApiError(either.value))
     },
   })
 }
