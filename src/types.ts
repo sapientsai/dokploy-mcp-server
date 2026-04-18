@@ -127,15 +127,20 @@ export type DokploySshKey = {
 }
 
 export type DokployDatabase = {
-  databaseId: string
-  name: string
-  appName: string
+  databaseId?: string
+  postgresId?: string
+  mysqlId?: string
+  mariadbId?: string
+  mongoId?: string
+  redisId?: string
+  name?: string
+  appName?: string
   description?: string
   databaseName?: string
   databaseUser?: string
   dockerImage?: string
-  applicationStatus: string
-  environmentId: string
+  applicationStatus?: string
+  environmentId?: string
   externalPort?: number
   createdAt?: string
 }
