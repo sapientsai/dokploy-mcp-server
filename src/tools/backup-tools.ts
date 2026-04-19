@@ -109,7 +109,7 @@ export function buildBackupProgram(
         .post<unknown>(MANUAL_BACKUP_ENDPOINTS[args.backupType!], { backupId: args.backupId! })
         .map(() => `Manual ${args.backupType} backup triggered for backup config ${args.backupId}.`),
     )
-    .exhaustive() as IOType<never, ApiError, string>
+    .exhaustive()
 }
 
 export function registerBackupTools(server: ToolServer) {

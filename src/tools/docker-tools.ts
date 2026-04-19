@@ -77,7 +77,7 @@ export function buildDockerProgram(
       if (args.type && method === "label") params.type = args.type
       return client.get<DokployContainer[]>(FIND_CONTAINER_ENDPOINTS[method], params).map(formatContainerList)
     })
-    .exhaustive() as IOType<never, ApiError, string>
+    .exhaustive()
 }
 
 export function registerDockerTools(server: ToolServer) {

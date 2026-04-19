@@ -224,7 +224,7 @@ export function buildApplicationProgram(
         .get<unknown>("application.readAppMonitoring", { appName: args.appName! })
         .map((data) => `# Monitoring: ${args.appName}\n\n\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\``),
     )
-    .exhaustive() as IOType<never, ApiError, string>
+    .exhaustive()
 }
 
 export function registerApplicationTools(server: ToolServer) {

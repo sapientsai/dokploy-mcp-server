@@ -79,7 +79,7 @@ export function buildServerProgram(
         })
         .map((metrics) => `# Server Metrics\n\n\`\`\`json\n${JSON.stringify(metrics, null, 2)}\n\`\`\``),
     )
-    .exhaustive() as IOType<never, ApiError, string>
+    .exhaustive()
 }
 
 export function registerServerTools(server: ToolServer) {

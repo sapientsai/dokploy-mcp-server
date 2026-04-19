@@ -108,7 +108,7 @@ export function buildDomainProgram(
         })
         .map((result) => `# DNS Validation: ${args.domain}\n\n\`\`\`json\n${JSON.stringify(result, null, 2)}\n\`\`\``),
     )
-    .exhaustive() as IOType<never, ApiError, string>
+    .exhaustive()
 }
 
 export function registerDomainTools(server: ToolServer) {

@@ -192,7 +192,7 @@ export function buildComposeProgram(
         .post<unknown>("compose.refreshToken", { composeId: args.composeId! })
         .map(() => `Compose ${args.composeId}: refreshToken completed.`),
     )
-    .exhaustive() as IOType<never, ApiError, string>
+    .exhaustive()
 }
 
 export function registerComposeTools(server: ToolServer) {

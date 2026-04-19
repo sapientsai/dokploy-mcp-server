@@ -63,7 +63,7 @@ export function buildEnvironmentProgram(
       if (args.description) body.description = args.description
       return client.post<unknown>("environment.duplicate", body).map(() => `Environment duplicated as "${args.name}".`)
     })
-    .exhaustive() as IOType<never, ApiError, string>
+    .exhaustive()
 }
 
 export function registerEnvironmentTools(server: ToolServer) {

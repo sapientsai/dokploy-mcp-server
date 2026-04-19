@@ -122,7 +122,7 @@ export function buildInfrastructureProgram(
         } satisfies RequestBody<"certificates-remove">)
         .map(() => `Certificate ${args.certificateId} removed.`),
     )
-    .exhaustive() as IOType<never, ApiError, string>
+    .exhaustive()
 }
 
 export function registerInfrastructureTools(server: ToolServer) {
