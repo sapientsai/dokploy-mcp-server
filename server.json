@@ -1,0 +1,57 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.jordanburke/dokploy-mcp-server",
+  "description": "Dokploy MCP server: manage apps, Docker Compose, databases, domains, backups, and servers.",
+  "repository": {
+    "url": "https://github.com/sapientsai/dokploy-mcp-server",
+    "source": "github"
+  },
+  "version": "1.6.1",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "dokploy-mcp-server",
+      "version": "1.6.1",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "DOKPLOY_URL",
+          "description": "Dokploy instance URL (e.g., https://dokploy.example.com)",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "DOKPLOY_API_KEY",
+          "description": "Dokploy API key (generate in Settings > API Keys)",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "TRANSPORT_TYPE",
+          "description": "Transport: 'stdio' (default) or 'httpStream' for remote/Docker deployments",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "PORT",
+          "description": "HTTP port for httpStream transport (default 3000)",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "HOST",
+          "description": "HTTP host for httpStream transport (default 0.0.0.0)",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}

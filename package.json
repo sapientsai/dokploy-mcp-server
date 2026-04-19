@@ -1,6 +1,7 @@
 {
   "name": "dokploy-mcp-server",
   "version": "1.6.1",
+  "mcpName": "io.github.jordanburke/dokploy-mcp-server",
   "description": "A comprehensive Model Context Protocol (MCP) server for Dokploy - deploy apps, manage containers, databases, domains, and servers.",
   "keywords": [
     "mcp",
@@ -56,7 +57,8 @@
     "test:coverage": "ts-builds test:coverage",
     "build": "NODE_ENV=production ts-builds build",
     "dev": "ts-builds dev",
-    "prepublishOnly": "pnpm validate",
+    "check:versions": "tsx scripts/check-versions.ts",
+    "prepublishOnly": "pnpm check:versions && pnpm validate",
     "inspect": "pnpm build && npx @modelcontextprotocol/inspector dist/index.js",
     "start": "pnpm build && node dist/bin.js",
     "serve": "pnpm build && node dist/index.js",
