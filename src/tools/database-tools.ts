@@ -1,21 +1,16 @@
+import type { IO as IOType } from "functype"
+import { Match } from "functype"
 import { z } from "zod"
 
+import type { DokployClient } from "../client/dokploy-client"
 import { getDokployClient } from "../client/dokploy-client"
+import type { ApiError } from "../client/errors"
+import { formatApiError } from "../client/errors"
 import type { RequestBody } from "../generated"
 import type { DatabaseType, DokployDatabase } from "../types"
 import { DB_ID_FIELDS, DB_TYPES } from "../types"
 import { formatDatabase } from "../utils/formatters"
 import type { ToolServer } from "./types"
-
-const dbTypeSchema = z.enum(DB_TYPES).describe("postgres, mysql, mariadb, mongo, or redis")
-
-function dbIdField(dbType: DatabaseType): string {
-  return DB_ID_FIELDS[dbType]
-}
-
-function dbBody(dbType: DatabaseType, databaseId: string): Record<string, unknown> {
-  return { [dbIdField(dbType)]: databaseId }
-}
 
 const ACTIONS = [
   "create",
@@ -33,7 +28,142 @@ const ACTIONS = [
   "saveExternalPort",
 ] as const
 
-type SimpleAction = "start" | "stop" | "deploy" | "rebuild" | "remove"
+const CREATE_FIELDS = [
+  "name",
+  "environmentId",
+  "databaseName",
+  "databaseUser",
+  "databasePassword",
+  "databaseRootPassword",
+  "dockerImage",
+  "description",
+  "serverId",
+] as const
+
+const UPDATE_FIELDS = ["name", "description", "dockerImage", "command", "memoryLimit", "cpuLimit"] as const
+
+type DatabaseArgs = {
+  action: (typeof ACTIONS)[number]
+  dbType: DatabaseType
+  databaseId?: string
+  name?: string
+  environmentId?: string
+  databaseName?: string
+  databaseUser?: string
+  databasePassword?: string
+  databaseRootPassword?: string
+  dockerImage?: string
+  description?: string
+  serverId?: string
+  command?: string
+  memoryLimit?: number
+  cpuLimit?: number
+  targetEnvironmentId?: string
+  appName?: string
+  applicationStatus?: string
+  env?: string
+  externalPort?: number
+}
+
+function pickDefined<T extends Record<string, unknown>, K extends readonly (keyof T)[]>(
+  source: T,
+  keys: K,
+): Record<string, unknown> {
+  return Object.fromEntries(keys.filter((k) => source[k] !== undefined).map((k) => [k, source[k]]))
+}
+
+function dbBody(dbType: DatabaseType, databaseId: string): Record<string, unknown> {
+  return { [DB_ID_FIELDS[dbType]]: databaseId }
+}
+
+export function buildDatabaseProgram(
+  client: Pick<DokployClient, "getIO" | "postIO">,
+  args: DatabaseArgs,
+): IOType<never, ApiError, string> {
+  const { dbType } = args
+  return Match(args.action)
+    .case("create", () =>
+      client
+        .postIO<DokployDatabase>(`${dbType}.create`, pickDefined(args, CREATE_FIELDS))
+        .map((db) => `# Database Created\n\n${formatDatabase(db, dbType)}`),
+    )
+    .case("get", () =>
+      client
+        .getIO<DokployDatabase>(`${dbType}.one`, dbBody(dbType, args.databaseId!) as Record<string, string>)
+        .map((db) => `# Database Details\n\n${formatDatabase(db, dbType)}`),
+    )
+    .case("update", () => {
+      const body = { ...dbBody(dbType, args.databaseId!), ...pickDefined(args, UPDATE_FIELDS) }
+      return client
+        .postIO<unknown>(`${dbType}.update`, body as RequestBody<"postgres-update">)
+        .map(() => `Database ${args.databaseId} (${dbType}) updated.`)
+    })
+    .case("move", () =>
+      client
+        .postIO<unknown>(`${dbType}.move`, {
+          ...dbBody(dbType, args.databaseId!),
+          targetEnvironmentId: args.targetEnvironmentId!,
+        })
+        .map(() => `Database ${args.databaseId} moved to environment ${args.targetEnvironmentId}.`),
+    )
+    .case("start", () =>
+      client
+        .postIO<unknown>(`${dbType}.start`, dbBody(dbType, args.databaseId!))
+        .map(() => `Database ${args.databaseId} (${dbType}): start completed.`),
+    )
+    .case("stop", () =>
+      client
+        .postIO<unknown>(`${dbType}.stop`, dbBody(dbType, args.databaseId!))
+        .map(() => `Database ${args.databaseId} (${dbType}): stop completed.`),
+    )
+    .case("deploy", () =>
+      client
+        .postIO<unknown>(`${dbType}.deploy`, dbBody(dbType, args.databaseId!))
+        .map(() => `Database ${args.databaseId} (${dbType}): deploy completed.`),
+    )
+    .case("rebuild", () =>
+      client
+        .postIO<unknown>(`${dbType}.rebuild`, dbBody(dbType, args.databaseId!))
+        .map(() => `Database ${args.databaseId} (${dbType}): rebuild completed.`),
+    )
+    .case("remove", () =>
+      client
+        .postIO<unknown>(`${dbType}.remove`, dbBody(dbType, args.databaseId!))
+        .map(() => `Database ${args.databaseId} (${dbType}): remove completed.`),
+    )
+    .case("reload", () =>
+      client
+        .postIO<unknown>(`${dbType}.reload`, {
+          ...dbBody(dbType, args.databaseId!),
+          appName: args.appName!,
+        })
+        .map(() => `Database ${args.databaseId} (${dbType}) reloaded.`),
+    )
+    .case("changeStatus", () =>
+      client
+        .postIO<unknown>(`${dbType}.changeStatus`, {
+          ...dbBody(dbType, args.databaseId!),
+          applicationStatus: args.applicationStatus!,
+        })
+        .map(() => `Database ${args.databaseId} status changed to ${args.applicationStatus}.`),
+    )
+    .case("saveEnvironment", () => {
+      const body: Record<string, unknown> = dbBody(dbType, args.databaseId!)
+      if (args.env !== undefined) body.env = args.env
+      return client
+        .postIO<unknown>(`${dbType}.saveEnvironment`, body)
+        .map(() => `Environment saved for database ${args.databaseId}.`)
+    })
+    .case("saveExternalPort", () =>
+      client
+        .postIO<unknown>(`${dbType}.saveExternalPort`, {
+          ...dbBody(dbType, args.databaseId!),
+          externalPort: args.externalPort!,
+        })
+        .map(() => `External port set to ${args.externalPort} for database ${args.databaseId}.`),
+    )
+    .exhaustive() as IOType<never, ApiError, string>
+}
 
 export function registerDatabaseTools(server: ToolServer) {
   server.addTool({
@@ -42,7 +172,7 @@ export function registerDatabaseTools(server: ToolServer) {
       "Manage databases (postgres/mysql/mariadb/mongo/redis). create: dbType+name+environmentId+databasePassword. get: dbType+databaseId. update: dbType+databaseId+fields. move: dbType+databaseId+targetEnvironmentId. start/stop/deploy/rebuild/remove: dbType+databaseId. reload: dbType+databaseId+appName. changeStatus: dbType+databaseId+applicationStatus. saveEnvironment: dbType+databaseId+env. saveExternalPort: dbType+databaseId+externalPort.",
     parameters: z.object({
       action: z.enum(ACTIONS),
-      dbType: dbTypeSchema,
+      dbType: z.enum(DB_TYPES).describe("postgres, mysql, mariadb, mongo, or redis"),
       databaseId: z.string().optional(),
       name: z.string().optional(),
       environmentId: z.string().optional(),
@@ -68,88 +198,10 @@ export function registerDatabaseTools(server: ToolServer) {
       externalPort: z.number().optional(),
     }),
     execute: async (args) => {
-      const client = getDokployClient()
-      const { dbType } = args
-
-      switch (args.action) {
-        case "create": {
-          const body: Record<string, unknown> = {}
-          const createFields = [
-            "name",
-            "environmentId",
-            "databaseName",
-            "databaseUser",
-            "databasePassword",
-            "databaseRootPassword",
-            "dockerImage",
-            "description",
-            "serverId",
-          ] as const
-          for (const key of createFields) {
-            if (args[key] !== undefined) body[key] = args[key]
-          }
-          const db = await client.post<DokployDatabase>(`${dbType}.create`, body)
-          return `# Database Created\n\n${formatDatabase(db, dbType)}`
-        }
-        case "get": {
-          const db = await client.get<DokployDatabase>(`${dbType}.one`, {
-            [dbIdField(dbType)]: args.databaseId!,
-          })
-          return `# Database Details\n\n${formatDatabase(db, dbType)}`
-        }
-        case "update": {
-          const body: Record<string, unknown> = { [dbIdField(dbType)]: args.databaseId! }
-          const updateFields = ["name", "description", "dockerImage", "command", "memoryLimit", "cpuLimit"] as const
-          for (const key of updateFields) {
-            if (args[key] !== undefined) body[key] = args[key]
-          }
-          await client.post(`${dbType}.update`, body as RequestBody<"postgres-update">)
-          return `Database ${args.databaseId} (${dbType}) updated.`
-        }
-        case "move": {
-          await client.post(`${dbType}.move`, {
-            ...dbBody(dbType, args.databaseId!),
-            targetEnvironmentId: args.targetEnvironmentId!,
-          })
-          return `Database ${args.databaseId} moved to environment ${args.targetEnvironmentId}.`
-        }
-        case "start":
-        case "stop":
-        case "deploy":
-        case "rebuild":
-        case "remove": {
-          await client.post(`${dbType}.${args.action satisfies SimpleAction}`, dbBody(dbType, args.databaseId!))
-          return `Database ${args.databaseId} (${dbType}): ${args.action} completed.`
-        }
-        case "reload": {
-          await client.post(`${dbType}.reload`, {
-            ...dbBody(dbType, args.databaseId!),
-            appName: args.appName!,
-          })
-          return `Database ${args.databaseId} (${dbType}) reloaded.`
-        }
-        case "changeStatus": {
-          await client.post(`${dbType}.changeStatus`, {
-            ...dbBody(dbType, args.databaseId!),
-            applicationStatus: args.applicationStatus!,
-          })
-          return `Database ${args.databaseId} status changed to ${args.applicationStatus}.`
-        }
-        case "saveEnvironment": {
-          await client.post(`${dbType}.saveEnvironment`, {
-            ...dbBody(dbType, args.databaseId!),
-            ...(args.env !== undefined && { env: args.env }),
-          })
-          return `Environment saved for database ${args.databaseId}.`
-        }
-        case "saveExternalPort": {
-          await client.post(`${dbType}.saveExternalPort`, {
-            ...dbBody(dbType, args.databaseId!),
-            externalPort: args.externalPort!,
-          })
-          return `External port set to ${args.externalPort} for database ${args.databaseId}.`
-        }
-      }
+      const either = await buildDatabaseProgram(getDokployClient(), args).run()
+      if (either.isRight()) return either.value
+      // eslint-disable-next-line functype/prefer-either -- intentional boundary throw for SomaMCP error classification.
+      throw new Error(formatApiError(either.value))
     },
   })
 }

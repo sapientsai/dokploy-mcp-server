@@ -1,15 +1,16 @@
+import { IO } from "functype"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { registerApplicationTools } from "../src/tools/application-tools"
 import { captureTool } from "./support/tool-harness"
 
-const { getMock, postMock } = vi.hoisted(() => ({
-  getMock: vi.fn(),
-  postMock: vi.fn(),
+const { getIOMock, postIOMock } = vi.hoisted(() => ({
+  getIOMock: vi.fn(),
+  postIOMock: vi.fn(),
 }))
 
 vi.mock("../src/client/dokploy-client", () => ({
-  getDokployClient: () => ({ get: getMock, post: postMock }),
+  getDokployClient: () => ({ getIO: getIOMock, postIO: postIOMock }),
 }))
 
 type AppArgs = {
@@ -52,8 +53,10 @@ type AppArgs = {
 const tool = captureTool<AppArgs>(registerApplicationTools)
 
 beforeEach(() => {
-  getMock.mockReset()
-  postMock.mockReset()
+  getIOMock.mockReset()
+  postIOMock.mockReset()
+  getIOMock.mockImplementation(() => IO.succeed(undefined))
+  postIOMock.mockImplementation(() => IO.succeed(undefined))
 })
 
 describe("dokploy_application metadata", () => {
@@ -65,13 +68,15 @@ describe("dokploy_application metadata", () => {
 
 describe("dokploy_application create/get/update/move", () => {
   it("create posts application.create with required fields", async () => {
-    postMock.mockResolvedValue({
-      applicationId: "a1",
-      name: "N",
-      appName: "n",
-      applicationStatus: "idle",
-      environmentId: "env",
-    })
+    postIOMock.mockReturnValueOnce(
+      IO.succeed({
+        applicationId: "a1",
+        name: "N",
+        appName: "n",
+        applicationStatus: "idle",
+        environmentId: "env",
+      }),
+    )
     await tool.execute({
       action: "create",
       name: "N",
@@ -79,7 +84,7 @@ describe("dokploy_application create/get/update/move", () => {
       description: "desc",
       serverId: "srv-1",
     })
-    expect(postMock).toHaveBeenCalledWith("application.create", {
+    expect(postIOMock).toHaveBeenCalledWith("application.create", {
       name: "N",
       environmentId: "env",
       description: "desc",
@@ -88,31 +93,34 @@ describe("dokploy_application create/get/update/move", () => {
   })
 
   it("create omits optional fields when not provided", async () => {
-    postMock.mockResolvedValue({
-      applicationId: "a1",
-      name: "N",
-      appName: "n",
-      applicationStatus: "idle",
-      environmentId: "env",
-    })
+    postIOMock.mockReturnValueOnce(
+      IO.succeed({
+        applicationId: "a1",
+        name: "N",
+        appName: "n",
+        applicationStatus: "idle",
+        environmentId: "env",
+      }),
+    )
     await tool.execute({ action: "create", name: "N", environmentId: "env" })
-    expect(postMock).toHaveBeenCalledWith("application.create", { name: "N", environmentId: "env" })
+    expect(postIOMock).toHaveBeenCalledWith("application.create", { name: "N", environmentId: "env" })
   })
 
   it("get calls application.one", async () => {
-    getMock.mockResolvedValue({
-      applicationId: "a1",
-      name: "N",
-      appName: "n",
-      applicationStatus: "running",
-      environmentId: "env",
-    })
+    getIOMock.mockReturnValueOnce(
+      IO.succeed({
+        applicationId: "a1",
+        name: "N",
+        appName: "n",
+        applicationStatus: "running",
+        environmentId: "env",
+      }),
+    )
     await tool.execute({ action: "get", applicationId: "a1" })
-    expect(getMock).toHaveBeenCalledWith("application.one", { applicationId: "a1" })
+    expect(getIOMock).toHaveBeenCalledWith("application.one", { applicationId: "a1" })
   })
 
   it("update sends only defined fields plus applicationId", async () => {
-    postMock.mockResolvedValue(undefined)
     await tool.execute({
       action: "update",
       applicationId: "a1",
@@ -123,7 +131,7 @@ describe("dokploy_application create/get/update/move", () => {
       owner: "org",
       branch: "main",
     })
-    expect(postMock).toHaveBeenCalledWith("application.update", {
+    expect(postIOMock).toHaveBeenCalledWith("application.update", {
       applicationId: "a1",
       name: "new",
       memoryLimit: 1024,
@@ -135,13 +143,12 @@ describe("dokploy_application create/get/update/move", () => {
   })
 
   it("move sends targetEnvironmentId", async () => {
-    postMock.mockResolvedValue(undefined)
     await tool.execute({
       action: "move",
       applicationId: "a1",
       targetEnvironmentId: "env-2",
     })
-    expect(postMock).toHaveBeenCalledWith("application.move", {
+    expect(postIOMock).toHaveBeenCalledWith("application.move", {
       applicationId: "a1",
       targetEnvironmentId: "env-2",
     })
@@ -150,14 +157,13 @@ describe("dokploy_application create/get/update/move", () => {
 
 describe("dokploy_application deploy branch", () => {
   it("deploy (default) posts to application.deploy", async () => {
-    postMock.mockResolvedValue(undefined)
     await tool.execute({
       action: "deploy",
       applicationId: "a1",
       title: "t",
       deployDescription: "d",
     })
-    expect(postMock).toHaveBeenCalledWith("application.deploy", {
+    expect(postIOMock).toHaveBeenCalledWith("application.deploy", {
       applicationId: "a1",
       title: "t",
       description: "d",
@@ -165,13 +171,11 @@ describe("dokploy_application deploy branch", () => {
   })
 
   it("deploy with redeploy=true posts to application.redeploy", async () => {
-    postMock.mockResolvedValue(undefined)
     await tool.execute({ action: "deploy", applicationId: "a1", redeploy: true })
-    expect(postMock).toHaveBeenCalledWith("application.redeploy", { applicationId: "a1" })
+    expect(postIOMock).toHaveBeenCalledWith("application.redeploy", { applicationId: "a1" })
   })
 
   it("deploy result message distinguishes redeploy vs deploy", async () => {
-    postMock.mockResolvedValue(undefined)
     const r1 = (await tool.execute({ action: "deploy", applicationId: "a1" })) as string
     expect(r1).toContain("Deployment triggered")
     const r2 = (await tool.execute({ action: "deploy", applicationId: "a1", redeploy: true })) as string
@@ -192,30 +196,27 @@ describe("dokploy_application simple actions", () => {
   ] as const
 
   it.each(simpleActions)("%s posts application.{action} with just applicationId", async (action) => {
-    postMock.mockResolvedValue(undefined)
     await tool.execute({ action, applicationId: "a1" })
-    expect(postMock).toHaveBeenCalledWith(`application.${action}`, { applicationId: "a1" })
+    expect(postIOMock).toHaveBeenCalledWith(`application.${action}`, { applicationId: "a1" })
   })
 })
 
 describe("dokploy_application reload/saveEnvironment/saveBuildType", () => {
   it("reload sends applicationId + appName", async () => {
-    postMock.mockResolvedValue(undefined)
     await tool.execute({ action: "reload", applicationId: "a1", appName: "my-app" })
-    expect(postMock).toHaveBeenCalledWith("application.reload", {
+    expect(postIOMock).toHaveBeenCalledWith("application.reload", {
       applicationId: "a1",
       appName: "my-app",
     })
   })
 
   it("saveEnvironment defaults createEnvFile to false and buildArgs/buildSecrets to empty string", async () => {
-    postMock.mockResolvedValue(undefined)
     await tool.execute({
       action: "saveEnvironment",
       applicationId: "a1",
       env: "FOO=1",
     })
-    expect(postMock).toHaveBeenCalledWith("application.saveEnvironment", {
+    expect(postIOMock).toHaveBeenCalledWith("application.saveEnvironment", {
       applicationId: "a1",
       createEnvFile: false,
       env: "FOO=1",
@@ -225,15 +226,13 @@ describe("dokploy_application reload/saveEnvironment/saveBuildType", () => {
   })
 
   it("saveEnvironment without env omits env field", async () => {
-    postMock.mockResolvedValue(undefined)
     await tool.execute({ action: "saveEnvironment", applicationId: "a1" })
-    const [, body] = postMock.mock.calls[0]
+    const [, body] = postIOMock.mock.calls[0]
     expect(body).not.toHaveProperty("env")
     expect(body).toMatchObject({ applicationId: "a1", createEnvFile: false })
   })
 
   it("saveEnvironment passes createEnvFile when provided", async () => {
-    postMock.mockResolvedValue(undefined)
     await tool.execute({
       action: "saveEnvironment",
       applicationId: "a1",
@@ -241,7 +240,7 @@ describe("dokploy_application reload/saveEnvironment/saveBuildType", () => {
       buildArgs: "ARG=1",
       buildSecrets: "SEC=1",
     })
-    expect(postMock).toHaveBeenCalledWith("application.saveEnvironment", {
+    expect(postIOMock).toHaveBeenCalledWith("application.saveEnvironment", {
       applicationId: "a1",
       createEnvFile: true,
       buildArgs: "ARG=1",
@@ -250,13 +249,12 @@ describe("dokploy_application reload/saveEnvironment/saveBuildType", () => {
   })
 
   it("saveBuildType defaults dockerContextPath='.' and dockerBuildStage=''", async () => {
-    postMock.mockResolvedValue(undefined)
     await tool.execute({
       action: "saveBuildType",
       applicationId: "a1",
       buildType: "dockerfile",
     })
-    expect(postMock).toHaveBeenCalledWith("application.saveBuildType", {
+    expect(postIOMock).toHaveBeenCalledWith("application.saveBuildType", {
       applicationId: "a1",
       buildType: "dockerfile",
       dockerContextPath: ".",
@@ -265,7 +263,6 @@ describe("dokploy_application reload/saveEnvironment/saveBuildType", () => {
   })
 
   it("saveBuildType includes dockerfile / publishDirectory when set", async () => {
-    postMock.mockResolvedValue(undefined)
     await tool.execute({
       action: "saveBuildType",
       applicationId: "a1",
@@ -275,7 +272,7 @@ describe("dokploy_application reload/saveEnvironment/saveBuildType", () => {
       dockerContextPath: "./app",
       dockerBuildStage: "build",
     })
-    expect(postMock).toHaveBeenCalledWith("application.saveBuildType", {
+    expect(postIOMock).toHaveBeenCalledWith("application.saveBuildType", {
       applicationId: "a1",
       buildType: "nixpacks",
       dockerContextPath: "./app",
@@ -288,31 +285,30 @@ describe("dokploy_application reload/saveEnvironment/saveBuildType", () => {
 
 describe("dokploy_application traefikConfig / readMonitoring", () => {
   it("traefikConfig without value reads config via GET", async () => {
-    getMock.mockResolvedValue("some: yaml")
+    getIOMock.mockReturnValueOnce(IO.succeed("some: yaml"))
     const result = (await tool.execute({ action: "traefikConfig", applicationId: "a1" })) as string
-    expect(getMock).toHaveBeenCalledWith("application.readTraefikConfig", { applicationId: "a1" })
+    expect(getIOMock).toHaveBeenCalledWith("application.readTraefikConfig", { applicationId: "a1" })
     expect(result).toContain("some: yaml")
-    expect(postMock).not.toHaveBeenCalled()
+    expect(postIOMock).not.toHaveBeenCalled()
   })
 
   it("traefikConfig with value writes via POST", async () => {
-    postMock.mockResolvedValue(undefined)
     await tool.execute({
       action: "traefikConfig",
       applicationId: "a1",
       traefikConfig: "updated: config",
     })
-    expect(postMock).toHaveBeenCalledWith("application.updateTraefikConfig", {
+    expect(postIOMock).toHaveBeenCalledWith("application.updateTraefikConfig", {
       applicationId: "a1",
       traefikConfig: "updated: config",
     })
-    expect(getMock).not.toHaveBeenCalled()
+    expect(getIOMock).not.toHaveBeenCalled()
   })
 
   it("readMonitoring GETs application.readAppMonitoring by appName", async () => {
-    getMock.mockResolvedValue({ cpu: 0.5, memory: 100 })
+    getIOMock.mockReturnValueOnce(IO.succeed({ cpu: 0.5, memory: 100 }))
     const result = (await tool.execute({ action: "readMonitoring", appName: "my-app" })) as string
-    expect(getMock).toHaveBeenCalledWith("application.readAppMonitoring", { appName: "my-app" })
+    expect(getIOMock).toHaveBeenCalledWith("application.readAppMonitoring", { appName: "my-app" })
     expect(result).toContain("Monitoring: my-app")
     expect(result).toContain("cpu")
   })
