@@ -1,11 +1,88 @@
+import type { IO as IOType } from "functype"
+import { Match } from "functype"
 import { z } from "zod"
 
+import type { DokployClient } from "../client/dokploy-client"
 import { getDokployClient } from "../client/dokploy-client"
+import type { ApiError } from "../client/errors"
+import { formatApiError } from "../client/errors"
 import type { DokployServer } from "../types"
 import { formatServer, formatServerList } from "../utils/formatters"
 import type { ToolServer } from "./types"
 
 const ACTIONS = ["list", "get", "create", "update", "remove", "count", "publicIp", "getMetrics"] as const
+
+type ServerArgs = {
+  action: (typeof ACTIONS)[number]
+  serverId?: string
+  name?: string
+  ipAddress?: string
+  port?: number
+  username?: string
+  sshKeyId?: string
+  serverType?: string
+  description?: string
+  url?: string
+  token?: string
+  dataPoints?: string
+}
+
+export function buildServerProgram(
+  client: Pick<DokployClient, "getIO" | "postIO">,
+  args: ServerArgs,
+): IOType<never, ApiError, string> {
+  return Match(args.action)
+    .case("list", () => client.getIO<DokployServer[]>("server.all").map(formatServerList))
+    .case("get", () =>
+      client
+        .getIO<DokployServer>("server.one", { serverId: args.serverId! })
+        .map((srv) => `# Server Details\n\n${formatServer(srv)}`),
+    )
+    .case("create", () =>
+      client
+        .postIO<DokployServer>("server.create", {
+          name: args.name!,
+          ipAddress: args.ipAddress!,
+          port: args.port!,
+          username: args.username!,
+          sshKeyId: args.sshKeyId!,
+          serverType: args.serverType!,
+          ...(args.description && { description: args.description }),
+        })
+        .map((srv) => `# Server Created\n\n${formatServer(srv)}`),
+    )
+    .case("update", () =>
+      client
+        .postIO<unknown>("server.update", {
+          serverId: args.serverId!,
+          name: args.name!,
+          ipAddress: args.ipAddress!,
+          port: args.port!,
+          username: args.username!,
+          sshKeyId: args.sshKeyId!,
+          serverType: args.serverType!,
+          ...(args.description && { description: args.description }),
+        })
+        .map(() => `Server ${args.serverId} updated.`),
+    )
+    .case("remove", () =>
+      client
+        .postIO<unknown>("server.remove", { serverId: args.serverId! })
+        .map(() => `Server ${args.serverId} removed.`),
+    )
+    .case("count", () => client.getIO<number>("server.count").map((count) => `Total servers: ${count}`))
+    .case("publicIp", () => client.getIO<string>("server.publicIp").map((ip) => `Public IP: ${ip}`))
+    .case("getMetrics", () =>
+      client
+        .getIO<unknown>("server.getServerMetrics", {
+          url: args.url!,
+          token: args.token!,
+          ...(args.dataPoints && { dataPoints: args.dataPoints }),
+        })
+        .map((metrics) => `# Server Metrics\n\n\`\`\`json\n${JSON.stringify(metrics, null, 2)}\n\`\`\``),
+    )
+    .exhaustive() as IOType<never, ApiError, string>
+}
 
 export function registerServerTools(server: ToolServer) {
   server.addTool({
@@ -27,63 +104,10 @@ export function registerServerTools(server: ToolServer) {
       dataPoints: z.string().optional(),
     }),
     execute: async (args) => {
-      const client = getDokployClient()
-
-      switch (args.action) {
-        case "list": {
-          const servers = await client.get<DokployServer[]>("server.all")
-          return formatServerList(servers)
-        }
-        case "get": {
-          const srv = await client.get<DokployServer>("server.one", { serverId: args.serverId! })
-          return `# Server Details\n\n${formatServer(srv)}`
-        }
-        case "create": {
-          const srv = await client.post<DokployServer>("server.create", {
-            name: args.name!,
-            ipAddress: args.ipAddress!,
-            port: args.port!,
-            username: args.username!,
-            sshKeyId: args.sshKeyId!,
-            serverType: args.serverType!,
-            ...(args.description && { description: args.description }),
-          })
-          return `# Server Created\n\n${formatServer(srv)}`
-        }
-        case "update": {
-          await client.post("server.update", {
-            serverId: args.serverId!,
-            name: args.name!,
-            ipAddress: args.ipAddress!,
-            port: args.port!,
-            username: args.username!,
-            sshKeyId: args.sshKeyId!,
-            serverType: args.serverType!,
-            ...(args.description && { description: args.description }),
-          })
-          return `Server ${args.serverId} updated.`
-        }
-        case "remove": {
-          await client.post("server.remove", { serverId: args.serverId! })
-          return `Server ${args.serverId} removed.`
-        }
-        case "count": {
-          const count = await client.get<number>("server.count")
-          return `Total servers: ${count}`
-        }
-        case "publicIp": {
-          const ip = await client.get<string>("server.publicIp")
-          return `Public IP: ${ip}`
-        }
-        case "getMetrics": {
-          const metrics = await client.get<unknown>("server.getServerMetrics", {
-            url: args.url!,
-            token: args.token!,
-            ...(args.dataPoints && { dataPoints: args.dataPoints }),
-          })
-          return `# Server Metrics\n\n\`\`\`json\n${JSON.stringify(metrics, null, 2)}\n\`\`\``
-        }
-      }
+      const either = await buildServerProgram(getDokployClient(), args).run()
+      if (either.isRight()) return either.value
+      // eslint-disable-next-line functype/prefer-either -- intentional boundary throw for SomaMCP error classification.
+      throw new Error(formatApiError(either.value))
     },
   })
 }
