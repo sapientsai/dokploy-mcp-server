@@ -58,14 +58,11 @@ export function buildDockerProgram(
           if (config == null) return notFoundHint
           return `# Container Config\n\n\`\`\`json\n${JSON.stringify(config, null, 2)}\n\`\`\``
         })
-        .recoverWith((err): IO<never, ApiError, string> => {
+        .catchTag("HttpError", (err) =>
           // 400 = malformed containerId (fails the API's `^[a-zA-Z0-9.\-_]+$` pattern).
           // 404 kept for robustness in case Dokploy starts returning it in future versions.
-          if (err._tag === "HttpError" && (err.status === 400 || err.status === 404)) {
-            return IO.succeed(notFoundHint)
-          }
-          return IO.fail(err)
-        })
+          err.status === 400 || err.status === 404 ? IO.succeed(notFoundHint) : IO.fail(err),
+        )
     })
     .case("findContainers", () => {
       if (!args.method) {
