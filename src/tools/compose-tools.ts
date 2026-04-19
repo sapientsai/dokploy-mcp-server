@@ -151,11 +151,10 @@ export function buildComposeProgram(
           ...(args.type && { type: args.type }),
         })
         .map((services) => `# Compose Services\n\n\`\`\`json\n${JSON.stringify(services, null, 2)}\n\`\`\``)
-        .recoverWith(
-          (err): IO<never, ApiError, string> =>
-            err._tag === "HttpError" && err.status === 404
-              ? IO.succeed("No services loaded yet. Deploy the compose service first, then call loadServices.")
-              : IO.fail(err),
+        .catchTag("HttpError", (err) =>
+          err.status === 404
+            ? IO.succeed("No services loaded yet. Deploy the compose service first, then call loadServices.")
+            : IO.fail(err),
         ),
     )
     .case("loadMounts", () =>
