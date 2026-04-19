@@ -1,12 +1,68 @@
+import type { IO as IOType } from "functype"
+import { Match } from "functype"
 import { z } from "zod"
 
+import type { DokployClient } from "../client/dokploy-client"
 import { getDokployClient } from "../client/dokploy-client"
+import type { ApiError } from "../client/errors"
+import { formatApiError } from "../client/errors"
 import type { RequestBody } from "../generated"
 import type { DokployProject } from "../types"
 import { formatProject, formatProjectList } from "../utils/formatters"
 import type { ToolServer } from "./types"
 
 const ACTIONS = ["list", "get", "create", "update", "remove", "duplicate"] as const
+
+type ProjectArgs = {
+  action: (typeof ACTIONS)[number]
+  projectId?: string
+  name?: string
+  description?: string
+  sourceEnvironmentId?: string
+  duplicateInSameProject?: boolean
+}
+
+export function buildProjectProgram(
+  client: Pick<DokployClient, "getIO" | "postIO">,
+  args: ProjectArgs,
+): IOType<never, ApiError, string> {
+  return Match(args.action)
+    .case("list", () => client.getIO<DokployProject[]>("project.all").map(formatProjectList))
+    .case("get", () =>
+      client
+        .getIO<DokployProject>("project.one", { projectId: args.projectId! })
+        .map((project) => `# Project Details\n\n${formatProject(project)}`),
+    )
+    .case("create", () =>
+      client
+        .postIO<DokployProject>("project.create", {
+          name: args.name!,
+          ...(args.description && { description: args.description }),
+        } satisfies RequestBody<"project-create">)
+        .map((project) => `# Project Created\n\n${formatProject(project)}`),
+    )
+    .case("update", () => {
+      const body: Record<string, unknown> = { projectId: args.projectId! }
+      if (args.name) body.name = args.name
+      if (args.description !== undefined) body.description = args.description
+      return client.postIO<unknown>("project.update", body).map(() => `Project ${args.projectId} updated.`)
+    })
+    .case("remove", () =>
+      client
+        .postIO<unknown>("project.remove", { projectId: args.projectId! } satisfies RequestBody<"project-remove">)
+        .map(() => `Project ${args.projectId} removed.`),
+    )
+    .case("duplicate", () => {
+      const body: Record<string, unknown> = {
+        sourceEnvironmentId: args.sourceEnvironmentId!,
+        name: args.name!,
+      }
+      if (args.description) body.description = args.description
+      if (args.duplicateInSameProject !== undefined) body.duplicateInSameProject = args.duplicateInSameProject
+      return client.postIO<unknown>("project.duplicate", body).map(() => `Environment duplicated as "${args.name}".`)
+    })
+    .exhaustive() as IOType<never, ApiError, string>
+}
 
 export function registerProjectTools(server: ToolServer) {
   server.addTool({
@@ -22,46 +78,10 @@ export function registerProjectTools(server: ToolServer) {
       duplicateInSameProject: z.boolean().optional(),
     }),
     execute: async (args) => {
-      const client = getDokployClient()
-
-      switch (args.action) {
-        case "list": {
-          const projects = await client.get<DokployProject[]>("project.all")
-          return formatProjectList(projects)
-        }
-        case "get": {
-          const project = await client.get<DokployProject>("project.one", { projectId: args.projectId! })
-          return `# Project Details\n\n${formatProject(project)}`
-        }
-        case "create": {
-          const project = await client.post<DokployProject>("project.create", {
-            name: args.name!,
-            ...(args.description && { description: args.description }),
-          } satisfies RequestBody<"project-create">)
-          return `# Project Created\n\n${formatProject(project)}`
-        }
-        case "update": {
-          await client.post("project.update", {
-            projectId: args.projectId!,
-            ...(args.name && { name: args.name }),
-            ...(args.description !== undefined && { description: args.description }),
-          })
-          return `Project ${args.projectId} updated.`
-        }
-        case "remove": {
-          await client.post("project.remove", { projectId: args.projectId! } satisfies RequestBody<"project-remove">)
-          return `Project ${args.projectId} removed.`
-        }
-        case "duplicate": {
-          await client.post("project.duplicate", {
-            sourceEnvironmentId: args.sourceEnvironmentId!,
-            name: args.name!,
-            ...(args.description && { description: args.description }),
-            ...(args.duplicateInSameProject !== undefined && { duplicateInSameProject: args.duplicateInSameProject }),
-          })
-          return `Environment duplicated as "${args.name}".`
-        }
-      }
+      const either = await buildProjectProgram(getDokployClient(), args).run()
+      if (either.isRight()) return either.value
+      // eslint-disable-next-line functype/prefer-either -- intentional boundary throw for SomaMCP error classification.
+      throw new Error(formatApiError(either.value))
     },
   })
 }

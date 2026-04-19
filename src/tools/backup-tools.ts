@@ -1,12 +1,122 @@
+import type { IO as IOType } from "functype"
+import { Match } from "functype"
 import { z } from "zod"
 
+import type { DokployClient } from "../client/dokploy-client"
 import { getDokployClient } from "../client/dokploy-client"
+import type { ApiError } from "../client/errors"
+import { formatApiError } from "../client/errors"
 import type { RequestBody } from "../generated"
 import type { DokployBackup } from "../types"
 import { formatBackup } from "../utils/formatters"
 import type { ToolServer } from "./types"
 
 const ACTIONS = ["create", "get", "update", "remove", "listFiles", "manualBackup"] as const
+
+const CREATE_FIELDS = [
+  "schedule",
+  "prefix",
+  "destinationId",
+  "database",
+  "databaseType",
+  "enabled",
+  "keepLatestCount",
+  "postgresId",
+  "mysqlId",
+  "mariadbId",
+  "mongoId",
+  "composeId",
+  "serviceName",
+] as const
+
+const UPDATE_FIELDS = [
+  "backupId",
+  "schedule",
+  "prefix",
+  "destinationId",
+  "database",
+  "serviceName",
+  "databaseType",
+  "enabled",
+  "keepLatestCount",
+] as const
+
+type BackupArgs = {
+  action: (typeof ACTIONS)[number]
+  backupId?: string
+  schedule?: string
+  prefix?: string
+  destinationId?: string
+  database?: string
+  databaseType?: string
+  serviceName?: string
+  enabled?: boolean
+  keepLatestCount?: number
+  postgresId?: string
+  mysqlId?: string
+  mariadbId?: string
+  mongoId?: string
+  composeId?: string
+  backupType?: "postgres" | "mysql" | "mariadb" | "mongo" | "compose"
+  search?: string
+  serverId?: string
+}
+
+const MANUAL_BACKUP_ENDPOINTS: Record<NonNullable<BackupArgs["backupType"]>, string> = {
+  postgres: "backup.manualBackupPostgres",
+  mysql: "backup.manualBackupMySql",
+  mariadb: "backup.manualBackupMariadb",
+  mongo: "backup.manualBackupMongo",
+  compose: "backup.manualBackupCompose",
+}
+
+function pickDefined<T extends Record<string, unknown>, K extends readonly (keyof T)[]>(
+  source: T,
+  keys: K,
+): Record<string, unknown> {
+  return Object.fromEntries(keys.filter((k) => source[k] !== undefined).map((k) => [k, source[k]]))
+}
+
+export function buildBackupProgram(
+  client: Pick<DokployClient, "getIO" | "postIO">,
+  args: BackupArgs,
+): IOType<never, ApiError, string> {
+  return Match(args.action)
+    .case("create", () =>
+      client
+        .postIO<DokployBackup>("backup.create", pickDefined(args, CREATE_FIELDS))
+        .map((backup) => `# Backup Created\n\n${formatBackup(backup)}`),
+    )
+    .case("get", () =>
+      client
+        .getIO<DokployBackup>("backup.one", { backupId: args.backupId! })
+        .map((backup) => `# Backup Details\n\n${formatBackup(backup)}`),
+    )
+    .case("update", () =>
+      client
+        .postIO<unknown>("backup.update", pickDefined(args, UPDATE_FIELDS))
+        .map(() => `Backup ${args.backupId} updated.`),
+    )
+    .case("remove", () =>
+      client
+        .postIO<unknown>("backup.remove", { backupId: args.backupId! } satisfies RequestBody<"backup-remove">)
+        .map(() => `Backup ${args.backupId} removed.`),
+    )
+    .case("listFiles", () => {
+      const params: Record<string, string> = { destinationId: args.destinationId! }
+      if (args.search) params.search = args.search
+      if (args.serverId) params.serverId = args.serverId
+      return client
+        .getIO<unknown>("backup.listBackupFiles", params)
+        .map((files) => `# Backup Files\n\n\`\`\`json\n${JSON.stringify(files, null, 2)}\n\`\`\``)
+    })
+    .case("manualBackup", () =>
+      client
+        .postIO<unknown>(MANUAL_BACKUP_ENDPOINTS[args.backupType!], { backupId: args.backupId! })
+        .map(() => `Manual ${args.backupType} backup triggered for backup config ${args.backupId}.`),
+    )
+    .exhaustive() as IOType<never, ApiError, string>
+}
 
 export function registerBackupTools(server: ToolServer) {
   server.addTool({
@@ -34,80 +144,10 @@ export function registerBackupTools(server: ToolServer) {
       serverId: z.string().optional(),
     }),
     execute: async (args) => {
-      const client = getDokployClient()
-
-      switch (args.action) {
-        case "create": {
-          const body: Record<string, unknown> = {}
-          const fields = [
-            "schedule",
-            "prefix",
-            "destinationId",
-            "database",
-            "databaseType",
-            "enabled",
-            "keepLatestCount",
-            "postgresId",
-            "mysqlId",
-            "mariadbId",
-            "mongoId",
-            "composeId",
-            "serviceName",
-          ] as const
-          for (const key of fields) {
-            if (args[key] !== undefined) body[key] = args[key]
-          }
-          const backup = await client.post<DokployBackup>("backup.create", body)
-          return `# Backup Created\n\n${formatBackup(backup)}`
-        }
-        case "get": {
-          const backup = await client.get<DokployBackup>("backup.one", { backupId: args.backupId! })
-          return `# Backup Details\n\n${formatBackup(backup)}`
-        }
-        case "update": {
-          const body: Record<string, unknown> = {}
-          const fields = [
-            "backupId",
-            "schedule",
-            "prefix",
-            "destinationId",
-            "database",
-            "serviceName",
-            "databaseType",
-            "enabled",
-            "keepLatestCount",
-          ] as const
-          for (const key of fields) {
-            if (args[key] !== undefined) body[key] = args[key]
-          }
-          await client.post("backup.update", body)
-          return `Backup ${args.backupId} updated.`
-        }
-        case "remove": {
-          await client.post("backup.remove", { backupId: args.backupId! } satisfies RequestBody<"backup-remove">)
-          return `Backup ${args.backupId} removed.`
-        }
-        case "listFiles": {
-          const files = await client.get<unknown>("backup.listBackupFiles", {
-            destinationId: args.destinationId!,
-            ...(args.search && { search: args.search }),
-            ...(args.serverId && { serverId: args.serverId }),
-          })
-          return `# Backup Files\n\n\`\`\`json\n${JSON.stringify(files, null, 2)}\n\`\`\``
-        }
-        case "manualBackup": {
-          const endpointMap: Record<string, string> = {
-            postgres: "backup.manualBackupPostgres",
-            mysql: "backup.manualBackupMySql",
-            mariadb: "backup.manualBackupMariadb",
-            mongo: "backup.manualBackupMongo",
-            compose: "backup.manualBackupCompose",
-          }
-          const endpoint = endpointMap[args.backupType!]
-          await client.post(endpoint, { backupId: args.backupId! })
-          return `Manual ${args.backupType} backup triggered for backup config ${args.backupId}.`
-        }
-      }
+      const either = await buildBackupProgram(getDokployClient(), args).run()
+      if (either.isRight()) return either.value
+      // eslint-disable-next-line functype/prefer-either -- intentional boundary throw for SomaMCP error classification.
+      throw new Error(formatApiError(either.value))
     },
   })
 }
