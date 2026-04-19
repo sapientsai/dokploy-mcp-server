@@ -1,4 +1,4 @@
-import type { IO as IOType } from "functype"
+import type { IO } from "functype"
 import { Match } from "functype"
 import { z } from "zod"
 
@@ -73,7 +73,7 @@ function dbBody(dbType: DatabaseType, databaseId: string): Record<string, unknow
 export function buildDatabaseProgram(
   client: Pick<DokployClient, "get" | "post">,
   args: DatabaseArgs,
-): IOType<never, ApiError, string> {
+): IO<never, ApiError, string> {
   const { dbType } = args
   return Match(args.action)
     .case("create", () =>

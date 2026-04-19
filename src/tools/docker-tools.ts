@@ -1,4 +1,3 @@
-import type { IO as IOType } from "functype"
 import { IO, Match } from "functype"
 import { z } from "zod"
 
@@ -32,7 +31,7 @@ const FIND_CONTAINER_ENDPOINTS: Record<NonNullable<DockerArgs["method"]>, string
 export function buildDockerProgram(
   client: Pick<DokployClient, "get" | "post">,
   args: DockerArgs,
-): IOType<never, ApiError, string> {
+): IO<never, ApiError, string> {
   return Match(args.action)
     .case("getContainers", () => {
       const params: Record<string, string> = {}
@@ -59,7 +58,7 @@ export function buildDockerProgram(
           if (config == null) return notFoundHint
           return `# Container Config\n\n\`\`\`json\n${JSON.stringify(config, null, 2)}\n\`\`\``
         })
-        .recoverWith((err): IOType<never, ApiError, string> => {
+        .recoverWith((err): IO<never, ApiError, string> => {
           // 400 = malformed containerId (fails the API's `^[a-zA-Z0-9.\-_]+$` pattern).
           // 404 kept for robustness in case Dokploy starts returning it in future versions.
           if (err._tag === "HttpError" && (err.status === 400 || err.status === 404)) {

@@ -1,4 +1,4 @@
-import type { IO as IOType } from "functype"
+import type { IO } from "functype"
 import { Match } from "functype"
 import { z } from "zod"
 
@@ -30,7 +30,7 @@ type ServerArgs = {
 export function buildServerProgram(
   client: Pick<DokployClient, "get" | "post">,
   args: ServerArgs,
-): IOType<never, ApiError, string> {
+): IO<never, ApiError, string> {
   return Match(args.action)
     .case("list", () => client.get<DokployServer[]>("server.all").map(formatServerList))
     .case("get", () =>

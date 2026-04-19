@@ -1,4 +1,4 @@
-import type { IO as IOType } from "functype"
+import type { IO } from "functype"
 import { Match } from "functype"
 import { z } from "zod"
 
@@ -25,7 +25,7 @@ type ProjectArgs = {
 export function buildProjectProgram(
   client: Pick<DokployClient, "get" | "post">,
   args: ProjectArgs,
-): IOType<never, ApiError, string> {
+): IO<never, ApiError, string> {
   return Match(args.action)
     .case("list", () => client.get<DokployProject[]>("project.all").map(formatProjectList))
     .case("get", () =>

@@ -1,4 +1,4 @@
-import type { IO as IOType } from "functype"
+import type { IO } from "functype"
 import { Match } from "functype"
 import { z } from "zod"
 
@@ -25,7 +25,7 @@ type DeploymentArgs = {
 export function buildDeploymentProgram(
   client: Pick<DokployClient, "get" | "post">,
   args: DeploymentArgs,
-): IOType<never, ApiError, string> {
+): IO<never, ApiError, string> {
   return Match(args.action)
     .case("list", () => {
       if (args.applicationId) {

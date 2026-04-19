@@ -1,4 +1,4 @@
-import type { IO as IOType } from "functype"
+import type { IO } from "functype"
 import { Match } from "functype"
 import { z } from "zod"
 
@@ -46,7 +46,7 @@ type DomainArgs = {
 export function buildDomainProgram(
   client: Pick<DokployClient, "get" | "post">,
   args: DomainArgs,
-): IOType<never, ApiError, string> {
+): IO<never, ApiError, string> {
   return Match(args.action)
     .case("create", () =>
       client
