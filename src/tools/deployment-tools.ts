@@ -1,5 +1,5 @@
 import type { IO as IOType } from "functype"
-import { IO, Match } from "functype"
+import { Match } from "functype"
 import { z } from "zod"
 
 import type { DokployClient } from "../client/dokploy-client"
@@ -10,7 +10,7 @@ import type { DokployDeployment } from "../types"
 import { formatDeploymentList } from "../utils/formatters"
 import type { ToolServer } from "./types"
 
-const ACTIONS = ["list", "getLog", "killProcess"] as const
+const ACTIONS = ["list", "killProcess"] as const
 
 type DeploymentArgs = {
   action: (typeof ACTIONS)[number]
@@ -51,27 +51,6 @@ export function buildDeploymentProgram(
       // eslint-disable-next-line functype/prefer-either -- validation failure surfaced as plain Error for SomaMCP classification.
       throw new Error("Provide applicationId, composeId, serverId, or type+id")
     })
-    .case("getLog", () =>
-      client
-        .get<unknown>("deployment.readLog", { deploymentId: args.deploymentId! })
-        .map((log) => {
-          const content =
-            typeof log === "string"
-              ? log
-              : typeof log === "object" && log !== null && "data" in log && typeof log.data === "string"
-                ? log.data
-                : JSON.stringify(log, null, 2)
-          return `# Deployment Log\n\n\`\`\`\n${content}\n\`\`\``
-        })
-        .recoverWith(
-          (err): IOType<never, ApiError, string> =>
-            err._tag === "HttpError" && err.status === 404
-              ? IO.succeed(
-                  `No log available for deployment ${args.deploymentId}. The log may not exist yet or has been cleaned up.`,
-                )
-              : IO.fail(err),
-        ),
-    )
     .case("killProcess", () =>
       client
         .post<unknown>("deployment.killProcess", { deploymentId: args.deploymentId! })
@@ -84,7 +63,7 @@ export function registerDeploymentTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_deployment",
     description:
-      "Manage deployments. list: applicationId|composeId|serverId|type+id. getLog: deploymentId (read deployment log content). killProcess: deploymentId.",
+      "Manage deployments. list: applicationId|composeId|serverId|type+id. killProcess: deploymentId. Note: Dokploy does not expose per-deployment log retrieval via API — use dokploy_application (readMonitoring) or the service-scoped *.readLogs endpoints for service logs.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       deploymentId: z.string().optional(),

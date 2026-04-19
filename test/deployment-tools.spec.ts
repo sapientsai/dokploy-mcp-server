@@ -1,7 +1,6 @@
 import { IO } from "functype"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { HttpError } from "../src/client/errors"
 import { registerDeploymentTools } from "../src/tools/deployment-tools"
 import { captureTool } from "./support/tool-harness"
 
@@ -64,33 +63,6 @@ describe("dokploy_deployment list dispatch", () => {
 
   it("throws when only type without id", async () => {
     await expect(tool.execute({ action: "list", type: "postgres" })).rejects.toThrow()
-  })
-})
-
-describe("dokploy_deployment getLog", () => {
-  it("extracts data field from log response", async () => {
-    getMock.mockReturnValueOnce(IO.succeed({ data: "line 1\nline 2" }))
-    const result = (await tool.execute({ action: "getLog", deploymentId: "d1" })) as string
-    expect(getMock).toHaveBeenCalledWith("deployment.readLog", { deploymentId: "d1" })
-    expect(result).toContain("line 1")
-    expect(result).toContain("line 2")
-  })
-
-  it("handles raw string log response", async () => {
-    getMock.mockReturnValueOnce(IO.succeed("raw log output"))
-    const result = (await tool.execute({ action: "getLog", deploymentId: "d1" })) as string
-    expect(result).toContain("raw log output")
-  })
-
-  it("returns helpful message on 404", async () => {
-    getMock.mockReturnValueOnce(IO.fail(HttpError("GET", "deployment.readLog", 404, "Not Found", "")))
-    const result = (await tool.execute({ action: "getLog", deploymentId: "d1" })) as string
-    expect(result).toContain("No log available")
-  })
-
-  it("re-throws non-404 errors", async () => {
-    getMock.mockReturnValueOnce(IO.fail(HttpError("GET", "deployment.readLog", 500, "Internal", "boom")))
-    await expect(tool.execute({ action: "getLog", deploymentId: "d1" })).rejects.toThrow(/500/)
   })
 })
 

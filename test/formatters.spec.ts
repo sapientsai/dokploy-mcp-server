@@ -255,6 +255,16 @@ describe("formatEnvironment", () => {
     })
     expect(result).toContain("Description: None")
   })
+
+  it("renders 'N/A' for projectId and createdAt when omitted (environment.byProjectId shape)", () => {
+    const result = formatEnvironment({
+      environmentId: "e",
+      name: "production",
+    })
+    expect(result).toContain("Project: N/A")
+    expect(result).toContain("Created: N/A")
+    expect(result).not.toContain("undefined")
+  })
 })
 
 describe("formatEnvironmentList", () => {
