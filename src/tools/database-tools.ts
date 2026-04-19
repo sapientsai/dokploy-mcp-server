@@ -41,6 +41,20 @@ const CREATE_FIELDS = [
   "serverId",
 ] as const
 
+const LIBSQL_CREATE_FIELDS = [
+  "name",
+  "appName",
+  "dockerImage",
+  "environmentId",
+  "description",
+  "databaseUser",
+  "databasePassword",
+  "sqldNode",
+  "sqldPrimaryUrl",
+  "enableNamespaces",
+  "serverId",
+] as const
+
 const UPDATE_FIELDS = ["name", "description", "dockerImage", "command", "memoryLimit", "cpuLimit"] as const
 
 type DatabaseArgs = {
@@ -64,6 +78,11 @@ type DatabaseArgs = {
   applicationStatus?: string
   env?: string
   externalPort?: number
+  externalGRPCPort?: number
+  externalAdminPort?: number
+  sqldNode?: "primary" | "replica"
+  sqldPrimaryUrl?: string | null
+  enableNamespaces?: boolean
 }
 
 function dbBody(dbType: DatabaseType, databaseId: string): Record<string, unknown> {
@@ -76,11 +95,16 @@ export function buildDatabaseProgram(
 ): IO<never, ApiError, string> {
   const { dbType } = args
   return Match(args.action)
-    .case("create", () =>
-      client
-        .post<DokployDatabase>(`${dbType}.create`, pickDefined(args, CREATE_FIELDS))
-        .map((db) => `# Database Created\n\n${formatDatabase(db, dbType)}`),
-    )
+    .case("create", () => {
+      const fields = dbType === "libsql" ? LIBSQL_CREATE_FIELDS : CREATE_FIELDS
+      const body =
+        dbType === "libsql"
+          ? { enableNamespaces: args.enableNamespaces ?? false, ...pickDefined(args, fields) }
+          : pickDefined(args, fields)
+      return client
+        .post<DokployDatabase>(`${dbType}.create`, body)
+        .map((db) => `# Database Created\n\n${formatDatabase(db, dbType)}`)
+    })
     .case("get", () =>
       client
         .get<DokployDatabase>(`${dbType}.one`, dbBody(dbType, args.databaseId!) as Record<string, string>)
@@ -148,14 +172,24 @@ export function buildDatabaseProgram(
         .post<unknown>(`${dbType}.saveEnvironment`, body)
         .map(() => `Environment saved for database ${args.databaseId}.`)
     })
-    .case("saveExternalPort", () =>
-      client
+    .case("saveExternalPort", () => {
+      // libsql exposes three port endpoints via a single saveExternalPorts (plural) call.
+      if (dbType === "libsql") {
+        const body: Record<string, unknown> = dbBody(dbType, args.databaseId!)
+        if (args.externalPort !== undefined) body.externalPort = args.externalPort
+        if (args.externalGRPCPort !== undefined) body.externalGRPCPort = args.externalGRPCPort
+        if (args.externalAdminPort !== undefined) body.externalAdminPort = args.externalAdminPort
+        return client
+          .post<unknown>("libsql.saveExternalPorts", body)
+          .map(() => `External ports updated for libsql database ${args.databaseId}.`)
+      }
+      return client
         .post<unknown>(`${dbType}.saveExternalPort`, {
           ...dbBody(dbType, args.databaseId!),
           externalPort: args.externalPort!,
         })
-        .map(() => `External port set to ${args.externalPort} for database ${args.databaseId}.`),
-    )
+        .map(() => `External port set to ${args.externalPort} for database ${args.databaseId}.`)
+    })
     .exhaustive()
 }
 
@@ -163,10 +197,10 @@ export function registerDatabaseTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_database",
     description:
-      "Manage databases (postgres/mysql/mariadb/mongo/redis). create: dbType+name+environmentId+databasePassword. get: dbType+databaseId. update: dbType+databaseId+fields. move: dbType+databaseId+targetEnvironmentId. start/stop/deploy/rebuild/remove: dbType+databaseId. reload: dbType+databaseId+appName. changeStatus: dbType+databaseId+applicationStatus. saveEnvironment: dbType+databaseId+env. saveExternalPort: dbType+databaseId+externalPort.",
+      "Manage databases (postgres/mysql/mariadb/mongo/redis/libsql). create: dbType+name+environmentId+databasePassword (libsql additionally requires appName+dockerImage+sqldNode, accepts sqldPrimaryUrl+enableNamespaces). get: dbType+databaseId. update: dbType+databaseId+fields. move: dbType+databaseId+targetEnvironmentId. start/stop/deploy/rebuild/remove: dbType+databaseId. reload: dbType+databaseId+appName. changeStatus: dbType+databaseId+applicationStatus. saveEnvironment: dbType+databaseId+env. saveExternalPort: dbType+databaseId+externalPort (libsql also accepts externalGRPCPort/externalAdminPort).",
     parameters: z.object({
       action: z.enum(ACTIONS),
-      dbType: z.enum(DB_TYPES).describe("postgres, mysql, mariadb, mongo, or redis"),
+      dbType: z.enum(DB_TYPES).describe("postgres, mysql, mariadb, mongo, redis, or libsql"),
       databaseId: z.string().optional(),
       name: z.string().optional(),
       environmentId: z.string().optional(),
@@ -190,6 +224,11 @@ export function registerDatabaseTools(server: ToolServer) {
           "Environment variables as KEY=VALUE pairs, one per line. Example: 'DB_HOST=localhost\\nDB_PORT=5432'",
         ),
       externalPort: z.number().optional(),
+      externalGRPCPort: z.number().optional().describe("libsql only"),
+      externalAdminPort: z.number().optional().describe("libsql only"),
+      sqldNode: z.enum(["primary", "replica"]).optional().describe("libsql sqld role"),
+      sqldPrimaryUrl: z.string().nullable().optional().describe("libsql replica primary URL"),
+      enableNamespaces: z.boolean().optional().describe("libsql multi-tenant namespaces"),
     }),
     execute: async (args) => {
       const either = await buildDatabaseProgram(getDokployClient(), args).run()

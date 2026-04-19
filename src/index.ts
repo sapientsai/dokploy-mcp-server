@@ -12,11 +12,13 @@ import {
   registerComposeTools,
   registerDatabaseTools,
   registerDeploymentTools,
+  registerDestinationTools,
   registerDockerTools,
   registerDomainTools,
   registerEnvironmentTools,
   registerInfrastructureTools,
   registerProjectTools,
+  registerRegistryTools,
   registerServerTools,
   registerSettingsTools,
   registerSshKeyTools,
@@ -60,17 +62,19 @@ const server = createServer({
 
 Available capabilities:
 - Projects: list, create, update, remove, duplicate
-- Applications: create, deploy, redeploy, start, stop, delete, configure builds, manage environment variables
-- Docker Compose: create, deploy, start, stop, manage services
-- Databases: unified tools for postgres, mysql, mariadb, mongo, redis (create, deploy, start, stop, manage)
+- Applications: create, deploy, redeploy, start, stop, delete, read logs, configure builds, manage environment variables
+- Docker Compose: create, deploy, start, stop, read logs, manage services
+- Databases: unified tools for postgres, mysql, mariadb, mongo, redis, libsql (create, deploy, start, stop, manage)
 - Domains: create, configure, validate DNS, generate traefik.me domains
-- Docker: list containers, restart, inspect configuration
+- Docker: list containers, start/stop/kill/restart/remove, inspect configuration
 - Servers: add, configure, monitor remote servers
 - Deployments: list, track, kill deployment processes
 - Backups: schedule, trigger manual backups, list backup files
 - Environments: create, duplicate, manage project environments
 - Infrastructure: ports, certificates, basic auth security
 - SSH Keys: create, list, update, remove, generate SSH keys for server access and git-based deployments
+- Registries: manage container registries for private image pulls
+- Destinations: manage S3-compatible backup destinations
 - Settings: health checks, version info, cleanup, reload services`,
 })
 
@@ -87,6 +91,8 @@ registerBackupTools(server)
 registerEnvironmentTools(server)
 registerInfrastructureTools(server)
 registerSshKeyTools(server)
+registerRegistryTools(server)
+registerDestinationTools(server)
 
 async function main() {
   // Bootstrap path: failures here are fatal (process.exit), so Either doesn't buy recovery.

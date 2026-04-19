@@ -6,9 +6,11 @@ import type {
   DokployContainer,
   DokployDatabase,
   DokployDeployment,
+  DokployDestination,
   DokployDomain,
   DokployEnvironment,
   DokployProject,
+  DokployRegistry,
   DokployServer,
   DokploySshKey,
 } from "../types"
@@ -236,4 +238,34 @@ export function formatSshKey(sshKey: DokploySshKey): string {
 export function formatSshKeyList(sshKeys: DokploySshKey[]): string {
   if (sshKeys.length === 0) return "No SSH keys found."
   return `# SSH Keys (${sshKeys.length})\n\n${sshKeys.map(formatSshKey).join("\n\n")}`
+}
+
+export function formatRegistry(registry: DokployRegistry): string {
+  return `- **${registry.registryName}** (ID: ${registry.registryId})
+  URL: ${registry.registryUrl}
+  Type: ${registry.registryType}
+  Username: ${orElse(registry.username, "N/A")}
+  Image Prefix: ${orElse(registry.imagePrefix, "None")}
+  Server: ${orElse(registry.serverId, "default")}
+  Created: ${formatDate(registry.createdAt)}`
+}
+
+export function formatRegistryList(registries: DokployRegistry[]): string {
+  if (registries.length === 0) return "No registries found."
+  return `# Registries (${registries.length})\n\n${registries.map(formatRegistry).join("\n\n")}`
+}
+
+export function formatDestination(destination: DokployDestination): string {
+  return `- **${destination.name}** (ID: ${destination.destinationId})
+  Provider: ${orElse(destination.provider, "N/A")}
+  Bucket: ${destination.bucket}
+  Region: ${destination.region}
+  Endpoint: ${destination.endpoint}
+  Server: ${orElse(destination.serverId, "default")}
+  Created: ${formatDate(destination.createdAt)}`
+}
+
+export function formatDestinationList(destinations: DokployDestination[]): string {
+  if (destinations.length === 0) return "No destinations found."
+  return `# Destinations (${destinations.length})\n\n${destinations.map(formatDestination).join("\n\n")}`
 }

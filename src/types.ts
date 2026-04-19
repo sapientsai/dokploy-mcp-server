@@ -1,4 +1,4 @@
-export const DB_TYPES = ["postgres", "mysql", "mariadb", "mongo", "redis"] as const
+export const DB_TYPES = ["postgres", "mysql", "mariadb", "mongo", "redis", "libsql"] as const
 export type DatabaseType = (typeof DB_TYPES)[number]
 
 export const DB_ID_FIELDS: Record<DatabaseType, string> = {
@@ -7,6 +7,7 @@ export const DB_ID_FIELDS: Record<DatabaseType, string> = {
   mariadb: "mariadbId",
   mongo: "mongoId",
   redis: "redisId",
+  libsql: "libsqlId",
 }
 
 export type DokployProject = {
@@ -135,6 +136,7 @@ export type DokployDatabase = {
   mariadbId?: string
   mongoId?: string
   redisId?: string
+  libsqlId?: string
   name?: string
   appName?: string
   description?: string
@@ -144,6 +146,11 @@ export type DokployDatabase = {
   applicationStatus?: string
   environmentId?: string
   externalPort?: number
+  externalGRPCPort?: number
+  externalAdminPort?: number
+  sqldNode?: "primary" | "replica"
+  sqldPrimaryUrl?: string | null
+  enableNamespaces?: boolean
   createdAt?: string
 }
 
@@ -202,4 +209,28 @@ export type DokploySecurity = {
   username: string
   password: string
   applicationId?: string
+}
+
+export type DokployRegistry = {
+  registryId: string
+  registryName: string
+  registryUrl: string
+  registryType: string
+  username?: string
+  imagePrefix?: string | null
+  serverId?: string
+  organizationId?: string
+  createdAt?: string
+}
+
+export type DokployDestination = {
+  destinationId: string
+  name: string
+  provider?: string | null
+  bucket: string
+  region: string
+  endpoint: string
+  accessKey?: string
+  serverId?: string
+  createdAt?: string
 }

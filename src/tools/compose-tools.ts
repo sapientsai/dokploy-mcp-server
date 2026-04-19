@@ -27,6 +27,7 @@ const ACTIONS = [
   "cleanQueues",
   "killBuild",
   "refreshToken",
+  "readLogs",
 ] as const
 
 const UPDATE_FIELDS = [
@@ -75,6 +76,10 @@ type ComposeArgs = {
   targetEnvironmentId?: string
   type?: string
   serviceName?: string
+  containerId?: string
+  tail?: number
+  since?: string
+  search?: string
 }
 
 export function buildComposeProgram(
@@ -190,6 +195,18 @@ export function buildComposeProgram(
         .post<unknown>("compose.refreshToken", { composeId: args.composeId! })
         .map(() => `Compose ${args.composeId}: refreshToken completed.`),
     )
+    .case("readLogs", () => {
+      const params: Record<string, string> = {
+        composeId: args.composeId!,
+        containerId: args.containerId!,
+      }
+      if (args.tail !== undefined) params.tail = String(args.tail)
+      if (args.since !== undefined) params.since = args.since
+      if (args.search !== undefined) params.search = args.search
+      return client
+        .get<string>("compose.readLogs", params)
+        .map((logs) => `# Compose Logs (${args.composeId} / ${args.containerId})\n\n\`\`\`\n${logs}\n\`\`\``)
+    })
     .exhaustive()
 }
 
@@ -197,7 +214,7 @@ export function registerComposeTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_compose",
     description:
-      "Manage Docker Compose services. create: name+environmentId. get: composeId (returns env vars). update: composeId+fields (supports sourceType, composeFile for raw/inline, git source fields, autoDeploy). delete/start/stop/getDefaultCommand: composeId. deploy: composeId, redeploy? (note: first deploy on new services may fail — retry immediately). move: composeId+targetEnvironmentId. loadServices: composeId (must deploy first). loadMounts: composeId+serviceName. saveEnvironment: composeId+env (KEY=VALUE pairs, one per line). cancelDeployment/cleanQueues/killBuild/refreshToken: composeId.",
+      "Manage Docker Compose services. create: name+environmentId. get: composeId (returns env vars). update: composeId+fields (supports sourceType, composeFile for raw/inline, git source fields, autoDeploy). delete/start/stop/getDefaultCommand: composeId. deploy: composeId, redeploy? (note: first deploy on new services may fail — retry immediately). move: composeId+targetEnvironmentId. loadServices: composeId (must deploy first). loadMounts: composeId+serviceName. saveEnvironment: composeId+env (KEY=VALUE pairs, one per line). cancelDeployment/cleanQueues/killBuild/refreshToken: composeId. readLogs: composeId+containerId, tail?, since?, search?.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       composeId: z.string().optional(),
@@ -234,6 +251,22 @@ export function registerComposeTools(server: ToolServer) {
       targetEnvironmentId: z.string().optional(),
       type: z.string().optional(),
       serviceName: z.string().optional(),
+      containerId: z
+        .string()
+        .regex(/^[a-zA-Z0-9.\-_]+$/)
+        .optional()
+        .describe("Container ID for readLogs (use dokploy_docker findContainers to discover)"),
+      tail: z.number().int().min(1).max(10000).optional().describe("Number of recent log lines (default 100)"),
+      since: z
+        .string()
+        .regex(/^(all|\d+[smhd])$/)
+        .optional()
+        .describe("Time range: 'all' or a duration like '30m', '1h', '7d'"),
+      search: z
+        .string()
+        .regex(/^[a-zA-Z0-9 ._-]{0,500}$/)
+        .optional()
+        .describe("Filter log lines by substring"),
     }),
     execute: async (args) => {
       const either = await buildComposeProgram(getDokployClient(), args).run()

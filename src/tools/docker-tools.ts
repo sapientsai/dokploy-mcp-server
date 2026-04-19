@@ -9,7 +9,16 @@ import type { DokployContainer } from "../types"
 import { formatContainerList } from "../utils/formatters"
 import type { ToolServer } from "./types"
 
-const ACTIONS = ["getContainers", "restartContainer", "getConfig", "findContainers"] as const
+const ACTIONS = [
+  "getContainers",
+  "restartContainer",
+  "startContainer",
+  "stopContainer",
+  "killContainer",
+  "removeContainer",
+  "getConfig",
+  "findContainers",
+] as const
 
 type DockerArgs = {
   action: (typeof ACTIONS)[number]
@@ -28,6 +37,25 @@ const FIND_CONTAINER_ENDPOINTS: Record<NonNullable<DockerArgs["method"]>, string
   service: "docker.getServiceContainersByAppName",
 }
 
+const SIMPLE_CONTAINER_ACTIONS = {
+  restartContainer: { endpoint: "docker.restartContainer", verb: "restarted" },
+  startContainer: { endpoint: "docker.startContainer", verb: "started" },
+  stopContainer: { endpoint: "docker.stopContainer", verb: "stopped" },
+  killContainer: { endpoint: "docker.killContainer", verb: "killed" },
+  removeContainer: { endpoint: "docker.removeContainer", verb: "removed" },
+} as const
+
+function containerLifecycle(
+  client: Pick<DokployClient, "get" | "post">,
+  action: keyof typeof SIMPLE_CONTAINER_ACTIONS,
+  args: DockerArgs,
+): IO<never, ApiError, string> {
+  const { endpoint, verb } = SIMPLE_CONTAINER_ACTIONS[action]
+  const body: Record<string, unknown> = { containerId: args.containerId! }
+  if (args.serverId) body.serverId = args.serverId
+  return client.post<unknown>(endpoint, body).map(() => `Container ${args.containerId} ${verb}.`)
+}
+
 export function buildDockerProgram(
   client: Pick<DokployClient, "get" | "post">,
   args: DockerArgs,
@@ -38,11 +66,11 @@ export function buildDockerProgram(
       if (args.serverId) params.serverId = args.serverId
       return client.get<DokployContainer[]>("docker.getContainers", params).map(formatContainerList)
     })
-    .case("restartContainer", () =>
-      client
-        .post<unknown>("docker.restartContainer", { containerId: args.containerId! })
-        .map(() => `Container ${args.containerId} restarted.`),
-    )
+    .case("restartContainer", () => containerLifecycle(client, "restartContainer", args))
+    .case("startContainer", () => containerLifecycle(client, "startContainer", args))
+    .case("stopContainer", () => containerLifecycle(client, "stopContainer", args))
+    .case("killContainer", () => containerLifecycle(client, "killContainer", args))
+    .case("removeContainer", () => containerLifecycle(client, "removeContainer", args))
     .case("getConfig", () => {
       // docker.getConfig is a GET endpoint in the Dokploy API (openapi.json confirms this — it
       // takes containerId + optional serverId as query params). Earlier versions of this tool
@@ -83,7 +111,7 @@ export function registerDockerTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_docker",
     description:
-      "Docker container management. Actions: getContainers (list all containers, serverId?), restartContainer (containerId), getConfig (containerId, serverId?), findContainers (appName+method: match|label|stack|service, serverId?).",
+      "Docker container management. Actions: getContainers (list all containers, serverId?), restartContainer/startContainer/stopContainer/killContainer/removeContainer (containerId, serverId?), getConfig (containerId, serverId?), findContainers (appName+method: match|label|stack|service, serverId?).",
     parameters: z.object({
       action: z.enum(ACTIONS),
       containerId: z.string().optional(),
