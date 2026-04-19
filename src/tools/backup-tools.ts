@@ -72,28 +72,28 @@ const MANUAL_BACKUP_ENDPOINTS: Record<NonNullable<BackupArgs["backupType"]>, str
 }
 
 export function buildBackupProgram(
-  client: Pick<DokployClient, "getIO" | "postIO">,
+  client: Pick<DokployClient, "get" | "post">,
   args: BackupArgs,
 ): IOType<never, ApiError, string> {
   return Match(args.action)
     .case("create", () =>
       client
-        .postIO<DokployBackup>("backup.create", pickDefined(args, CREATE_FIELDS))
+        .post<DokployBackup>("backup.create", pickDefined(args, CREATE_FIELDS))
         .map((backup) => `# Backup Created\n\n${formatBackup(backup)}`),
     )
     .case("get", () =>
       client
-        .getIO<DokployBackup>("backup.one", { backupId: args.backupId! })
+        .get<DokployBackup>("backup.one", { backupId: args.backupId! })
         .map((backup) => `# Backup Details\n\n${formatBackup(backup)}`),
     )
     .case("update", () =>
       client
-        .postIO<unknown>("backup.update", pickDefined(args, UPDATE_FIELDS))
+        .post<unknown>("backup.update", pickDefined(args, UPDATE_FIELDS))
         .map(() => `Backup ${args.backupId} updated.`),
     )
     .case("remove", () =>
       client
-        .postIO<unknown>("backup.remove", { backupId: args.backupId! } satisfies RequestBody<"backup-remove">)
+        .post<unknown>("backup.remove", { backupId: args.backupId! } satisfies RequestBody<"backup-remove">)
         .map(() => `Backup ${args.backupId} removed.`),
     )
     .case("listFiles", () => {
@@ -101,12 +101,12 @@ export function buildBackupProgram(
       if (args.search) params.search = args.search
       if (args.serverId) params.serverId = args.serverId
       return client
-        .getIO<unknown>("backup.listBackupFiles", params)
+        .get<unknown>("backup.listBackupFiles", params)
         .map((files) => `# Backup Files\n\n\`\`\`json\n${JSON.stringify(files, null, 2)}\n\`\`\``)
     })
     .case("manualBackup", () =>
       client
-        .postIO<unknown>(MANUAL_BACKUP_ENDPOINTS[args.backupType!], { backupId: args.backupId! })
+        .post<unknown>(MANUAL_BACKUP_ENDPOINTS[args.backupType!], { backupId: args.backupId! })
         .map(() => `Manual ${args.backupType} backup triggered for backup config ${args.backupId}.`),
     )
     .exhaustive() as IOType<never, ApiError, string>

@@ -18,29 +18,29 @@ type SettingsArgs = {
 }
 
 export function buildSettingsProgram(
-  client: Pick<DokployClient, "getIO" | "postIO">,
+  client: Pick<DokployClient, "get" | "post">,
   args: SettingsArgs,
 ): IO<never, ApiError, string> {
   return Match(args.action)
     .case("health", () =>
       client
-        .getIO<unknown>("settings.health")
+        .get<unknown>("settings.health")
         .map((health) => `# Health\n\n\`\`\`json\n${JSON.stringify(health, null, 2)}\n\`\`\``),
     )
-    .case("version", () => client.getIO<string>("settings.getDokployVersion").map((v) => `Dokploy version: ${v}`))
-    .case("ip", () => client.getIO<string>("settings.getIp").map((ip) => `Server IP: ${ip}`))
+    .case("version", () => client.get<string>("settings.getDokployVersion").map((v) => `Dokploy version: ${v}`))
+    .case("ip", () => client.get<string>("settings.getIp").map((ip) => `Server IP: ${ip}`))
     .case("clean", () => {
       const type = args.cleanType ?? "all"
       const endpoint = type === "all" ? "settings.cleanAll" : "settings.cleanUnusedImages"
       const body: Record<string, unknown> = args.serverId ? { serverId: args.serverId } : {}
-      return client.postIO<unknown>(endpoint, body).map(() => `Cleanup (${type}) completed.`)
+      return client.post<unknown>(endpoint, body).map(() => `Cleanup (${type}) completed.`)
     })
     .case("reload", () => {
       const target = args.reloadTarget ?? "server"
       const io =
         target === "server"
-          ? client.postIO<unknown>("settings.reloadServer")
-          : client.postIO<unknown>("settings.reloadTraefik", args.serverId ? { serverId: args.serverId } : {})
+          ? client.post<unknown>("settings.reloadServer")
+          : client.post<unknown>("settings.reloadTraefik", args.serverId ? { serverId: args.serverId } : {})
       return io.map(() => `${target} reloaded.`)
     })
     .exhaustive() as IO<never, ApiError, string>

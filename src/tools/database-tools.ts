@@ -71,30 +71,30 @@ function dbBody(dbType: DatabaseType, databaseId: string): Record<string, unknow
 }
 
 export function buildDatabaseProgram(
-  client: Pick<DokployClient, "getIO" | "postIO">,
+  client: Pick<DokployClient, "get" | "post">,
   args: DatabaseArgs,
 ): IOType<never, ApiError, string> {
   const { dbType } = args
   return Match(args.action)
     .case("create", () =>
       client
-        .postIO<DokployDatabase>(`${dbType}.create`, pickDefined(args, CREATE_FIELDS))
+        .post<DokployDatabase>(`${dbType}.create`, pickDefined(args, CREATE_FIELDS))
         .map((db) => `# Database Created\n\n${formatDatabase(db, dbType)}`),
     )
     .case("get", () =>
       client
-        .getIO<DokployDatabase>(`${dbType}.one`, dbBody(dbType, args.databaseId!) as Record<string, string>)
+        .get<DokployDatabase>(`${dbType}.one`, dbBody(dbType, args.databaseId!) as Record<string, string>)
         .map((db) => `# Database Details\n\n${formatDatabase(db, dbType)}`),
     )
     .case("update", () => {
       const body = { ...dbBody(dbType, args.databaseId!), ...pickDefined(args, UPDATE_FIELDS) }
       return client
-        .postIO<unknown>(`${dbType}.update`, body as RequestBody<"postgres-update">)
+        .post<unknown>(`${dbType}.update`, body as RequestBody<"postgres-update">)
         .map(() => `Database ${args.databaseId} (${dbType}) updated.`)
     })
     .case("move", () =>
       client
-        .postIO<unknown>(`${dbType}.move`, {
+        .post<unknown>(`${dbType}.move`, {
           ...dbBody(dbType, args.databaseId!),
           targetEnvironmentId: args.targetEnvironmentId!,
         })
@@ -102,32 +102,32 @@ export function buildDatabaseProgram(
     )
     .case("start", () =>
       client
-        .postIO<unknown>(`${dbType}.start`, dbBody(dbType, args.databaseId!))
+        .post<unknown>(`${dbType}.start`, dbBody(dbType, args.databaseId!))
         .map(() => `Database ${args.databaseId} (${dbType}): start completed.`),
     )
     .case("stop", () =>
       client
-        .postIO<unknown>(`${dbType}.stop`, dbBody(dbType, args.databaseId!))
+        .post<unknown>(`${dbType}.stop`, dbBody(dbType, args.databaseId!))
         .map(() => `Database ${args.databaseId} (${dbType}): stop completed.`),
     )
     .case("deploy", () =>
       client
-        .postIO<unknown>(`${dbType}.deploy`, dbBody(dbType, args.databaseId!))
+        .post<unknown>(`${dbType}.deploy`, dbBody(dbType, args.databaseId!))
         .map(() => `Database ${args.databaseId} (${dbType}): deploy completed.`),
     )
     .case("rebuild", () =>
       client
-        .postIO<unknown>(`${dbType}.rebuild`, dbBody(dbType, args.databaseId!))
+        .post<unknown>(`${dbType}.rebuild`, dbBody(dbType, args.databaseId!))
         .map(() => `Database ${args.databaseId} (${dbType}): rebuild completed.`),
     )
     .case("remove", () =>
       client
-        .postIO<unknown>(`${dbType}.remove`, dbBody(dbType, args.databaseId!))
+        .post<unknown>(`${dbType}.remove`, dbBody(dbType, args.databaseId!))
         .map(() => `Database ${args.databaseId} (${dbType}): remove completed.`),
     )
     .case("reload", () =>
       client
-        .postIO<unknown>(`${dbType}.reload`, {
+        .post<unknown>(`${dbType}.reload`, {
           ...dbBody(dbType, args.databaseId!),
           appName: args.appName!,
         })
@@ -135,7 +135,7 @@ export function buildDatabaseProgram(
     )
     .case("changeStatus", () =>
       client
-        .postIO<unknown>(`${dbType}.changeStatus`, {
+        .post<unknown>(`${dbType}.changeStatus`, {
           ...dbBody(dbType, args.databaseId!),
           applicationStatus: args.applicationStatus!,
         })
@@ -145,12 +145,12 @@ export function buildDatabaseProgram(
       const body: Record<string, unknown> = dbBody(dbType, args.databaseId!)
       if (args.env !== undefined) body.env = args.env
       return client
-        .postIO<unknown>(`${dbType}.saveEnvironment`, body)
+        .post<unknown>(`${dbType}.saveEnvironment`, body)
         .map(() => `Environment saved for database ${args.databaseId}.`)
     })
     .case("saveExternalPort", () =>
       client
-        .postIO<unknown>(`${dbType}.saveExternalPort`, {
+        .post<unknown>(`${dbType}.saveExternalPort`, {
           ...dbBody(dbType, args.databaseId!),
           externalPort: args.externalPort!,
         })

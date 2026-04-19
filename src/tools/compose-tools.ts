@@ -79,13 +79,13 @@ type ComposeArgs = {
 }
 
 export function buildComposeProgram(
-  client: Pick<DokployClient, "getIO" | "postIO">,
+  client: Pick<DokployClient, "get" | "post">,
   args: ComposeArgs,
 ): IOType<never, ApiError, string> {
   return Match(args.action)
     .case("create", () =>
       client
-        .postIO<DokployCompose>("compose.create", {
+        .post<DokployCompose>("compose.create", {
           name: args.name!,
           environmentId: args.environmentId!,
           ...(args.description && { description: args.description }),
@@ -97,18 +97,18 @@ export function buildComposeProgram(
     )
     .case("get", () =>
       client
-        .getIO<DokployCompose>("compose.one", { composeId: args.composeId! })
+        .get<DokployCompose>("compose.one", { composeId: args.composeId! })
         .map((compose) => `# Compose Details\n\n${formatCompose(compose)}`),
     )
     .case("update", () => {
       const body = { composeId: args.composeId!, ...pickDefined(args, UPDATE_FIELDS) }
       return client
-        .postIO<unknown>("compose.update", body as RequestBody<"compose-update">)
+        .post<unknown>("compose.update", body as RequestBody<"compose-update">)
         .map(() => `Compose ${args.composeId} updated.`)
     })
     .case("delete", () =>
       client
-        .postIO<unknown>("compose.delete", {
+        .post<unknown>("compose.delete", {
           composeId: args.composeId!,
           deleteVolumes: args.deleteVolumes ?? false,
         } satisfies RequestBody<"compose-delete">)
@@ -121,7 +121,7 @@ export function buildComposeProgram(
       if (args.deployDescription) body.description = args.deployDescription
       const verb = args.redeploy ? "Redeployment" : "Deployment"
       return client
-        .postIO<unknown>(endpoint, body)
+        .post<unknown>(endpoint, body)
         .map(
           () =>
             `${verb} triggered for compose ${args.composeId}.\n\nNote: First deployments on new services may fail on Dokploy. If this fails, try deploying again immediately.`,
@@ -129,17 +129,17 @@ export function buildComposeProgram(
     })
     .case("start", () =>
       client
-        .postIO<unknown>("compose.start", { composeId: args.composeId! })
+        .post<unknown>("compose.start", { composeId: args.composeId! })
         .map(() => `Compose ${args.composeId}: start completed.`),
     )
     .case("stop", () =>
       client
-        .postIO<unknown>("compose.stop", { composeId: args.composeId! })
+        .post<unknown>("compose.stop", { composeId: args.composeId! })
         .map(() => `Compose ${args.composeId}: stop completed.`),
     )
     .case("move", () =>
       client
-        .postIO<unknown>("compose.move", {
+        .post<unknown>("compose.move", {
           composeId: args.composeId!,
           targetEnvironmentId: args.targetEnvironmentId!,
         })
@@ -147,7 +147,7 @@ export function buildComposeProgram(
     )
     .case("loadServices", () =>
       client
-        .getIO<unknown>("compose.loadServices", {
+        .get<unknown>("compose.loadServices", {
           composeId: args.composeId!,
           ...(args.type && { type: args.type }),
         })
@@ -161,7 +161,7 @@ export function buildComposeProgram(
     )
     .case("loadMounts", () =>
       client
-        .getIO<unknown>("compose.loadMountsByService", {
+        .get<unknown>("compose.loadMountsByService", {
           composeId: args.composeId!,
           serviceName: args.serviceName!,
         })
@@ -169,27 +169,27 @@ export function buildComposeProgram(
     )
     .case("getDefaultCommand", () =>
       client
-        .getIO<string>("compose.getDefaultCommand", { composeId: args.composeId! })
+        .get<string>("compose.getDefaultCommand", { composeId: args.composeId! })
         .map((command) => `Default command: ${command}`),
     )
     .case("cancelDeployment", () =>
       client
-        .postIO<unknown>("compose.cancelDeployment", { composeId: args.composeId! })
+        .post<unknown>("compose.cancelDeployment", { composeId: args.composeId! })
         .map(() => `Compose ${args.composeId}: cancelDeployment completed.`),
     )
     .case("cleanQueues", () =>
       client
-        .postIO<unknown>("compose.cleanQueues", { composeId: args.composeId! })
+        .post<unknown>("compose.cleanQueues", { composeId: args.composeId! })
         .map(() => `Compose ${args.composeId}: cleanQueues completed.`),
     )
     .case("killBuild", () =>
       client
-        .postIO<unknown>("compose.killBuild", { composeId: args.composeId! })
+        .post<unknown>("compose.killBuild", { composeId: args.composeId! })
         .map(() => `Compose ${args.composeId}: killBuild completed.`),
     )
     .case("refreshToken", () =>
       client
-        .postIO<unknown>("compose.refreshToken", { composeId: args.composeId! })
+        .post<unknown>("compose.refreshToken", { composeId: args.composeId! })
         .map(() => `Compose ${args.composeId}: refreshToken completed.`),
     )
     .exhaustive() as IOType<never, ApiError, string>

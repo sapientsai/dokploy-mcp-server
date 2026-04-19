@@ -42,7 +42,7 @@ describe("DokployClient.get", () => {
     fetchMock.mockResolvedValue(mockResponse({ ok: true }))
     const client = new DokployClient("https://dok.example.com", "secret-key")
 
-    await client.get("project.all")
+    await client.get("project.all").run()
 
     expect(fetchMock).toHaveBeenCalledTimes(1)
     const [url, init] = fetchMock.mock.calls[0] as FetchArgs
@@ -58,12 +58,14 @@ describe("DokployClient.get", () => {
     fetchMock.mockResolvedValue(mockResponse([]))
     const client = new DokployClient("https://dok.example.com", "k")
 
-    await client.get("project.one", {
-      projectId: "p1",
-      includeEnvs: true,
-      limit: 10,
-      skipped: undefined,
-    })
+    await client
+      .get("project.one", {
+        projectId: "p1",
+        includeEnvs: true,
+        limit: 10,
+        skipped: undefined,
+      })
+      .run()
 
     const [url] = fetchMock.mock.calls[0] as FetchArgs
     const parsed = new URL(url)
@@ -73,18 +75,20 @@ describe("DokployClient.get", () => {
     expect(parsed.searchParams.has("skipped")).toBe(false)
   })
 
-  it("returns parsed JSON body", async () => {
+  it("returns parsed JSON body on the Right", async () => {
     fetchMock.mockResolvedValue(mockResponse({ projectId: "p1", name: "X" }))
     const client = new DokployClient("https://dok.example.com", "k")
-    const result = await client.get<{ projectId: string; name: string }>("project.one")
-    expect(result).toEqual({ projectId: "p1", name: "X" })
+    const either = await client.get<{ projectId: string; name: string }>("project.one").run()
+    expect(either.isRight()).toBe(true)
+    if (either.isRight()) expect(either.value).toEqual({ projectId: "p1", name: "X" })
   })
 
-  it("returns undefined on empty response body", async () => {
+  it("returns undefined on the Right when response body is empty", async () => {
     fetchMock.mockResolvedValue(mockResponse(""))
     const client = new DokployClient("https://dok.example.com", "k")
-    const result = await client.get("project.none")
-    expect(result).toBeUndefined()
+    const either = await client.get("project.none").run()
+    expect(either.isRight()).toBe(true)
+    if (either.isRight()) expect(either.value).toBeUndefined()
   })
 })
 
@@ -104,7 +108,7 @@ describe("DokployClient.post", () => {
     fetchMock.mockResolvedValue(mockResponse({ ok: true }))
     const client = new DokployClient("https://dok.example.com", "k")
 
-    await client.post("project.create", { name: "New", description: "desc" })
+    await client.post("project.create", { name: "New", description: "desc" }).run()
 
     const [url, init] = fetchMock.mock.calls[0] as FetchArgs
     expect(url).toBe("https://dok.example.com/api/project.create")
@@ -117,25 +121,34 @@ describe("DokployClient.post", () => {
     fetchMock.mockResolvedValue(mockResponse({ ok: true }))
     const client = new DokployClient("https://dok.example.com", "k")
 
-    await client.post("application.start")
+    await client.post("application.start").run()
 
     const [, init] = fetchMock.mock.calls[0] as FetchArgs
     expect((init.headers as Record<string, string>)["Content-Type"]).toBeUndefined()
     expect(init.body).toBeUndefined()
   })
 
-  it("throws with status, method, path, and response text on non-2xx", async () => {
+  it("returns Left HttpError with status, method, path, and response text on non-2xx", async () => {
     fetchMock.mockResolvedValue(
       mockResponse("boom — bad request", { ok: false, status: 400, statusText: "Bad Request" }),
     )
     const client = new DokployClient("https://dok.example.com", "k")
 
-    await expect(client.post("project.create", { name: "x" })).rejects.toThrow(
-      /Dokploy API error \(400 Bad Request\) on POST \/project\.create: boom — bad request/,
-    )
+    const either = await client.post("project.create", { name: "x" }).run()
+    expect(either.isLeft()).toBe(true)
+    if (either.isLeft()) {
+      expect(either.value).toMatchObject({
+        _tag: "HttpError",
+        method: "POST",
+        path: "project.create",
+        status: 400,
+        statusText: "Bad Request",
+        body: "boom — bad request",
+      })
+    }
   })
 
-  it("includes a fallback error message when response text cannot be read", async () => {
+  it("falls back to 'Unknown error' body when response text cannot be read", async () => {
     fetchMock.mockResolvedValue({
       ok: false,
       status: 500,
@@ -146,7 +159,11 @@ describe("DokployClient.post", () => {
     } as unknown as Response)
     const client = new DokployClient("https://dok.example.com", "k")
 
-    await expect(client.get("project.all")).rejects.toThrow(/Unknown error/)
+    const either = await client.get("project.all").run()
+    expect(either.isLeft()).toBe(true)
+    if (either.isLeft()) {
+      expect(either.value).toMatchObject({ _tag: "HttpError", status: 500, body: "Unknown error" })
+    }
   })
 })
 

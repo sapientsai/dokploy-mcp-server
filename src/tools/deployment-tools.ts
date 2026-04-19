@@ -23,29 +23,29 @@ type DeploymentArgs = {
 }
 
 export function buildDeploymentProgram(
-  client: Pick<DokployClient, "getIO" | "postIO">,
+  client: Pick<DokployClient, "get" | "post">,
   args: DeploymentArgs,
 ): IOType<never, ApiError, string> {
   return Match(args.action)
     .case("list", () => {
       if (args.applicationId) {
         return client
-          .getIO<DokployDeployment[]>("deployment.all", { applicationId: args.applicationId })
+          .get<DokployDeployment[]>("deployment.all", { applicationId: args.applicationId })
           .map(formatDeploymentList)
       }
       if (args.composeId) {
         return client
-          .getIO<DokployDeployment[]>("deployment.allByCompose", { composeId: args.composeId })
+          .get<DokployDeployment[]>("deployment.allByCompose", { composeId: args.composeId })
           .map(formatDeploymentList)
       }
       if (args.serverId) {
         return client
-          .getIO<DokployDeployment[]>("deployment.allByServer", { serverId: args.serverId })
+          .get<DokployDeployment[]>("deployment.allByServer", { serverId: args.serverId })
           .map(formatDeploymentList)
       }
       if (args.type && args.id) {
         return client
-          .getIO<DokployDeployment[]>("deployment.allByType", { type: args.type, id: args.id })
+          .get<DokployDeployment[]>("deployment.allByType", { type: args.type, id: args.id })
           .map(formatDeploymentList)
       }
       // eslint-disable-next-line functype/prefer-either -- validation failure surfaced as plain Error for SomaMCP classification.
@@ -53,7 +53,7 @@ export function buildDeploymentProgram(
     })
     .case("getLog", () =>
       client
-        .getIO<unknown>("deployment.readLog", { deploymentId: args.deploymentId! })
+        .get<unknown>("deployment.readLog", { deploymentId: args.deploymentId! })
         .map((log) => {
           const content =
             typeof log === "string"
@@ -74,7 +74,7 @@ export function buildDeploymentProgram(
     )
     .case("killProcess", () =>
       client
-        .postIO<unknown>("deployment.killProcess", { deploymentId: args.deploymentId! })
+        .post<unknown>("deployment.killProcess", { deploymentId: args.deploymentId! })
         .map(() => `Deployment ${args.deploymentId} killed.`),
     )
     .exhaustive() as IOType<never, ApiError, string>

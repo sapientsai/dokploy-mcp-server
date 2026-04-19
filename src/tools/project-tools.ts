@@ -23,19 +23,19 @@ type ProjectArgs = {
 }
 
 export function buildProjectProgram(
-  client: Pick<DokployClient, "getIO" | "postIO">,
+  client: Pick<DokployClient, "get" | "post">,
   args: ProjectArgs,
 ): IOType<never, ApiError, string> {
   return Match(args.action)
-    .case("list", () => client.getIO<DokployProject[]>("project.all").map(formatProjectList))
+    .case("list", () => client.get<DokployProject[]>("project.all").map(formatProjectList))
     .case("get", () =>
       client
-        .getIO<DokployProject>("project.one", { projectId: args.projectId! })
+        .get<DokployProject>("project.one", { projectId: args.projectId! })
         .map((project) => `# Project Details\n\n${formatProject(project)}`),
     )
     .case("create", () =>
       client
-        .postIO<DokployProject>("project.create", {
+        .post<DokployProject>("project.create", {
           name: args.name!,
           ...(args.description && { description: args.description }),
         } satisfies RequestBody<"project-create">)
@@ -45,11 +45,11 @@ export function buildProjectProgram(
       const body: Record<string, unknown> = { projectId: args.projectId! }
       if (args.name) body.name = args.name
       if (args.description !== undefined) body.description = args.description
-      return client.postIO<unknown>("project.update", body).map(() => `Project ${args.projectId} updated.`)
+      return client.post<unknown>("project.update", body).map(() => `Project ${args.projectId} updated.`)
     })
     .case("remove", () =>
       client
-        .postIO<unknown>("project.remove", { projectId: args.projectId! } satisfies RequestBody<"project-remove">)
+        .post<unknown>("project.remove", { projectId: args.projectId! } satisfies RequestBody<"project-remove">)
         .map(() => `Project ${args.projectId} removed.`),
     )
     .case("duplicate", () => {
@@ -59,7 +59,7 @@ export function buildProjectProgram(
       }
       if (args.description) body.description = args.description
       if (args.duplicateInSameProject !== undefined) body.duplicateInSameProject = args.duplicateInSameProject
-      return client.postIO<unknown>("project.duplicate", body).map(() => `Environment duplicated as "${args.name}".`)
+      return client.post<unknown>("project.duplicate", body).map(() => `Environment duplicated as "${args.name}".`)
     })
     .exhaustive() as IOType<never, ApiError, string>
 }

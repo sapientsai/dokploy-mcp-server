@@ -4,14 +4,14 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { registerInfrastructureTools } from "../src/tools/infrastructure-tools"
 import { captureTool } from "./support/tool-harness"
 
-const { getIOMock, postIOMock, getOrganizationIdMock } = vi.hoisted(() => ({
-  getIOMock: vi.fn(),
-  postIOMock: vi.fn(),
+const { getMock, postMock, getOrganizationIdMock } = vi.hoisted(() => ({
+  getMock: vi.fn(),
+  postMock: vi.fn(),
   getOrganizationIdMock: vi.fn(),
 }))
 
 vi.mock("../src/client/dokploy-client", () => ({
-  getDokployClient: () => ({ getIO: getIOMock, postIO: postIOMock }),
+  getDokployClient: () => ({ get: getMock, post: postMock }),
   getOrganizationId: getOrganizationIdMock,
 }))
 
@@ -37,16 +37,16 @@ type InfraArgs = {
 const tool = captureTool<InfraArgs>(registerInfrastructureTools)
 
 beforeEach(() => {
-  getIOMock.mockReset()
-  postIOMock.mockReset()
+  getMock.mockReset()
+  postMock.mockReset()
   getOrganizationIdMock.mockReset()
-  getIOMock.mockImplementation(() => IO.succeed(undefined))
-  postIOMock.mockImplementation(() => IO.succeed(undefined))
+  getMock.mockImplementation(() => IO.succeed(undefined))
+  postMock.mockImplementation(() => IO.succeed(undefined))
 })
 
 describe("dokploy_infrastructure ports", () => {
   it("createPort posts port.create with required + optional fields", async () => {
-    postIOMock.mockReturnValueOnce(IO.succeed({ portId: "p1", publishedPort: 80, targetPort: 8080 }))
+    postMock.mockReturnValueOnce(IO.succeed({ portId: "p1", publishedPort: 80, targetPort: 8080 }))
     await tool.execute({
       action: "createPort",
       applicationId: "a1",
@@ -55,7 +55,7 @@ describe("dokploy_infrastructure ports", () => {
       protocol: "tcp",
       publishMode: "ingress",
     })
-    expect(postIOMock).toHaveBeenCalledWith("port.create", {
+    expect(postMock).toHaveBeenCalledWith("port.create", {
       applicationId: "a1",
       publishedPort: 80,
       targetPort: 8080,
@@ -65,14 +65,14 @@ describe("dokploy_infrastructure ports", () => {
   })
 
   it("createPort omits protocol/publishMode when absent", async () => {
-    postIOMock.mockReturnValueOnce(IO.succeed({ portId: "p1", publishedPort: 80, targetPort: 8080 }))
+    postMock.mockReturnValueOnce(IO.succeed({ portId: "p1", publishedPort: 80, targetPort: 8080 }))
     await tool.execute({
       action: "createPort",
       applicationId: "a1",
       publishedPort: 80,
       targetPort: 8080,
     })
-    expect(postIOMock).toHaveBeenCalledWith("port.create", {
+    expect(postMock).toHaveBeenCalledWith("port.create", {
       applicationId: "a1",
       publishedPort: 80,
       targetPort: 8080,
@@ -81,20 +81,20 @@ describe("dokploy_infrastructure ports", () => {
 
   it("deletePort posts port.delete with portId", async () => {
     await tool.execute({ action: "deletePort", portId: "p1" })
-    expect(postIOMock).toHaveBeenCalledWith("port.delete", { portId: "p1" })
+    expect(postMock).toHaveBeenCalledWith("port.delete", { portId: "p1" })
   })
 })
 
 describe("dokploy_infrastructure auth", () => {
   it("createAuth posts security.create with credentials", async () => {
-    postIOMock.mockReturnValueOnce(IO.succeed({ securityId: "s1", username: "u", password: "p", applicationId: "a1" }))
+    postMock.mockReturnValueOnce(IO.succeed({ securityId: "s1", username: "u", password: "p", applicationId: "a1" }))
     await tool.execute({
       action: "createAuth",
       applicationId: "a1",
       username: "admin",
       password: "secret",
     })
-    expect(postIOMock).toHaveBeenCalledWith("security.create", {
+    expect(postMock).toHaveBeenCalledWith("security.create", {
       applicationId: "a1",
       username: "admin",
       password: "secret",
@@ -103,40 +103,40 @@ describe("dokploy_infrastructure auth", () => {
 
   it("deleteAuth posts security.delete with securityId", async () => {
     await tool.execute({ action: "deleteAuth", securityId: "s1" })
-    expect(postIOMock).toHaveBeenCalledWith("security.delete", { securityId: "s1" })
+    expect(postMock).toHaveBeenCalledWith("security.delete", { securityId: "s1" })
   })
 })
 
 describe("dokploy_infrastructure certificates", () => {
   it("listCerts returns formatted list", async () => {
-    getIOMock.mockReturnValueOnce(
+    getMock.mockReturnValueOnce(
       IO.succeed([
         { certificateId: "c1", name: "Cert 1", autoRenew: true },
         { certificateId: "c2", name: "Cert 2" },
       ]),
     )
     const result = (await tool.execute({ action: "listCerts" })) as string
-    expect(getIOMock).toHaveBeenCalledWith("certificates.all")
+    expect(getMock).toHaveBeenCalledWith("certificates.all")
     expect(result).toContain("Certificates (2)")
     expect(result).toContain("Cert 1")
     expect(result).toContain("Cert 2")
   })
 
   it("listCerts returns empty message when no certs", async () => {
-    getIOMock.mockReturnValueOnce(IO.succeed([]))
+    getMock.mockReturnValueOnce(IO.succeed([]))
     const result = await tool.execute({ action: "listCerts" })
     expect(result).toBe("No certificates found.")
   })
 
   it("getCert calls certificates.one", async () => {
-    getIOMock.mockReturnValueOnce(IO.succeed({ certificateId: "c1", name: "Cert" }))
+    getMock.mockReturnValueOnce(IO.succeed({ certificateId: "c1", name: "Cert" }))
     await tool.execute({ action: "getCert", certificateId: "c1" })
-    expect(getIOMock).toHaveBeenCalledWith("certificates.one", { certificateId: "c1" })
+    expect(getMock).toHaveBeenCalledWith("certificates.one", { certificateId: "c1" })
   })
 
   it("createCert resolves organizationId and includes it in body", async () => {
     getOrganizationIdMock.mockResolvedValue("org-xyz")
-    postIOMock.mockReturnValueOnce(IO.succeed({ certificateId: "c1", name: "NewCert" }))
+    postMock.mockReturnValueOnce(IO.succeed({ certificateId: "c1", name: "NewCert" }))
     await tool.execute({
       action: "createCert",
       name: "NewCert",
@@ -146,7 +146,7 @@ describe("dokploy_infrastructure certificates", () => {
       serverId: "srv-1",
     })
     expect(getOrganizationIdMock).toHaveBeenCalled()
-    expect(postIOMock).toHaveBeenCalledWith("certificates.create", {
+    expect(postMock).toHaveBeenCalledWith("certificates.create", {
       name: "NewCert",
       certificateData: "-----BEGIN CERT-----",
       privateKey: "-----BEGIN KEY-----",
@@ -158,14 +158,14 @@ describe("dokploy_infrastructure certificates", () => {
 
   it("createCert omits autoRenew/serverId when absent", async () => {
     getOrganizationIdMock.mockResolvedValue("org-xyz")
-    postIOMock.mockReturnValueOnce(IO.succeed({ certificateId: "c1", name: "NewCert" }))
+    postMock.mockReturnValueOnce(IO.succeed({ certificateId: "c1", name: "NewCert" }))
     await tool.execute({
       action: "createCert",
       name: "NewCert",
       certificateData: "cert",
       privateKey: "key",
     })
-    expect(postIOMock).toHaveBeenCalledWith("certificates.create", {
+    expect(postMock).toHaveBeenCalledWith("certificates.create", {
       name: "NewCert",
       certificateData: "cert",
       privateKey: "key",
@@ -175,7 +175,7 @@ describe("dokploy_infrastructure certificates", () => {
 
   it("createCert passes autoRenew=false explicitly", async () => {
     getOrganizationIdMock.mockResolvedValue("org-xyz")
-    postIOMock.mockReturnValueOnce(IO.succeed({ certificateId: "c1", name: "N" }))
+    postMock.mockReturnValueOnce(IO.succeed({ certificateId: "c1", name: "N" }))
     await tool.execute({
       action: "createCert",
       name: "N",
@@ -183,12 +183,12 @@ describe("dokploy_infrastructure certificates", () => {
       privateKey: "key",
       autoRenew: false,
     })
-    const [, body] = postIOMock.mock.calls[0]
+    const [, body] = postMock.mock.calls[0]
     expect(body).toMatchObject({ autoRenew: false })
   })
 
   it("removeCert posts certificates.remove", async () => {
     await tool.execute({ action: "removeCert", certificateId: "c1" })
-    expect(postIOMock).toHaveBeenCalledWith("certificates.remove", { certificateId: "c1" })
+    expect(postMock).toHaveBeenCalledWith("certificates.remove", { certificateId: "c1" })
   })
 })

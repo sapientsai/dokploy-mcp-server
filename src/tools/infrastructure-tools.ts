@@ -48,14 +48,14 @@ function resolveOrganizationIdIO(resolve: () => Promise<string>): IOType<never, 
 }
 
 export function buildInfrastructureProgram(
-  client: Pick<DokployClient, "getIO" | "postIO">,
+  client: Pick<DokployClient, "get" | "post">,
   args: InfraArgs,
   resolveOrganizationId: () => Promise<string> = getOrganizationId,
 ): IOType<never, ApiError, string> {
   return Match(args.action)
     .case("createPort", () =>
       client
-        .postIO<DokployPort>("port.create", {
+        .post<DokployPort>("port.create", {
           applicationId: args.applicationId!,
           publishedPort: args.publishedPort!,
           targetPort: args.targetPort!,
@@ -66,12 +66,12 @@ export function buildInfrastructureProgram(
     )
     .case("deletePort", () =>
       client
-        .postIO<unknown>("port.delete", { portId: args.portId! } satisfies RequestBody<"port-delete">)
+        .post<unknown>("port.delete", { portId: args.portId! } satisfies RequestBody<"port-delete">)
         .map(() => `Port mapping ${args.portId} deleted.`),
     )
     .case("createAuth", () =>
       client
-        .postIO<DokploySecurity>("security.create", {
+        .post<DokploySecurity>("security.create", {
           applicationId: args.applicationId!,
           username: args.username!,
           password: args.password!,
@@ -80,13 +80,13 @@ export function buildInfrastructureProgram(
     )
     .case("deleteAuth", () =>
       client
-        .postIO<unknown>("security.delete", {
+        .post<unknown>("security.delete", {
           securityId: args.securityId!,
         } satisfies RequestBody<"security-delete">)
         .map(() => `Security credentials ${args.securityId} deleted.`),
     )
     .case("listCerts", () =>
-      client.getIO<DokployCertificate[]>("certificates.all").map((certs) => {
+      client.get<DokployCertificate[]>("certificates.all").map((certs) => {
         if (certs.length === 0) return "No certificates found."
         const lines = certs.map((c) => `- **${c.name}** (ID: ${c.certificateId}) | Auto-renew: ${c.autoRenew ?? "N/A"}`)
         return `# Certificates (${certs.length})\n\n${lines.join("\n")}`
@@ -94,7 +94,7 @@ export function buildInfrastructureProgram(
     )
     .case("getCert", () =>
       client
-        .getIO<DokployCertificate>("certificates.one", { certificateId: args.certificateId! })
+        .get<DokployCertificate>("certificates.one", { certificateId: args.certificateId! })
         .map(
           (cert) =>
             `# Certificate: ${cert.name}\n\n- ID: ${cert.certificateId}\n- Auto-renew: ${cert.autoRenew ?? "N/A"}`,
@@ -111,13 +111,13 @@ export function buildInfrastructureProgram(
         if (args.autoRenew !== undefined) body.autoRenew = args.autoRenew
         if (args.serverId) body.serverId = args.serverId
         return client
-          .postIO<DokployCertificate>("certificates.create", body)
+          .post<DokployCertificate>("certificates.create", body)
           .map((cert) => `Certificate "${cert.name}" created (ID: ${cert.certificateId}).`)
       }),
     )
     .case("removeCert", () =>
       client
-        .postIO<unknown>("certificates.remove", {
+        .post<unknown>("certificates.remove", {
           certificateId: args.certificateId!,
         } satisfies RequestBody<"certificates-remove">)
         .map(() => `Certificate ${args.certificateId} removed.`),

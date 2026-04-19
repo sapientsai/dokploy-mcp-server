@@ -21,13 +21,13 @@ type EnvironmentArgs = {
 }
 
 export function buildEnvironmentProgram(
-  client: Pick<DokployClient, "getIO" | "postIO">,
+  client: Pick<DokployClient, "get" | "post">,
   args: EnvironmentArgs,
 ): IOType<never, ApiError, string> {
   return Match(args.action)
     .case("create", () =>
       client
-        .postIO<DokployEnvironment>("environment.create", {
+        .post<DokployEnvironment>("environment.create", {
           name: args.name!,
           projectId: args.projectId!,
           ...(args.description && { description: args.description }),
@@ -36,23 +36,23 @@ export function buildEnvironmentProgram(
     )
     .case("get", () =>
       client
-        .getIO<DokployEnvironment>("environment.one", { environmentId: args.environmentId! })
+        .get<DokployEnvironment>("environment.one", { environmentId: args.environmentId! })
         .map((env) => `# Environment Details\n\n${formatEnvironment(env)}`),
     )
     .case("list", () =>
       client
-        .getIO<DokployEnvironment[]>("environment.byProjectId", { projectId: args.projectId! })
+        .get<DokployEnvironment[]>("environment.byProjectId", { projectId: args.projectId! })
         .map(formatEnvironmentList),
     )
     .case("update", () => {
       const body: Record<string, unknown> = { environmentId: args.environmentId! }
       if (args.name) body.name = args.name
       if (args.description !== undefined) body.description = args.description
-      return client.postIO<unknown>("environment.update", body).map(() => `Environment ${args.environmentId} updated.`)
+      return client.post<unknown>("environment.update", body).map(() => `Environment ${args.environmentId} updated.`)
     })
     .case("remove", () =>
       client
-        .postIO<unknown>("environment.remove", { environmentId: args.environmentId! })
+        .post<unknown>("environment.remove", { environmentId: args.environmentId! })
         .map(() => `Environment ${args.environmentId} removed.`),
     )
     .case("duplicate", () => {
@@ -61,9 +61,7 @@ export function buildEnvironmentProgram(
         name: args.name!,
       }
       if (args.description) body.description = args.description
-      return client
-        .postIO<unknown>("environment.duplicate", body)
-        .map(() => `Environment duplicated as "${args.name}".`)
+      return client.post<unknown>("environment.duplicate", body).map(() => `Environment duplicated as "${args.name}".`)
     })
     .exhaustive() as IOType<never, ApiError, string>
 }
