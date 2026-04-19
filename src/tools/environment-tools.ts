@@ -1,11 +1,72 @@
+import type { IO as IOType } from "functype"
+import { Match } from "functype"
 import { z } from "zod"
 
+import type { DokployClient } from "../client/dokploy-client"
 import { getDokployClient } from "../client/dokploy-client"
+import type { ApiError } from "../client/errors"
+import { formatApiError } from "../client/errors"
 import type { DokployEnvironment } from "../types"
 import { formatEnvironment, formatEnvironmentList } from "../utils/formatters"
 import type { ToolServer } from "./types"
 
 const ACTIONS = ["create", "get", "list", "update", "remove", "duplicate"] as const
+
+type EnvironmentArgs = {
+  action: (typeof ACTIONS)[number]
+  environmentId?: string
+  projectId?: string
+  name?: string
+  description?: string
+}
+
+export function buildEnvironmentProgram(
+  client: Pick<DokployClient, "getIO" | "postIO">,
+  args: EnvironmentArgs,
+): IOType<never, ApiError, string> {
+  return Match(args.action)
+    .case("create", () =>
+      client
+        .postIO<DokployEnvironment>("environment.create", {
+          name: args.name!,
+          projectId: args.projectId!,
+          ...(args.description && { description: args.description }),
+        })
+        .map((env) => `# Environment Created\n\n${formatEnvironment(env)}`),
+    )
+    .case("get", () =>
+      client
+        .getIO<DokployEnvironment>("environment.one", { environmentId: args.environmentId! })
+        .map((env) => `# Environment Details\n\n${formatEnvironment(env)}`),
+    )
+    .case("list", () =>
+      client
+        .getIO<DokployEnvironment[]>("environment.byProjectId", { projectId: args.projectId! })
+        .map(formatEnvironmentList),
+    )
+    .case("update", () => {
+      const body: Record<string, unknown> = { environmentId: args.environmentId! }
+      if (args.name) body.name = args.name
+      if (args.description !== undefined) body.description = args.description
+      return client.postIO<unknown>("environment.update", body).map(() => `Environment ${args.environmentId} updated.`)
+    })
+    .case("remove", () =>
+      client
+        .postIO<unknown>("environment.remove", { environmentId: args.environmentId! })
+        .map(() => `Environment ${args.environmentId} removed.`),
+    )
+    .case("duplicate", () => {
+      const body: Record<string, unknown> = {
+        environmentId: args.environmentId!,
+        name: args.name!,
+      }
+      if (args.description) body.description = args.description
+      return client
+        .postIO<unknown>("environment.duplicate", body)
+        .map(() => `Environment duplicated as "${args.name}".`)
+    })
+    .exhaustive() as IOType<never, ApiError, string>
+}
 
 export function registerEnvironmentTools(server: ToolServer) {
   server.addTool({
@@ -20,48 +81,10 @@ export function registerEnvironmentTools(server: ToolServer) {
       description: z.string().optional(),
     }),
     execute: async (args) => {
-      const client = getDokployClient()
-
-      switch (args.action) {
-        case "create": {
-          const env = await client.post<DokployEnvironment>("environment.create", {
-            name: args.name!,
-            projectId: args.projectId!,
-            ...(args.description && { description: args.description }),
-          })
-          return `# Environment Created\n\n${formatEnvironment(env)}`
-        }
-        case "get": {
-          const env = await client.get<DokployEnvironment>("environment.one", { environmentId: args.environmentId! })
-          return `# Environment Details\n\n${formatEnvironment(env)}`
-        }
-        case "list": {
-          const envs = await client.get<DokployEnvironment[]>("environment.byProjectId", {
-            projectId: args.projectId!,
-          })
-          return formatEnvironmentList(envs)
-        }
-        case "update": {
-          await client.post("environment.update", {
-            environmentId: args.environmentId!,
-            ...(args.name && { name: args.name }),
-            ...(args.description !== undefined && { description: args.description }),
-          })
-          return `Environment ${args.environmentId} updated.`
-        }
-        case "remove": {
-          await client.post("environment.remove", { environmentId: args.environmentId! })
-          return `Environment ${args.environmentId} removed.`
-        }
-        case "duplicate": {
-          await client.post("environment.duplicate", {
-            environmentId: args.environmentId!,
-            name: args.name!,
-            ...(args.description && { description: args.description }),
-          })
-          return `Environment duplicated as "${args.name}".`
-        }
-      }
+      const either = await buildEnvironmentProgram(getDokployClient(), args).run()
+      if (either.isRight()) return either.value
+      // eslint-disable-next-line functype/prefer-either -- intentional boundary throw for SomaMCP error classification.
+      throw new Error(formatApiError(either.value))
     },
   })
 }
