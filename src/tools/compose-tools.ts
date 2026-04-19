@@ -1,6 +1,11 @@
+import type { IO as IOType } from "functype"
+import { IO, Match } from "functype"
 import { z } from "zod"
 
+import type { DokployClient } from "../client/dokploy-client"
 import { getDokployClient } from "../client/dokploy-client"
+import type { ApiError } from "../client/errors"
+import { formatApiError } from "../client/errors"
 import type { RequestBody } from "../generated"
 import type { DokployCompose } from "../types"
 import { formatCompose } from "../utils/formatters"
@@ -23,6 +28,178 @@ const ACTIONS = [
   "killBuild",
   "refreshToken",
 ] as const
+
+const UPDATE_FIELDS = [
+  "name",
+  "description",
+  "composeFile",
+  "env",
+  "command",
+  "sourceType",
+  "customGitUrl",
+  "customGitBranch",
+  "customGitSSHKeyId",
+  "repository",
+  "branch",
+  "owner",
+  "composePath",
+  "autoDeploy",
+  "appName",
+] as const
+
+type ComposeArgs = {
+  action: (typeof ACTIONS)[number]
+  composeId?: string
+  name?: string
+  environmentId?: string
+  description?: string
+  composeType?: string
+  composeFile?: string
+  serverId?: string
+  env?: string
+  command?: string
+  sourceType?: string
+  customGitUrl?: string
+  customGitBranch?: string
+  customGitSSHKeyId?: string
+  repository?: string
+  branch?: string
+  owner?: string
+  composePath?: string
+  autoDeploy?: boolean
+  appName?: string
+  deleteVolumes?: boolean
+  redeploy?: boolean
+  title?: string
+  deployDescription?: string
+  targetEnvironmentId?: string
+  type?: string
+  serviceName?: string
+}
+
+function pickDefined<T extends Record<string, unknown>, K extends readonly (keyof T)[]>(
+  source: T,
+  keys: K,
+): Record<string, unknown> {
+  return Object.fromEntries(keys.filter((k) => source[k] !== undefined).map((k) => [k, source[k]]))
+}
+
+export function buildComposeProgram(
+  client: Pick<DokployClient, "getIO" | "postIO">,
+  args: ComposeArgs,
+): IOType<never, ApiError, string> {
+  return Match(args.action)
+    .case("create", () =>
+      client
+        .postIO<DokployCompose>("compose.create", {
+          name: args.name!,
+          environmentId: args.environmentId!,
+          ...(args.description && { description: args.description }),
+          ...(args.composeType && { composeType: args.composeType }),
+          ...(args.composeFile && { composeFile: args.composeFile }),
+          ...(args.serverId && { serverId: args.serverId }),
+        })
+        .map((compose) => `# Compose Created\n\n${formatCompose(compose)}`),
+    )
+    .case("get", () =>
+      client
+        .getIO<DokployCompose>("compose.one", { composeId: args.composeId! })
+        .map((compose) => `# Compose Details\n\n${formatCompose(compose)}`),
+    )
+    .case("update", () => {
+      const body = { composeId: args.composeId!, ...pickDefined(args, UPDATE_FIELDS) }
+      return client
+        .postIO<unknown>("compose.update", body as RequestBody<"compose-update">)
+        .map(() => `Compose ${args.composeId} updated.`)
+    })
+    .case("delete", () =>
+      client
+        .postIO<unknown>("compose.delete", {
+          composeId: args.composeId!,
+          deleteVolumes: args.deleteVolumes ?? false,
+        } satisfies RequestBody<"compose-delete">)
+        .map(() => `Compose ${args.composeId} deleted.`),
+    )
+    .case("deploy", () => {
+      const endpoint = args.redeploy ? "compose.redeploy" : "compose.deploy"
+      const body: Record<string, unknown> = { composeId: args.composeId! }
+      if (args.title) body.title = args.title
+      if (args.deployDescription) body.description = args.deployDescription
+      const verb = args.redeploy ? "Redeployment" : "Deployment"
+      return client
+        .postIO<unknown>(endpoint, body)
+        .map(
+          () =>
+            `${verb} triggered for compose ${args.composeId}.\n\nNote: First deployments on new services may fail on Dokploy. If this fails, try deploying again immediately.`,
+        )
+    })
+    .case("start", () =>
+      client
+        .postIO<unknown>("compose.start", { composeId: args.composeId! })
+        .map(() => `Compose ${args.composeId}: start completed.`),
+    )
+    .case("stop", () =>
+      client
+        .postIO<unknown>("compose.stop", { composeId: args.composeId! })
+        .map(() => `Compose ${args.composeId}: stop completed.`),
+    )
+    .case("move", () =>
+      client
+        .postIO<unknown>("compose.move", {
+          composeId: args.composeId!,
+          targetEnvironmentId: args.targetEnvironmentId!,
+        })
+        .map(() => `Compose ${args.composeId} moved to environment ${args.targetEnvironmentId}.`),
+    )
+    .case("loadServices", () =>
+      client
+        .getIO<unknown>("compose.loadServices", {
+          composeId: args.composeId!,
+          ...(args.type && { type: args.type }),
+        })
+        .map((services) => `# Compose Services\n\n\`\`\`json\n${JSON.stringify(services, null, 2)}\n\`\`\``)
+        .recoverWith(
+          (err): IOType<never, ApiError, string> =>
+            err._tag === "HttpError" && err.status === 404
+              ? IO.succeed("No services loaded yet. Deploy the compose service first, then call loadServices.")
+              : IO.fail(err),
+        ),
+    )
+    .case("loadMounts", () =>
+      client
+        .getIO<unknown>("compose.loadMountsByService", {
+          composeId: args.composeId!,
+          serviceName: args.serviceName!,
+        })
+        .map((mounts) => `# Mounts: ${args.serviceName}\n\n\`\`\`json\n${JSON.stringify(mounts, null, 2)}\n\`\`\``),
+    )
+    .case("getDefaultCommand", () =>
+      client
+        .getIO<string>("compose.getDefaultCommand", { composeId: args.composeId! })
+        .map((command) => `Default command: ${command}`),
+    )
+    .case("cancelDeployment", () =>
+      client
+        .postIO<unknown>("compose.cancelDeployment", { composeId: args.composeId! })
+        .map(() => `Compose ${args.composeId}: cancelDeployment completed.`),
+    )
+    .case("cleanQueues", () =>
+      client
+        .postIO<unknown>("compose.cleanQueues", { composeId: args.composeId! })
+        .map(() => `Compose ${args.composeId}: cleanQueues completed.`),
+    )
+    .case("killBuild", () =>
+      client
+        .postIO<unknown>("compose.killBuild", { composeId: args.composeId! })
+        .map(() => `Compose ${args.composeId}: killBuild completed.`),
+    )
+    .case("refreshToken", () =>
+      client
+        .postIO<unknown>("compose.refreshToken", { composeId: args.composeId! })
+        .map(() => `Compose ${args.composeId}: refreshToken completed.`),
+    )
+    .exhaustive() as IOType<never, ApiError, string>
+}
 
 export function registerComposeTools(server: ToolServer) {
   server.addTool({
@@ -67,111 +244,10 @@ export function registerComposeTools(server: ToolServer) {
       serviceName: z.string().optional(),
     }),
     execute: async (args) => {
-      const client = getDokployClient()
-
-      switch (args.action) {
-        case "create": {
-          const compose = await client.post<DokployCompose>("compose.create", {
-            name: args.name!,
-            environmentId: args.environmentId!,
-            ...(args.description && { description: args.description }),
-            ...(args.composeType && { composeType: args.composeType }),
-            ...(args.composeFile && { composeFile: args.composeFile }),
-            ...(args.serverId && { serverId: args.serverId }),
-          })
-          return `# Compose Created\n\n${formatCompose(compose)}`
-        }
-        case "get": {
-          const compose = await client.get<DokployCompose>("compose.one", { composeId: args.composeId! })
-          return `# Compose Details\n\n${formatCompose(compose)}`
-        }
-        case "update": {
-          const body: Record<string, unknown> = { composeId: args.composeId! }
-          const updateFields = [
-            "name",
-            "description",
-            "composeFile",
-            "env",
-            "command",
-            "sourceType",
-            "customGitUrl",
-            "customGitBranch",
-            "customGitSSHKeyId",
-            "repository",
-            "branch",
-            "owner",
-            "composePath",
-            "autoDeploy",
-            "appName",
-          ] as const
-          for (const key of updateFields) {
-            if (args[key] !== undefined) body[key] = args[key]
-          }
-          await client.post("compose.update", body as RequestBody<"compose-update">)
-          return `Compose ${args.composeId} updated.`
-        }
-        case "delete": {
-          await client.post("compose.delete", {
-            composeId: args.composeId!,
-            deleteVolumes: args.deleteVolumes ?? false,
-          } satisfies RequestBody<"compose-delete">)
-          return `Compose ${args.composeId} deleted.`
-        }
-        case "deploy": {
-          const endpoint = args.redeploy ? "compose.redeploy" : "compose.deploy"
-          await client.post(endpoint, {
-            composeId: args.composeId!,
-            ...(args.title && { title: args.title }),
-            ...(args.deployDescription && { description: args.deployDescription }),
-          })
-          return `${args.redeploy ? "Redeployment" : "Deployment"} triggered for compose ${args.composeId}.\n\nNote: First deployments on new services may fail on Dokploy. If this fails, try deploying again immediately.`
-        }
-        case "start":
-        case "stop": {
-          await client.post(`compose.${args.action}`, { composeId: args.composeId! })
-          return `Compose ${args.composeId}: ${args.action} completed.`
-        }
-        case "move": {
-          await client.post("compose.move", {
-            composeId: args.composeId!,
-            targetEnvironmentId: args.targetEnvironmentId!,
-          })
-          return `Compose ${args.composeId} moved to environment ${args.targetEnvironmentId}.`
-        }
-        case "loadServices": {
-          try {
-            const services = await client.get<unknown>("compose.loadServices", {
-              composeId: args.composeId!,
-              ...(args.type && { type: args.type }),
-            })
-            return `# Compose Services\n\n\`\`\`json\n${JSON.stringify(services, null, 2)}\n\`\`\``
-          } catch (error) {
-            const msg = error instanceof Error ? error.message : String(error)
-            if (msg.includes("404") || msg.includes("NOT_FOUND") || msg.includes("not found")) {
-              return "No services loaded yet. Deploy the compose service first, then call loadServices."
-            }
-            throw error
-          }
-        }
-        case "loadMounts": {
-          const mounts = await client.get<unknown>("compose.loadMountsByService", {
-            composeId: args.composeId!,
-            serviceName: args.serviceName!,
-          })
-          return `# Mounts: ${args.serviceName}\n\n\`\`\`json\n${JSON.stringify(mounts, null, 2)}\n\`\`\``
-        }
-        case "getDefaultCommand": {
-          const command = await client.get<string>("compose.getDefaultCommand", { composeId: args.composeId! })
-          return `Default command: ${command}`
-        }
-        case "cancelDeployment":
-        case "cleanQueues":
-        case "killBuild":
-        case "refreshToken": {
-          await client.post(`compose.${args.action}`, { composeId: args.composeId! })
-          return `Compose ${args.composeId}: ${args.action} completed.`
-        }
-      }
+      const either = await buildComposeProgram(getDokployClient(), args).run()
+      if (either.isRight()) return either.value
+      // eslint-disable-next-line functype/prefer-either -- intentional boundary throw for SomaMCP error classification.
+      throw new Error(formatApiError(either.value))
     },
   })
 }

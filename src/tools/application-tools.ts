@@ -1,6 +1,11 @@
+import type { IO as IOType } from "functype"
+import { Match } from "functype"
 import { z } from "zod"
 
+import type { DokployClient } from "../client/dokploy-client"
 import { getDokployClient } from "../client/dokploy-client"
+import type { ApiError } from "../client/errors"
+import { formatApiError } from "../client/errors"
 import type { RequestBody } from "../generated"
 import type { DokployApplication } from "../types"
 import { formatApplication } from "../utils/formatters"
@@ -27,15 +32,206 @@ const ACTIONS = [
   "readMonitoring",
 ] as const
 
-type SimpleAction =
-  | "start"
-  | "stop"
-  | "delete"
-  | "markRunning"
-  | "refreshToken"
-  | "cleanQueues"
-  | "killBuild"
-  | "cancelDeployment"
+const UPDATE_FIELDS = [
+  "name",
+  "description",
+  "dockerImage",
+  "command",
+  "memoryLimit",
+  "cpuLimit",
+  "replicas",
+  "autoDeploy",
+  "sourceType",
+  "repository",
+  "owner",
+  "branch",
+  "customGitUrl",
+  "customGitBranch",
+  "githubId",
+] as const
+
+type ApplicationArgs = {
+  action: (typeof ACTIONS)[number]
+  applicationId?: string
+  name?: string
+  environmentId?: string
+  description?: string
+  serverId?: string
+  targetEnvironmentId?: string
+  redeploy?: boolean
+  title?: string
+  deployDescription?: string
+  dockerImage?: string
+  command?: string
+  memoryLimit?: number
+  cpuLimit?: number
+  replicas?: number
+  autoDeploy?: boolean
+  appName?: string
+  sourceType?: "github" | "git" | "docker" | "raw"
+  repository?: string
+  owner?: string
+  branch?: string
+  customGitUrl?: string
+  customGitBranch?: string
+  githubId?: string
+  env?: string
+  buildArgs?: string
+  buildSecrets?: string
+  createEnvFile?: boolean
+  buildType?: string
+  dockerfile?: string
+  dockerContextPath?: string
+  dockerBuildStage?: string
+  publishDirectory?: string
+  traefikConfig?: string
+}
+
+function pickDefined<T extends Record<string, unknown>, K extends readonly (keyof T)[]>(
+  source: T,
+  keys: K,
+): Record<string, unknown> {
+  return Object.fromEntries(keys.filter((k) => source[k] !== undefined).map((k) => [k, source[k]]))
+}
+
+export function buildApplicationProgram(
+  client: Pick<DokployClient, "getIO" | "postIO">,
+  args: ApplicationArgs,
+): IOType<never, ApiError, string> {
+  return Match(args.action)
+    .case("create", () =>
+      client
+        .postIO<DokployApplication>("application.create", {
+          name: args.name!,
+          environmentId: args.environmentId!,
+          ...(args.description && { description: args.description }),
+          ...(args.serverId && { serverId: args.serverId }),
+        } satisfies RequestBody<"application-create">)
+        .map((app) => `# Application Created\n\n${formatApplication(app)}`),
+    )
+    .case("get", () =>
+      client
+        .getIO<DokployApplication>("application.one", { applicationId: args.applicationId! })
+        .map((app) => `# Application Details\n\n${formatApplication(app)}`),
+    )
+    .case("update", () => {
+      const body = { applicationId: args.applicationId!, ...pickDefined(args, UPDATE_FIELDS) }
+      return client
+        .postIO<unknown>("application.update", body as RequestBody<"application-update">)
+        .map(() => `Application ${args.applicationId} updated.`)
+    })
+    .case("move", () =>
+      client
+        .postIO<unknown>("application.move", {
+          applicationId: args.applicationId!,
+          targetEnvironmentId: args.targetEnvironmentId!,
+        } satisfies RequestBody<"application-move">)
+        .map(() => `Application ${args.applicationId} moved to environment ${args.targetEnvironmentId}.`),
+    )
+    .case("deploy", () => {
+      const endpoint = args.redeploy ? "application.redeploy" : "application.deploy"
+      const body: Record<string, unknown> = { applicationId: args.applicationId! }
+      if (args.title) body.title = args.title
+      if (args.deployDescription) body.description = args.deployDescription
+      const verb = args.redeploy ? "Redeployment" : "Deployment"
+      return client
+        .postIO<unknown>(endpoint, body)
+        .map(
+          () =>
+            `${verb} triggered for application ${args.applicationId}.\n\nNote: First deployments on new services may fail on Dokploy. If this fails, try deploying again immediately.`,
+        )
+    })
+    .case("start", () =>
+      client
+        .postIO<unknown>("application.start", { applicationId: args.applicationId! })
+        .map(() => `Application ${args.applicationId}: start completed.`),
+    )
+    .case("stop", () =>
+      client
+        .postIO<unknown>("application.stop", { applicationId: args.applicationId! })
+        .map(() => `Application ${args.applicationId}: stop completed.`),
+    )
+    .case("delete", () =>
+      client
+        .postIO<unknown>("application.delete", { applicationId: args.applicationId! })
+        .map(() => `Application ${args.applicationId}: delete completed.`),
+    )
+    .case("markRunning", () =>
+      client
+        .postIO<unknown>("application.markRunning", { applicationId: args.applicationId! })
+        .map(() => `Application ${args.applicationId}: markRunning completed.`),
+    )
+    .case("refreshToken", () =>
+      client
+        .postIO<unknown>("application.refreshToken", { applicationId: args.applicationId! })
+        .map(() => `Application ${args.applicationId}: refreshToken completed.`),
+    )
+    .case("cleanQueues", () =>
+      client
+        .postIO<unknown>("application.cleanQueues", { applicationId: args.applicationId! })
+        .map(() => `Application ${args.applicationId}: cleanQueues completed.`),
+    )
+    .case("killBuild", () =>
+      client
+        .postIO<unknown>("application.killBuild", { applicationId: args.applicationId! })
+        .map(() => `Application ${args.applicationId}: killBuild completed.`),
+    )
+    .case("cancelDeployment", () =>
+      client
+        .postIO<unknown>("application.cancelDeployment", { applicationId: args.applicationId! })
+        .map(() => `Application ${args.applicationId}: cancelDeployment completed.`),
+    )
+    .case("reload", () =>
+      client
+        .postIO<unknown>("application.reload", {
+          applicationId: args.applicationId!,
+          appName: args.appName!,
+        } satisfies RequestBody<"application-reload">)
+        .map(() => `Application ${args.applicationId} reloaded.`),
+    )
+    .case("saveEnvironment", () => {
+      const body: Record<string, unknown> = {
+        applicationId: args.applicationId!,
+        createEnvFile: args.createEnvFile ?? false,
+        buildArgs: args.buildArgs ?? "",
+        buildSecrets: args.buildSecrets ?? "",
+      }
+      if (args.env !== undefined) body.env = args.env
+      return client
+        .postIO<unknown>("application.saveEnvironment", body)
+        .map(() => `Environment saved for application ${args.applicationId}.`)
+    })
+    .case("saveBuildType", () =>
+      client
+        .postIO<unknown>("application.saveBuildType", {
+          applicationId: args.applicationId!,
+          buildType: args.buildType!,
+          dockerContextPath: args.dockerContextPath ?? ".",
+          dockerBuildStage: args.dockerBuildStage ?? "",
+          ...(args.dockerfile && { dockerfile: args.dockerfile }),
+          ...(args.publishDirectory && { publishDirectory: args.publishDirectory }),
+        })
+        .map(() => `Build type set to "${args.buildType}" for application ${args.applicationId}.`),
+    )
+    .case("traefikConfig", () =>
+      args.traefikConfig
+        ? client
+            .postIO<unknown>("application.updateTraefikConfig", {
+              applicationId: args.applicationId!,
+              traefikConfig: args.traefikConfig,
+            } satisfies RequestBody<"application-updateTraefikConfig">)
+            .map(() => `Traefik config updated for application ${args.applicationId}.`)
+        : client
+            .getIO<string>("application.readTraefikConfig", { applicationId: args.applicationId! })
+            .map((config) => `# Traefik Config\n\n\`\`\`yaml\n${config}\n\`\`\``),
+    )
+    .case("readMonitoring", () =>
+      client
+        .getIO<unknown>("application.readAppMonitoring", { appName: args.appName! })
+        .map((data) => `# Monitoring: ${args.appName}\n\n\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\``),
+    )
+    .exhaustive() as IOType<never, ApiError, string>
+}
 
 export function registerApplicationTools(server: ToolServer) {
   server.addTool({
@@ -84,124 +280,10 @@ export function registerApplicationTools(server: ToolServer) {
       traefikConfig: z.string().optional().describe("New config content (omit to read current)"),
     }),
     execute: async (args) => {
-      const client = getDokployClient()
-
-      switch (args.action) {
-        case "create": {
-          const app = await client.post<DokployApplication>("application.create", {
-            name: args.name!,
-            environmentId: args.environmentId!,
-            ...(args.description && { description: args.description }),
-            ...(args.serverId && { serverId: args.serverId }),
-          } satisfies RequestBody<"application-create">)
-          return `# Application Created\n\n${formatApplication(app)}`
-        }
-        case "get": {
-          const app = await client.get<DokployApplication>("application.one", {
-            applicationId: args.applicationId!,
-          })
-          return `# Application Details\n\n${formatApplication(app)}`
-        }
-        case "update": {
-          const body: Record<string, unknown> = { applicationId: args.applicationId! }
-          const updateFields = [
-            "name",
-            "description",
-            "dockerImage",
-            "command",
-            "memoryLimit",
-            "cpuLimit",
-            "replicas",
-            "autoDeploy",
-            "sourceType",
-            "repository",
-            "owner",
-            "branch",
-            "customGitUrl",
-            "customGitBranch",
-            "githubId",
-          ] as const
-          for (const key of updateFields) {
-            if (args[key] !== undefined) body[key] = args[key]
-          }
-          await client.post("application.update", body as RequestBody<"application-update">)
-          return `Application ${args.applicationId} updated.`
-        }
-        case "move": {
-          await client.post("application.move", {
-            applicationId: args.applicationId!,
-            targetEnvironmentId: args.targetEnvironmentId!,
-          } satisfies RequestBody<"application-move">)
-          return `Application ${args.applicationId} moved to environment ${args.targetEnvironmentId}.`
-        }
-        case "deploy": {
-          const endpoint = args.redeploy ? "application.redeploy" : "application.deploy"
-          await client.post(endpoint, {
-            applicationId: args.applicationId!,
-            ...(args.title && { title: args.title }),
-            ...(args.deployDescription && { description: args.deployDescription }),
-          })
-          return `${args.redeploy ? "Redeployment" : "Deployment"} triggered for application ${args.applicationId}.\n\nNote: First deployments on new services may fail on Dokploy. If this fails, try deploying again immediately.`
-        }
-        case "start":
-        case "stop":
-        case "delete":
-        case "markRunning":
-        case "refreshToken":
-        case "cleanQueues":
-        case "killBuild":
-        case "cancelDeployment": {
-          await client.post(`application.${args.action satisfies SimpleAction}`, {
-            applicationId: args.applicationId!,
-          })
-          return `Application ${args.applicationId}: ${args.action} completed.`
-        }
-        case "reload": {
-          await client.post("application.reload", {
-            applicationId: args.applicationId!,
-            appName: args.appName!,
-          } satisfies RequestBody<"application-reload">)
-          return `Application ${args.applicationId} reloaded.`
-        }
-        case "saveEnvironment": {
-          await client.post("application.saveEnvironment", {
-            applicationId: args.applicationId!,
-            createEnvFile: args.createEnvFile ?? false,
-            ...(args.env !== undefined && { env: args.env }),
-            buildArgs: args.buildArgs ?? "",
-            buildSecrets: args.buildSecrets ?? "",
-          })
-          return `Environment saved for application ${args.applicationId}.`
-        }
-        case "saveBuildType": {
-          await client.post("application.saveBuildType", {
-            applicationId: args.applicationId!,
-            buildType: args.buildType!,
-            dockerContextPath: args.dockerContextPath ?? ".",
-            dockerBuildStage: args.dockerBuildStage ?? "",
-            ...(args.dockerfile && { dockerfile: args.dockerfile }),
-            ...(args.publishDirectory && { publishDirectory: args.publishDirectory }),
-          })
-          return `Build type set to "${args.buildType}" for application ${args.applicationId}.`
-        }
-        case "traefikConfig": {
-          if (args.traefikConfig) {
-            await client.post("application.updateTraefikConfig", {
-              applicationId: args.applicationId!,
-              traefikConfig: args.traefikConfig,
-            } satisfies RequestBody<"application-updateTraefikConfig">)
-            return `Traefik config updated for application ${args.applicationId}.`
-          }
-          const config = await client.get<string>("application.readTraefikConfig", {
-            applicationId: args.applicationId!,
-          })
-          return `# Traefik Config\n\n\`\`\`yaml\n${config}\n\`\`\``
-        }
-        case "readMonitoring": {
-          const data = await client.get<unknown>("application.readAppMonitoring", { appName: args.appName! })
-          return `# Monitoring: ${args.appName}\n\n\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\``
-        }
-      }
+      const either = await buildApplicationProgram(getDokployClient(), args).run()
+      if (either.isRight()) return either.value
+      // eslint-disable-next-line functype/prefer-either -- intentional boundary throw for SomaMCP error classification.
+      throw new Error(formatApiError(either.value))
     },
   })
 }

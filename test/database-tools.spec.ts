@@ -1,16 +1,17 @@
+import { IO } from "functype"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
 import { registerDatabaseTools } from "../src/tools/database-tools"
 import { DB_ID_FIELDS, DB_TYPES } from "../src/types"
 import { captureTool } from "./support/tool-harness"
 
-const { getMock, postMock } = vi.hoisted(() => ({
-  getMock: vi.fn(),
-  postMock: vi.fn(),
+const { getIOMock, postIOMock } = vi.hoisted(() => ({
+  getIOMock: vi.fn(),
+  postIOMock: vi.fn(),
 }))
 
 vi.mock("../src/client/dokploy-client", () => ({
-  getDokployClient: () => ({ get: getMock, post: postMock }),
+  getDokployClient: () => ({ getIO: getIOMock, postIO: postIOMock }),
 }))
 
 type DbArgs = {
@@ -39,8 +40,10 @@ type DbArgs = {
 const tool = captureTool<DbArgs>(registerDatabaseTools)
 
 beforeEach(() => {
-  getMock.mockReset()
-  postMock.mockReset()
+  getIOMock.mockReset()
+  postIOMock.mockReset()
+  getIOMock.mockImplementation(() => IO.succeed(undefined))
+  postIOMock.mockImplementation(() => IO.succeed(undefined))
 })
 
 describe("dokploy_database metadata", () => {
@@ -52,13 +55,15 @@ describe("dokploy_database metadata", () => {
 
 describe("dokploy_database dispatch across DB types", () => {
   it.each(DB_TYPES)("create (%s) posts to {dbType}.create with only defined fields", async (dbType) => {
-    postMock.mockResolvedValue({
-      databaseId: "new",
-      name: "N",
-      appName: "n",
-      applicationStatus: "idle",
-      environmentId: "env",
-    })
+    postIOMock.mockReturnValueOnce(
+      IO.succeed({
+        databaseId: "new",
+        name: "N",
+        appName: "n",
+        applicationStatus: "idle",
+        environmentId: "env",
+      }),
+    )
     await tool.execute({
       action: "create",
       dbType,
@@ -66,8 +71,8 @@ describe("dokploy_database dispatch across DB types", () => {
       environmentId: "env",
       databasePassword: "secret",
     })
-    expect(postMock).toHaveBeenCalledTimes(1)
-    expect(postMock).toHaveBeenCalledWith(`${dbType}.create`, {
+    expect(postIOMock).toHaveBeenCalledTimes(1)
+    expect(postIOMock).toHaveBeenCalledWith(`${dbType}.create`, {
       name: "N",
       environmentId: "env",
       databasePassword: "secret",
@@ -75,19 +80,20 @@ describe("dokploy_database dispatch across DB types", () => {
   })
 
   it.each(DB_TYPES)("get (%s) calls {dbType}.one with {idField: databaseId}", async (dbType) => {
-    getMock.mockResolvedValue({
-      databaseId: "db1",
-      name: "N",
-      appName: "n",
-      applicationStatus: "running",
-      environmentId: "env",
-    })
+    getIOMock.mockReturnValueOnce(
+      IO.succeed({
+        databaseId: "db1",
+        name: "N",
+        appName: "n",
+        applicationStatus: "running",
+        environmentId: "env",
+      }),
+    )
     await tool.execute({ action: "get", dbType, databaseId: "db1" })
-    expect(getMock).toHaveBeenCalledWith(`${dbType}.one`, { [DB_ID_FIELDS[dbType]]: "db1" })
+    expect(getIOMock).toHaveBeenCalledWith(`${dbType}.one`, { [DB_ID_FIELDS[dbType]]: "db1" })
   })
 
   it.each(DB_TYPES)("update (%s) posts only defined fields plus id", async (dbType) => {
-    postMock.mockResolvedValue(undefined)
     await tool.execute({
       action: "update",
       dbType,
@@ -95,7 +101,7 @@ describe("dokploy_database dispatch across DB types", () => {
       name: "new-name",
       memoryLimit: 1024,
     })
-    expect(postMock).toHaveBeenCalledWith(`${dbType}.update`, {
+    expect(postIOMock).toHaveBeenCalledWith(`${dbType}.update`, {
       [DB_ID_FIELDS[dbType]]: "db1",
       name: "new-name",
       memoryLimit: 1024,
@@ -103,14 +109,13 @@ describe("dokploy_database dispatch across DB types", () => {
   })
 
   it.each(DB_TYPES)("move (%s) sends targetEnvironmentId", async (dbType) => {
-    postMock.mockResolvedValue(undefined)
     await tool.execute({
       action: "move",
       dbType,
       databaseId: "db1",
       targetEnvironmentId: "env-2",
     })
-    expect(postMock).toHaveBeenCalledWith(`${dbType}.move`, {
+    expect(postIOMock).toHaveBeenCalledWith(`${dbType}.move`, {
       [DB_ID_FIELDS[dbType]]: "db1",
       targetEnvironmentId: "env-2",
     })
@@ -119,64 +124,58 @@ describe("dokploy_database dispatch across DB types", () => {
   const simpleActions = ["start", "stop", "deploy", "rebuild", "remove"] as const
   for (const action of simpleActions) {
     it.each(DB_TYPES)(`${action} (%s) posts to {dbType}.${action} with just id`, async (dbType) => {
-      postMock.mockResolvedValue(undefined)
       await tool.execute({ action, dbType, databaseId: "db1" })
-      expect(postMock).toHaveBeenCalledWith(`${dbType}.${action}`, { [DB_ID_FIELDS[dbType]]: "db1" })
+      expect(postIOMock).toHaveBeenCalledWith(`${dbType}.${action}`, { [DB_ID_FIELDS[dbType]]: "db1" })
     })
   }
 
   it.each(DB_TYPES)("reload (%s) includes appName", async (dbType) => {
-    postMock.mockResolvedValue(undefined)
     await tool.execute({ action: "reload", dbType, databaseId: "db1", appName: "my-app" })
-    expect(postMock).toHaveBeenCalledWith(`${dbType}.reload`, {
+    expect(postIOMock).toHaveBeenCalledWith(`${dbType}.reload`, {
       [DB_ID_FIELDS[dbType]]: "db1",
       appName: "my-app",
     })
   })
 
   it.each(DB_TYPES)("changeStatus (%s) sends applicationStatus", async (dbType) => {
-    postMock.mockResolvedValue(undefined)
     await tool.execute({
       action: "changeStatus",
       dbType,
       databaseId: "db1",
       applicationStatus: "error",
     })
-    expect(postMock).toHaveBeenCalledWith(`${dbType}.changeStatus`, {
+    expect(postIOMock).toHaveBeenCalledWith(`${dbType}.changeStatus`, {
       [DB_ID_FIELDS[dbType]]: "db1",
       applicationStatus: "error",
     })
   })
 
   it.each(DB_TYPES)("saveEnvironment (%s) includes env only when provided", async (dbType) => {
-    postMock.mockResolvedValue(undefined)
-
     await tool.execute({
       action: "saveEnvironment",
       dbType,
       databaseId: "db1",
       env: "FOO=1",
     })
-    expect(postMock).toHaveBeenLastCalledWith(`${dbType}.saveEnvironment`, {
+    expect(postIOMock).toHaveBeenLastCalledWith(`${dbType}.saveEnvironment`, {
       [DB_ID_FIELDS[dbType]]: "db1",
       env: "FOO=1",
     })
 
     await tool.execute({ action: "saveEnvironment", dbType, databaseId: "db1" })
-    expect(postMock).toHaveBeenLastCalledWith(`${dbType}.saveEnvironment`, {
+    expect(postIOMock).toHaveBeenLastCalledWith(`${dbType}.saveEnvironment`, {
       [DB_ID_FIELDS[dbType]]: "db1",
     })
   })
 
   it.each(DB_TYPES)("saveExternalPort (%s) sends externalPort", async (dbType) => {
-    postMock.mockResolvedValue(undefined)
     await tool.execute({
       action: "saveExternalPort",
       dbType,
       databaseId: "db1",
       externalPort: 5432,
     })
-    expect(postMock).toHaveBeenCalledWith(`${dbType}.saveExternalPort`, {
+    expect(postIOMock).toHaveBeenCalledWith(`${dbType}.saveExternalPort`, {
       [DB_ID_FIELDS[dbType]]: "db1",
       externalPort: 5432,
     })
@@ -185,13 +184,15 @@ describe("dokploy_database dispatch across DB types", () => {
 
 describe("dokploy_database return values", () => {
   it("create returns formatted markdown including type", async () => {
-    postMock.mockResolvedValue({
-      databaseId: "db-1",
-      name: "MyDB",
-      appName: "my-db",
-      applicationStatus: "idle",
-      environmentId: "env",
-    })
+    postIOMock.mockReturnValueOnce(
+      IO.succeed({
+        databaseId: "db-1",
+        name: "MyDB",
+        appName: "my-db",
+        applicationStatus: "idle",
+        environmentId: "env",
+      }),
+    )
     const result = await tool.execute({
       action: "create",
       dbType: "postgres",
@@ -205,7 +206,6 @@ describe("dokploy_database return values", () => {
   })
 
   it("simple action returns confirmation message", async () => {
-    postMock.mockResolvedValue(undefined)
     const result = await tool.execute({
       action: "start",
       dbType: "redis",
@@ -215,7 +215,6 @@ describe("dokploy_database return values", () => {
   })
 
   it("move returns message naming target environment", async () => {
-    postMock.mockResolvedValue(undefined)
     const result = await tool.execute({
       action: "move",
       dbType: "mongo",
