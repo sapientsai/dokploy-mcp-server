@@ -76,6 +76,20 @@ describe("dokploy_docker getConfig", () => {
     expect(result).toContain("Ensure the containerId is a valid Docker container ID")
   })
 
+  it("returns helpful message when API returns 200 with null body (Dokploy's actual not-found behavior)", async () => {
+    getMock.mockReturnValueOnce(IO.succeed(null))
+    const result = (await tool.execute({ action: "getConfig", containerId: "c1" })) as string
+    expect(result).toContain("Ensure the containerId is a valid Docker container ID")
+    expect(result).not.toContain("undefined")
+  })
+
+  it("returns helpful message when API returns 200 with undefined body", async () => {
+    getMock.mockReturnValueOnce(IO.succeed(undefined))
+    const result = (await tool.execute({ action: "getConfig", containerId: "c1" })) as string
+    expect(result).toContain("Ensure the containerId is a valid Docker container ID")
+    expect(result).not.toContain("undefined")
+  })
+
   it("re-throws 5xx errors", async () => {
     getMock.mockReturnValueOnce(IO.fail(HttpError("GET", "docker.getConfig", 500, "Internal", "boom")))
     await expect(tool.execute({ action: "getConfig", containerId: "c1" })).rejects.toThrow(/500/)
