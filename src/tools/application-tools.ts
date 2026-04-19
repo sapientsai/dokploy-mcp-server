@@ -1,4 +1,4 @@
-import type { IO as IOType } from "functype"
+import type { IO } from "functype"
 import { Match } from "functype"
 import { z } from "zod"
 
@@ -91,7 +91,7 @@ type ApplicationArgs = {
 export function buildApplicationProgram(
   client: Pick<DokployClient, "get" | "post">,
   args: ApplicationArgs,
-): IOType<never, ApiError, string> {
+): IO<never, ApiError, string> {
   return Match(args.action)
     .case("create", () =>
       client

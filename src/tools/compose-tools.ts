@@ -1,4 +1,3 @@
-import type { IO as IOType } from "functype"
 import { IO, Match } from "functype"
 import { z } from "zod"
 
@@ -81,7 +80,7 @@ type ComposeArgs = {
 export function buildComposeProgram(
   client: Pick<DokployClient, "get" | "post">,
   args: ComposeArgs,
-): IOType<never, ApiError, string> {
+): IO<never, ApiError, string> {
   return Match(args.action)
     .case("create", () =>
       client
@@ -153,7 +152,7 @@ export function buildComposeProgram(
         })
         .map((services) => `# Compose Services\n\n\`\`\`json\n${JSON.stringify(services, null, 2)}\n\`\`\``)
         .recoverWith(
-          (err): IOType<never, ApiError, string> =>
+          (err): IO<never, ApiError, string> =>
             err._tag === "HttpError" && err.status === 404
               ? IO.succeed("No services loaded yet. Deploy the compose service first, then call loadServices.")
               : IO.fail(err),

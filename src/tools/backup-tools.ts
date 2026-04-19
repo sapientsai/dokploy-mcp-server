@@ -1,4 +1,4 @@
-import type { IO as IOType } from "functype"
+import type { IO } from "functype"
 import { Match } from "functype"
 import { z } from "zod"
 
@@ -74,7 +74,7 @@ const MANUAL_BACKUP_ENDPOINTS: Record<NonNullable<BackupArgs["backupType"]>, str
 export function buildBackupProgram(
   client: Pick<DokployClient, "get" | "post">,
   args: BackupArgs,
-): IOType<never, ApiError, string> {
+): IO<never, ApiError, string> {
   return Match(args.action)
     .case("create", () =>
       client

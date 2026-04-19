@@ -1,4 +1,3 @@
-import type { IO as IOType } from "functype"
 import { IO, Match } from "functype"
 import { z } from "zod"
 
@@ -23,7 +22,7 @@ type SshKeyArgs = {
   type?: "rsa" | "ed25519"
 }
 
-function resolveOrganizationIdIO(resolve: () => Promise<string>): IOType<never, ApiError, string> {
+function resolveOrganizationIdIO(resolve: () => Promise<string>): IO<never, ApiError, string> {
   return IO.tryPromise({
     try: resolve,
     catch: (cause): ApiError => NetworkError("GET", "organizationId", cause),
@@ -34,7 +33,7 @@ export function buildSshKeyProgram(
   client: Pick<DokployClient, "get" | "post">,
   args: SshKeyArgs,
   resolveOrganizationId: () => Promise<string> = getOrganizationId,
-): IOType<never, ApiError, string> {
+): IO<never, ApiError, string> {
   return Match(args.action)
     .case("create", () =>
       resolveOrganizationIdIO(resolveOrganizationId).flatMap((organizationId) =>

@@ -1,4 +1,3 @@
-import type { IO as IOType } from "functype"
 import { IO, Match } from "functype"
 import { z } from "zod"
 
@@ -40,7 +39,7 @@ type InfraArgs = {
   serverId?: string
 }
 
-function resolveOrganizationIdIO(resolve: () => Promise<string>): IOType<never, ApiError, string> {
+function resolveOrganizationIdIO(resolve: () => Promise<string>): IO<never, ApiError, string> {
   return IO.tryPromise({
     try: resolve,
     catch: (cause): ApiError => NetworkError("GET", "organizationId", cause),
@@ -51,7 +50,7 @@ export function buildInfrastructureProgram(
   client: Pick<DokployClient, "get" | "post">,
   args: InfraArgs,
   resolveOrganizationId: () => Promise<string> = getOrganizationId,
-): IOType<never, ApiError, string> {
+): IO<never, ApiError, string> {
   return Match(args.action)
     .case("createPort", () =>
       client
