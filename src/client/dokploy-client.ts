@@ -58,14 +58,11 @@ export class DokployClient {
           init.body = JSON.stringify(options.body)
         }
 
-        let response: Response
-        try {
-          response = await fetch(url.toString(), init)
-        } catch (cause) {
-          // Sentinel throw — caught by TaggedError handler below, then mapped to ApiError via `catch`.
-
+        // Sentinel throw in the .catch — caught by TaggedError handler below, then mapped to ApiError via outer `catch`.
+        const response = await fetch(url.toString(), init).catch((cause: unknown) => {
+          // eslint-disable-next-line functype/prefer-either -- tagged sentinel: recovered by outer IO.tryPromise catch.
           throw new TaggedError(NetworkError(options.method, path, cause))
-        }
+        })
 
         if (!response.ok) {
           const errorText = await response.text().catch(() => "Unknown error")
@@ -114,27 +111,32 @@ async function runOrThrow<T>(io: IO<never, ApiError, T>): Promise<T> {
   throw new Error(formatApiError(either.value))
 }
 
-let client: Option<DokployClient> = None()
-let cachedOrganizationId: Option<string> = None()
+// Module-level singleton state. Wrapped in a const-bound record because this
+// file is the ownership boundary for the client/orgId caches; fields are
+// reassigned only through `initializeDokployClient` and `getOrganizationId`.
+const state: { client: Option<DokployClient>; cachedOrganizationId: Option<string> } = {
+  client: None(),
+  cachedOrganizationId: None(),
+}
 
 export function initializeDokployClient(baseUrl: string, apiKey: string): DokployClient {
   const instance = new DokployClient(baseUrl, apiKey)
-  client = Some(instance)
-  cachedOrganizationId = None()
+  state.client = Some(instance)
+  state.cachedOrganizationId = None()
   return instance
 }
 
 export function getDokployClient(): DokployClient {
   // Option.orThrow raises when None; uninitialized-singleton is a programmer error, not a recoverable domain failure.
-  return client.orThrow(new Error(formatApiError(NotInitialized)))
+  return state.client.orThrow(new Error(formatApiError(NotInitialized)))
 }
 
 export async function getOrganizationId(): Promise<string> {
-  const cached = cachedOrganizationId
+  const cached = state.cachedOrganizationId
   if (cached.isSome()) return cached.value
   const c = getDokployClient()
   const id = await resolveOrganizationId(c)
-  cachedOrganizationId = Some(id)
+  state.cachedOrganizationId = Some(id)
   return id
 }
 

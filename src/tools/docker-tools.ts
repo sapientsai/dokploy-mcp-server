@@ -5,7 +5,7 @@ import { z } from "zod"
 import type { DokployClient } from "../client/dokploy-client"
 import { getDokployClient } from "../client/dokploy-client"
 import type { ApiError } from "../client/errors"
-import { apiSucceed, formatApiError } from "../client/errors"
+import { formatApiError } from "../client/errors"
 import type { DokployContainer } from "../types"
 import { formatContainerList } from "../utils/formatters"
 import type { ToolServer } from "./types"
@@ -53,7 +53,7 @@ export function buildDockerProgram(
         .recoverWith(
           (err): IOType<never, ApiError, string> =>
             err._tag === "HttpError" && err.status === 400
-              ? apiSucceed(
+              ? IO.succeed(
                   `Failed to get config for container ${args.containerId}. Ensure the containerId is a valid Docker container ID (not a name). You can find container IDs using getContainers action.`,
                 )
               : IO.fail(err),

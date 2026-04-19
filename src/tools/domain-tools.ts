@@ -53,16 +53,14 @@ export function registerDomainTools(server: ToolServer) {
           return `# Domain Created\n\n${formatDomain(domain)}`
         }
         case "list": {
-          let domains: DokployDomain[]
-          if (args.applicationId) {
-            domains = await client.get<DokployDomain[]>("domain.byApplicationId", {
-              applicationId: args.applicationId,
-            })
-          } else if (args.composeId) {
-            domains = await client.get<DokployDomain[]>("domain.byComposeId", { composeId: args.composeId })
-          } else {
+          if (!args.applicationId && !args.composeId) {
             throw new Error("Provide applicationId or composeId")
           }
+          const domains = args.applicationId
+            ? await client.get<DokployDomain[]>("domain.byApplicationId", {
+                applicationId: args.applicationId,
+              })
+            : await client.get<DokployDomain[]>("domain.byComposeId", { composeId: args.composeId! })
           return formatDomainList(domains)
         }
         case "get": {

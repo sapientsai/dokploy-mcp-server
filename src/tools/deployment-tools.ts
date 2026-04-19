@@ -5,7 +5,7 @@ import { z } from "zod"
 import type { DokployClient } from "../client/dokploy-client"
 import { getDokployClient } from "../client/dokploy-client"
 import type { ApiError } from "../client/errors"
-import { apiSucceed, formatApiError } from "../client/errors"
+import { formatApiError } from "../client/errors"
 import type { DokployDeployment } from "../types"
 import { formatDeploymentList } from "../utils/formatters"
 import type { ToolServer } from "./types"
@@ -66,7 +66,7 @@ export function buildDeploymentProgram(
         .recoverWith(
           (err): IOType<never, ApiError, string> =>
             err._tag === "HttpError" && err.status === 404
-              ? apiSucceed(
+              ? IO.succeed(
                   `No log available for deployment ${args.deploymentId}. The log may not exist yet or has been cleaned up.`,
                 )
               : IO.fail(err),
