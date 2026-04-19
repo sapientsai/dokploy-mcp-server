@@ -50,17 +50,20 @@ export function buildDockerProgram(
       // POSTed here, which produced 404 "Not found" because no POST route exists at that path.
       const params: Record<string, string> = { containerId: args.containerId! }
       if (args.serverId) params.serverId = args.serverId
+      const notFoundHint = `Failed to get config for container ${args.containerId}. Ensure the containerId is a valid Docker container ID (not a name). You can find container IDs using getContainers action.`
       return client
         .get<unknown>("docker.getConfig", params)
-        .map((config) => `# Container Config\n\n\`\`\`json\n${JSON.stringify(config, null, 2)}\n\`\`\``)
+        .map((config) => {
+          // Empirically, the API returns 200 with a null/undefined body when the container
+          // doesn't exist on the server (rather than 404). Treat that as "not found".
+          if (config == null) return notFoundHint
+          return `# Container Config\n\n\`\`\`json\n${JSON.stringify(config, null, 2)}\n\`\`\``
+        })
         .recoverWith((err): IOType<never, ApiError, string> => {
           // 400 = malformed containerId (fails the API's `^[a-zA-Z0-9.\-_]+$` pattern).
-          // 404 = pattern valid but no such container on the server.
-          // Both call for the same actionable hint.
+          // 404 kept for robustness in case Dokploy starts returning it in future versions.
           if (err._tag === "HttpError" && (err.status === 400 || err.status === 404)) {
-            return IO.succeed(
-              `Failed to get config for container ${args.containerId}. Ensure the containerId is a valid Docker container ID (not a name). You can find container IDs using getContainers action.`,
-            )
+            return IO.succeed(notFoundHint)
           }
           return IO.fail(err)
         })
