@@ -35,7 +35,16 @@ type DbArgs = {
   applicationStatus?: string
   env?: string
   externalPort?: number
+  externalGRPCPort?: number
+  externalAdminPort?: number
+  sqldNode?: "primary" | "replica"
+  sqldPrimaryUrl?: string | null
+  enableNamespaces?: boolean
 }
+
+// libsql diverges from the other DB types: different create payload (appName/sqldNode/etc.) and
+// uses saveExternalPorts (plural) for ports. Parametric tests over the homogeneous set use this.
+const STANDARD_DB_TYPES = DB_TYPES.filter((t) => t !== "libsql")
 
 const tool = captureTool<DbArgs>(registerDatabaseTools)
 
@@ -54,7 +63,7 @@ describe("dokploy_database metadata", () => {
 })
 
 describe("dokploy_database dispatch across DB types", () => {
-  it.each(DB_TYPES)("create (%s) posts to {dbType}.create with only defined fields", async (dbType) => {
+  it.each(STANDARD_DB_TYPES)("create (%s) posts to {dbType}.create with only defined fields", async (dbType) => {
     postMock.mockReturnValueOnce(
       IO.succeed({
         databaseId: "new",
@@ -168,7 +177,7 @@ describe("dokploy_database dispatch across DB types", () => {
     })
   })
 
-  it.each(DB_TYPES)("saveExternalPort (%s) sends externalPort", async (dbType) => {
+  it.each(STANDARD_DB_TYPES)("saveExternalPort (%s) sends externalPort", async (dbType) => {
     await tool.execute({
       action: "saveExternalPort",
       dbType,
@@ -178,6 +187,52 @@ describe("dokploy_database dispatch across DB types", () => {
     expect(postMock).toHaveBeenCalledWith(`${dbType}.saveExternalPort`, {
       [DB_ID_FIELDS[dbType]]: "db1",
       externalPort: 5432,
+    })
+  })
+})
+
+describe("dokploy_database libsql specifics", () => {
+  it("create (libsql) sends sqld + namespace fields and defaults enableNamespaces to false", async () => {
+    postMock.mockReturnValueOnce(
+      IO.succeed({ libsqlId: "lib1", name: "L", appName: "l", applicationStatus: "idle", environmentId: "env" }),
+    )
+    await tool.execute({
+      action: "create",
+      dbType: "libsql",
+      name: "L",
+      appName: "l-app",
+      dockerImage: "ghcr.io/tursodatabase/libsql-server:latest",
+      environmentId: "env",
+      databaseUser: "user",
+      databasePassword: "pw",
+      sqldNode: "primary",
+    })
+    expect(postMock).toHaveBeenCalledWith("libsql.create", {
+      enableNamespaces: false,
+      name: "L",
+      appName: "l-app",
+      dockerImage: "ghcr.io/tursodatabase/libsql-server:latest",
+      environmentId: "env",
+      databaseUser: "user",
+      databasePassword: "pw",
+      sqldNode: "primary",
+    })
+  })
+
+  it("saveExternalPort (libsql) maps to libsql.saveExternalPorts (plural) with all three port fields", async () => {
+    await tool.execute({
+      action: "saveExternalPort",
+      dbType: "libsql",
+      databaseId: "lib1",
+      externalPort: 8080,
+      externalGRPCPort: 5001,
+      externalAdminPort: 8081,
+    })
+    expect(postMock).toHaveBeenCalledWith("libsql.saveExternalPorts", {
+      libsqlId: "lib1",
+      externalPort: 8080,
+      externalGRPCPort: 5001,
+      externalAdminPort: 8081,
     })
   })
 })

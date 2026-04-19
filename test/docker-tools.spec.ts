@@ -47,10 +47,22 @@ describe("dokploy_docker getContainers", () => {
   })
 })
 
-describe("dokploy_docker restartContainer", () => {
-  it("posts docker.restartContainer", async () => {
-    await tool.execute({ action: "restartContainer", containerId: "c1" })
-    expect(postMock).toHaveBeenCalledWith("docker.restartContainer", { containerId: "c1" })
+describe("dokploy_docker container lifecycle", () => {
+  it.each([
+    ["restartContainer", "docker.restartContainer", "restarted"],
+    ["startContainer", "docker.startContainer", "started"],
+    ["stopContainer", "docker.stopContainer", "stopped"],
+    ["killContainer", "docker.killContainer", "killed"],
+    ["removeContainer", "docker.removeContainer", "removed"],
+  ] as const)("%s posts to %s", async (action, endpoint, verb) => {
+    const result = (await tool.execute({ action, containerId: "c1" })) as string
+    expect(postMock).toHaveBeenCalledWith(endpoint, { containerId: "c1" })
+    expect(result).toBe(`Container c1 ${verb}.`)
+  })
+
+  it("includes serverId when provided", async () => {
+    await tool.execute({ action: "stopContainer", containerId: "c1", serverId: "srv-1" })
+    expect(postMock).toHaveBeenCalledWith("docker.stopContainer", { containerId: "c1", serverId: "srv-1" })
   })
 })
 

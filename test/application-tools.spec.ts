@@ -48,6 +48,9 @@ type AppArgs = {
   dockerBuildStage?: string
   publishDirectory?: string
   traefikConfig?: string
+  tail?: number
+  since?: string
+  search?: string
 }
 
 const tool = captureTool<AppArgs>(registerApplicationTools)
@@ -311,5 +314,32 @@ describe("dokploy_application traefikConfig / readMonitoring", () => {
     expect(getMock).toHaveBeenCalledWith("application.readAppMonitoring", { appName: "my-app" })
     expect(result).toContain("Monitoring: my-app")
     expect(result).toContain("cpu")
+  })
+})
+
+describe("dokploy_application readLogs", () => {
+  it("GETs application.readLogs with only applicationId by default", async () => {
+    getMock.mockReturnValueOnce(IO.succeed("log line"))
+    const result = (await tool.execute({ action: "readLogs", applicationId: "a1" })) as string
+    expect(getMock).toHaveBeenCalledWith("application.readLogs", { applicationId: "a1" })
+    expect(result).toContain("Application Logs (a1)")
+    expect(result).toContain("log line")
+  })
+
+  it("forwards tail/since/search as query params (tail stringified)", async () => {
+    getMock.mockReturnValueOnce(IO.succeed(""))
+    await tool.execute({
+      action: "readLogs",
+      applicationId: "a1",
+      tail: 500,
+      since: "1h",
+      search: "error",
+    })
+    expect(getMock).toHaveBeenCalledWith("application.readLogs", {
+      applicationId: "a1",
+      tail: "500",
+      since: "1h",
+      search: "error",
+    })
   })
 })

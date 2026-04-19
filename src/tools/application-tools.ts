@@ -31,6 +31,7 @@ const ACTIONS = [
   "saveBuildType",
   "traefikConfig",
   "readMonitoring",
+  "readLogs",
 ] as const
 
 const UPDATE_FIELDS = [
@@ -86,6 +87,9 @@ type ApplicationArgs = {
   dockerBuildStage?: string
   publishDirectory?: string
   traefikConfig?: string
+  tail?: number
+  since?: string
+  search?: string
 }
 
 export function buildApplicationProgram(
@@ -224,6 +228,15 @@ export function buildApplicationProgram(
         .get<unknown>("application.readAppMonitoring", { appName: args.appName! })
         .map((data) => `# Monitoring: ${args.appName}\n\n\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\``),
     )
+    .case("readLogs", () => {
+      const params: Record<string, string> = { applicationId: args.applicationId! }
+      if (args.tail !== undefined) params.tail = String(args.tail)
+      if (args.since !== undefined) params.since = args.since
+      if (args.search !== undefined) params.search = args.search
+      return client
+        .get<string>("application.readLogs", params)
+        .map((logs) => `# Application Logs (${args.applicationId})\n\n\`\`\`\n${logs}\n\`\`\``)
+    })
     .exhaustive()
 }
 
@@ -231,7 +244,7 @@ export function registerApplicationTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_application",
     description:
-      "Manage applications. create: name+environmentId. get: applicationId (returns env vars, git source, build config). update: applicationId+fields (supports sourceType, repository, owner, branch, customGitUrl, customGitBranch, githubId, dockerImage, etc.). move: applicationId+targetEnvironmentId. deploy: applicationId, redeploy? (note: first deploy on new services may fail — retry immediately). start/stop/delete/markRunning/refreshToken/cleanQueues/killBuild/cancelDeployment: applicationId. reload: applicationId+appName. saveEnvironment: applicationId+env (KEY=VALUE pairs, one per line). saveBuildType: applicationId+buildType. traefikConfig: applicationId, traefikConfig? (omit to read). readMonitoring: appName.",
+      "Manage applications. create: name+environmentId. get: applicationId (returns env vars, git source, build config). update: applicationId+fields (supports sourceType, repository, owner, branch, customGitUrl, customGitBranch, githubId, dockerImage, etc.). move: applicationId+targetEnvironmentId. deploy: applicationId, redeploy? (note: first deploy on new services may fail — retry immediately). start/stop/delete/markRunning/refreshToken/cleanQueues/killBuild/cancelDeployment: applicationId. reload: applicationId+appName. saveEnvironment: applicationId+env (KEY=VALUE pairs, one per line). saveBuildType: applicationId+buildType. traefikConfig: applicationId, traefikConfig? (omit to read). readMonitoring: appName. readLogs: applicationId, tail? (default 100), since? ('all' or duration like '1h'), search? (substring filter).",
     parameters: z.object({
       action: z.enum(ACTIONS),
       applicationId: z.string().optional(),
@@ -272,6 +285,23 @@ export function registerApplicationTools(server: ToolServer) {
       dockerBuildStage: z.string().optional(),
       publishDirectory: z.string().optional(),
       traefikConfig: z.string().optional().describe("New config content (omit to read current)"),
+      tail: z
+        .number()
+        .int()
+        .min(1)
+        .max(10000)
+        .optional()
+        .describe("Number of recent log lines to return (default 100)"),
+      since: z
+        .string()
+        .regex(/^(all|\d+[smhd])$/)
+        .optional()
+        .describe("Time range: 'all' or a duration like '30m', '1h', '7d'"),
+      search: z
+        .string()
+        .regex(/^[a-zA-Z0-9 ._-]{0,500}$/)
+        .optional()
+        .describe("Filter log lines by substring (alphanumeric + ' ._-' only)"),
     }),
     execute: async (args) => {
       const either = await buildApplicationProgram(getDokployClient(), args).run()

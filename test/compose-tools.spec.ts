@@ -42,6 +42,10 @@ type ComposeArgs = {
   targetEnvironmentId?: string
   type?: string
   serviceName?: string
+  containerId?: string
+  tail?: number
+  since?: string
+  search?: string
 }
 
 const tool = captureTool<ComposeArgs>(registerComposeTools)
@@ -222,4 +226,33 @@ describe("dokploy_compose simple actions", () => {
       expect(postMock).toHaveBeenCalledWith(`compose.${action}`, { composeId: "c1" })
     },
   )
+})
+
+describe("dokploy_compose readLogs", () => {
+  it("GETs compose.readLogs with composeId+containerId", async () => {
+    getMock.mockReturnValueOnce(IO.succeed("compose log line"))
+    const result = (await tool.execute({ action: "readLogs", composeId: "c1", containerId: "abc123" })) as string
+    expect(getMock).toHaveBeenCalledWith("compose.readLogs", { composeId: "c1", containerId: "abc123" })
+    expect(result).toContain("Compose Logs (c1 / abc123)")
+    expect(result).toContain("compose log line")
+  })
+
+  it("forwards optional tail/since/search", async () => {
+    getMock.mockReturnValueOnce(IO.succeed(""))
+    await tool.execute({
+      action: "readLogs",
+      composeId: "c1",
+      containerId: "abc123",
+      tail: 50,
+      since: "30m",
+      search: "warn",
+    })
+    expect(getMock).toHaveBeenCalledWith("compose.readLogs", {
+      composeId: "c1",
+      containerId: "abc123",
+      tail: "50",
+      since: "30m",
+      search: "warn",
+    })
+  })
 })
