@@ -61,7 +61,7 @@ export function buildProjectProgram(
       if (args.duplicateInSameProject !== undefined) body.duplicateInSameProject = args.duplicateInSameProject
       return client.post<unknown>("project.duplicate", body).map(() => `Environment duplicated as "${args.name}".`)
     })
-    .exhaustive() as IOType<never, ApiError, string>
+    .exhaustive()
 }
 
 export function registerProjectTools(server: ToolServer) {

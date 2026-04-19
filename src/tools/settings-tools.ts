@@ -43,7 +43,7 @@ export function buildSettingsProgram(
           : client.post<unknown>("settings.reloadTraefik", args.serverId ? { serverId: args.serverId } : {})
       return io.map(() => `${target} reloaded.`)
     })
-    .exhaustive() as IO<never, ApiError, string>
+    .exhaustive()
 }
 
 export function registerSettingsTools(server: ToolServer) {

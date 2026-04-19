@@ -56,7 +56,7 @@ export function buildDeploymentProgram(
         .post<unknown>("deployment.killProcess", { deploymentId: args.deploymentId! })
         .map(() => `Deployment ${args.deploymentId} killed.`),
     )
-    .exhaustive() as IOType<never, ApiError, string>
+    .exhaustive()
 }
 
 export function registerDeploymentTools(server: ToolServer) {

@@ -156,7 +156,7 @@ export function buildDatabaseProgram(
         })
         .map(() => `External port set to ${args.externalPort} for database ${args.databaseId}.`),
     )
-    .exhaustive() as IOType<never, ApiError, string>
+    .exhaustive()
 }
 
 export function registerDatabaseTools(server: ToolServer) {
