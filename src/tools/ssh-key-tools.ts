@@ -77,7 +77,7 @@ export function buildSshKeyProgram(
           .map((sshKey) => `# SSH Key Generated\n\n${formatSshKey(sshKey)}`),
       ),
     )
-    .exhaustive() as IOType<never, ApiError, string>
+    .exhaustive()
 }
 
 export function registerSshKeyTools(server: ToolServer) {

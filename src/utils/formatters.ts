@@ -97,9 +97,11 @@ export function formatProjectList(projects: DokployProject[]): string {
 
 export function formatEnvironment(env: DokployEnvironment): string {
   const services = formatEnvironmentServices(env)
+  // Dokploy's environment.byProjectId response omits projectId and createdAt on the nested
+  // environment records, so both can legitimately be undefined at render time.
   return `- **${env.name}** (ID: ${env.environmentId})
   Description: ${orElse(env.description, "None")}
-  Project: ${env.projectId}
+  Project: ${orElse(env.projectId, "N/A")}
   Created: ${formatDate(env.createdAt)}${services ? `\n${services}` : ""}`
 }
 

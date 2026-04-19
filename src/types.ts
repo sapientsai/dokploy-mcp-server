@@ -22,7 +22,9 @@ export type DokployEnvironment = {
   environmentId: string
   name: string
   description?: string
-  projectId: string
+  // Empirically missing on environment.byProjectId responses — the caller passes projectId
+  // as a query param, so the API treats it as known context and omits it from the payload.
+  projectId?: string
   createdAt?: string
   applications?: DokployApplication[]
   compose?: DokployCompose[]

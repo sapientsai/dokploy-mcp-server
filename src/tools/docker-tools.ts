@@ -45,19 +45,25 @@ export function buildDockerProgram(
         .map(() => `Container ${args.containerId} restarted.`),
     )
     .case("getConfig", () => {
-      const body: Record<string, unknown> = { containerId: args.containerId! }
-      if (args.serverId) body.serverId = args.serverId
+      // docker.getConfig is a GET endpoint in the Dokploy API (openapi.json confirms this — it
+      // takes containerId + optional serverId as query params). Earlier versions of this tool
+      // POSTed here, which produced 404 "Not found" because no POST route exists at that path.
+      const params: Record<string, string> = { containerId: args.containerId! }
+      if (args.serverId) params.serverId = args.serverId
       return client
-        .post<unknown>("docker.getConfig", body)
+        .get<unknown>("docker.getConfig", params)
         .map((config) => `# Container Config\n\n\`\`\`json\n${JSON.stringify(config, null, 2)}\n\`\`\``)
-        .recoverWith(
-          (err): IOType<never, ApiError, string> =>
-            err._tag === "HttpError" && err.status === 400
-              ? IO.succeed(
-                  `Failed to get config for container ${args.containerId}. Ensure the containerId is a valid Docker container ID (not a name). You can find container IDs using getContainers action.`,
-                )
-              : IO.fail(err),
-        )
+        .recoverWith((err): IOType<never, ApiError, string> => {
+          // 400 = malformed containerId (fails the API's `^[a-zA-Z0-9.\-_]+$` pattern).
+          // 404 = pattern valid but no such container on the server.
+          // Both call for the same actionable hint.
+          if (err._tag === "HttpError" && (err.status === 400 || err.status === 404)) {
+            return IO.succeed(
+              `Failed to get config for container ${args.containerId}. Ensure the containerId is a valid Docker container ID (not a name). You can find container IDs using getContainers action.`,
+            )
+          }
+          return IO.fail(err)
+        })
     })
     .case("findContainers", () => {
       if (!args.method) {

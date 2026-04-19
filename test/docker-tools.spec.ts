@@ -55,23 +55,29 @@ describe("dokploy_docker restartContainer", () => {
 })
 
 describe("dokploy_docker getConfig", () => {
-  it("posts docker.getConfig with optional serverId", async () => {
-    postMock.mockReturnValueOnce(IO.succeed({ Id: "c1" }))
+  it("GETs docker.getConfig with optional serverId", async () => {
+    getMock.mockReturnValueOnce(IO.succeed({ Id: "c1" }))
     await tool.execute({ action: "getConfig", containerId: "c1", serverId: "srv-1" })
-    expect(postMock).toHaveBeenCalledWith("docker.getConfig", {
+    expect(getMock).toHaveBeenCalledWith("docker.getConfig", {
       containerId: "c1",
       serverId: "srv-1",
     })
   })
 
-  it("returns helpful message on 400", async () => {
-    postMock.mockReturnValueOnce(IO.fail(HttpError("POST", "docker.getConfig", 400, "Bad Request", "")))
+  it("returns helpful message on 400 (malformed containerId)", async () => {
+    getMock.mockReturnValueOnce(IO.fail(HttpError("GET", "docker.getConfig", 400, "Bad Request", "")))
     const result = (await tool.execute({ action: "getConfig", containerId: "c1" })) as string
     expect(result).toContain("Ensure the containerId is a valid Docker container ID")
   })
 
-  it("re-throws non-400 errors", async () => {
-    postMock.mockReturnValueOnce(IO.fail(HttpError("POST", "docker.getConfig", 500, "Internal", "boom")))
+  it("returns helpful message on 404 (container not found on server)", async () => {
+    getMock.mockReturnValueOnce(IO.fail(HttpError("GET", "docker.getConfig", 404, "Not Found", "")))
+    const result = (await tool.execute({ action: "getConfig", containerId: "c1" })) as string
+    expect(result).toContain("Ensure the containerId is a valid Docker container ID")
+  })
+
+  it("re-throws 5xx errors", async () => {
+    getMock.mockReturnValueOnce(IO.fail(HttpError("GET", "docker.getConfig", 500, "Internal", "boom")))
     await expect(tool.execute({ action: "getConfig", containerId: "c1" })).rejects.toThrow(/500/)
   })
 })
