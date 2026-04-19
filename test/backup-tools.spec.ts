@@ -4,13 +4,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { registerBackupTools } from "../src/tools/backup-tools"
 import { captureTool } from "./support/tool-harness"
 
-const { getIOMock, postIOMock } = vi.hoisted(() => ({
-  getIOMock: vi.fn(),
-  postIOMock: vi.fn(),
+const { getMock, postMock } = vi.hoisted(() => ({
+  getMock: vi.fn(),
+  postMock: vi.fn(),
 }))
 
 vi.mock("../src/client/dokploy-client", () => ({
-  getDokployClient: () => ({ getIO: getIOMock, postIO: postIOMock }),
+  getDokployClient: () => ({ get: getMock, post: postMock }),
 }))
 
 type BackupArgs = {
@@ -37,15 +37,15 @@ type BackupArgs = {
 const tool = captureTool<BackupArgs>(registerBackupTools)
 
 beforeEach(() => {
-  getIOMock.mockReset()
-  postIOMock.mockReset()
-  getIOMock.mockImplementation(() => IO.succeed(undefined))
-  postIOMock.mockImplementation(() => IO.succeed(undefined))
+  getMock.mockReset()
+  postMock.mockReset()
+  getMock.mockImplementation(() => IO.succeed(undefined))
+  postMock.mockImplementation(() => IO.succeed(undefined))
 })
 
 describe("dokploy_backup CRUD", () => {
   it("create posts only defined fields", async () => {
-    postIOMock.mockReturnValueOnce(
+    postMock.mockReturnValueOnce(
       IO.succeed({
         backupId: "b1",
         schedule: "0 2 * * *",
@@ -64,7 +64,7 @@ describe("dokploy_backup CRUD", () => {
       databaseType: "postgres",
       postgresId: "pg1",
     })
-    expect(postIOMock).toHaveBeenCalledWith("backup.create", {
+    expect(postMock).toHaveBeenCalledWith("backup.create", {
       schedule: "0 2 * * *",
       prefix: "daily",
       destinationId: "d",
@@ -75,7 +75,7 @@ describe("dokploy_backup CRUD", () => {
   })
 
   it("get calls backup.one", async () => {
-    getIOMock.mockReturnValueOnce(
+    getMock.mockReturnValueOnce(
       IO.succeed({
         backupId: "b1",
         schedule: "@daily",
@@ -86,7 +86,7 @@ describe("dokploy_backup CRUD", () => {
       }),
     )
     await tool.execute({ action: "get", backupId: "b1" })
-    expect(getIOMock).toHaveBeenCalledWith("backup.one", { backupId: "b1" })
+    expect(getMock).toHaveBeenCalledWith("backup.one", { backupId: "b1" })
   })
 
   it("update includes backupId plus only defined fields", async () => {
@@ -96,7 +96,7 @@ describe("dokploy_backup CRUD", () => {
       schedule: "@hourly",
       enabled: false,
     })
-    expect(postIOMock).toHaveBeenCalledWith("backup.update", {
+    expect(postMock).toHaveBeenCalledWith("backup.update", {
       backupId: "b1",
       schedule: "@hourly",
       enabled: false,
@@ -105,20 +105,20 @@ describe("dokploy_backup CRUD", () => {
 
   it("remove posts backup.remove", async () => {
     await tool.execute({ action: "remove", backupId: "b1" })
-    expect(postIOMock).toHaveBeenCalledWith("backup.remove", { backupId: "b1" })
+    expect(postMock).toHaveBeenCalledWith("backup.remove", { backupId: "b1" })
   })
 })
 
 describe("dokploy_backup listFiles", () => {
   it("calls backup.listBackupFiles with destination + optional params", async () => {
-    getIOMock.mockReturnValueOnce(IO.succeed([]))
+    getMock.mockReturnValueOnce(IO.succeed([]))
     await tool.execute({
       action: "listFiles",
       destinationId: "d1",
       search: "2025",
       serverId: "srv-1",
     })
-    expect(getIOMock).toHaveBeenCalledWith("backup.listBackupFiles", {
+    expect(getMock).toHaveBeenCalledWith("backup.listBackupFiles", {
       destinationId: "d1",
       search: "2025",
       serverId: "srv-1",
@@ -126,9 +126,9 @@ describe("dokploy_backup listFiles", () => {
   })
 
   it("omits search/serverId when absent", async () => {
-    getIOMock.mockReturnValueOnce(IO.succeed([]))
+    getMock.mockReturnValueOnce(IO.succeed([]))
     await tool.execute({ action: "listFiles", destinationId: "d1" })
-    expect(getIOMock).toHaveBeenCalledWith("backup.listBackupFiles", { destinationId: "d1" })
+    expect(getMock).toHaveBeenCalledWith("backup.listBackupFiles", { destinationId: "d1" })
   })
 })
 
@@ -141,6 +141,6 @@ describe("dokploy_backup manualBackup", () => {
     ["compose", "backup.manualBackupCompose"],
   ] as const)("backupType=%s hits %s", async (backupType, endpoint) => {
     await tool.execute({ action: "manualBackup", backupId: "b1", backupType })
-    expect(postIOMock).toHaveBeenCalledWith(endpoint, { backupId: "b1" })
+    expect(postMock).toHaveBeenCalledWith(endpoint, { backupId: "b1" })
   })
 })

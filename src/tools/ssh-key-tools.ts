@@ -31,7 +31,7 @@ function resolveOrganizationIdIO(resolve: () => Promise<string>): IOType<never, 
 }
 
 export function buildSshKeyProgram(
-  client: Pick<DokployClient, "getIO" | "postIO">,
+  client: Pick<DokployClient, "get" | "post">,
   args: SshKeyArgs,
   resolveOrganizationId: () => Promise<string> = getOrganizationId,
 ): IOType<never, ApiError, string> {
@@ -39,7 +39,7 @@ export function buildSshKeyProgram(
     .case("create", () =>
       resolveOrganizationIdIO(resolveOrganizationId).flatMap((organizationId) =>
         client
-          .postIO<DokploySshKey>("sshKey.create", {
+          .post<DokploySshKey>("sshKey.create", {
             name: args.name!,
             privateKey: args.privateKey!,
             publicKey: args.publicKey!,
@@ -49,10 +49,10 @@ export function buildSshKeyProgram(
           .map((sshKey) => `# SSH Key Created\n\n${formatSshKey(sshKey)}`),
       ),
     )
-    .case("list", () => client.getIO<DokploySshKey[]>("sshKey.all").map(formatSshKeyList))
+    .case("list", () => client.get<DokploySshKey[]>("sshKey.all").map(formatSshKeyList))
     .case("get", () =>
       client
-        .getIO<DokploySshKey>("sshKey.one", { sshKeyId: args.sshKeyId! })
+        .get<DokploySshKey>("sshKey.one", { sshKeyId: args.sshKeyId! })
         .map((sshKey) => `# SSH Key Details\n\n${formatSshKey(sshKey)}`),
     )
     .case("update", () => {
@@ -60,17 +60,17 @@ export function buildSshKeyProgram(
       if (args.name !== undefined) body.name = args.name
       if (args.description !== undefined) body.description = args.description
       if (args.lastUsedAt !== undefined) body.lastUsedAt = args.lastUsedAt
-      return client.postIO<unknown>("sshKey.update", body).map(() => `SSH key ${args.sshKeyId} updated.`)
+      return client.post<unknown>("sshKey.update", body).map(() => `SSH key ${args.sshKeyId} updated.`)
     })
     .case("remove", () =>
       client
-        .postIO<unknown>("sshKey.remove", { sshKeyId: args.sshKeyId! })
+        .post<unknown>("sshKey.remove", { sshKeyId: args.sshKeyId! })
         .map(() => `SSH key ${args.sshKeyId} removed.`),
     )
     .case("generate", () =>
       resolveOrganizationIdIO(resolveOrganizationId).flatMap((organizationId) =>
         client
-          .postIO<DokploySshKey>("sshKey.generate", {
+          .post<DokploySshKey>("sshKey.generate", {
             type: args.type ?? "ed25519",
             organizationId,
           })

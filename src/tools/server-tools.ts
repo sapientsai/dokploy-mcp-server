@@ -28,19 +28,19 @@ type ServerArgs = {
 }
 
 export function buildServerProgram(
-  client: Pick<DokployClient, "getIO" | "postIO">,
+  client: Pick<DokployClient, "get" | "post">,
   args: ServerArgs,
 ): IOType<never, ApiError, string> {
   return Match(args.action)
-    .case("list", () => client.getIO<DokployServer[]>("server.all").map(formatServerList))
+    .case("list", () => client.get<DokployServer[]>("server.all").map(formatServerList))
     .case("get", () =>
       client
-        .getIO<DokployServer>("server.one", { serverId: args.serverId! })
+        .get<DokployServer>("server.one", { serverId: args.serverId! })
         .map((srv) => `# Server Details\n\n${formatServer(srv)}`),
     )
     .case("create", () =>
       client
-        .postIO<DokployServer>("server.create", {
+        .post<DokployServer>("server.create", {
           name: args.name!,
           ipAddress: args.ipAddress!,
           port: args.port!,
@@ -53,7 +53,7 @@ export function buildServerProgram(
     )
     .case("update", () =>
       client
-        .postIO<unknown>("server.update", {
+        .post<unknown>("server.update", {
           serverId: args.serverId!,
           name: args.name!,
           ipAddress: args.ipAddress!,
@@ -66,15 +66,13 @@ export function buildServerProgram(
         .map(() => `Server ${args.serverId} updated.`),
     )
     .case("remove", () =>
-      client
-        .postIO<unknown>("server.remove", { serverId: args.serverId! })
-        .map(() => `Server ${args.serverId} removed.`),
+      client.post<unknown>("server.remove", { serverId: args.serverId! }).map(() => `Server ${args.serverId} removed.`),
     )
-    .case("count", () => client.getIO<number>("server.count").map((count) => `Total servers: ${count}`))
-    .case("publicIp", () => client.getIO<string>("server.publicIp").map((ip) => `Public IP: ${ip}`))
+    .case("count", () => client.get<number>("server.count").map((count) => `Total servers: ${count}`))
+    .case("publicIp", () => client.get<string>("server.publicIp").map((ip) => `Public IP: ${ip}`))
     .case("getMetrics", () =>
       client
-        .getIO<unknown>("server.getServerMetrics", {
+        .get<unknown>("server.getServerMetrics", {
           url: args.url!,
           token: args.token!,
           ...(args.dataPoints && { dataPoints: args.dataPoints }),

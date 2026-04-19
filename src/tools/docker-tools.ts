@@ -30,25 +30,25 @@ const FIND_CONTAINER_ENDPOINTS: Record<NonNullable<DockerArgs["method"]>, string
 }
 
 export function buildDockerProgram(
-  client: Pick<DokployClient, "getIO" | "postIO">,
+  client: Pick<DokployClient, "get" | "post">,
   args: DockerArgs,
 ): IOType<never, ApiError, string> {
   return Match(args.action)
     .case("getContainers", () => {
       const params: Record<string, string> = {}
       if (args.serverId) params.serverId = args.serverId
-      return client.getIO<DokployContainer[]>("docker.getContainers", params).map(formatContainerList)
+      return client.get<DokployContainer[]>("docker.getContainers", params).map(formatContainerList)
     })
     .case("restartContainer", () =>
       client
-        .postIO<unknown>("docker.restartContainer", { containerId: args.containerId! })
+        .post<unknown>("docker.restartContainer", { containerId: args.containerId! })
         .map(() => `Container ${args.containerId} restarted.`),
     )
     .case("getConfig", () => {
       const body: Record<string, unknown> = { containerId: args.containerId! }
       if (args.serverId) body.serverId = args.serverId
       return client
-        .postIO<unknown>("docker.getConfig", body)
+        .post<unknown>("docker.getConfig", body)
         .map((config) => `# Container Config\n\n\`\`\`json\n${JSON.stringify(config, null, 2)}\n\`\`\``)
         .recoverWith(
           (err): IOType<never, ApiError, string> =>
@@ -69,7 +69,7 @@ export function buildDockerProgram(
       if (args.serverId) params.serverId = args.serverId
       if (args.appType && method === "match") params.appType = args.appType
       if (args.type && method === "label") params.type = args.type
-      return client.getIO<DokployContainer[]>(FIND_CONTAINER_ENDPOINTS[method], params).map(formatContainerList)
+      return client.get<DokployContainer[]>(FIND_CONTAINER_ENDPOINTS[method], params).map(formatContainerList)
     })
     .exhaustive() as IOType<never, ApiError, string>
 }

@@ -4,13 +4,13 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { registerDomainTools } from "../src/tools/domain-tools"
 import { captureTool } from "./support/tool-harness"
 
-const { getIOMock, postIOMock } = vi.hoisted(() => ({
-  getIOMock: vi.fn(),
-  postIOMock: vi.fn(),
+const { getMock, postMock } = vi.hoisted(() => ({
+  getMock: vi.fn(),
+  postMock: vi.fn(),
 }))
 
 vi.mock("../src/client/dokploy-client", () => ({
-  getDokployClient: () => ({ getIO: getIOMock, postIO: postIOMock }),
+  getDokployClient: () => ({ get: getMock, post: postMock }),
 }))
 
 type DomainArgs = {
@@ -34,15 +34,15 @@ type DomainArgs = {
 const tool = captureTool<DomainArgs>(registerDomainTools)
 
 beforeEach(() => {
-  getIOMock.mockReset()
-  postIOMock.mockReset()
-  getIOMock.mockImplementation(() => IO.succeed(undefined))
-  postIOMock.mockImplementation(() => IO.succeed(undefined))
+  getMock.mockReset()
+  postMock.mockReset()
+  getMock.mockImplementation(() => IO.succeed(undefined))
+  postMock.mockImplementation(() => IO.succeed(undefined))
 })
 
 describe("dokploy_domain create", () => {
   it("posts domain.create with host + only defined optional fields", async () => {
-    postIOMock.mockReturnValueOnce(IO.succeed({ domainId: "d1", host: "x.com", https: true }))
+    postMock.mockReturnValueOnce(IO.succeed({ domainId: "d1", host: "x.com", https: true }))
     await tool.execute({
       action: "create",
       host: "x.com",
@@ -52,7 +52,7 @@ describe("dokploy_domain create", () => {
       https: true,
       certificateType: "letsencrypt",
     })
-    expect(postIOMock).toHaveBeenCalledWith("domain.create", {
+    expect(postMock).toHaveBeenCalledWith("domain.create", {
       host: "x.com",
       applicationId: "a1",
       path: "/api",
@@ -63,13 +63,13 @@ describe("dokploy_domain create", () => {
   })
 
   it("omits undefined optional fields", async () => {
-    postIOMock.mockReturnValueOnce(IO.succeed({ domainId: "d1", host: "x.com", https: false }))
+    postMock.mockReturnValueOnce(IO.succeed({ domainId: "d1", host: "x.com", https: false }))
     await tool.execute({ action: "create", host: "x.com" })
-    expect(postIOMock).toHaveBeenCalledWith("domain.create", { host: "x.com" })
+    expect(postMock).toHaveBeenCalledWith("domain.create", { host: "x.com" })
   })
 
   it("supports compose domains with serviceName", async () => {
-    postIOMock.mockReturnValueOnce(IO.succeed({ domainId: "d1", host: "x.com", https: true }))
+    postMock.mockReturnValueOnce(IO.succeed({ domainId: "d1", host: "x.com", https: true }))
     await tool.execute({
       action: "create",
       host: "x.com",
@@ -77,7 +77,7 @@ describe("dokploy_domain create", () => {
       serviceName: "web",
       https: true,
     })
-    expect(postIOMock).toHaveBeenCalledWith("domain.create", {
+    expect(postMock).toHaveBeenCalledWith("domain.create", {
       host: "x.com",
       composeId: "c1",
       serviceName: "web",
@@ -88,15 +88,15 @@ describe("dokploy_domain create", () => {
 
 describe("dokploy_domain list", () => {
   it("by applicationId calls domain.byApplicationId", async () => {
-    getIOMock.mockReturnValueOnce(IO.succeed([]))
+    getMock.mockReturnValueOnce(IO.succeed([]))
     await tool.execute({ action: "list", applicationId: "a1" })
-    expect(getIOMock).toHaveBeenCalledWith("domain.byApplicationId", { applicationId: "a1" })
+    expect(getMock).toHaveBeenCalledWith("domain.byApplicationId", { applicationId: "a1" })
   })
 
   it("by composeId calls domain.byComposeId", async () => {
-    getIOMock.mockReturnValueOnce(IO.succeed([]))
+    getMock.mockReturnValueOnce(IO.succeed([]))
     await tool.execute({ action: "list", composeId: "c1" })
-    expect(getIOMock).toHaveBeenCalledWith("domain.byComposeId", { composeId: "c1" })
+    expect(getMock).toHaveBeenCalledWith("domain.byComposeId", { composeId: "c1" })
   })
 
   it("throws when neither applicationId nor composeId provided", async () => {
@@ -106,9 +106,9 @@ describe("dokploy_domain list", () => {
 
 describe("dokploy_domain get/update/delete", () => {
   it("get calls domain.one", async () => {
-    getIOMock.mockReturnValueOnce(IO.succeed({ domainId: "d1", host: "x.com", https: true }))
+    getMock.mockReturnValueOnce(IO.succeed({ domainId: "d1", host: "x.com", https: true }))
     await tool.execute({ action: "get", domainId: "d1" })
-    expect(getIOMock).toHaveBeenCalledWith("domain.one", { domainId: "d1" })
+    expect(getMock).toHaveBeenCalledWith("domain.one", { domainId: "d1" })
   })
 
   it("update sends domainId + host + defined optional fields", async () => {
@@ -119,7 +119,7 @@ describe("dokploy_domain get/update/delete", () => {
       https: false,
       path: "/v2",
     })
-    expect(postIOMock).toHaveBeenCalledWith("domain.update", {
+    expect(postMock).toHaveBeenCalledWith("domain.update", {
       domainId: "d1",
       host: "new.com",
       https: false,
@@ -129,52 +129,52 @@ describe("dokploy_domain get/update/delete", () => {
 
   it("delete posts domain.delete", async () => {
     await tool.execute({ action: "delete", domainId: "d1" })
-    expect(postIOMock).toHaveBeenCalledWith("domain.delete", { domainId: "d1" })
+    expect(postMock).toHaveBeenCalledWith("domain.delete", { domainId: "d1" })
   })
 })
 
 describe("dokploy_domain generate / canGenerateTraefikMe / validate", () => {
   it("generate posts domain.generateDomain with appName + optional serverId", async () => {
-    postIOMock.mockReturnValueOnce(IO.succeed({ domain: "app.traefik.me" }))
+    postMock.mockReturnValueOnce(IO.succeed({ domain: "app.traefik.me" }))
     await tool.execute({ action: "generate", appName: "my-app", serverId: "srv-1" })
-    expect(postIOMock).toHaveBeenCalledWith("domain.generateDomain", {
+    expect(postMock).toHaveBeenCalledWith("domain.generateDomain", {
       appName: "my-app",
       serverId: "srv-1",
     })
   })
 
   it("generate omits serverId when absent", async () => {
-    postIOMock.mockReturnValueOnce(IO.succeed({}))
+    postMock.mockReturnValueOnce(IO.succeed({}))
     await tool.execute({ action: "generate", appName: "my-app" })
-    expect(postIOMock).toHaveBeenCalledWith("domain.generateDomain", { appName: "my-app" })
+    expect(postMock).toHaveBeenCalledWith("domain.generateDomain", { appName: "my-app" })
   })
 
   it("canGenerateTraefikMe GETs and formats result boolean", async () => {
-    getIOMock.mockReturnValueOnce(IO.succeed(true))
+    getMock.mockReturnValueOnce(IO.succeed(true))
     const result = (await tool.execute({ action: "canGenerateTraefikMe", serverId: "srv-1" })) as string
-    expect(getIOMock).toHaveBeenCalledWith("domain.canGenerateTraefikMeDomains", { serverId: "srv-1" })
+    expect(getMock).toHaveBeenCalledWith("domain.canGenerateTraefikMeDomains", { serverId: "srv-1" })
     expect(result).toBe("Traefik.me: Available")
   })
 
   it("canGenerateTraefikMe formats false result", async () => {
-    getIOMock.mockReturnValueOnce(IO.succeed(false))
+    getMock.mockReturnValueOnce(IO.succeed(false))
     const result = (await tool.execute({ action: "canGenerateTraefikMe" })) as string
-    expect(getIOMock).toHaveBeenCalledWith("domain.canGenerateTraefikMeDomains", {})
+    expect(getMock).toHaveBeenCalledWith("domain.canGenerateTraefikMeDomains", {})
     expect(result).toBe("Traefik.me: Not available")
   })
 
   it("validate posts domain.validateDomain", async () => {
-    postIOMock.mockReturnValueOnce(IO.succeed({ ok: true }))
+    postMock.mockReturnValueOnce(IO.succeed({ ok: true }))
     await tool.execute({ action: "validate", domain: "x.com", serverIp: "1.2.3.4" })
-    expect(postIOMock).toHaveBeenCalledWith("domain.validateDomain", {
+    expect(postMock).toHaveBeenCalledWith("domain.validateDomain", {
       domain: "x.com",
       serverIp: "1.2.3.4",
     })
   })
 
   it("validate omits serverIp when absent", async () => {
-    postIOMock.mockReturnValueOnce(IO.succeed({ ok: true }))
+    postMock.mockReturnValueOnce(IO.succeed({ ok: true }))
     await tool.execute({ action: "validate", domain: "x.com" })
-    expect(postIOMock).toHaveBeenCalledWith("domain.validateDomain", { domain: "x.com" })
+    expect(postMock).toHaveBeenCalledWith("domain.validateDomain", { domain: "x.com" })
   })
 })

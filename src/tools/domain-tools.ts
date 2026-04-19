@@ -44,13 +44,13 @@ type DomainArgs = {
 }
 
 export function buildDomainProgram(
-  client: Pick<DokployClient, "getIO" | "postIO">,
+  client: Pick<DokployClient, "get" | "post">,
   args: DomainArgs,
 ): IOType<never, ApiError, string> {
   return Match(args.action)
     .case("create", () =>
       client
-        .postIO<DokployDomain>("domain.create", {
+        .post<DokployDomain>("domain.create", {
           host: args.host!,
           ...pickDefined(args, DOMAIN_OPTIONAL_FIELDS),
         })
@@ -62,18 +62,18 @@ export function buildDomainProgram(
         throw new Error("Provide applicationId or composeId")
       }
       const io = args.applicationId
-        ? client.getIO<DokployDomain[]>("domain.byApplicationId", { applicationId: args.applicationId })
-        : client.getIO<DokployDomain[]>("domain.byComposeId", { composeId: args.composeId! })
+        ? client.get<DokployDomain[]>("domain.byApplicationId", { applicationId: args.applicationId })
+        : client.get<DokployDomain[]>("domain.byComposeId", { composeId: args.composeId! })
       return io.map(formatDomainList)
     })
     .case("get", () =>
       client
-        .getIO<DokployDomain>("domain.one", { domainId: args.domainId! })
+        .get<DokployDomain>("domain.one", { domainId: args.domainId! })
         .map((domain) => `# Domain Details\n\n${formatDomain(domain)}`),
     )
     .case("update", () =>
       client
-        .postIO<unknown>("domain.update", {
+        .post<unknown>("domain.update", {
           domainId: args.domainId!,
           host: args.host!,
           ...pickDefined(args, DOMAIN_OPTIONAL_FIELDS),
@@ -82,12 +82,12 @@ export function buildDomainProgram(
     )
     .case("delete", () =>
       client
-        .postIO<unknown>("domain.delete", { domainId: args.domainId! } satisfies RequestBody<"domain-delete">)
+        .post<unknown>("domain.delete", { domainId: args.domainId! } satisfies RequestBody<"domain-delete">)
         .map(() => `Domain ${args.domainId} deleted.`),
     )
     .case("generate", () =>
       client
-        .postIO<unknown>("domain.generateDomain", {
+        .post<unknown>("domain.generateDomain", {
           appName: args.appName!,
           ...(args.serverId && { serverId: args.serverId }),
         })
@@ -95,14 +95,14 @@ export function buildDomainProgram(
     )
     .case("canGenerateTraefikMe", () =>
       client
-        .getIO<boolean>("domain.canGenerateTraefikMeDomains", {
+        .get<boolean>("domain.canGenerateTraefikMeDomains", {
           ...(args.serverId && { serverId: args.serverId }),
         })
         .map((available) => `Traefik.me: ${available ? "Available" : "Not available"}`),
     )
     .case("validate", () =>
       client
-        .postIO<unknown>("domain.validateDomain", {
+        .post<unknown>("domain.validateDomain", {
           domain: args.domain!,
           ...(args.serverIp && { serverIp: args.serverIp }),
         })

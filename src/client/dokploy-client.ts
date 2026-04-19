@@ -19,23 +19,15 @@ export class DokployClient {
     this.apiKey = apiKey
   }
 
-  getIO<T>(path: string, params?: Record<string, string | number | boolean | undefined>): IO<never, ApiError, T> {
+  get<T>(path: string, params?: Record<string, string | number | boolean | undefined>) {
     return this.requestIO<T>(path, { method: "GET", params })
   }
 
-  postIO<T>(path: string, body?: Record<string, unknown>): IO<never, ApiError, T> {
+  post<T>(path: string, body?: Record<string, unknown>) {
     return this.requestIO<T>(path, { method: "POST", body })
   }
 
-  async get<T>(path: string, params?: Record<string, string | number | boolean | undefined>): Promise<T> {
-    return runOrThrow(this.getIO<T>(path, params))
-  }
-
-  async post<T>(path: string, body?: Record<string, unknown>): Promise<T> {
-    return runOrThrow(this.postIO<T>(path, body))
-  }
-
-  private requestIO<T>(path: string, options: RequestOptions): IO<never, ApiError, T> {
+  private requestIO<T>(path: string, options: RequestOptions) {
     const { baseUrl, apiKey } = this
     return IO.tryPromise({
       try: async () => {
@@ -99,18 +91,6 @@ class TaggedError extends Error {
   }
 }
 
-/**
- * Boundary adapter: IO<never, ApiError, T> → Promise<T> (throwing on Left).
- * SomaMCP's telemetry pipeline classifies thrown Errors; this is the agreed
- * IO-to-SomaMCP handoff point.
- */
-async function runOrThrow<T>(io: IO<never, ApiError, T>): Promise<T> {
-  const either = await io.run()
-  if (either.isRight()) return either.value
-  // eslint-disable-next-line functype/prefer-either -- by design: this is the single IO→Promise boundary.
-  throw new Error(formatApiError(either.value))
-}
-
 // Module-level singleton state. Wrapped in a const-bound record because this
 // file is the ownership boundary for the client/orgId caches; fields are
 // reassigned only through `initializeDokployClient` and `getOrganizationId`.
@@ -141,10 +121,15 @@ export async function getOrganizationId(): Promise<string> {
 }
 
 async function resolveOrganizationId(c: DokployClient): Promise<string> {
-  const adminEither = await c.getIO<{ organizationId: string }>("admin.one").run()
+  const adminEither = await c.get<{ organizationId: string }>("admin.one").run()
   if (adminEither.isRight()) return adminEither.value.organizationId
 
-  const projects = await c.get<Array<{ organizationId: string }>>("project.all")
+  const projectsEither = await c.get<Array<{ organizationId: string }>>("project.all").run()
+  if (projectsEither.isLeft()) {
+    // eslint-disable-next-line functype/prefer-either -- bootstrap failure surfaced as plain Error for SomaMCP classification.
+    throw new Error(formatApiError(projectsEither.value))
+  }
+  const projects = projectsEither.value
   if (projects.length === 0) {
     // eslint-disable-next-line functype/prefer-either -- bootstrap failure surfaced as plain Error for SomaMCP classification.
     throw new Error("Cannot resolve organizationId: no projects found and admin.one not accessible")

@@ -89,13 +89,13 @@ type ApplicationArgs = {
 }
 
 export function buildApplicationProgram(
-  client: Pick<DokployClient, "getIO" | "postIO">,
+  client: Pick<DokployClient, "get" | "post">,
   args: ApplicationArgs,
 ): IOType<never, ApiError, string> {
   return Match(args.action)
     .case("create", () =>
       client
-        .postIO<DokployApplication>("application.create", {
+        .post<DokployApplication>("application.create", {
           name: args.name!,
           environmentId: args.environmentId!,
           ...(args.description && { description: args.description }),
@@ -105,18 +105,18 @@ export function buildApplicationProgram(
     )
     .case("get", () =>
       client
-        .getIO<DokployApplication>("application.one", { applicationId: args.applicationId! })
+        .get<DokployApplication>("application.one", { applicationId: args.applicationId! })
         .map((app) => `# Application Details\n\n${formatApplication(app)}`),
     )
     .case("update", () => {
       const body = { applicationId: args.applicationId!, ...pickDefined(args, UPDATE_FIELDS) }
       return client
-        .postIO<unknown>("application.update", body as RequestBody<"application-update">)
+        .post<unknown>("application.update", body as RequestBody<"application-update">)
         .map(() => `Application ${args.applicationId} updated.`)
     })
     .case("move", () =>
       client
-        .postIO<unknown>("application.move", {
+        .post<unknown>("application.move", {
           applicationId: args.applicationId!,
           targetEnvironmentId: args.targetEnvironmentId!,
         } satisfies RequestBody<"application-move">)
@@ -129,7 +129,7 @@ export function buildApplicationProgram(
       if (args.deployDescription) body.description = args.deployDescription
       const verb = args.redeploy ? "Redeployment" : "Deployment"
       return client
-        .postIO<unknown>(endpoint, body)
+        .post<unknown>(endpoint, body)
         .map(
           () =>
             `${verb} triggered for application ${args.applicationId}.\n\nNote: First deployments on new services may fail on Dokploy. If this fails, try deploying again immediately.`,
@@ -137,47 +137,47 @@ export function buildApplicationProgram(
     })
     .case("start", () =>
       client
-        .postIO<unknown>("application.start", { applicationId: args.applicationId! })
+        .post<unknown>("application.start", { applicationId: args.applicationId! })
         .map(() => `Application ${args.applicationId}: start completed.`),
     )
     .case("stop", () =>
       client
-        .postIO<unknown>("application.stop", { applicationId: args.applicationId! })
+        .post<unknown>("application.stop", { applicationId: args.applicationId! })
         .map(() => `Application ${args.applicationId}: stop completed.`),
     )
     .case("delete", () =>
       client
-        .postIO<unknown>("application.delete", { applicationId: args.applicationId! })
+        .post<unknown>("application.delete", { applicationId: args.applicationId! })
         .map(() => `Application ${args.applicationId}: delete completed.`),
     )
     .case("markRunning", () =>
       client
-        .postIO<unknown>("application.markRunning", { applicationId: args.applicationId! })
+        .post<unknown>("application.markRunning", { applicationId: args.applicationId! })
         .map(() => `Application ${args.applicationId}: markRunning completed.`),
     )
     .case("refreshToken", () =>
       client
-        .postIO<unknown>("application.refreshToken", { applicationId: args.applicationId! })
+        .post<unknown>("application.refreshToken", { applicationId: args.applicationId! })
         .map(() => `Application ${args.applicationId}: refreshToken completed.`),
     )
     .case("cleanQueues", () =>
       client
-        .postIO<unknown>("application.cleanQueues", { applicationId: args.applicationId! })
+        .post<unknown>("application.cleanQueues", { applicationId: args.applicationId! })
         .map(() => `Application ${args.applicationId}: cleanQueues completed.`),
     )
     .case("killBuild", () =>
       client
-        .postIO<unknown>("application.killBuild", { applicationId: args.applicationId! })
+        .post<unknown>("application.killBuild", { applicationId: args.applicationId! })
         .map(() => `Application ${args.applicationId}: killBuild completed.`),
     )
     .case("cancelDeployment", () =>
       client
-        .postIO<unknown>("application.cancelDeployment", { applicationId: args.applicationId! })
+        .post<unknown>("application.cancelDeployment", { applicationId: args.applicationId! })
         .map(() => `Application ${args.applicationId}: cancelDeployment completed.`),
     )
     .case("reload", () =>
       client
-        .postIO<unknown>("application.reload", {
+        .post<unknown>("application.reload", {
           applicationId: args.applicationId!,
           appName: args.appName!,
         } satisfies RequestBody<"application-reload">)
@@ -192,12 +192,12 @@ export function buildApplicationProgram(
       }
       if (args.env !== undefined) body.env = args.env
       return client
-        .postIO<unknown>("application.saveEnvironment", body)
+        .post<unknown>("application.saveEnvironment", body)
         .map(() => `Environment saved for application ${args.applicationId}.`)
     })
     .case("saveBuildType", () =>
       client
-        .postIO<unknown>("application.saveBuildType", {
+        .post<unknown>("application.saveBuildType", {
           applicationId: args.applicationId!,
           buildType: args.buildType!,
           dockerContextPath: args.dockerContextPath ?? ".",
@@ -210,18 +210,18 @@ export function buildApplicationProgram(
     .case("traefikConfig", () =>
       args.traefikConfig
         ? client
-            .postIO<unknown>("application.updateTraefikConfig", {
+            .post<unknown>("application.updateTraefikConfig", {
               applicationId: args.applicationId!,
               traefikConfig: args.traefikConfig,
             } satisfies RequestBody<"application-updateTraefikConfig">)
             .map(() => `Traefik config updated for application ${args.applicationId}.`)
         : client
-            .getIO<string>("application.readTraefikConfig", { applicationId: args.applicationId! })
+            .get<string>("application.readTraefikConfig", { applicationId: args.applicationId! })
             .map((config) => `# Traefik Config\n\n\`\`\`yaml\n${config}\n\`\`\``),
     )
     .case("readMonitoring", () =>
       client
-        .getIO<unknown>("application.readAppMonitoring", { appName: args.appName! })
+        .get<unknown>("application.readAppMonitoring", { appName: args.appName! })
         .map((data) => `# Monitoring: ${args.appName}\n\n\`\`\`json\n${JSON.stringify(data, null, 2)}\n\`\`\``),
     )
     .exhaustive() as IOType<never, ApiError, string>

@@ -5,13 +5,13 @@ import { registerDatabaseTools } from "../src/tools/database-tools"
 import { DB_ID_FIELDS, DB_TYPES } from "../src/types"
 import { captureTool } from "./support/tool-harness"
 
-const { getIOMock, postIOMock } = vi.hoisted(() => ({
-  getIOMock: vi.fn(),
-  postIOMock: vi.fn(),
+const { getMock, postMock } = vi.hoisted(() => ({
+  getMock: vi.fn(),
+  postMock: vi.fn(),
 }))
 
 vi.mock("../src/client/dokploy-client", () => ({
-  getDokployClient: () => ({ getIO: getIOMock, postIO: postIOMock }),
+  getDokployClient: () => ({ get: getMock, post: postMock }),
 }))
 
 type DbArgs = {
@@ -40,10 +40,10 @@ type DbArgs = {
 const tool = captureTool<DbArgs>(registerDatabaseTools)
 
 beforeEach(() => {
-  getIOMock.mockReset()
-  postIOMock.mockReset()
-  getIOMock.mockImplementation(() => IO.succeed(undefined))
-  postIOMock.mockImplementation(() => IO.succeed(undefined))
+  getMock.mockReset()
+  postMock.mockReset()
+  getMock.mockImplementation(() => IO.succeed(undefined))
+  postMock.mockImplementation(() => IO.succeed(undefined))
 })
 
 describe("dokploy_database metadata", () => {
@@ -55,7 +55,7 @@ describe("dokploy_database metadata", () => {
 
 describe("dokploy_database dispatch across DB types", () => {
   it.each(DB_TYPES)("create (%s) posts to {dbType}.create with only defined fields", async (dbType) => {
-    postIOMock.mockReturnValueOnce(
+    postMock.mockReturnValueOnce(
       IO.succeed({
         databaseId: "new",
         name: "N",
@@ -71,8 +71,8 @@ describe("dokploy_database dispatch across DB types", () => {
       environmentId: "env",
       databasePassword: "secret",
     })
-    expect(postIOMock).toHaveBeenCalledTimes(1)
-    expect(postIOMock).toHaveBeenCalledWith(`${dbType}.create`, {
+    expect(postMock).toHaveBeenCalledTimes(1)
+    expect(postMock).toHaveBeenCalledWith(`${dbType}.create`, {
       name: "N",
       environmentId: "env",
       databasePassword: "secret",
@@ -80,7 +80,7 @@ describe("dokploy_database dispatch across DB types", () => {
   })
 
   it.each(DB_TYPES)("get (%s) calls {dbType}.one with {idField: databaseId}", async (dbType) => {
-    getIOMock.mockReturnValueOnce(
+    getMock.mockReturnValueOnce(
       IO.succeed({
         databaseId: "db1",
         name: "N",
@@ -90,7 +90,7 @@ describe("dokploy_database dispatch across DB types", () => {
       }),
     )
     await tool.execute({ action: "get", dbType, databaseId: "db1" })
-    expect(getIOMock).toHaveBeenCalledWith(`${dbType}.one`, { [DB_ID_FIELDS[dbType]]: "db1" })
+    expect(getMock).toHaveBeenCalledWith(`${dbType}.one`, { [DB_ID_FIELDS[dbType]]: "db1" })
   })
 
   it.each(DB_TYPES)("update (%s) posts only defined fields plus id", async (dbType) => {
@@ -101,7 +101,7 @@ describe("dokploy_database dispatch across DB types", () => {
       name: "new-name",
       memoryLimit: 1024,
     })
-    expect(postIOMock).toHaveBeenCalledWith(`${dbType}.update`, {
+    expect(postMock).toHaveBeenCalledWith(`${dbType}.update`, {
       [DB_ID_FIELDS[dbType]]: "db1",
       name: "new-name",
       memoryLimit: 1024,
@@ -115,7 +115,7 @@ describe("dokploy_database dispatch across DB types", () => {
       databaseId: "db1",
       targetEnvironmentId: "env-2",
     })
-    expect(postIOMock).toHaveBeenCalledWith(`${dbType}.move`, {
+    expect(postMock).toHaveBeenCalledWith(`${dbType}.move`, {
       [DB_ID_FIELDS[dbType]]: "db1",
       targetEnvironmentId: "env-2",
     })
@@ -125,13 +125,13 @@ describe("dokploy_database dispatch across DB types", () => {
   for (const action of simpleActions) {
     it.each(DB_TYPES)(`${action} (%s) posts to {dbType}.${action} with just id`, async (dbType) => {
       await tool.execute({ action, dbType, databaseId: "db1" })
-      expect(postIOMock).toHaveBeenCalledWith(`${dbType}.${action}`, { [DB_ID_FIELDS[dbType]]: "db1" })
+      expect(postMock).toHaveBeenCalledWith(`${dbType}.${action}`, { [DB_ID_FIELDS[dbType]]: "db1" })
     })
   }
 
   it.each(DB_TYPES)("reload (%s) includes appName", async (dbType) => {
     await tool.execute({ action: "reload", dbType, databaseId: "db1", appName: "my-app" })
-    expect(postIOMock).toHaveBeenCalledWith(`${dbType}.reload`, {
+    expect(postMock).toHaveBeenCalledWith(`${dbType}.reload`, {
       [DB_ID_FIELDS[dbType]]: "db1",
       appName: "my-app",
     })
@@ -144,7 +144,7 @@ describe("dokploy_database dispatch across DB types", () => {
       databaseId: "db1",
       applicationStatus: "error",
     })
-    expect(postIOMock).toHaveBeenCalledWith(`${dbType}.changeStatus`, {
+    expect(postMock).toHaveBeenCalledWith(`${dbType}.changeStatus`, {
       [DB_ID_FIELDS[dbType]]: "db1",
       applicationStatus: "error",
     })
@@ -157,13 +157,13 @@ describe("dokploy_database dispatch across DB types", () => {
       databaseId: "db1",
       env: "FOO=1",
     })
-    expect(postIOMock).toHaveBeenLastCalledWith(`${dbType}.saveEnvironment`, {
+    expect(postMock).toHaveBeenLastCalledWith(`${dbType}.saveEnvironment`, {
       [DB_ID_FIELDS[dbType]]: "db1",
       env: "FOO=1",
     })
 
     await tool.execute({ action: "saveEnvironment", dbType, databaseId: "db1" })
-    expect(postIOMock).toHaveBeenLastCalledWith(`${dbType}.saveEnvironment`, {
+    expect(postMock).toHaveBeenLastCalledWith(`${dbType}.saveEnvironment`, {
       [DB_ID_FIELDS[dbType]]: "db1",
     })
   })
@@ -175,7 +175,7 @@ describe("dokploy_database dispatch across DB types", () => {
       databaseId: "db1",
       externalPort: 5432,
     })
-    expect(postIOMock).toHaveBeenCalledWith(`${dbType}.saveExternalPort`, {
+    expect(postMock).toHaveBeenCalledWith(`${dbType}.saveExternalPort`, {
       [DB_ID_FIELDS[dbType]]: "db1",
       externalPort: 5432,
     })
@@ -184,7 +184,7 @@ describe("dokploy_database dispatch across DB types", () => {
 
 describe("dokploy_database return values", () => {
   it("create returns formatted markdown including type", async () => {
-    postIOMock.mockReturnValueOnce(
+    postMock.mockReturnValueOnce(
       IO.succeed({
         databaseId: "db-1",
         name: "MyDB",
