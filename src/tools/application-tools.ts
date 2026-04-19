@@ -9,6 +9,7 @@ import { formatApiError } from "../client/errors"
 import type { RequestBody } from "../generated"
 import type { DokployApplication } from "../types"
 import { formatApplication } from "../utils/formatters"
+import { pickDefined } from "./tool-utils"
 import type { ToolServer } from "./types"
 
 const ACTIONS = [
@@ -85,13 +86,6 @@ type ApplicationArgs = {
   dockerBuildStage?: string
   publishDirectory?: string
   traefikConfig?: string
-}
-
-function pickDefined<T extends Record<string, unknown>, K extends readonly (keyof T)[]>(
-  source: T,
-  keys: K,
-): Record<string, unknown> {
-  return Object.fromEntries(keys.filter((k) => source[k] !== undefined).map((k) => [k, source[k]]))
 }
 
 export function buildApplicationProgram(

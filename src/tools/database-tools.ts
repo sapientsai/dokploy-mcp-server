@@ -10,6 +10,7 @@ import type { RequestBody } from "../generated"
 import type { DatabaseType, DokployDatabase } from "../types"
 import { DB_ID_FIELDS, DB_TYPES } from "../types"
 import { formatDatabase } from "../utils/formatters"
+import { pickDefined } from "./tool-utils"
 import type { ToolServer } from "./types"
 
 const ACTIONS = [
@@ -63,13 +64,6 @@ type DatabaseArgs = {
   applicationStatus?: string
   env?: string
   externalPort?: number
-}
-
-function pickDefined<T extends Record<string, unknown>, K extends readonly (keyof T)[]>(
-  source: T,
-  keys: K,
-): Record<string, unknown> {
-  return Object.fromEntries(keys.filter((k) => source[k] !== undefined).map((k) => [k, source[k]]))
 }
 
 function dbBody(dbType: DatabaseType, databaseId: string): Record<string, unknown> {

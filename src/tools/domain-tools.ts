@@ -9,6 +9,7 @@ import { formatApiError } from "../client/errors"
 import type { RequestBody } from "../generated"
 import type { DokployDomain } from "../types"
 import { formatDomain, formatDomainList } from "../utils/formatters"
+import { pickDefined } from "./tool-utils"
 import type { ToolServer } from "./types"
 
 const ACTIONS = ["create", "list", "get", "update", "delete", "generate", "canGenerateTraefikMe", "validate"] as const
@@ -40,13 +41,6 @@ type DomainArgs = {
   serverId?: string
   domain?: string
   serverIp?: string
-}
-
-function pickDefined<T extends Record<string, unknown>, K extends readonly (keyof T)[]>(
-  source: T,
-  keys: K,
-): Record<string, unknown> {
-  return Object.fromEntries(keys.filter((k) => source[k] !== undefined).map((k) => [k, source[k]]))
 }
 
 export function buildDomainProgram(
