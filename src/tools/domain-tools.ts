@@ -1,12 +1,121 @@
+import type { IO as IOType } from "functype"
+import { Match } from "functype"
 import { z } from "zod"
 
+import type { DokployClient } from "../client/dokploy-client"
 import { getDokployClient } from "../client/dokploy-client"
+import type { ApiError } from "../client/errors"
+import { formatApiError } from "../client/errors"
 import type { RequestBody } from "../generated"
 import type { DokployDomain } from "../types"
 import { formatDomain, formatDomainList } from "../utils/formatters"
 import type { ToolServer } from "./types"
 
 const ACTIONS = ["create", "list", "get", "update", "delete", "generate", "canGenerateTraefikMe", "validate"] as const
+
+const DOMAIN_OPTIONAL_FIELDS = [
+  "applicationId",
+  "composeId",
+  "serviceName",
+  "path",
+  "port",
+  "https",
+  "certificateType",
+  "domainType",
+] as const
+
+type DomainArgs = {
+  action: (typeof ACTIONS)[number]
+  domainId?: string
+  host?: string
+  applicationId?: string
+  composeId?: string
+  serviceName?: string
+  path?: string
+  port?: number
+  https?: boolean
+  certificateType?: string
+  domainType?: string
+  appName?: string
+  serverId?: string
+  domain?: string
+  serverIp?: string
+}
+
+function pickDefined<T extends Record<string, unknown>, K extends readonly (keyof T)[]>(
+  source: T,
+  keys: K,
+): Record<string, unknown> {
+  return Object.fromEntries(keys.filter((k) => source[k] !== undefined).map((k) => [k, source[k]]))
+}
+
+export function buildDomainProgram(
+  client: Pick<DokployClient, "getIO" | "postIO">,
+  args: DomainArgs,
+): IOType<never, ApiError, string> {
+  return Match(args.action)
+    .case("create", () =>
+      client
+        .postIO<DokployDomain>("domain.create", {
+          host: args.host!,
+          ...pickDefined(args, DOMAIN_OPTIONAL_FIELDS),
+        })
+        .map((domain) => `# Domain Created\n\n${formatDomain(domain)}`),
+    )
+    .case("list", () => {
+      if (!args.applicationId && !args.composeId) {
+        // eslint-disable-next-line functype/prefer-either -- validation failure surfaced as plain Error for SomaMCP classification.
+        throw new Error("Provide applicationId or composeId")
+      }
+      const io = args.applicationId
+        ? client.getIO<DokployDomain[]>("domain.byApplicationId", { applicationId: args.applicationId })
+        : client.getIO<DokployDomain[]>("domain.byComposeId", { composeId: args.composeId! })
+      return io.map(formatDomainList)
+    })
+    .case("get", () =>
+      client
+        .getIO<DokployDomain>("domain.one", { domainId: args.domainId! })
+        .map((domain) => `# Domain Details\n\n${formatDomain(domain)}`),
+    )
+    .case("update", () =>
+      client
+        .postIO<unknown>("domain.update", {
+          domainId: args.domainId!,
+          host: args.host!,
+          ...pickDefined(args, DOMAIN_OPTIONAL_FIELDS),
+        })
+        .map(() => `Domain ${args.domainId} updated.`),
+    )
+    .case("delete", () =>
+      client
+        .postIO<unknown>("domain.delete", { domainId: args.domainId! } satisfies RequestBody<"domain-delete">)
+        .map(() => `Domain ${args.domainId} deleted.`),
+    )
+    .case("generate", () =>
+      client
+        .postIO<unknown>("domain.generateDomain", {
+          appName: args.appName!,
+          ...(args.serverId && { serverId: args.serverId }),
+        })
+        .map((result) => `# Generated Domain\n\n\`\`\`json\n${JSON.stringify(result, null, 2)}\n\`\`\``),
+    )
+    .case("canGenerateTraefikMe", () =>
+      client
+        .getIO<boolean>("domain.canGenerateTraefikMeDomains", {
+          ...(args.serverId && { serverId: args.serverId }),
+        })
+        .map((available) => `Traefik.me: ${available ? "Available" : "Not available"}`),
+    )
+    .case("validate", () =>
+      client
+        .postIO<unknown>("domain.validateDomain", {
+          domain: args.domain!,
+          ...(args.serverIp && { serverIp: args.serverIp }),
+        })
+        .map((result) => `# DNS Validation: ${args.domain}\n\n\`\`\`json\n${JSON.stringify(result, null, 2)}\n\`\`\``),
+    )
+    .exhaustive() as IOType<never, ApiError, string>
+}
 
 export function registerDomainTools(server: ToolServer) {
   server.addTool({
@@ -31,85 +140,10 @@ export function registerDomainTools(server: ToolServer) {
       serverIp: z.string().optional(),
     }),
     execute: async (args) => {
-      const client = getDokployClient()
-
-      switch (args.action) {
-        case "create": {
-          const body: Record<string, unknown> = { host: args.host! }
-          const optionalFields = [
-            "applicationId",
-            "composeId",
-            "serviceName",
-            "path",
-            "port",
-            "https",
-            "certificateType",
-            "domainType",
-          ] as const
-          for (const key of optionalFields) {
-            if (args[key] !== undefined) body[key] = args[key]
-          }
-          const domain = await client.post<DokployDomain>("domain.create", body)
-          return `# Domain Created\n\n${formatDomain(domain)}`
-        }
-        case "list": {
-          if (!args.applicationId && !args.composeId) {
-            throw new Error("Provide applicationId or composeId")
-          }
-          const domains = args.applicationId
-            ? await client.get<DokployDomain[]>("domain.byApplicationId", {
-                applicationId: args.applicationId,
-              })
-            : await client.get<DokployDomain[]>("domain.byComposeId", { composeId: args.composeId! })
-          return formatDomainList(domains)
-        }
-        case "get": {
-          const domain = await client.get<DokployDomain>("domain.one", { domainId: args.domainId! })
-          return `# Domain Details\n\n${formatDomain(domain)}`
-        }
-        case "update": {
-          const body: Record<string, unknown> = { domainId: args.domainId!, host: args.host! }
-          const optionalFields = [
-            "applicationId",
-            "composeId",
-            "serviceName",
-            "path",
-            "port",
-            "https",
-            "certificateType",
-            "domainType",
-          ] as const
-          for (const key of optionalFields) {
-            if (args[key] !== undefined) body[key] = args[key]
-          }
-          await client.post("domain.update", body)
-          return `Domain ${args.domainId} updated.`
-        }
-        case "delete": {
-          await client.post("domain.delete", { domainId: args.domainId! } satisfies RequestBody<"domain-delete">)
-          return `Domain ${args.domainId} deleted.`
-        }
-        case "generate": {
-          const result = await client.post<unknown>("domain.generateDomain", {
-            appName: args.appName!,
-            ...(args.serverId && { serverId: args.serverId }),
-          })
-          return `# Generated Domain\n\n\`\`\`json\n${JSON.stringify(result, null, 2)}\n\`\`\``
-        }
-        case "canGenerateTraefikMe": {
-          const result = await client.get<boolean>("domain.canGenerateTraefikMeDomains", {
-            ...(args.serverId && { serverId: args.serverId }),
-          })
-          return `Traefik.me: ${result ? "Available" : "Not available"}`
-        }
-        case "validate": {
-          const result = await client.post<unknown>("domain.validateDomain", {
-            domain: args.domain!,
-            ...(args.serverIp && { serverIp: args.serverIp }),
-          })
-          return `# DNS Validation: ${args.domain}\n\n\`\`\`json\n${JSON.stringify(result, null, 2)}\n\`\`\``
-        }
-      }
+      const either = await buildDomainProgram(getDokployClient(), args).run()
+      if (either.isRight()) return either.value
+      // eslint-disable-next-line functype/prefer-either -- intentional boundary throw for SomaMCP error classification.
+      throw new Error(formatApiError(either.value))
     },
   })
 }
