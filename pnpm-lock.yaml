@@ -13,9 +13,6 @@ importers:
       dotenv:
         specifier: ^17.4.2
         version: 17.4.2
-      fastmcp:
-        specifier: ^4.0.1
-        version: 4.0.1
       functype:
         specifier: ^0.60.7
         version: 0.60.7
