@@ -70,7 +70,6 @@
   "dependencies": {
     "@loglayer/transport-pino": "^3.0.3",
     "dotenv": "^17.4.2",
-    "fastmcp": "^4.0.1",
     "functype": "^0.60.7",
     "functype-log": "^0.60.7",
     "loglayer": "^9.1.1",
