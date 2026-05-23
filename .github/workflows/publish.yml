@@ -58,8 +58,14 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Install MCP Publisher
+        # v1.7.6+ required: registry binds the GitHub OIDC token exchange to a
+        # per-deployment audience (https://registry.modelcontextprotocol.io)
+        # rather than the legacy "mcp-registry" string. Older publisher
+        # versions request the legacy audience and the server rejects them
+        # with HTTP 401 ("invalid audience").
+        # Release: https://github.com/modelcontextprotocol/registry/releases/tag/v1.7.6
         run: |
-          curl -L "https://github.com/modelcontextprotocol/registry/releases/download/v1.6.0/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
+          curl -L "https://github.com/modelcontextprotocol/registry/releases/download/v1.7.9/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
           chmod +x ./mcp-publisher
 
       - name: Login to MCP Registry
