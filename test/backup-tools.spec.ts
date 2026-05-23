@@ -28,8 +28,9 @@ type BackupArgs = {
   mysqlId?: string
   mariadbId?: string
   mongoId?: string
+  libsqlId?: string
   composeId?: string
-  backupType?: "postgres" | "mysql" | "mariadb" | "mongo" | "compose"
+  backupType?: "postgres" | "mysql" | "mariadb" | "mongo" | "compose" | "libsql" | "webServer"
   search?: string
   serverId?: string
 }
@@ -139,6 +140,8 @@ describe("dokploy_backup manualBackup", () => {
     ["mariadb", "backup.manualBackupMariadb"],
     ["mongo", "backup.manualBackupMongo"],
     ["compose", "backup.manualBackupCompose"],
+    ["libsql", "backup.manualBackupLibsql"],
+    ["webServer", "backup.manualBackupWebServer"],
   ] as const)("backupType=%s hits %s", async (backupType, endpoint) => {
     await tool.execute({ action: "manualBackup", backupId: "b1", backupType })
     expect(postMock).toHaveBeenCalledWith(endpoint, { backupId: "b1" })

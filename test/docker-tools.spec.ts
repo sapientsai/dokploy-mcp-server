@@ -111,7 +111,6 @@ describe("dokploy_docker getConfig", () => {
 describe("dokploy_docker findContainers", () => {
   it.each([
     ["match", "docker.getContainersByAppNameMatch"],
-    ["label", "docker.getContainersByAppLabel"],
     ["stack", "docker.getStackContainersByAppName"],
     ["service", "docker.getServiceContainersByAppName"],
   ] as const)("%s method hits %s endpoint", async (method, endpoint) => {
@@ -120,37 +119,52 @@ describe("dokploy_docker findContainers", () => {
     expect(getMock).toHaveBeenCalledWith(endpoint, { appName: "my-app" })
   })
 
-  it("includes appType only for match method", async () => {
+  it("label method requires type (standalone|swarm) and hits getContainersByAppLabel", async () => {
+    getMock.mockReturnValueOnce(IO.succeed([]))
+    await tool.execute({ action: "findContainers", method: "label", appName: "my-app", type: "swarm" })
+    expect(getMock).toHaveBeenCalledWith("docker.getContainersByAppLabel", {
+      appName: "my-app",
+      type: "swarm",
+    })
+  })
+
+  it("includes appType only for match method (enum: stack | docker-compose)", async () => {
     getMock.mockReturnValueOnce(IO.succeed([]))
     await tool.execute({
       action: "findContainers",
       method: "match",
       appName: "my-app",
-      appType: "application",
-      type: "ignored-for-match",
+      appType: "docker-compose",
+      type: "swarm",
     })
     expect(getMock).toHaveBeenCalledWith("docker.getContainersByAppNameMatch", {
       appName: "my-app",
-      appType: "application",
+      appType: "docker-compose",
     })
   })
 
-  it("includes type only for label method", async () => {
+  it("includes type only for label method (enum: standalone | swarm)", async () => {
     getMock.mockReturnValueOnce(IO.succeed([]))
     await tool.execute({
       action: "findContainers",
       method: "label",
       appName: "my-app",
-      type: "stack",
-      appType: "ignored-for-label",
+      type: "standalone",
+      appType: "stack",
     })
     expect(getMock).toHaveBeenCalledWith("docker.getContainersByAppLabel", {
       appName: "my-app",
-      type: "stack",
+      type: "standalone",
     })
   })
 
   it("throws when method missing", async () => {
     await expect(tool.execute({ action: "findContainers", appName: "x" })).rejects.toThrow(/requires method/)
+  })
+
+  it("throws when label method called without type", async () => {
+    await expect(tool.execute({ action: "findContainers", method: "label", appName: "my-app" })).rejects.toThrow(
+      /requires type/,
+    )
   })
 })

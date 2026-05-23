@@ -59,7 +59,7 @@ type ComposeArgs = {
   serverId?: string
   env?: string
   command?: string
-  sourceType?: string
+  sourceType?: "github" | "git" | "raw"
   customGitUrl?: string
   customGitBranch?: string
   customGitSSHKeyId?: string
@@ -234,7 +234,12 @@ export function registerComposeTools(server: ToolServer) {
           "Environment variables as KEY=VALUE pairs, one per line. Example: 'DB_HOST=localhost\\nDB_PORT=5432'",
         ),
       command: z.string().optional(),
-      sourceType: z.string().optional().describe("git, github, gitlab, bitbucket, gitea, raw"),
+      sourceType: z
+        .enum(["github", "git", "raw"])
+        .optional()
+        .describe(
+          "Source type. github → set repository+owner+branch (+composePath). git → set customGitUrl+customGitBranch (+customGitSSHKeyId for private). raw → set composeFile (inline YAML). The API also supports gitlab/bitbucket/gitea sources, but those need provider-specific fields not yet exposed by this tool.",
+        ),
       customGitUrl: z.string().optional().describe("Custom git repository URL"),
       customGitBranch: z.string().optional().describe("Custom git branch"),
       customGitSSHKeyId: z.string().optional().describe("SSH key ID for private git repos"),

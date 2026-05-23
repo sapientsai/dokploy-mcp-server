@@ -20,7 +20,7 @@ type ServerArgs = {
   port?: number
   username?: string
   sshKeyId?: string
-  serverType?: string
+  serverType?: "deploy" | "build"
   description?: string
   url?: string
   token?: string
@@ -95,7 +95,7 @@ export function registerServerTools(server: ToolServer) {
       port: z.number().optional(),
       username: z.string().optional(),
       sshKeyId: z.string().optional(),
-      serverType: z.string().optional(),
+      serverType: z.enum(["deploy", "build"]).optional().describe("deploy | build"),
       description: z.string().optional(),
       url: z.string().optional(),
       token: z.string().optional(),

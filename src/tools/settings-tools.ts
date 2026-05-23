@@ -10,10 +10,46 @@ import type { ToolServer } from "./types"
 
 const ACTIONS = ["health", "version", "ip", "clean", "reload"] as const
 
+const CLEAN_TYPES = [
+  "all",
+  "images",
+  "volumes",
+  "stoppedContainers",
+  "dockerBuilder",
+  "dockerPrune",
+  "monitoring",
+  "redis",
+  "deploymentQueue",
+  "sshPrivateKey",
+] as const
+
+const RELOAD_TARGETS = ["server", "traefik", "redis"] as const
+
+// Map MCP-friendly cleanType to the actual Dokploy endpoint.
+// The dropped/null entries are server-scoped; `null` means no serverId in body.
+const CLEAN_ENDPOINTS: Record<(typeof CLEAN_TYPES)[number], { endpoint: string; serverScoped: boolean }> = {
+  all: { endpoint: "settings.cleanAll", serverScoped: true },
+  images: { endpoint: "settings.cleanUnusedImages", serverScoped: true },
+  volumes: { endpoint: "settings.cleanUnusedVolumes", serverScoped: true },
+  stoppedContainers: { endpoint: "settings.cleanStoppedContainers", serverScoped: true },
+  dockerBuilder: { endpoint: "settings.cleanDockerBuilder", serverScoped: true },
+  dockerPrune: { endpoint: "settings.cleanDockerPrune", serverScoped: true },
+  monitoring: { endpoint: "settings.cleanMonitoring", serverScoped: false },
+  redis: { endpoint: "settings.cleanRedis", serverScoped: false },
+  deploymentQueue: { endpoint: "settings.cleanAllDeploymentQueue", serverScoped: false },
+  sshPrivateKey: { endpoint: "settings.cleanSSHPrivateKey", serverScoped: false },
+}
+
+const RELOAD_ENDPOINTS: Record<(typeof RELOAD_TARGETS)[number], { endpoint: string; serverScoped: boolean }> = {
+  server: { endpoint: "settings.reloadServer", serverScoped: false },
+  traefik: { endpoint: "settings.reloadTraefik", serverScoped: true },
+  redis: { endpoint: "settings.reloadRedis", serverScoped: false },
+}
+
 type SettingsArgs = {
   action: (typeof ACTIONS)[number]
-  cleanType?: "all" | "images"
-  reloadTarget?: "server" | "traefik"
+  cleanType?: (typeof CLEAN_TYPES)[number]
+  reloadTarget?: (typeof RELOAD_TARGETS)[number]
   serverId?: string
 }
 
@@ -31,16 +67,18 @@ export function buildSettingsProgram(
     .case("ip", () => client.get<string>("settings.getIp").map((ip) => `Server IP: ${ip}`))
     .case("clean", () => {
       const type = args.cleanType ?? "all"
-      const endpoint = type === "all" ? "settings.cleanAll" : "settings.cleanUnusedImages"
-      const body: Record<string, unknown> = args.serverId ? { serverId: args.serverId } : {}
-      return client.post<unknown>(endpoint, body).map(() => `Cleanup (${type}) completed.`)
+      const { endpoint, serverScoped } = CLEAN_ENDPOINTS[type]
+      const io = serverScoped
+        ? client.post<unknown>(endpoint, args.serverId ? { serverId: args.serverId } : {})
+        : client.post<unknown>(endpoint)
+      return io.map(() => `Cleanup (${type}) completed.`)
     })
     .case("reload", () => {
       const target = args.reloadTarget ?? "server"
-      const io =
-        target === "server"
-          ? client.post<unknown>("settings.reloadServer")
-          : client.post<unknown>("settings.reloadTraefik", args.serverId ? { serverId: args.serverId } : {})
+      const { endpoint, serverScoped } = RELOAD_ENDPOINTS[target]
+      const io = serverScoped
+        ? client.post<unknown>(endpoint, args.serverId ? { serverId: args.serverId } : {})
+        : client.post<unknown>(endpoint)
       return io.map(() => `${target} reloaded.`)
     })
     .exhaustive()
@@ -50,11 +88,11 @@ export function registerSettingsTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_settings",
     description:
-      "System settings. health: check status. version: get version. ip: get IP. clean: cleanType (all|images), serverId?. reload: reloadTarget (server|traefik), serverId?.",
+      "System settings. health: check status. version: get version. ip: get IP. clean: cleanType (all|images|volumes|stoppedContainers|dockerBuilder|dockerPrune|monitoring|redis|deploymentQueue|sshPrivateKey), serverId? (only honored for docker-related clean types). reload: reloadTarget (server|traefik|redis), serverId? (traefik only).",
     parameters: z.object({
       action: z.enum(ACTIONS),
-      cleanType: z.enum(["all", "images"]).optional(),
-      reloadTarget: z.enum(["server", "traefik"]).optional(),
+      cleanType: z.enum(CLEAN_TYPES).optional(),
+      reloadTarget: z.enum(RELOAD_TARGETS).optional(),
       serverId: z.string().optional(),
     }),
     execute: async (args) => {

@@ -18,8 +18,18 @@ vi.mock("../src/client/dokploy-client", () => ({
 
 type SettingsArgs = {
   action: string
-  cleanType?: "all" | "images"
-  reloadTarget?: "server" | "traefik"
+  cleanType?:
+    | "all"
+    | "images"
+    | "volumes"
+    | "stoppedContainers"
+    | "dockerBuilder"
+    | "dockerPrune"
+    | "monitoring"
+    | "redis"
+    | "deploymentQueue"
+    | "sshPrivateKey"
+  reloadTarget?: "server" | "traefik" | "redis"
   serverId?: string
 }
 
@@ -61,12 +71,29 @@ describe("dokploy_settings clean", () => {
     expect(postMock).toHaveBeenCalledWith("settings.cleanAll", {})
   })
 
-  it("uses cleanAll when cleanType=all", async () => {
-    await tool.execute({ action: "clean", cleanType: "all", serverId: "s1" })
-    expect(postMock).toHaveBeenCalledWith("settings.cleanAll", { serverId: "s1" })
+  it.each([
+    ["all", "settings.cleanAll"],
+    ["images", "settings.cleanUnusedImages"],
+    ["volumes", "settings.cleanUnusedVolumes"],
+    ["stoppedContainers", "settings.cleanStoppedContainers"],
+    ["dockerBuilder", "settings.cleanDockerBuilder"],
+    ["dockerPrune", "settings.cleanDockerPrune"],
+  ] as const)("server-scoped cleanType=%s passes serverId when supplied", async (cleanType, endpoint) => {
+    await tool.execute({ action: "clean", cleanType, serverId: "s1" })
+    expect(postMock).toHaveBeenCalledWith(endpoint, { serverId: "s1" })
   })
 
-  it("uses cleanUnusedImages when cleanType=images", async () => {
+  it.each([
+    ["monitoring", "settings.cleanMonitoring"],
+    ["redis", "settings.cleanRedis"],
+    ["deploymentQueue", "settings.cleanAllDeploymentQueue"],
+    ["sshPrivateKey", "settings.cleanSSHPrivateKey"],
+  ] as const)("non-server-scoped cleanType=%s ignores serverId", async (cleanType, endpoint) => {
+    await tool.execute({ action: "clean", cleanType, serverId: "s1" })
+    expect(postMock).toHaveBeenCalledWith(endpoint)
+  })
+
+  it("server-scoped without serverId still passes empty body", async () => {
     await tool.execute({ action: "clean", cleanType: "images" })
     expect(postMock).toHaveBeenCalledWith("settings.cleanUnusedImages", {})
   })
@@ -91,5 +118,10 @@ describe("dokploy_settings reload", () => {
   it("reloadTarget=traefik without serverId passes empty body", async () => {
     await tool.execute({ action: "reload", reloadTarget: "traefik" })
     expect(postMock).toHaveBeenCalledWith("settings.reloadTraefik", {})
+  })
+
+  it("reloadTarget=redis calls settings.reloadRedis (no body)", async () => {
+    await tool.execute({ action: "reload", reloadTarget: "redis" })
+    expect(postMock).toHaveBeenCalledWith("settings.reloadRedis")
   })
 })

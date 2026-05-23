@@ -35,8 +35,8 @@ type DomainArgs = {
   path?: string
   port?: number
   https?: boolean
-  certificateType?: string
-  domainType?: string
+  certificateType?: "letsencrypt" | "none" | "custom"
+  domainType?: "compose" | "application" | "preview"
   appName?: string
   serverId?: string
   domain?: string
@@ -126,8 +126,8 @@ export function registerDomainTools(server: ToolServer) {
       path: z.string().optional(),
       port: z.number().optional(),
       https: z.boolean().optional(),
-      certificateType: z.string().optional(),
-      domainType: z.string().optional(),
+      certificateType: z.enum(["letsencrypt", "none", "custom"]).optional().describe("letsencrypt | none | custom"),
+      domainType: z.enum(["compose", "application", "preview"]).optional().describe("compose | application | preview"),
       appName: z.string().optional(),
       serverId: z.string().optional(),
       domain: z.string().optional(),
