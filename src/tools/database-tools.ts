@@ -75,7 +75,7 @@ type DatabaseArgs = {
   cpuLimit?: number
   targetEnvironmentId?: string
   appName?: string
-  applicationStatus?: string
+  applicationStatus?: "idle" | "running" | "done" | "error"
   env?: string
   externalPort?: number
   externalGRPCPort?: number
@@ -197,7 +197,7 @@ export function registerDatabaseTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_database",
     description:
-      "Manage databases (postgres/mysql/mariadb/mongo/redis/libsql). create: dbType+name+environmentId+databasePassword (libsql additionally requires appName+dockerImage+sqldNode, accepts sqldPrimaryUrl+enableNamespaces). get: dbType+databaseId. update: dbType+databaseId+fields. move: dbType+databaseId+targetEnvironmentId. start/stop/deploy/rebuild/remove: dbType+databaseId. reload: dbType+databaseId+appName. changeStatus: dbType+databaseId+applicationStatus. saveEnvironment: dbType+databaseId+env. saveExternalPort: dbType+databaseId+externalPort (libsql also accepts externalGRPCPort/externalAdminPort).",
+      "Manage databases (postgres/mysql/mariadb/mongo/redis/libsql). create: dbType+name+environmentId+databasePassword. Per-engine extras — postgres/mysql/mariadb: REQUIRE databaseName+databaseUser; mysql/mariadb also accept databaseRootPassword. mongo: REQUIRES databaseUser (databaseName not used). redis: only databasePassword (no databaseName/User). libsql: REQUIRES appName+dockerImage+sqldNode (primary|replica); accepts sqldPrimaryUrl+enableNamespaces. get: dbType+databaseId. update: dbType+databaseId+fields. move: dbType+databaseId+targetEnvironmentId. start/stop/deploy/rebuild/remove: dbType+databaseId. reload: dbType+databaseId+appName. changeStatus: dbType+databaseId+applicationStatus (idle|running|done|error). saveEnvironment: dbType+databaseId+env. saveExternalPort: dbType+databaseId+externalPort (libsql also accepts externalGRPCPort/externalAdminPort).",
     parameters: z.object({
       action: z.enum(ACTIONS),
       dbType: z.enum(DB_TYPES).describe("postgres, mysql, mariadb, mongo, redis, or libsql"),
@@ -216,7 +216,7 @@ export function registerDatabaseTools(server: ToolServer) {
       cpuLimit: z.number().optional(),
       targetEnvironmentId: z.string().optional(),
       appName: z.string().optional(),
-      applicationStatus: z.string().optional().describe("idle, running, done, or error"),
+      applicationStatus: z.enum(["idle", "running", "done", "error"]).optional(),
       env: z
         .string()
         .optional()

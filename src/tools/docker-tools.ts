@@ -26,8 +26,8 @@ type DockerArgs = {
   serverId?: string
   appName?: string
   method?: "match" | "label" | "stack" | "service"
-  appType?: string
-  type?: string
+  appType?: "stack" | "docker-compose"
+  type?: "standalone" | "swarm"
 }
 
 const FIND_CONTAINER_ENDPOINTS: Record<NonNullable<DockerArgs["method"]>, string> = {
@@ -98,6 +98,11 @@ export function buildDockerProgram(
         throw new Error("findContainers requires method (match|label|stack|service)")
       }
       const { method } = args
+      // The label endpoint REQUIRES `type` (standalone|swarm); the API rejects without it.
+      if (method === "label" && !args.type) {
+        // eslint-disable-next-line functype/prefer-either -- boundary validation; surfaces as a clear classified error.
+        throw new Error("findContainers method=label requires type (standalone|swarm)")
+      }
       const params: Record<string, string> = { appName: args.appName! }
       if (args.serverId) params.serverId = args.serverId
       if (args.appType && method === "match") params.appType = args.appType
@@ -111,15 +116,18 @@ export function registerDockerTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_docker",
     description:
-      "Docker container management. Actions: getContainers (list all containers, serverId?), restartContainer/startContainer/stopContainer/killContainer/removeContainer (containerId, serverId?), getConfig (containerId, serverId?), findContainers (appName+method: match|label|stack|service, serverId?).",
+      "Docker container management. Actions: getContainers (list all containers, serverId?), restartContainer/startContainer/stopContainer/killContainer/removeContainer (containerId, serverId?), getConfig (containerId, serverId?), findContainers (appName+method, serverId?). Method semantics: match → fuzzy name match (optional appType: stack|docker-compose). label → REQUIRES type: standalone|swarm. stack → docker stack lookup. service → swarm service lookup.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       containerId: z.string().optional(),
       serverId: z.string().optional(),
       appName: z.string().optional(),
       method: z.enum(["match", "label", "stack", "service"]).optional(),
-      appType: z.string().optional().describe("App type filter (match method only)"),
-      type: z.string().optional().describe("Label type (label method only)"),
+      appType: z
+        .enum(["stack", "docker-compose"])
+        .optional()
+        .describe("App type filter for method=match only: stack | docker-compose"),
+      type: z.enum(["standalone", "swarm"]).optional().describe("Required for method=label: standalone | swarm"),
     }),
     execute: async (args) => {
       const either = await buildDockerProgram(getDokployClient(), args).run()

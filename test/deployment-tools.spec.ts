@@ -53,8 +53,8 @@ describe("dokploy_deployment list dispatch", () => {
 
   it("by type+id", async () => {
     getMock.mockReturnValueOnce(IO.succeed([]))
-    await tool.execute({ action: "list", type: "postgres", id: "db1" })
-    expect(getMock).toHaveBeenCalledWith("deployment.allByType", { type: "postgres", id: "db1" })
+    await tool.execute({ action: "list", type: "backup", id: "b1" })
+    expect(getMock).toHaveBeenCalledWith("deployment.allByType", { type: "backup", id: "b1" })
   })
 
   it("throws when no identifier provided", async () => {
@@ -62,7 +62,7 @@ describe("dokploy_deployment list dispatch", () => {
   })
 
   it("throws when only type without id", async () => {
-    await expect(tool.execute({ action: "list", type: "postgres" })).rejects.toThrow()
+    await expect(tool.execute({ action: "list", type: "backup" })).rejects.toThrow()
   })
 })
 

@@ -14,6 +14,12 @@ import type { ToolServer } from "./types"
 
 const ACTIONS = ["create", "get", "update", "remove", "listFiles", "manualBackup"] as const
 
+// API enum for backup.create / backup.update databaseType.
+const DATABASE_TYPES = ["postgres", "mariadb", "mysql", "mongo", "web-server", "libsql"] as const
+
+// MCP-internal discriminator for manualBackup — routes to per-DB endpoints.
+const MANUAL_BACKUP_TYPES = ["postgres", "mysql", "mariadb", "mongo", "compose", "libsql", "webServer"] as const
+
 const CREATE_FIELDS = [
   "schedule",
   "prefix",
@@ -26,6 +32,7 @@ const CREATE_FIELDS = [
   "mysqlId",
   "mariadbId",
   "mongoId",
+  "libsqlId",
   "composeId",
   "serviceName",
 ] as const
@@ -49,7 +56,7 @@ type BackupArgs = {
   prefix?: string
   destinationId?: string
   database?: string
-  databaseType?: string
+  databaseType?: (typeof DATABASE_TYPES)[number]
   serviceName?: string
   enabled?: boolean
   keepLatestCount?: number
@@ -57,8 +64,9 @@ type BackupArgs = {
   mysqlId?: string
   mariadbId?: string
   mongoId?: string
+  libsqlId?: string
   composeId?: string
-  backupType?: "postgres" | "mysql" | "mariadb" | "mongo" | "compose"
+  backupType?: (typeof MANUAL_BACKUP_TYPES)[number]
   search?: string
   serverId?: string
 }
@@ -69,6 +77,8 @@ const MANUAL_BACKUP_ENDPOINTS: Record<NonNullable<BackupArgs["backupType"]>, str
   mariadb: "backup.manualBackupMariadb",
   mongo: "backup.manualBackupMongo",
   compose: "backup.manualBackupCompose",
+  libsql: "backup.manualBackupLibsql",
+  webServer: "backup.manualBackupWebServer",
 }
 
 export function buildBackupProgram(
@@ -116,7 +126,7 @@ export function registerBackupTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_backup",
     description:
-      "Manage backups. create: schedule+prefix+destinationId+database+databaseType. get: backupId. update: backupId+fields. remove: backupId. listFiles: destinationId. manualBackup: backupId+backupType.",
+      "Manage backups. create: schedule+prefix+destinationId+database+databaseType. Provide ONE service id matching databaseType: postgres→postgresId, mysql→mysqlId, mariadb→mariadbId, mongo→mongoId, libsql→libsqlId, web-server→(no id). For backups of a db running inside a compose stack: pass composeId+serviceName (and set databaseType to the engine, e.g. postgres). get: backupId. update: backupId+fields. remove: backupId. listFiles: destinationId. manualBackup: backupId+backupType (postgres|mysql|mariadb|mongo|libsql for db backups; compose for whole-stack; webServer for the dokploy server itself).",
     parameters: z.object({
       action: z.enum(ACTIONS),
       backupId: z.string().optional(),
@@ -124,7 +134,10 @@ export function registerBackupTools(server: ToolServer) {
       prefix: z.string().optional(),
       destinationId: z.string().optional(),
       database: z.string().optional(),
-      databaseType: z.string().optional().describe("postgres, mysql, mariadb, or mongo"),
+      databaseType: z
+        .enum(DATABASE_TYPES)
+        .optional()
+        .describe("postgres | mariadb | mysql | mongo | web-server | libsql"),
       serviceName: z.string().optional(),
       enabled: z.boolean().optional(),
       keepLatestCount: z.number().optional(),
@@ -132,8 +145,12 @@ export function registerBackupTools(server: ToolServer) {
       mysqlId: z.string().optional(),
       mariadbId: z.string().optional(),
       mongoId: z.string().optional(),
+      libsqlId: z.string().optional(),
       composeId: z.string().optional(),
-      backupType: z.enum(["postgres", "mysql", "mariadb", "mongo", "compose"]).optional(),
+      backupType: z
+        .enum(MANUAL_BACKUP_TYPES)
+        .optional()
+        .describe("Manual-backup target: postgres | mysql | mariadb | mongo | compose | libsql | webServer"),
       search: z.string().optional(),
       serverId: z.string().optional(),
     }),

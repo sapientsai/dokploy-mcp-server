@@ -12,13 +12,23 @@ import type { ToolServer } from "./types"
 
 const ACTIONS = ["list", "killProcess"] as const
 
+const DEPLOYMENT_TYPES = [
+  "application",
+  "compose",
+  "server",
+  "schedule",
+  "previewDeployment",
+  "backup",
+  "volumeBackup",
+] as const
+
 type DeploymentArgs = {
   action: (typeof ACTIONS)[number]
   deploymentId?: string
   applicationId?: string
   composeId?: string
   serverId?: string
-  type?: string
+  type?: (typeof DEPLOYMENT_TYPES)[number]
   id?: string
 }
 
@@ -70,7 +80,12 @@ export function registerDeploymentTools(server: ToolServer) {
       applicationId: z.string().optional(),
       composeId: z.string().optional(),
       serverId: z.string().optional(),
-      type: z.string().optional().describe("Resource type (application, compose, postgres, mysql, etc.)"),
+      type: z
+        .enum(DEPLOYMENT_TYPES)
+        .optional()
+        .describe(
+          "Resource type. The Dokploy API accepts only: application | compose | server | schedule | previewDeployment | backup | volumeBackup. Database deployments are listed via the resource itself, not here.",
+        ),
       id: z.string().optional().describe("Resource ID (used with type)"),
     }),
     execute: async (args) => {

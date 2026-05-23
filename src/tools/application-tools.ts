@@ -70,7 +70,7 @@ type ApplicationArgs = {
   replicas?: number
   autoDeploy?: boolean
   appName?: string
-  sourceType?: "github" | "git" | "docker" | "raw"
+  sourceType?: "github" | "git" | "docker"
   repository?: string
   owner?: string
   branch?: string
@@ -81,7 +81,7 @@ type ApplicationArgs = {
   buildArgs?: string
   buildSecrets?: string
   createEnvFile?: boolean
-  buildType?: string
+  buildType?: "dockerfile" | "heroku_buildpacks" | "paketo_buildpacks" | "nixpacks" | "static" | "railpack"
   dockerfile?: string
   dockerContextPath?: string
   dockerBuildStage?: string
@@ -263,7 +263,12 @@ export function registerApplicationTools(server: ToolServer) {
       replicas: z.number().optional(),
       autoDeploy: z.boolean().optional(),
       appName: z.string().optional(),
-      sourceType: z.enum(["github", "git", "docker", "raw"]).optional().describe("Source type for the application"),
+      sourceType: z
+        .enum(["github", "git", "docker"])
+        .optional()
+        .describe(
+          "Source type. github → set repository+owner+branch (+githubId for private). git → set customGitUrl+customGitBranch. docker → set dockerImage. The API also supports gitlab/bitbucket/gitea/drop sources, but those need provider-specific fields not yet exposed by this tool.",
+        ),
       repository: z.string().optional().describe("GitHub repository name"),
       owner: z.string().optional().describe("GitHub org/user"),
       branch: z.string().optional().describe("Branch name"),
@@ -279,7 +284,10 @@ export function registerApplicationTools(server: ToolServer) {
       buildArgs: z.string().optional(),
       buildSecrets: z.string().optional(),
       createEnvFile: z.boolean().optional(),
-      buildType: z.string().optional(),
+      buildType: z
+        .enum(["dockerfile", "heroku_buildpacks", "paketo_buildpacks", "nixpacks", "static", "railpack"])
+        .optional()
+        .describe("dockerfile | heroku_buildpacks | paketo_buildpacks | nixpacks | static | railpack"),
       dockerfile: z.string().optional(),
       dockerContextPath: z.string().optional(),
       dockerBuildStage: z.string().optional(),

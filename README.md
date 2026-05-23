@@ -108,25 +108,46 @@ Manage projects. `list` and `get` return nested environments with their applicat
 
 Actions: `create | get | update | move | deploy | start | stop | delete | markRunning | refreshToken | cleanQueues | killBuild | cancelDeployment | reload | saveEnvironment | saveBuildType | traefikConfig | readMonitoring`
 
-Full application lifecycle. Most actions require `applicationId`. `create` requires `name` + `environmentId`. `deploy` supports `redeploy` flag. `readMonitoring` requires `appName`.
+Full application lifecycle. Most actions require `applicationId`. `create` requires `name` + `environmentId`. `deploy` supports `redeploy` flag. `readMonitoring` requires `appName`. `sourceType`:
+
+- `github` → `repository` + `owner` + `branch` (+ `githubId` for private)
+- `git` → `customGitUrl` + `customGitBranch`
+- `docker` → `dockerImage`
+
+`buildType`: `dockerfile | heroku_buildpacks | paketo_buildpacks | nixpacks | static | railpack`.
+
+The underlying API also supports `gitlab`/`bitbucket`/`gitea`/`drop` sources, but those need provider-specific fields not yet exposed by this tool.
 
 ### `dokploy_compose` (15 actions)
 
 Actions: `create | get | update | delete | deploy | start | stop | move | loadServices | loadMounts | getDefaultCommand | cancelDeployment | cleanQueues | killBuild | refreshToken`
 
-Docker Compose management. Most actions require `composeId`. `create` requires `name` + `environmentId`. `loadMounts` requires `serviceName`. `cancelDeployment`/`cleanQueues`/`killBuild`/`refreshToken` require `composeId`.
+Docker Compose management. Most actions require `composeId`. `create` requires `name` + `environmentId`. `loadMounts` requires `serviceName`. `cancelDeployment`/`cleanQueues`/`killBuild`/`refreshToken` require `composeId`. `sourceType`:
+
+- `github` → `repository` + `owner` + `branch` (+ `composePath`)
+- `git` → `customGitUrl` + `customGitBranch` (+ `customGitSSHKeyId` for private)
+- `raw` → `composeFile` (inline YAML)
+
+The underlying API also supports `gitlab`/`bitbucket`/`gitea` sources, but those need provider-specific fields not yet exposed by this tool.
 
 ### `dokploy_database` (13 actions)
 
 Actions: `create | get | update | move | start | stop | deploy | rebuild | remove | reload | changeStatus | saveEnvironment | saveExternalPort`
 
-Unified database management. All actions require `dbType` (postgres/mysql/mariadb/mongo/redis). Most also require `databaseId`.
+Unified database management. All actions require `dbType` (`postgres | mysql | mariadb | mongo | redis | libsql`); most also require `databaseId`. `create` baseline: `dbType` + `name` + `environmentId` + `databasePassword`. Per-engine extras:
+
+- `postgres` / `mysql` / `mariadb` — also require `databaseName` + `databaseUser`. `mysql`/`mariadb` accept `databaseRootPassword`.
+- `mongo` — requires `databaseUser` (no `databaseName`).
+- `redis` — only `databasePassword`.
+- `libsql` — requires `appName` + `dockerImage` + `sqldNode` (`primary | replica`); accepts `sqldPrimaryUrl` + `enableNamespaces`.
+
+`changeStatus` uses `applicationStatus` (`idle | running | done | error`).
 
 ### `dokploy_domain` (8 actions)
 
 Actions: `create | list | get | update | delete | generate | canGenerateTraefikMe | validate`
 
-Domain/DNS management. `create` requires `host` + `applicationId`|`composeId`. `validate` requires `domain`.
+Domain/DNS management. `create` requires `host` + `applicationId`|`composeId` (and `serviceName` for compose domains). Enums: `certificateType` (`letsencrypt | none | custom`), `domainType` (`compose | application | preview`). `validate` requires `domain`.
 
 ### `dokploy_environment` (6 actions)
 
@@ -138,25 +159,39 @@ Project environment management. `create` requires `projectId` + `name`. `list` r
 
 Actions: `list | get | create | update | remove | count | publicIp | getMetrics`
 
-Server management. `create` requires `name` + `ipAddress` + `port` + `username` + `sshKeyId` + `serverType`. `getMetrics` requires `url` + `token`.
+Server management. `create` requires `name` + `ipAddress` + `port` + `username` + `sshKeyId` + `serverType` (`deploy | build`). `getMetrics` requires `url` + `token`.
 
 ### `dokploy_backup` (6 actions)
 
 Actions: `create | get | update | remove | listFiles | manualBackup`
 
-Backup scheduling and triggers. `create` requires `schedule` + `prefix` + `destinationId` + `database` + `databaseType`. `manualBackup` requires `backupId` + `backupType`.
+Backup scheduling and triggers. `create` requires `schedule` + `prefix` + `destinationId` + `database` + `databaseType`. Provide the **one** service id matching the engine:
+
+- `databaseType: postgres` → `postgresId`
+- `databaseType: mysql` → `mysqlId`
+- `databaseType: mariadb` → `mariadbId`
+- `databaseType: mongo` → `mongoId`
+- `databaseType: libsql` → `libsqlId`
+- `databaseType: web-server` → no service id (backs up the Dokploy server itself)
+- Backing up a DB inside a compose stack → `composeId` + `serviceName` + the engine as `databaseType`
+
+`manualBackup` requires `backupId` + `backupType`:
+
+- `postgres | mysql | mariadb | mongo | libsql` — individual DB backups
+- `compose` — whole-stack backup
+- `webServer` — Dokploy server backup
 
 ### `dokploy_deployment` (2 actions)
 
 Actions: `list | killProcess`
 
-Deployment tracking. `list` requires `applicationId`|`composeId`|`serverId`|`type`+`id`. `killProcess` requires `deploymentId`.
+Deployment tracking. `list` requires `applicationId`|`composeId`|`serverId`|`type`+`id`. `type` enum: `application | compose | server | schedule | previewDeployment | backup | volumeBackup` (database deployments are listed via the database resource itself, not this endpoint). `killProcess` requires `deploymentId`.
 
 ### `dokploy_docker` (4 actions)
 
 Actions: `getContainers | restartContainer | getConfig | findContainers`
 
-Container management. `findContainers` requires `appName` + `method` (match|label|stack|service).
+Container management. `findContainers` requires `appName` + `method` (`match | label | stack | service`). For `method=match`, `appType` accepts `stack | docker-compose`. For `method=label`, `type` is **required** and accepts `standalone | swarm` (the API rejects without it).
 
 ### `dokploy_infrastructure` (8 actions)
 
@@ -174,7 +209,7 @@ SSH key management for git-based deployments. `create` requires `name` + `privat
 
 Actions: `health | version | ip | clean | reload`
 
-System settings. `clean` uses `cleanType` (all|images). `reload` uses `reloadTarget` (server|traefik).
+System settings. `clean` uses `cleanType` — server-scoped: `all | images | volumes | stoppedContainers | dockerBuilder | dockerPrune` (honor `serverId`); global: `monitoring | redis | deploymentQueue | sshPrivateKey`. `reload` uses `reloadTarget` (`server | traefik | redis`); `serverId` is honored for `traefik`.
 
 ## Usage Examples
 
