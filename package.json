@@ -1,7 +1,7 @@
 {
   "name": "dokploy-mcp-server",
   "version": "1.6.6",
-  "mcpName": "io.github.jordanburke/dokploy-mcp-server",
+  "mcpName": "io.github.sapientsai/dokploy-mcp-server",
   "description": "A comprehensive Model Context Protocol (MCP) server for Dokploy - deploy apps, manage containers, databases, domains, and servers.",
   "keywords": [
     "mcp",
