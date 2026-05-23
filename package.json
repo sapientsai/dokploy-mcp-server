@@ -46,7 +46,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "validate": "ts-builds validate",
+    "validate": "pnpm check:versions && ts-builds validate",
     "format": "ts-builds format",
     "format:check": "ts-builds format:check",
     "lint": "ts-builds lint",
@@ -58,6 +58,8 @@
     "build": "NODE_ENV=production ts-builds build",
     "dev": "ts-builds dev",
     "check:versions": "tsx scripts/check-versions.ts",
+    "sync:versions": "tsx scripts/sync-versions.ts",
+    "version": "pnpm sync:versions",
     "prepublishOnly": "pnpm check:versions && pnpm validate",
     "inspect": "pnpm build && npx @modelcontextprotocol/inspector dist/index.js",
     "start": "pnpm build && node dist/bin.js",
