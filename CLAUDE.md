@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A comprehensive MCP (Model Context Protocol) server for [Dokploy](https://dokploy.com/) - the open-source, self-hosted PaaS. Provides **13 tools** (one per category, using action enums) for managing deployments, applications, databases, domains, and servers through AI assistants.
+A comprehensive MCP (Model Context Protocol) server for [Dokploy](https://dokploy.com/) - the open-source, self-hosted PaaS. Provides **14 tools** (one per category, using action enums) for managing deployments, applications, databases, domains, and servers through AI assistants.
 
 Built with **FastMCP**, **ts-builds**, and **Zod**. Supports stdio (default for npx/CLI) and httpStream (for Docker/remote) transports.
 
@@ -62,6 +62,7 @@ src/
 │   ├── backup-tools.ts         # 1 tool (6 actions) - backup scheduling/triggers
 │   ├── environment-tools.ts    # 1 tool (6 actions) - project environments
 │   ├── infrastructure-tools.ts # 1 tool (8 actions) - ports, certs, basic auth
+│   ├── mounts-tools.ts         # 1 tool (6 actions) - volume / bind / file mounts
 │   └── ssh-key-tools.ts        # 1 tool (6 actions) - SSH key management
 ├── types.ts                    # TypeScript types + DB type constants
 └── utils/
@@ -99,7 +100,7 @@ src/
 
 ## Key Files
 
-- `src/index.ts` - Server entry point, registers all 13 tool modules
+- `src/index.ts` - Server entry point, registers all 14 tool modules
 - `src/bin.ts` - CLI entry point (`npx dokploy-mcp-server`)
 - `src/client/dokploy-client.ts` - Dokploy API client with GET/POST
 - `src/types.ts` - All TypeScript types + `DB_TYPES` / `DB_ID_FIELDS` constants

@@ -9,6 +9,7 @@ import type {
   DokployDestination,
   DokployDomain,
   DokployEnvironment,
+  DokployMount,
   DokployProject,
   DokployRegistry,
   DokployServer,
@@ -268,4 +269,23 @@ export function formatDestination(destination: DokployDestination): string {
 export function formatDestinationList(destinations: DokployDestination[]): string {
   if (destinations.length === 0) return "No destinations found."
   return `# Destinations (${destinations.length})\n\n${destinations.map(formatDestination).join("\n\n")}`
+}
+
+export function formatMount(mount: DokployMount): string {
+  const sourceLine =
+    mount.type === "volume"
+      ? `  Volume Name: ${orElse(mount.volumeName, "N/A")}`
+      : mount.type === "bind"
+        ? `  Host Path: ${orElse(mount.hostPath, "N/A")}`
+        : mount.type === "file"
+          ? `  File Path: ${orElse(mount.filePath, "N/A")}`
+          : ""
+  return `- **${mount.type}** mount (ID: ${mount.mountId})
+  Mount Path: ${mount.mountPath}${sourceLine ? `\n${sourceLine}` : ""}
+  Service Type: ${orElse(mount.serviceType, "N/A")}`
+}
+
+export function formatMountList(mounts: DokployMount[]): string {
+  if (mounts.length === 0) return "No mounts found."
+  return `# Mounts (${mounts.length})\n\n${mounts.map(formatMount).join("\n\n")}`
 }

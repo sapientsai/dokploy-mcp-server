@@ -17,6 +17,7 @@ import {
   registerDomainTools,
   registerEnvironmentTools,
   registerInfrastructureTools,
+  registerMountsTools,
   registerProjectTools,
   registerRegistryTools,
   registerServerTools,
@@ -72,6 +73,7 @@ Available capabilities:
 - Backups: schedule, trigger manual backups, list backup files
 - Environments: create, duplicate, manage project environments
 - Infrastructure: ports, certificates, basic auth security
+- Mounts: volumes, bind mounts, and file mounts attached to applications/databases/compose services
 - SSH Keys: create, list, update, remove, generate SSH keys for server access and git-based deployments
 - Registries: manage container registries for private image pulls
 - Destinations: manage S3-compatible backup destinations
@@ -90,6 +92,7 @@ registerDatabaseTools(server)
 registerBackupTools(server)
 registerEnvironmentTools(server)
 registerInfrastructureTools(server)
+registerMountsTools(server)
 registerSshKeyTools(server)
 registerRegistryTools(server)
 registerDestinationTools(server)
