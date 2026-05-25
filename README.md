@@ -6,7 +6,7 @@ A comprehensive [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)
 
 ## Why This Server?
 
-The [official Dokploy MCP](https://github.com/Dokploy/mcp) covers only ~5 of 42 API categories. This server provides **13 tools** (one per category with action enums) covering the full DevOps lifecycle with minimal token usage.
+The [official Dokploy MCP](https://github.com/Dokploy/mcp) covers only ~5 of 42 API categories. This server provides **14 tools** (one per category with action enums) covering the full DevOps lifecycle with minimal token usage.
 
 ### Feature Comparison
 
@@ -24,12 +24,13 @@ The [official Dokploy MCP](https://github.com/Dokploy/mcp) covers only ~5 of 42 
 | Backups        | -                   | 1 tool (6 actions)            |
 | Environments   | -                   | 1 tool (6 actions)            |
 | Infrastructure | -                   | 1 tool (8 actions)            |
+| Mounts         | -                   | 1 tool (6 actions)            |
 | SSH Keys       | -                   | 1 tool (6 actions)            |
-| **Total**      | **67 tools**        | **13 tools**                  |
+| **Total**      | **67 tools**        | **14 tools**                  |
 
 Key advantages:
 
-- **Minimal token usage** - 13 tools instead of 67+, dramatically reducing context consumption
+- **Minimal token usage** - 14 tools instead of 67+, dramatically reducing context consumption
 - **Unified database tool** - One tool handles all 5 database types (postgres, mysql, mariadb, mongo, redis) via `dbType` + `action` params
 - **Full API coverage** - Docker Compose, containers, servers, deployments, backups, certificates, ports, and basic auth
 - **Action-based design** - Each tool has an `action` enum parameter; other params are optional based on action

@@ -178,13 +178,38 @@ export type DokployContainer = {
   ports?: string
 }
 
+export const MOUNT_SERVICE_TYPES = [
+  "application",
+  "postgres",
+  "mysql",
+  "mariadb",
+  "mongo",
+  "redis",
+  "compose",
+  "libsql",
+] as const
+export type MountServiceType = (typeof MOUNT_SERVICE_TYPES)[number]
+
+export const MOUNT_TYPES = ["bind", "volume", "file"] as const
+export type MountType = (typeof MOUNT_TYPES)[number]
+
 export type DokployMount = {
   mountId: string
-  type: string
-  hostPath?: string
-  volumeName?: string
+  type: MountType | string
   mountPath: string
-  applicationId?: string
+  hostPath?: string | null
+  volumeName?: string | null
+  filePath?: string | null
+  content?: string | null
+  serviceType?: MountServiceType | string
+  applicationId?: string | null
+  composeId?: string | null
+  postgresId?: string | null
+  mysqlId?: string | null
+  mariadbId?: string | null
+  mongoId?: string | null
+  redisId?: string | null
+  libsqlId?: string | null
 }
 
 export type DokployPort = {
