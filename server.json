@@ -6,12 +6,12 @@
     "url": "https://github.com/sapientsai/dokploy-mcp-server",
     "source": "github"
   },
-  "version": "1.6.7",
+  "version": "1.7.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "dokploy-mcp-server",
-      "version": "1.6.7",
+      "version": "1.7.0",
       "transport": {
         "type": "stdio"
       },
