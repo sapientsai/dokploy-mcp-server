@@ -1,3 +1,4 @@
+import { countEnvKeys } from "../tools/tool-utils"
 import type {
   DatabaseType,
   DokployApplication,
@@ -126,15 +127,25 @@ export function formatApplication(app: DokployApplication): string {
     .filter(Boolean)
     .join("\n")
 
-  const envSection = app.env ? `\n  Env Variables:\n\`\`\`\n${app.env}\n\`\`\`` : ""
-
   return `- **${app.name}** ${statusIcon(app.applicationStatus)} (ID: ${app.applicationId})
   App Name: ${app.appName}
   Description: ${orElse(app.description, "None")}
   Build Type: ${orElse(app.buildType, "N/A")}
   Source: ${orElse(app.sourceType, "N/A")}
 ${gitSource ? `${gitSource}\n` : ""}  Auto Deploy: ${app.autoDeploy ?? "N/A"}
-  Created: ${formatDate(app.createdAt)}${envSection}`
+  Created: ${formatDate(app.createdAt)}
+  Env: ${formatEnvSummary(app.env)}`
+}
+
+/**
+ * Render the env field as a masked summary — never echoes values into the
+ * tool result. Callers wanting the actual contents must use `setEnvVars` /
+ * `getEnvKeys` / `getEnvValuesUnsafe`.
+ */
+function formatEnvSummary(env: string | null | undefined): string {
+  const count = countEnvKeys(env)
+  if (count === 0) return "none"
+  return `${count} var${count === 1 ? "" : "s"} set (values hidden — use getEnvKeys to list names, getEnvValuesUnsafe to reveal values)`
 }
 
 export function formatDeployment(dep: DokployDeployment): string {
@@ -150,14 +161,13 @@ export function formatDeploymentList(deployments: DokployDeployment[]): string {
 }
 
 export function formatCompose(compose: DokployCompose): string {
-  const envSection = compose.env ? `\n  Env Variables:\n\`\`\`\n${compose.env}\n\`\`\`` : ""
-
   return `- **${compose.name}** ${statusIcon(compose.composeStatus)} (ID: ${compose.composeId})
   App Name: ${compose.appName}
   Description: ${orElse(compose.description, "None")}
   Type: ${orElse(compose.composeType, "N/A")}
   Source: ${orElse(compose.sourceType, "N/A")}
-  Created: ${formatDate(compose.createdAt)}${envSection}`
+  Created: ${formatDate(compose.createdAt)}
+  Env: ${formatEnvSummary(compose.env)}`
 }
 
 export function formatDomain(domain: DokployDomain): string {
@@ -201,7 +211,8 @@ export function formatDatabase(db: DokployDatabase, dbType: string): string {
   Database Name: ${orElse(db.databaseName, "N/A")}
   Image: ${orElse(db.dockerImage, "default")}
   External Port: ${db.externalPort ?? "None"}
-  Created: ${formatDate(db.createdAt)}`
+  Created: ${formatDate(db.createdAt)}
+  Env: ${formatEnvSummary(db.env)}`
 }
 
 export function formatContainer(container: DokployContainer): string {

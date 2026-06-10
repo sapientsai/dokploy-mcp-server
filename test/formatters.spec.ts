@@ -290,19 +290,20 @@ describe("formatApplication", () => {
     environmentId: "env-1",
   }
 
-  it("includes env vars block when env present", () => {
+  it("masks env values when present (count only, never the values)", () => {
     const result = formatApplication({
       ...base,
       env: "DB_HOST=localhost\nDB_PORT=5432",
     })
-    expect(result).toContain("DB_HOST=localhost")
-    expect(result).toContain("DB_PORT=5432")
-    expect(result).toContain("Env Variables:")
+    expect(result).not.toContain("DB_HOST=localhost")
+    expect(result).not.toContain("DB_PORT=5432")
+    expect(result).toContain("Env: 2 vars set")
+    expect(result).toContain("getEnvValuesUnsafe")
   })
 
-  it("omits env block when env missing", () => {
+  it("reports 'Env: none' when env missing", () => {
     const result = formatApplication(base)
-    expect(result).not.toContain("Env Variables:")
+    expect(result).toContain("Env: none")
   })
 
   it("renders owner/repo when both present", () => {
@@ -657,18 +658,18 @@ describe("formatCompose", () => {
     environmentId: "env-1",
   }
 
-  it("includes env block when env present", () => {
+  it("masks env values when present (count only, never the values)", () => {
     const result = formatCompose({
       ...base,
       env: "REDIS_URL=redis://localhost:6379",
     })
-    expect(result).toContain("REDIS_URL=redis://localhost:6379")
-    expect(result).toContain("Env Variables:")
+    expect(result).not.toContain("REDIS_URL=redis://localhost:6379")
+    expect(result).toContain("Env: 1 var set")
   })
 
-  it("omits env block when env missing", () => {
+  it("reports 'Env: none' when env missing", () => {
     const result = formatCompose(base)
-    expect(result).not.toContain("Env Variables:")
+    expect(result).toContain("Env: none")
   })
 
   it("renders defaults for missing optional fields", () => {

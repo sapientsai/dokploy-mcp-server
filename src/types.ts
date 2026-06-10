@@ -151,6 +151,7 @@ export type DokployDatabase = {
   sqldNode?: "primary" | "replica"
   sqldPrimaryUrl?: string | null
   enableNamespaces?: boolean
+  env?: string
   createdAt?: string
 }
 
