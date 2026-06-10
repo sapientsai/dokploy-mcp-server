@@ -9,7 +9,7 @@ import { formatApiError } from "../client/errors"
 import type { RequestBody } from "../generated"
 import type { DokployApplication } from "../types"
 import { formatApplication } from "../utils/formatters"
-import { pickDefined } from "./tool-utils"
+import { formatEnvMutation, listEnvKeys, mergeEnv, pickDefined } from "./tool-utils"
 import type { ToolServer } from "./types"
 
 const ACTIONS = [
@@ -28,6 +28,9 @@ const ACTIONS = [
   "cancelDeployment",
   "reload",
   "saveEnvironment",
+  "setEnvVars",
+  "getEnvKeys",
+  "getEnvValuesUnsafe",
   "saveBuildType",
   "traefikConfig",
   "readMonitoring",
@@ -78,6 +81,8 @@ type ApplicationArgs = {
   customGitBranch?: string
   githubId?: string
   env?: string
+  set?: string
+  unset?: string[]
   buildArgs?: string
   buildSecrets?: string
   createEnvFile?: boolean
@@ -199,6 +204,37 @@ export function buildApplicationProgram(
         .post<unknown>("application.saveEnvironment", body)
         .map(() => `Environment saved for application ${args.applicationId}.`)
     })
+    .case("setEnvVars", () =>
+      client.get<DokployApplication>("application.one", { applicationId: args.applicationId! }).flatMap((app) => {
+        const merged = mergeEnv(app.env, args.set, args.unset)
+        const body: Record<string, unknown> = {
+          applicationId: args.applicationId!,
+          env: merged.blob,
+          createEnvFile: args.createEnvFile ?? false,
+          buildArgs: args.buildArgs ?? "",
+          buildSecrets: args.buildSecrets ?? "",
+        }
+        return client
+          .post<unknown>("application.saveEnvironment", body)
+          .map(() => formatEnvMutation("application", args.applicationId!, merged))
+      }),
+    )
+    .case("getEnvKeys", () =>
+      client.get<DokployApplication>("application.one", { applicationId: args.applicationId! }).map((app) => {
+        const keys = listEnvKeys(app.env)
+        return keys.length
+          ? `# Env Keys for application ${args.applicationId} (${keys.length})\n\n${keys.join("\n")}\n\n(Values hidden — use getEnvValuesUnsafe to reveal.)`
+          : `No env vars set for application ${args.applicationId}.`
+      }),
+    )
+    .case("getEnvValuesUnsafe", () =>
+      client.get<DokployApplication>("application.one", { applicationId: args.applicationId! }).map((app) => {
+        const env = app.env ?? ""
+        return env
+          ? `# Env (UNSAFE — values revealed) for application ${args.applicationId}\n\n\`\`\`\n${env}\n\`\`\`\n\nThis output contains plaintext secret values. They are now in the tool transcript and any retained agent logs. Prefer getEnvKeys + setEnvVars for routine work.`
+          : `No env vars set for application ${args.applicationId}.`
+      }),
+    )
     .case("saveBuildType", () =>
       client
         .post<unknown>("application.saveBuildType", {
@@ -244,7 +280,7 @@ export function registerApplicationTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_application",
     description:
-      "Manage applications. create: name+environmentId. get: applicationId (returns env vars, git source, build config). update: applicationId+fields (supports sourceType, repository, owner, branch, customGitUrl, customGitBranch, githubId, dockerImage, etc.). move: applicationId+targetEnvironmentId. deploy: applicationId, redeploy? (note: first deploy on new services may fail — retry immediately). start/stop/delete/markRunning/refreshToken/cleanQueues/killBuild/cancelDeployment: applicationId. reload: applicationId+appName. saveEnvironment: applicationId+env (KEY=VALUE pairs, one per line). saveBuildType: applicationId+buildType. traefikConfig: applicationId, traefikConfig? (omit to read). readMonitoring: appName. readLogs: applicationId, tail? (default 100), since? ('all' or duration like '1h'), search? (substring filter).",
+      "Manage applications. create: name+environmentId. get: applicationId (returns metadata + masked env summary — never values). update: applicationId+fields (supports sourceType, repository, owner, branch, customGitUrl, customGitBranch, githubId, dockerImage, etc.). move: applicationId+targetEnvironmentId. deploy: applicationId, redeploy? (note: first deploy on new services may fail — retry immediately). start/stop/delete/markRunning/refreshToken/cleanQueues/killBuild/cancelDeployment: applicationId. reload: applicationId+appName. saveEnvironment: applicationId+env (KEY=VALUE pairs, full replace). setEnvVars: applicationId + set? (KEY=VALUE pairs to upsert) + unset? (KEY names to remove) — read-modify-write inside the server; result is a masked confirmation with changed key names only. getEnvKeys: applicationId — returns just the KEY names (no values). getEnvValuesUnsafe: applicationId — UNSAFE escape hatch that returns full KEY=VALUE pairs (use only when you need actual values; output goes to the tool transcript and any retained logs). saveBuildType: applicationId+buildType. traefikConfig: applicationId, traefikConfig? (omit to read). readMonitoring: appName. readLogs: applicationId, tail? (default 100), since? ('all' or duration like '1h'), search? (substring filter).",
     parameters: z.object({
       action: z.enum(ACTIONS),
       applicationId: z.string().optional(),
@@ -279,8 +315,16 @@ export function registerApplicationTools(server: ToolServer) {
         .string()
         .optional()
         .describe(
-          "Environment variables as KEY=VALUE pairs, one per line. Example: 'DB_HOST=localhost\\nDB_PORT=5432'",
+          "Environment variables as KEY=VALUE pairs, one per line. Example: 'DB_HOST=localhost\\nDB_PORT=5432'. Used by saveEnvironment (full replace).",
         ),
+      set: z
+        .string()
+        .optional()
+        .describe("setEnvVars: KEY=VALUE pairs to upsert, one per line. Existing keys retain order; new keys append."),
+      unset: z
+        .array(z.string())
+        .optional()
+        .describe("setEnvVars: list of KEY names to remove. Unknown keys are silently skipped."),
       buildArgs: z.string().optional(),
       buildSecrets: z.string().optional(),
       createEnvFile: z.boolean().optional(),

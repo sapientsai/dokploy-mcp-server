@@ -24,6 +24,8 @@ type ComposeArgs = {
   composeFile?: string
   serverId?: string
   env?: string
+  set?: string
+  unset?: string[]
   command?: string
   sourceType?: string
   customGitUrl?: string
@@ -254,5 +256,55 @@ describe("dokploy_compose readLogs", () => {
       since: "30m",
       search: "warn",
     })
+  })
+})
+
+describe("dokploy_compose saveEnvironment / setEnvVars / getEnvKeys / getEnvValuesUnsafe", () => {
+  const baseCompose = {
+    composeId: "c1",
+    name: "N",
+    appName: "n",
+    composeStatus: "idle",
+    environmentId: "env",
+  }
+
+  it("saveEnvironment posts compose.saveEnvironment with env (null when omitted)", async () => {
+    await tool.execute({ action: "saveEnvironment", composeId: "c1", env: "FOO=1" })
+    expect(postMock).toHaveBeenLastCalledWith("compose.saveEnvironment", { composeId: "c1", env: "FOO=1" })
+
+    await tool.execute({ action: "saveEnvironment", composeId: "c1" })
+    expect(postMock).toHaveBeenLastCalledWith("compose.saveEnvironment", { composeId: "c1", env: null })
+  })
+
+  it("setEnvVars reads current env, merges, posts saveEnvironment, returns masked confirmation", async () => {
+    getMock.mockReturnValueOnce(IO.succeed({ ...baseCompose, env: "FOO=1\nBAR=2" }))
+    const result = (await tool.execute({
+      action: "setEnvVars",
+      composeId: "c1",
+      set: "BAR=99\nNEW=value",
+      unset: ["FOO"],
+    })) as string
+
+    expect(getMock).toHaveBeenCalledWith("compose.one", { composeId: "c1" })
+    expect(postMock).toHaveBeenCalledWith("compose.saveEnvironment", { composeId: "c1", env: "BAR=99\nNEW=value" })
+    expect(result).toContain("set 2 (BAR, NEW)")
+    expect(result).toContain("unset 1 (FOO)")
+    expect(result).not.toContain("value")
+    expect(result).not.toContain("99")
+  })
+
+  it("getEnvKeys returns sorted KEY names only", async () => {
+    getMock.mockReturnValueOnce(IO.succeed({ ...baseCompose, env: "Z=zee\nA=eh" }))
+    const result = (await tool.execute({ action: "getEnvKeys", composeId: "c1" })) as string
+    expect(result).toContain("A\nZ")
+    expect(result).not.toContain("zee")
+    expect(result).not.toContain("eh")
+  })
+
+  it("getEnvValuesUnsafe echoes raw env with warning", async () => {
+    getMock.mockReturnValueOnce(IO.succeed({ ...baseCompose, env: "SECRET=hunter2" }))
+    const result = (await tool.execute({ action: "getEnvValuesUnsafe", composeId: "c1" })) as string
+    expect(result).toContain("SECRET=hunter2")
+    expect(result).toContain("UNSAFE")
   })
 })

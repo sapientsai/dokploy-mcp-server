@@ -34,6 +34,8 @@ type DbArgs = {
   appName?: string
   applicationStatus?: string
   env?: string
+  set?: string
+  unset?: string[]
   externalPort?: number
   externalGRPCPort?: number
   externalAdminPort?: number
@@ -277,5 +279,47 @@ describe("dokploy_database return values", () => {
       targetEnvironmentId: "env-2",
     })
     expect(result).toBe("Database db-9 moved to environment env-2.")
+  })
+})
+
+describe("dokploy_database setEnvVars / getEnvKeys / getEnvValuesUnsafe", () => {
+  it.each(DB_TYPES)("setEnvVars (%s) reads env, merges, posts saveEnvironment, masks output", async (dbType) => {
+    getMock.mockReturnValueOnce(IO.succeed({ [DB_ID_FIELDS[dbType]]: "db1", env: "FOO=1\nBAR=2" }))
+    const result = (await tool.execute({
+      action: "setEnvVars",
+      dbType,
+      databaseId: "db1",
+      set: "BAR=99\nNEW=value",
+      unset: ["FOO"],
+    })) as string
+
+    expect(getMock).toHaveBeenCalledWith(`${dbType}.one`, { [DB_ID_FIELDS[dbType]]: "db1" })
+    expect(postMock).toHaveBeenCalledWith(`${dbType}.saveEnvironment`, {
+      [DB_ID_FIELDS[dbType]]: "db1",
+      env: "BAR=99\nNEW=value",
+    })
+    expect(result).toContain("set 2 (BAR, NEW)")
+    expect(result).toContain("unset 1 (FOO)")
+    expect(result).not.toContain("value")
+    expect(result).not.toContain("99")
+  })
+
+  it("getEnvKeys returns sorted KEY names only", async () => {
+    getMock.mockReturnValueOnce(IO.succeed({ postgresId: "db1", env: "Z=zee\nA=eh" }))
+    const result = (await tool.execute({ action: "getEnvKeys", dbType: "postgres", databaseId: "db1" })) as string
+    expect(result).toContain("A\nZ")
+    expect(result).not.toContain("zee")
+    expect(result).not.toContain("eh")
+  })
+
+  it("getEnvValuesUnsafe echoes raw env with warning", async () => {
+    getMock.mockReturnValueOnce(IO.succeed({ postgresId: "db1", env: "SECRET=hunter2" }))
+    const result = (await tool.execute({
+      action: "getEnvValuesUnsafe",
+      dbType: "postgres",
+      databaseId: "db1",
+    })) as string
+    expect(result).toContain("SECRET=hunter2")
+    expect(result).toContain("UNSAFE")
   })
 })

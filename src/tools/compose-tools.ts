@@ -8,7 +8,7 @@ import { formatApiError } from "../client/errors"
 import type { RequestBody } from "../generated"
 import type { DokployCompose } from "../types"
 import { formatCompose } from "../utils/formatters"
-import { pickDefined } from "./tool-utils"
+import { formatEnvMutation, listEnvKeys, mergeEnv, pickDefined } from "./tool-utils"
 import type { ToolServer } from "./types"
 
 const ACTIONS = [
@@ -27,6 +27,10 @@ const ACTIONS = [
   "cleanQueues",
   "killBuild",
   "refreshToken",
+  "saveEnvironment",
+  "setEnvVars",
+  "getEnvKeys",
+  "getEnvValuesUnsafe",
   "readLogs",
 ] as const
 
@@ -58,6 +62,8 @@ type ComposeArgs = {
   composeFile?: string
   serverId?: string
   env?: string
+  set?: string
+  unset?: string[]
   command?: string
   sourceType?: "github" | "git" | "raw"
   customGitUrl?: string
@@ -195,6 +201,38 @@ export function buildComposeProgram(
         .post<unknown>("compose.refreshToken", { composeId: args.composeId! })
         .map(() => `Compose ${args.composeId}: refreshToken completed.`),
     )
+    .case("saveEnvironment", () =>
+      client
+        .post<unknown>("compose.saveEnvironment", {
+          composeId: args.composeId!,
+          env: args.env ?? null,
+        })
+        .map(() => `Environment saved for compose ${args.composeId}.`),
+    )
+    .case("setEnvVars", () =>
+      client.get<DokployCompose>("compose.one", { composeId: args.composeId! }).flatMap((compose) => {
+        const merged = mergeEnv(compose.env, args.set, args.unset)
+        return client
+          .post<unknown>("compose.saveEnvironment", { composeId: args.composeId!, env: merged.blob })
+          .map(() => formatEnvMutation("compose", args.composeId!, merged))
+      }),
+    )
+    .case("getEnvKeys", () =>
+      client.get<DokployCompose>("compose.one", { composeId: args.composeId! }).map((compose) => {
+        const keys = listEnvKeys(compose.env)
+        return keys.length
+          ? `# Env Keys for compose ${args.composeId} (${keys.length})\n\n${keys.join("\n")}\n\n(Values hidden — use getEnvValuesUnsafe to reveal.)`
+          : `No env vars set for compose ${args.composeId}.`
+      }),
+    )
+    .case("getEnvValuesUnsafe", () =>
+      client.get<DokployCompose>("compose.one", { composeId: args.composeId! }).map((compose) => {
+        const env = compose.env ?? ""
+        return env
+          ? `# Env (UNSAFE — values revealed) for compose ${args.composeId}\n\n\`\`\`\n${env}\n\`\`\`\n\nThis output contains plaintext secret values. They are now in the tool transcript and any retained agent logs. Prefer getEnvKeys + setEnvVars for routine work.`
+          : `No env vars set for compose ${args.composeId}.`
+      }),
+    )
     .case("readLogs", () => {
       const params: Record<string, string> = {
         composeId: args.composeId!,
@@ -214,7 +252,7 @@ export function registerComposeTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_compose",
     description:
-      "Manage Docker Compose services. create: name+environmentId. get: composeId (returns env vars). update: composeId+fields (supports sourceType, composeFile for raw/inline, git source fields, autoDeploy). delete/start/stop/getDefaultCommand: composeId. deploy: composeId, redeploy? (note: first deploy on new services may fail — retry immediately). move: composeId+targetEnvironmentId. loadServices: composeId (must deploy first). loadMounts: composeId+serviceName. saveEnvironment: composeId+env (KEY=VALUE pairs, one per line). cancelDeployment/cleanQueues/killBuild/refreshToken: composeId. readLogs: composeId+containerId, tail?, since?, search?.",
+      "Manage Docker Compose services. create: name+environmentId. get: composeId (metadata + masked env summary — never values). update: composeId+fields (supports sourceType, composeFile for raw/inline, git source fields, autoDeploy). delete/start/stop/getDefaultCommand: composeId. deploy: composeId, redeploy? (note: first deploy on new services may fail — retry immediately). move: composeId+targetEnvironmentId. loadServices: composeId (must deploy first). loadMounts: composeId+serviceName. saveEnvironment: composeId+env (full replace). setEnvVars: composeId + set?/unset? (merge inside the server, masked confirmation only). getEnvKeys: composeId — KEY names only. getEnvValuesUnsafe: composeId — UNSAFE escape hatch that returns full KEY=VALUE pairs (output goes to the tool transcript). cancelDeployment/cleanQueues/killBuild/refreshToken: composeId. readLogs: composeId+containerId, tail?, since?, search?.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       composeId: z.string().optional(),
@@ -231,8 +269,10 @@ export function registerComposeTools(server: ToolServer) {
         .string()
         .optional()
         .describe(
-          "Environment variables as KEY=VALUE pairs, one per line. Example: 'DB_HOST=localhost\\nDB_PORT=5432'",
+          "Environment variables as KEY=VALUE pairs, one per line. Example: 'DB_HOST=localhost\\nDB_PORT=5432'. Used by saveEnvironment (full replace).",
         ),
+      set: z.string().optional().describe("setEnvVars: KEY=VALUE pairs to upsert, one per line."),
+      unset: z.array(z.string()).optional().describe("setEnvVars: list of KEY names to remove."),
       command: z.string().optional(),
       sourceType: z
         .enum(["github", "git", "raw"])

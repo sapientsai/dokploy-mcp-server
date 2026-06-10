@@ -10,7 +10,7 @@ import type { RequestBody } from "../generated"
 import type { DatabaseType, DokployDatabase } from "../types"
 import { DB_ID_FIELDS, DB_TYPES } from "../types"
 import { formatDatabase } from "../utils/formatters"
-import { pickDefined } from "./tool-utils"
+import { formatEnvMutation, listEnvKeys, mergeEnv, pickDefined } from "./tool-utils"
 import type { ToolServer } from "./types"
 
 const ACTIONS = [
@@ -26,6 +26,9 @@ const ACTIONS = [
   "reload",
   "changeStatus",
   "saveEnvironment",
+  "setEnvVars",
+  "getEnvKeys",
+  "getEnvValuesUnsafe",
   "saveExternalPort",
 ] as const
 
@@ -77,6 +80,8 @@ type DatabaseArgs = {
   appName?: string
   applicationStatus?: "idle" | "running" | "done" | "error"
   env?: string
+  set?: string
+  unset?: string[]
   externalPort?: number
   externalGRPCPort?: number
   externalAdminPort?: number
@@ -172,6 +177,37 @@ export function buildDatabaseProgram(
         .post<unknown>(`${dbType}.saveEnvironment`, body)
         .map(() => `Environment saved for database ${args.databaseId}.`)
     })
+    .case("setEnvVars", () =>
+      client
+        .get<DokployDatabase>(`${dbType}.one`, dbBody(dbType, args.databaseId!) as Record<string, string>)
+        .flatMap((db) => {
+          const merged = mergeEnv(db.env, args.set, args.unset)
+          const body: Record<string, unknown> = { ...dbBody(dbType, args.databaseId!), env: merged.blob }
+          return client
+            .post<unknown>(`${dbType}.saveEnvironment`, body)
+            .map(() => formatEnvMutation(`${dbType} database`, args.databaseId!, merged))
+        }),
+    )
+    .case("getEnvKeys", () =>
+      client
+        .get<DokployDatabase>(`${dbType}.one`, dbBody(dbType, args.databaseId!) as Record<string, string>)
+        .map((db) => {
+          const keys = listEnvKeys(db.env)
+          return keys.length
+            ? `# Env Keys for ${dbType} database ${args.databaseId} (${keys.length})\n\n${keys.join("\n")}\n\n(Values hidden — use getEnvValuesUnsafe to reveal.)`
+            : `No env vars set for ${dbType} database ${args.databaseId}.`
+        }),
+    )
+    .case("getEnvValuesUnsafe", () =>
+      client
+        .get<DokployDatabase>(`${dbType}.one`, dbBody(dbType, args.databaseId!) as Record<string, string>)
+        .map((db) => {
+          const env = db.env ?? ""
+          return env
+            ? `# Env (UNSAFE — values revealed) for ${dbType} database ${args.databaseId}\n\n\`\`\`\n${env}\n\`\`\`\n\nThis output contains plaintext secret values. They are now in the tool transcript and any retained agent logs. Prefer getEnvKeys + setEnvVars for routine work.`
+            : `No env vars set for ${dbType} database ${args.databaseId}.`
+        }),
+    )
     .case("saveExternalPort", () => {
       // libsql exposes three port endpoints via a single saveExternalPorts (plural) call.
       if (dbType === "libsql") {
@@ -197,7 +233,7 @@ export function registerDatabaseTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_database",
     description:
-      "Manage databases (postgres/mysql/mariadb/mongo/redis/libsql). create: dbType+name+environmentId+databasePassword. Per-engine extras — postgres/mysql/mariadb: REQUIRE databaseName+databaseUser; mysql/mariadb also accept databaseRootPassword. mongo: REQUIRES databaseUser (databaseName not used). redis: only databasePassword (no databaseName/User). libsql: REQUIRES appName+dockerImage+sqldNode (primary|replica); accepts sqldPrimaryUrl+enableNamespaces. get: dbType+databaseId. update: dbType+databaseId+fields. move: dbType+databaseId+targetEnvironmentId. start/stop/deploy/rebuild/remove: dbType+databaseId. reload: dbType+databaseId+appName. changeStatus: dbType+databaseId+applicationStatus (idle|running|done|error). saveEnvironment: dbType+databaseId+env. saveExternalPort: dbType+databaseId+externalPort (libsql also accepts externalGRPCPort/externalAdminPort).",
+      "Manage databases (postgres/mysql/mariadb/mongo/redis/libsql). create: dbType+name+environmentId+databasePassword. Per-engine extras — postgres/mysql/mariadb: REQUIRE databaseName+databaseUser; mysql/mariadb also accept databaseRootPassword. mongo: REQUIRES databaseUser (databaseName not used). redis: only databasePassword (no databaseName/User). libsql: REQUIRES appName+dockerImage+sqldNode (primary|replica); accepts sqldPrimaryUrl+enableNamespaces. get: dbType+databaseId (returns metadata + masked env summary — never values). update: dbType+databaseId+fields. move: dbType+databaseId+targetEnvironmentId. start/stop/deploy/rebuild/remove: dbType+databaseId. reload: dbType+databaseId+appName. changeStatus: dbType+databaseId+applicationStatus (idle|running|done|error). saveEnvironment: dbType+databaseId+env (full replace). setEnvVars: dbType+databaseId + set?/unset? (merge inside the server, masked confirmation only). getEnvKeys: dbType+databaseId — KEY names only. getEnvValuesUnsafe: dbType+databaseId — UNSAFE escape hatch that returns full KEY=VALUE pairs. saveExternalPort: dbType+databaseId+externalPort (libsql also accepts externalGRPCPort/externalAdminPort).",
     parameters: z.object({
       action: z.enum(ACTIONS),
       dbType: z.enum(DB_TYPES).describe("postgres, mysql, mariadb, mongo, redis, or libsql"),
@@ -220,9 +256,9 @@ export function registerDatabaseTools(server: ToolServer) {
       env: z
         .string()
         .optional()
-        .describe(
-          "Environment variables as KEY=VALUE pairs, one per line. Example: 'DB_HOST=localhost\\nDB_PORT=5432'",
-        ),
+        .describe("Environment variables as KEY=VALUE pairs, one per line. Used by saveEnvironment (full replace)."),
+      set: z.string().optional().describe("setEnvVars: KEY=VALUE pairs to upsert, one per line."),
+      unset: z.array(z.string()).optional().describe("setEnvVars: list of KEY names to remove."),
       externalPort: z.number().optional(),
       externalGRPCPort: z.number().optional().describe("libsql only"),
       externalAdminPort: z.number().optional().describe("libsql only"),

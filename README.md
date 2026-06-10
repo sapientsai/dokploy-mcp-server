@@ -13,14 +13,14 @@ The [official Dokploy MCP](https://github.com/Dokploy/mcp) covers only ~5 of 42 
 | Category       | Official MCP        | This Server                   |
 | -------------- | ------------------- | ----------------------------- |
 | Projects       | 6 tools             | 1 tool (6 actions)            |
-| Applications   | 26 tools            | 1 tool (18 actions)           |
-| Compose        | -                   | 1 tool (15 actions)           |
+| Applications   | 26 tools            | 1 tool (22 actions)           |
+| Compose        | -                   | 1 tool (20 actions)           |
 | Deployments    | -                   | 1 tool (2 actions)            |
 | Docker         | -                   | 1 tool (4 actions)            |
 | Domains        | 9 tools             | 1 tool (8 actions)            |
 | Servers        | -                   | 1 tool (8 actions)            |
 | Settings       | -                   | 1 tool (5 actions)            |
-| Databases      | 26 tools (pg+mysql) | 1 tool (13 actions, all 5 DB) |
+| Databases      | 26 tools (pg+mysql) | 1 tool (16 actions, all 5 DB) |
 | Backups        | -                   | 1 tool (6 actions)            |
 | Environments   | -                   | 1 tool (6 actions)            |
 | Infrastructure | -                   | 1 tool (8 actions)            |
@@ -105,11 +105,20 @@ Actions: `list | get | create | update | remove | duplicate`
 
 Manage projects. `list` and `get` return nested environments with their applications, composes, and databases (with names, IDs, and status), so you can discover service IDs without extra calls. `create` requires `name`. `update` requires `projectId` + fields. `remove` requires `projectId`. `duplicate` requires `sourceEnvironmentId` + `name`.
 
-### `dokploy_application` (18 actions)
+### `dokploy_application` (22 actions)
 
-Actions: `create | get | update | move | deploy | start | stop | delete | markRunning | refreshToken | cleanQueues | killBuild | cancelDeployment | reload | saveEnvironment | saveBuildType | traefikConfig | readMonitoring`
+Actions: `create | get | update | move | deploy | start | stop | delete | markRunning | refreshToken | cleanQueues | killBuild | cancelDeployment | reload | saveEnvironment | setEnvVars | getEnvKeys | getEnvValuesUnsafe | saveBuildType | traefikConfig | readMonitoring | readLogs`
 
-Full application lifecycle. Most actions require `applicationId`. `create` requires `name` + `environmentId`. `deploy` supports `redeploy` flag. `readMonitoring` requires `appName`. `sourceType`:
+Full application lifecycle. Most actions require `applicationId`. `create` requires `name` + `environmentId`. `deploy` supports `redeploy` flag. `readMonitoring` requires `appName`.
+
+**Env handling.** `get` returns a masked env summary (count only) — never the values. Three actions cover the rest:
+
+- `setEnvVars` — granular merge inside the server. Pass `set` (KEY=VALUE per line, upsert) and/or `unset` (array of KEY names). The read-modify-write happens server-side; the tool result is a masked confirmation listing only the changed key names. No untouched-key values ever enter the transcript.
+- `getEnvKeys` — returns KEY names only, sorted. Safe to read.
+- `getEnvValuesUnsafe` — **unsafe escape hatch** that returns the full `KEY=VALUE` blob. Use only when you genuinely need the values; the output is in the tool transcript and any retained agent logs.
+- `saveEnvironment` — full-replace, kept for explicit blob-set workflows.
+
+`sourceType`:
 
 - `github` → `repository` + `owner` + `branch` (+ `githubId` for private)
 - `git` → `customGitUrl` + `customGitBranch`
@@ -119,11 +128,15 @@ Full application lifecycle. Most actions require `applicationId`. `create` requi
 
 The underlying API also supports `gitlab`/`bitbucket`/`gitea`/`drop` sources, but those need provider-specific fields not yet exposed by this tool.
 
-### `dokploy_compose` (15 actions)
+### `dokploy_compose` (20 actions)
 
-Actions: `create | get | update | delete | deploy | start | stop | move | loadServices | loadMounts | getDefaultCommand | cancelDeployment | cleanQueues | killBuild | refreshToken`
+Actions: `create | get | update | delete | deploy | start | stop | move | loadServices | loadMounts | getDefaultCommand | cancelDeployment | cleanQueues | killBuild | refreshToken | saveEnvironment | setEnvVars | getEnvKeys | getEnvValuesUnsafe | readLogs`
 
-Docker Compose management. Most actions require `composeId`. `create` requires `name` + `environmentId`. `loadMounts` requires `serviceName`. `cancelDeployment`/`cleanQueues`/`killBuild`/`refreshToken` require `composeId`. `sourceType`:
+Docker Compose management. Most actions require `composeId`. `create` requires `name` + `environmentId`. `loadMounts` requires `serviceName`. `cancelDeployment`/`cleanQueues`/`killBuild`/`refreshToken` require `composeId`.
+
+**Env handling.** Same shape as `dokploy_application`: `get` returns a masked summary, `setEnvVars` merges, `getEnvKeys` lists key names, `getEnvValuesUnsafe` is the escape hatch, `saveEnvironment` full-replaces.
+
+`sourceType`:
 
 - `github` → `repository` + `owner` + `branch` (+ `composePath`)
 - `git` → `customGitUrl` + `customGitBranch` (+ `customGitSSHKeyId` for private)
@@ -131,11 +144,15 @@ Docker Compose management. Most actions require `composeId`. `create` requires `
 
 The underlying API also supports `gitlab`/`bitbucket`/`gitea` sources, but those need provider-specific fields not yet exposed by this tool.
 
-### `dokploy_database` (13 actions)
+### `dokploy_database` (16 actions)
 
-Actions: `create | get | update | move | start | stop | deploy | rebuild | remove | reload | changeStatus | saveEnvironment | saveExternalPort`
+Actions: `create | get | update | move | start | stop | deploy | rebuild | remove | reload | changeStatus | saveEnvironment | setEnvVars | getEnvKeys | getEnvValuesUnsafe | saveExternalPort`
 
-Unified database management. All actions require `dbType` (`postgres | mysql | mariadb | mongo | redis | libsql`); most also require `databaseId`. `create` baseline: `dbType` + `name` + `environmentId` + `databasePassword`. Per-engine extras:
+Unified database management. All actions require `dbType` (`postgres | mysql | mariadb | mongo | redis | libsql`); most also require `databaseId`. `create` baseline: `dbType` + `name` + `environmentId` + `databasePassword`.
+
+**Env handling.** Same shape as `dokploy_application`: `get` returns a masked summary, `setEnvVars` merges (works for every engine), `getEnvKeys` lists key names, `getEnvValuesUnsafe` is the escape hatch.
+
+Per-engine extras:
 
 - `postgres` / `mysql` / `mariadb` — also require `databaseName` + `databaseUser`. `mysql`/`mariadb` accept `databaseRootPassword`.
 - `mongo` — requires `databaseUser` (no `databaseName`).

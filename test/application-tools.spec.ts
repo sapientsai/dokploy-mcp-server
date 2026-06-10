@@ -39,6 +39,8 @@ type AppArgs = {
   customGitBranch?: string
   githubId?: string
   env?: string
+  set?: string
+  unset?: string[]
   buildArgs?: string
   buildSecrets?: string
   createEnvFile?: boolean
@@ -249,6 +251,63 @@ describe("dokploy_application reload/saveEnvironment/saveBuildType", () => {
       buildArgs: "ARG=1",
       buildSecrets: "SEC=1",
     })
+  })
+})
+
+describe("dokploy_application setEnvVars / getEnvKeys / getEnvValuesUnsafe", () => {
+  const baseApp = {
+    applicationId: "a1",
+    name: "N",
+    appName: "n",
+    applicationStatus: "running",
+    environmentId: "env",
+  }
+
+  it("setEnvVars reads current env, merges, and posts saveEnvironment with the merged blob", async () => {
+    getMock.mockReturnValueOnce(IO.succeed({ ...baseApp, env: "FOO=1\nBAR=2" }))
+    const result = (await tool.execute({
+      action: "setEnvVars",
+      applicationId: "a1",
+      set: "BAR=99\nNEW=value",
+      unset: ["FOO"],
+    })) as string
+
+    expect(getMock).toHaveBeenCalledWith("application.one", { applicationId: "a1" })
+    expect(postMock).toHaveBeenCalledWith("application.saveEnvironment", {
+      applicationId: "a1",
+      env: "BAR=99\nNEW=value",
+      createEnvFile: false,
+      buildArgs: "",
+      buildSecrets: "",
+    })
+    expect(result).toContain("set 2 (BAR, NEW)")
+    expect(result).toContain("unset 1 (FOO)")
+    expect(result).toContain("2 vars total")
+    expect(result).not.toContain("value")
+    expect(result).not.toContain("99")
+  })
+
+  it("getEnvKeys returns sorted KEY names only (no values)", async () => {
+    getMock.mockReturnValueOnce(IO.succeed({ ...baseApp, env: "Z=zee\nA=eh\nM=em" }))
+    const result = (await tool.execute({ action: "getEnvKeys", applicationId: "a1" })) as string
+    expect(result).toContain("A\nM\nZ")
+    expect(result).not.toContain("zee")
+    expect(result).not.toContain("eh")
+    expect(result).not.toContain("em")
+    expect(postMock).not.toHaveBeenCalled()
+  })
+
+  it("getEnvKeys reports 'no env vars set' when empty", async () => {
+    getMock.mockReturnValueOnce(IO.succeed(baseApp))
+    const result = (await tool.execute({ action: "getEnvKeys", applicationId: "a1" })) as string
+    expect(result).toContain("No env vars set")
+  })
+
+  it("getEnvValuesUnsafe echoes the raw env blob with an explicit warning", async () => {
+    getMock.mockReturnValueOnce(IO.succeed({ ...baseApp, env: "SECRET=hunter2" }))
+    const result = (await tool.execute({ action: "getEnvValuesUnsafe", applicationId: "a1" })) as string
+    expect(result).toContain("SECRET=hunter2")
+    expect(result).toContain("UNSAFE")
   })
 
   it("saveBuildType defaults dockerContextPath='.' and dockerBuildStage=''", async () => {
