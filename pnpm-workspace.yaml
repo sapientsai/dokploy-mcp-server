@@ -1,3 +1,13 @@
 allowBuilds:
   esbuild: true
   tldjs: false
+
+# pnpm 11 ignores `public-hoist-pattern` in .npmrc; the canonical home is here.
+# Hoists CLI tool binaries from transitive deps so ts-builds can find them.
+publicHoistPattern:
+  - "*eslint*"
+  - "*prettier*"
+  - "*vitest*"
+  - "typescript"
+  - "*rimraf*"
+  - "*cross-env*"
