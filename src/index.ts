@@ -99,7 +99,7 @@ registerDestinationTools(server)
 
 async function main() {
   // Bootstrap path: failures here are fatal (process.exit), so Either doesn't buy recovery.
-  // eslint-disable-next-line functype/prefer-either -- top-level bootstrap; exit-on-failure is the only sensible behavior.
+
   try {
     setupDokployClient()
 
