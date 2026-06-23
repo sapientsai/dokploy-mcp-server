@@ -1,10 +1,11 @@
-import { IO, Match } from "functype"
+import type { IO } from "functype"
+import { Match } from "functype"
 import { z } from "zod"
 
 import type { DokployClient } from "../client/dokploy-client"
 import { getDokployClient, getOrganizationId } from "../client/dokploy-client"
 import type { ApiError } from "../client/errors"
-import { formatApiError, NetworkError } from "../client/errors"
+import { formatApiError } from "../client/errors"
 import type { RequestBody } from "../generated"
 import type { DokployCertificate, DokployPort, DokploySecurity } from "../types"
 import type { ToolServer } from "./types"
@@ -39,17 +40,10 @@ type InfraArgs = {
   serverId?: string
 }
 
-function resolveOrganizationIdIO(resolve: () => Promise<string>): IO<never, ApiError, string> {
-  return IO.tryPromise({
-    try: resolve,
-    catch: (cause): ApiError => NetworkError("GET", "organizationId", cause),
-  })
-}
-
 export function buildInfrastructureProgram(
   client: Pick<DokployClient, "get" | "post">,
   args: InfraArgs,
-  resolveOrganizationId: () => Promise<string> = getOrganizationId,
+  resolveOrganizationId: () => IO<never, ApiError, string> = getOrganizationId,
 ): IO<never, ApiError, string> {
   return Match(args.action)
     .case("createPort", () =>
@@ -100,7 +94,7 @@ export function buildInfrastructureProgram(
         ),
     )
     .case("createCert", () =>
-      resolveOrganizationIdIO(resolveOrganizationId).flatMap((organizationId) => {
+      resolveOrganizationId().flatMap((organizationId) => {
         const body: Record<string, unknown> = {
           name: args.name!,
           certificateData: args.certificateData!,

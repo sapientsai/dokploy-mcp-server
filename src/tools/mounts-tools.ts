@@ -40,20 +40,20 @@ type MountArgs = {
   mountId?: string
   type?: (typeof MOUNT_TYPES)[number]
   mountPath?: string
-  hostPath?: string | null
-  volumeName?: string | null
-  filePath?: string | null
-  content?: string | null
+  hostPath?: string
+  volumeName?: string
+  filePath?: string
+  content?: string
   serviceType?: (typeof MOUNT_SERVICE_TYPES)[number]
   serviceId?: string
-  applicationId?: string | null
-  composeId?: string | null
-  libsqlId?: string | null
-  mariadbId?: string | null
-  mongoId?: string | null
-  mysqlId?: string | null
-  postgresId?: string | null
-  redisId?: string | null
+  applicationId?: string
+  composeId?: string
+  libsqlId?: string
+  mariadbId?: string
+  mongoId?: string
+  mysqlId?: string
+  postgresId?: string
+  redisId?: string
 }
 
 export function buildMountProgram(
@@ -116,20 +116,20 @@ export function registerMountsTools(server: ToolServer) {
       mountId: z.string().optional(),
       type: z.enum(MOUNT_TYPES).optional().describe("bind | volume | file"),
       mountPath: z.string().optional().describe("Path inside the container"),
-      hostPath: z.string().nullable().optional().describe("Required for type=bind"),
-      volumeName: z.string().nullable().optional().describe("Required for type=volume"),
-      filePath: z.string().nullable().optional().describe("Required for type=file"),
-      content: z.string().nullable().optional().describe("File contents for type=file"),
+      hostPath: z.string().optional().describe("Required for type=bind"),
+      volumeName: z.string().optional().describe("Required for type=volume"),
+      filePath: z.string().optional().describe("Required for type=file"),
+      content: z.string().optional().describe("File contents for type=file"),
       serviceType: z.enum(MOUNT_SERVICE_TYPES).optional(),
       serviceId: z.string().optional().describe("ID of the service the mount attaches to"),
-      applicationId: z.string().nullable().optional(),
-      composeId: z.string().nullable().optional(),
-      libsqlId: z.string().nullable().optional(),
-      mariadbId: z.string().nullable().optional(),
-      mongoId: z.string().nullable().optional(),
-      mysqlId: z.string().nullable().optional(),
-      postgresId: z.string().nullable().optional(),
-      redisId: z.string().nullable().optional(),
+      applicationId: z.string().optional(),
+      composeId: z.string().optional(),
+      libsqlId: z.string().optional(),
+      mariadbId: z.string().optional(),
+      mongoId: z.string().optional(),
+      mysqlId: z.string().optional(),
+      postgresId: z.string().optional(),
+      redisId: z.string().optional(),
     }),
     execute: async (args) => {
       const either = await buildMountProgram(getDokployClient(), args).run()

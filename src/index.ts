@@ -1,5 +1,6 @@
 import { PinoTransport } from "@loglayer/transport-pino"
 import dotenv from "dotenv"
+import { Try } from "functype"
 import { logLayerAdapter, toDirectLogger } from "functype-log"
 import { LogLayer } from "loglayer"
 import pino from "pino"
@@ -98,9 +99,9 @@ registerRegistryTools(server)
 registerDestinationTools(server)
 
 async function main() {
-  // Bootstrap path: failures here are fatal (process.exit), so Either doesn't buy recovery.
-
-  try {
+  // Bootstrap path: failures here are fatal (process.exit), so a Try wrapper
+  // routes any startup error through a single fold instead of try/catch.
+  const result = await Try.async(async () => {
     setupDokployClient()
 
     const useHttp = process.env.TRANSPORT_TYPE === "httpStream" || process.env.TRANSPORT_TYPE === "http"
@@ -124,10 +125,15 @@ async function main() {
         transportType: "stdio",
       })
     }
-  } catch (error) {
-    console.error("[Error] Failed to start server:", error)
-    process.exit(1)
-  }
+  })
+
+  result.fold(
+    (error) => {
+      console.error("[Error] Failed to start server:", error)
+      process.exit(1)
+    },
+    () => undefined,
+  )
 }
 
 process.on("SIGINT", () => {

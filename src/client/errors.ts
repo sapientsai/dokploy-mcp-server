@@ -1,50 +1,31 @@
-export type ApiError =
-  | { _tag: "NetworkError"; method: string; path: string; cause: unknown }
-  | { _tag: "HttpError"; method: string; path: string; status: number; statusText: string; body: string }
-  | { _tag: "JsonParseError"; method: string; path: string; body: string; cause: unknown }
-  | { _tag: "NotInitialized" }
+import type { HttpError } from "functype"
 
-export const NetworkError = (method: string, path: string, cause: unknown): ApiError => ({
-  _tag: "NetworkError",
-  method,
-  path,
-  cause,
-})
+export type ValidationError = { _tag: "ValidationError"; message: string }
+export const ValidationError = (message: string): ValidationError => ({ _tag: "ValidationError", message })
 
-export const HttpError = (
-  method: string,
-  path: string,
-  status: number,
-  statusText: string,
-  body: string,
-): ApiError => ({
-  _tag: "HttpError",
-  method,
-  path,
-  status,
-  statusText,
-  body,
-})
-
-export const JsonParseError = (method: string, path: string, body: string, cause: unknown): ApiError => ({
-  _tag: "JsonParseError",
-  method,
-  path,
-  body,
-  cause,
-})
-
-export const NotInitialized: ApiError = { _tag: "NotInitialized" }
+/**
+ * Domain error union for the Dokploy client. Wraps functype's `HttpError`
+ * tagged ADT (NetworkError | HttpStatusError | DecodeError) and adds a
+ * `ValidationError` variant for synchronous arg-validation failures in
+ * tool programs. Recovery and classification happen via `.catchTag(...)`
+ * on the IO chain; final rendering to the SomaMCP boundary uses
+ * `formatApiError`.
+ */
+export type ApiError = HttpError | ValidationError
 
 export function formatApiError(err: ApiError): string {
   switch (err._tag) {
     case "NetworkError":
-      return `Network error on ${err.method} /${err.path}: ${err.cause instanceof Error ? err.cause.message : String(err.cause)}`
-    case "HttpError":
-      return `Dokploy API error (${err.status} ${err.statusText}) on ${err.method} /${err.path}: ${err.body}`
-    case "JsonParseError":
-      return `Failed to parse JSON from ${err.method} /${err.path}: ${err.cause instanceof Error ? err.cause.message : String(err.cause)}`
-    case "NotInitialized":
-      return "Dokploy client not initialized. Ensure DOKPLOY_URL and DOKPLOY_API_KEY environment variables are set."
+      return `Network error on ${err.method} ${err.url}: ${
+        err.cause instanceof Error ? err.cause.message : String(err.cause)
+      }`
+    case "HttpStatusError":
+      return `Dokploy API error (${err.status} ${err.statusText}) on ${err.method} ${err.url}: ${err.body}`
+    case "DecodeError":
+      return `Failed to decode response from ${err.method} ${err.url}: ${
+        err.cause instanceof Error ? err.cause.message : String(err.cause)
+      }`
+    case "ValidationError":
+      return err.message
   }
 }

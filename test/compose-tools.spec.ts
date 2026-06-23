@@ -1,7 +1,6 @@
-import { IO } from "functype"
+import { HttpErrors, IO } from "functype"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { HttpError } from "../src/client/errors"
 import { registerComposeTools } from "../src/tools/compose-tools"
 import { captureTool } from "./support/tool-harness"
 
@@ -189,13 +188,17 @@ describe("dokploy_compose loadServices / loadMounts / getDefaultCommand", () => 
   })
 
   it("loadServices returns helpful message on 404", async () => {
-    getMock.mockReturnValueOnce(IO.fail(HttpError("GET", "compose.loadServices", 404, "Not Found", "NOT_FOUND")))
+    getMock.mockReturnValueOnce(
+      IO.fail(HttpErrors.httpStatusError("compose.loadServices", "GET", 404, "Not Found", "NOT_FOUND")),
+    )
     const result = (await tool.execute({ action: "loadServices", composeId: "c1" })) as string
     expect(result).toContain("No services loaded yet")
   })
 
   it("loadServices re-throws non-404 errors", async () => {
-    getMock.mockReturnValueOnce(IO.fail(HttpError("GET", "compose.loadServices", 500, "Internal", "boom")))
+    getMock.mockReturnValueOnce(
+      IO.fail(HttpErrors.httpStatusError("compose.loadServices", "GET", 500, "Internal", "boom")),
+    )
     await expect(tool.execute({ action: "loadServices", composeId: "c1" })).rejects.toThrow(/500/)
   })
 

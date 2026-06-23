@@ -86,7 +86,7 @@ type DatabaseArgs = {
   externalGRPCPort?: number
   externalAdminPort?: number
   sqldNode?: "primary" | "replica"
-  sqldPrimaryUrl?: string | null
+  sqldPrimaryUrl?: string
   enableNamespaces?: boolean
 }
 
@@ -263,7 +263,7 @@ export function registerDatabaseTools(server: ToolServer) {
       externalGRPCPort: z.number().optional().describe("libsql only"),
       externalAdminPort: z.number().optional().describe("libsql only"),
       sqldNode: z.enum(["primary", "replica"]).optional().describe("libsql sqld role"),
-      sqldPrimaryUrl: z.string().nullable().optional().describe("libsql replica primary URL"),
+      sqldPrimaryUrl: z.string().optional().describe("libsql replica primary URL"),
       enableNamespaces: z.boolean().optional().describe("libsql multi-tenant namespaces"),
     }),
     execute: async (args) => {

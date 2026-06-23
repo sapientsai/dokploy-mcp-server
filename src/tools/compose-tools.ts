@@ -162,7 +162,7 @@ export function buildComposeProgram(
           ...(args.type && { type: args.type }),
         })
         .map((services) => `# Compose Services\n\n\`\`\`json\n${JSON.stringify(services, null, 2)}\n\`\`\``)
-        .catchTag("HttpError", (err) =>
+        .catchTag("HttpStatusError", (err) =>
           err.status === 404
             ? IO.succeed("No services loaded yet. Deploy the compose service first, then call loadServices.")
             : IO.fail(err),
