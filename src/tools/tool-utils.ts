@@ -1,3 +1,13 @@
+/* eslint-disable functype/prefer-option --
+ * Env-blob helpers accept `string | null | undefined` because they sit at the
+ * Dokploy API boundary: `application.env` / `compose.env` / `*.env` arrive as
+ * raw text that can be missing (undefined), explicitly empty (null), or a
+ * KEY=VALUE blob. Wrapping in Option<string> here would force every caller
+ * (formatters, env merge tools, getEnvKeys) to unwrap before parsing —
+ * unnecessary ceremony for what is functionally "treat absent and empty the
+ * same." Nullish handling lives in `parseEnvLines` itself.
+ */
+
 /**
  * Returns a new object containing only the properties of `source` whose keys
  * appear in `keys` AND whose values are not `undefined`. Defined falsy values
@@ -15,6 +25,9 @@ export function pickDefined<T extends Record<string, unknown>, K extends readonl
 }
 
 export type EnvLine = { kind: "raw"; text: string } | { kind: "kv"; key: string; value: string }
+
+type EnvKvLine = Extract<EnvLine, { kind: "kv" }>
+const isKv = (l: EnvLine): l is EnvKvLine => l.kind === "kv"
 
 /**
  * Parse a KEY=VALUE blob into a positional list. Blank, comment-only, and
@@ -51,37 +64,32 @@ export function mergeEnv(
   unsetKeys: readonly string[] | undefined,
 ): { blob: string; setKeys: string[]; unsetKeys: string[] } {
   const existing = parseEnvLines(current)
-  const setMap = new Map<string, string>()
-  for (const line of parseEnvLines(setBlob)) {
-    if (line.kind === "kv") setMap.set(line.key, line.value)
-  }
-  const unsetSet = new Set(unsetKeys ?? [])
-  const existingKeys = new Set(
-    existing.filter((l): l is Extract<EnvLine, { kind: "kv" }> => l.kind === "kv").map((l) => l.key),
-  )
+  const setEntries: EnvKvLine[] = parseEnvLines(setBlob).filter(isKv)
+  const setLookup: Record<string, string> = Object.fromEntries(setEntries.map((l) => [l.key, l.value]))
+  const setKeyList = setEntries.map((l) => l.key)
+  const unsetList = unsetKeys ?? []
+  const isUnset = (k: string): boolean => unsetList.includes(k)
+  const isSet = (k: string): boolean => Object.prototype.hasOwnProperty.call(setLookup, k)
 
-  const seen = new Set<string>()
-  const merged: EnvLine[] = []
-  for (const line of existing) {
-    if (line.kind === "raw") {
-      merged.push(line)
-      continue
-    }
-    if (unsetSet.has(line.key)) continue
-    if (setMap.has(line.key)) {
-      merged.push({ kind: "kv", key: line.key, value: setMap.get(line.key)! })
-      seen.add(line.key)
-    } else {
-      merged.push(line)
-    }
-  }
-  for (const [key, value] of setMap) {
-    if (!seen.has(key)) merged.push({ kind: "kv", key, value })
-  }
-  const actualUnset = Array.from(unsetSet).filter((k) => existingKeys.has(k))
+  const existingKvKeys = existing.filter(isKv).map((l) => l.key)
+  const replacedKeys = existingKvKeys.filter((k) => isSet(k) && !isUnset(k))
+  const isReplaced = (k: string): boolean => replacedKeys.includes(k)
+
+  const fromExisting = existing.flatMap<EnvLine>((line) => {
+    if (line.kind === "raw") return [line]
+    if (isUnset(line.key)) return []
+    if (isSet(line.key)) return [{ kind: "kv", key: line.key, value: setLookup[line.key] }]
+    return [line]
+  })
+  const appended: EnvLine[] = setEntries
+    .filter((l) => !isReplaced(l.key))
+    .map((l) => ({ kind: "kv", key: l.key, value: l.value }))
+
+  const merged = [...fromExisting, ...appended]
+  const actualUnset = unsetList.filter((k) => existingKvKeys.includes(k))
   return {
     blob: serializeEnvLines(merged),
-    setKeys: Array.from(setMap.keys()),
+    setKeys: setKeyList,
     unsetKeys: actualUnset,
   }
 }
@@ -92,7 +100,7 @@ export function mergeEnv(
  */
 export function listEnvKeys(blob: string | null | undefined): string[] {
   return parseEnvLines(blob)
-    .filter((l): l is Extract<EnvLine, { kind: "kv" }> => l.kind === "kv")
+    .filter(isKv)
     .map((l) => l.key)
     .sort()
 }

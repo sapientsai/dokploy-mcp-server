@@ -41,7 +41,7 @@ type RegistryArgs = {
   password?: string
   registryUrl?: string
   registryType?: "cloud"
-  imagePrefix?: string | null
+  imagePrefix?: string
   serverId?: string
 }
 
@@ -106,7 +106,7 @@ export function registerRegistryTools(server: ToolServer) {
       password: z.string().min(1).optional(),
       registryUrl: z.string().optional().describe("Registry URL, e.g. ghcr.io or registry.hub.docker.com"),
       registryType: z.enum(["cloud"]).optional(),
-      imagePrefix: z.string().nullable().optional().describe("Optional image prefix prepended to pull paths"),
+      imagePrefix: z.string().optional().describe("Optional image prefix prepended to pull paths"),
       serverId: z.string().optional(),
     }),
     execute: async (args) => {

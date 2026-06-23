@@ -4,7 +4,7 @@ import { z } from "zod"
 import type { DokployClient } from "../client/dokploy-client"
 import { getDokployClient } from "../client/dokploy-client"
 import type { ApiError } from "../client/errors"
-import { formatApiError } from "../client/errors"
+import { formatApiError, ValidationError } from "../client/errors"
 import type { DokployContainer } from "../types"
 import { formatContainerList } from "../utils/formatters"
 import type { ToolServer } from "./types"
@@ -86,7 +86,7 @@ export function buildDockerProgram(
           if (config == null) return notFoundHint
           return `# Container Config\n\n\`\`\`json\n${JSON.stringify(config, null, 2)}\n\`\`\``
         })
-        .catchTag("HttpError", (err) =>
+        .catchTag("HttpStatusError", (err) =>
           // 400 = malformed containerId (fails the API's `^[a-zA-Z0-9.\-_]+$` pattern).
           // 404 kept for robustness in case Dokploy starts returning it in future versions.
           err.status === 400 || err.status === 404 ? IO.succeed(notFoundHint) : IO.fail(err),
@@ -94,14 +94,12 @@ export function buildDockerProgram(
     })
     .case("findContainers", () => {
       if (!args.method) {
-        // eslint-disable-next-line functype/prefer-either -- validation failure surfaced as plain Error for SomaMCP classification.
-        throw new Error("findContainers requires method (match|label|stack|service)")
+        return IO.fail<ApiError>(ValidationError("findContainers requires method (match|label|stack|service)"))
       }
       const { method } = args
       // The label endpoint REQUIRES `type` (standalone|swarm); the API rejects without it.
       if (method === "label" && !args.type) {
-        // eslint-disable-next-line functype/prefer-either -- boundary validation; surfaces as a clear classified error.
-        throw new Error("findContainers method=label requires type (standalone|swarm)")
+        return IO.fail<ApiError>(ValidationError("findContainers method=label requires type (standalone|swarm)"))
       }
       const params: Record<string, string> = { appName: args.appName! }
       if (args.serverId) params.serverId = args.serverId

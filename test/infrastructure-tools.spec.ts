@@ -135,7 +135,7 @@ describe("dokploy_infrastructure certificates", () => {
   })
 
   it("createCert resolves organizationId and includes it in body", async () => {
-    getOrganizationIdMock.mockResolvedValue("org-xyz")
+    getOrganizationIdMock.mockReturnValue(IO.succeed("org-xyz"))
     postMock.mockReturnValueOnce(IO.succeed({ certificateId: "c1", name: "NewCert" }))
     await tool.execute({
       action: "createCert",
@@ -157,7 +157,7 @@ describe("dokploy_infrastructure certificates", () => {
   })
 
   it("createCert omits autoRenew/serverId when absent", async () => {
-    getOrganizationIdMock.mockResolvedValue("org-xyz")
+    getOrganizationIdMock.mockReturnValue(IO.succeed("org-xyz"))
     postMock.mockReturnValueOnce(IO.succeed({ certificateId: "c1", name: "NewCert" }))
     await tool.execute({
       action: "createCert",
@@ -174,7 +174,7 @@ describe("dokploy_infrastructure certificates", () => {
   })
 
   it("createCert passes autoRenew=false explicitly", async () => {
-    getOrganizationIdMock.mockResolvedValue("org-xyz")
+    getOrganizationIdMock.mockReturnValue(IO.succeed("org-xyz"))
     postMock.mockReturnValueOnce(IO.succeed({ certificateId: "c1", name: "N" }))
     await tool.execute({
       action: "createCert",

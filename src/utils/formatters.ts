@@ -1,3 +1,12 @@
+/* eslint-disable functype/prefer-option --
+ * Formatters consume API DTO fields that arrive as `string | null | undefined`
+ * directly from the Dokploy REST API. The `orElse` helper normalizes nullish
+ * values to a display fallback at the rendering boundary; wrapping every DTO
+ * field in Option<T> would require allocating Option per-field across every
+ * response and obscure the formatter's one job (turn DTO → markdown).
+ */
+import { Try } from "functype"
+
 import { countEnvKeys } from "../tools/tool-utils"
 import type {
   DatabaseType,
@@ -34,14 +43,12 @@ function resolveDbId(db: DokployDatabase, dbType: DatabaseType): string {
 
 function formatDate(dateStr?: string): string {
   if (!dateStr) return "N/A"
-  try {
-    return new Date(dateStr)
+  return Try(() =>
+    new Date(dateStr)
       .toISOString()
       .replace("T", " ")
-      .replace(/\.\d+Z$/, " UTC")
-  } catch {
-    return dateStr
-  }
+      .replace(/\.\d+Z$/, " UTC"),
+  ).orElse(dateStr)
 }
 
 function statusIcon(status: string | undefined | null): string {
@@ -54,30 +61,21 @@ function statusIcon(status: string | undefined | null): string {
 }
 
 function formatEnvironmentServices(env: DokployEnvironment): string {
-  const lines: string[] = []
+  const appLines = (env.applications ?? []).map(
+    (app) => `    - App: **${app.name}** ${statusIcon(app.applicationStatus)} (ID: ${app.applicationId})`,
+  )
+  const composeLines = (env.compose ?? []).map(
+    (c) => `    - Compose: **${c.name}** ${statusIcon(c.composeStatus)} (ID: ${c.composeId})`,
+  )
+  const dbLines = DB_TYPES.flatMap((dbType) =>
+    (env[dbType] ?? []).map((db) => {
+      const name = db.name ?? dbType
+      const id = resolveDbId(db, dbType)
+      return `    - ${dbType}: **${name}** ${statusIcon(db.applicationStatus)} (ID: ${id})`
+    }),
+  )
 
-  if (env.applications?.length) {
-    for (const app of env.applications) {
-      lines.push(`    - App: **${app.name}** ${statusIcon(app.applicationStatus)} (ID: ${app.applicationId})`)
-    }
-  }
-  if (env.compose?.length) {
-    for (const c of env.compose) {
-      lines.push(`    - Compose: **${c.name}** ${statusIcon(c.composeStatus)} (ID: ${c.composeId})`)
-    }
-  }
-  for (const dbType of DB_TYPES) {
-    const dbs = env[dbType]
-    if (dbs?.length) {
-      for (const db of dbs) {
-        const name = db.name ?? dbType
-        const id = resolveDbId(db, dbType)
-        lines.push(`    - ${dbType}: **${name}** ${statusIcon(db.applicationStatus)} (ID: ${id})`)
-      }
-    }
-  }
-
-  return lines.join("\n")
+  return [...appLines, ...composeLines, ...dbLines].join("\n")
 }
 
 export function formatProject(project: DokployProject): string {

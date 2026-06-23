@@ -29,13 +29,13 @@ type DestinationArgs = {
   action: (typeof ACTIONS)[number]
   destinationId?: string
   name?: string
-  provider?: string | null
+  provider?: string
   accessKey?: string
   bucket?: string
   region?: string
   endpoint?: string
   secretAccessKey?: string
-  additionalFlags?: string[] | null
+  additionalFlags?: string[]
   serverId?: string
 }
 
@@ -89,7 +89,7 @@ export function registerDestinationTools(server: ToolServer) {
       action: z.enum(ACTIONS),
       destinationId: z.string().optional(),
       name: z.string().min(1).optional(),
-      provider: z.string().nullable().optional().describe("Provider hint for rclone (e.g. AWS, Cloudflare, MinIO)"),
+      provider: z.string().optional().describe("Provider hint for rclone (e.g. AWS, Cloudflare, MinIO)"),
       accessKey: z.string().optional(),
       bucket: z.string().optional(),
       region: z.string().optional(),
@@ -97,7 +97,6 @@ export function registerDestinationTools(server: ToolServer) {
       secretAccessKey: z.string().optional(),
       additionalFlags: z
         .array(z.string().regex(/^--[a-zA-Z0-9-]+(=[a-zA-Z0-9._:/@-]+)?$/))
-        .nullable()
         .optional()
         .describe("Extra rclone flags, e.g. ['--s3-no-check-bucket']"),
       serverId: z.string().optional(),

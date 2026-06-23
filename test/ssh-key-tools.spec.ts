@@ -38,7 +38,7 @@ beforeEach(() => {
 
 describe("dokploy_ssh_key create", () => {
   it("resolves organizationId and posts sshKey.create", async () => {
-    getOrganizationIdMock.mockResolvedValue("org-xyz")
+    getOrganizationIdMock.mockReturnValue(IO.succeed("org-xyz"))
     postMock.mockReturnValueOnce(IO.succeed({ sshKeyId: "k1", name: "deploy" }))
     await tool.execute({
       action: "create",
@@ -58,7 +58,7 @@ describe("dokploy_ssh_key create", () => {
   })
 
   it("omits description when absent", async () => {
-    getOrganizationIdMock.mockResolvedValue("org-xyz")
+    getOrganizationIdMock.mockReturnValue(IO.succeed("org-xyz"))
     postMock.mockReturnValueOnce(IO.succeed({ sshKeyId: "k1", name: "deploy" }))
     await tool.execute({ action: "create", name: "deploy", privateKey: "p", publicKey: "pk" })
     expect(postMock).toHaveBeenCalledWith("sshKey.create", {
@@ -112,7 +112,7 @@ describe("dokploy_ssh_key update", () => {
 
 describe("dokploy_ssh_key generate", () => {
   it("defaults type to ed25519 and includes organizationId", async () => {
-    getOrganizationIdMock.mockResolvedValue("org-xyz")
+    getOrganizationIdMock.mockReturnValue(IO.succeed("org-xyz"))
     postMock.mockReturnValueOnce(IO.succeed({ sshKeyId: "k1", name: "gen" }))
     await tool.execute({ action: "generate" })
     expect(postMock).toHaveBeenCalledWith("sshKey.generate", {
@@ -122,7 +122,7 @@ describe("dokploy_ssh_key generate", () => {
   })
 
   it("respects explicit type", async () => {
-    getOrganizationIdMock.mockResolvedValue("org-xyz")
+    getOrganizationIdMock.mockReturnValue(IO.succeed("org-xyz"))
     postMock.mockReturnValueOnce(IO.succeed({ sshKeyId: "k1", name: "gen" }))
     await tool.execute({ action: "generate", type: "rsa" })
     expect(postMock).toHaveBeenCalledWith("sshKey.generate", {

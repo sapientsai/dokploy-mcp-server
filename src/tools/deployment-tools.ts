@@ -1,11 +1,10 @@
-import type { IO } from "functype"
-import { Match } from "functype"
+import { IO, Match } from "functype"
 import { z } from "zod"
 
 import type { DokployClient } from "../client/dokploy-client"
 import { getDokployClient } from "../client/dokploy-client"
 import type { ApiError } from "../client/errors"
-import { formatApiError } from "../client/errors"
+import { formatApiError, ValidationError } from "../client/errors"
 import type { DokployDeployment } from "../types"
 import { formatDeploymentList } from "../utils/formatters"
 import type { ToolServer } from "./types"
@@ -58,8 +57,7 @@ export function buildDeploymentProgram(
           .get<DokployDeployment[]>("deployment.allByType", { type: args.type, id: args.id })
           .map(formatDeploymentList)
       }
-      // eslint-disable-next-line functype/prefer-either -- validation failure surfaced as plain Error for SomaMCP classification.
-      throw new Error("Provide applicationId, composeId, serverId, or type+id")
+      return IO.fail<ApiError>(ValidationError("Provide applicationId, composeId, serverId, or type+id"))
     })
     .case("killProcess", () =>
       client

@@ -1,3 +1,12 @@
+/* eslint-disable functype/prefer-option --
+ * These DTOs mirror Dokploy's REST API response shapes (see src/generated/dokploy-api.ts).
+ * Fields typed as `string | null` reflect the wire format — the Dokploy server can return
+ * either an absent key (undefined) or an explicit `null` for unset optional values. The
+ * Option<T> wrapping happens at the rendering boundary via `formatters.ts#orElse`, not in
+ * the DTO definitions, because these types are read from JSON in one place (the client)
+ * and consumed by many formatters/tools — keeping them isomorphic with the OpenAPI spec
+ * makes codegen reviews and incident debugging easier.
+ */
 export const DB_TYPES = ["postgres", "mysql", "mariadb", "mongo", "redis", "libsql"] as const
 export type DatabaseType = (typeof DB_TYPES)[number]
 

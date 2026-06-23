@@ -1,11 +1,10 @@
-import type { IO } from "functype"
-import { Match } from "functype"
+import { IO, Match } from "functype"
 import { z } from "zod"
 
 import type { DokployClient } from "../client/dokploy-client"
 import { getDokployClient } from "../client/dokploy-client"
 import type { ApiError } from "../client/errors"
-import { formatApiError } from "../client/errors"
+import { formatApiError, ValidationError } from "../client/errors"
 import type { RequestBody } from "../generated"
 import type { DokployDomain } from "../types"
 import { formatDomain, formatDomainList } from "../utils/formatters"
@@ -58,8 +57,7 @@ export function buildDomainProgram(
     )
     .case("list", () => {
       if (!args.applicationId && !args.composeId) {
-        // eslint-disable-next-line functype/prefer-either -- validation failure surfaced as plain Error for SomaMCP classification.
-        throw new Error("Provide applicationId or composeId")
+        return IO.fail<ApiError>(ValidationError("Provide applicationId or composeId"))
       }
       const io = args.applicationId
         ? client.get<DokployDomain[]>("domain.byApplicationId", { applicationId: args.applicationId })

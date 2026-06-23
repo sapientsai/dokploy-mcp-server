@@ -10,11 +10,24 @@ function mockResponse(body: unknown, init: Partial<{ ok: boolean; status: number
     ok: init.ok ?? true,
     status: init.status ?? 200,
     statusText: init.statusText ?? "OK",
+    headers: new Headers({ "content-type": "application/json" }),
     text: async () => text,
-  } as Response
+    json: async () => (typeof body === "string" ? body : body),
+  } as unknown as Response
 }
 
 describe("DokployClient construction", () => {
+  const fetchMock = vi.fn()
+
+  beforeEach(() => {
+    fetchMock.mockReset()
+    vi.stubGlobal("fetch", fetchMock)
+  })
+
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
   it("strips trailing slashes from base URL", () => {
     const client = new DokployClient("https://dokploy.example.com///", "k")
     expect(client).toBeDefined()
@@ -23,6 +36,22 @@ describe("DokployClient construction", () => {
   it("accepts base URL without trailing slash", () => {
     const client = new DokployClient("https://dokploy.example.com", "k")
     expect(client).toBeDefined()
+  })
+
+  it("does not double the /api segment when caller already included it", async () => {
+    fetchMock.mockResolvedValue(mockResponse({ ok: true }))
+    const client = new DokployClient("https://dokploy.example.com/api", "k")
+    await client.get("settings.health").run()
+    const [url] = fetchMock.mock.calls[0] as FetchArgs
+    expect(url).toBe("https://dokploy.example.com/api/settings.health")
+  })
+
+  it("appends /api when caller omits it", async () => {
+    fetchMock.mockResolvedValue(mockResponse({ ok: true }))
+    const client = new DokployClient("https://dokploy.example.com", "k")
+    await client.get("settings.health").run()
+    const [url] = fetchMock.mock.calls[0] as FetchArgs
+    expect(url).toBe("https://dokploy.example.com/api/settings.health")
   })
 })
 
@@ -50,7 +79,6 @@ describe("DokployClient.get", () => {
     expect(init.method).toBe("GET")
     expect((init.headers as Record<string, string>)["x-api-key"]).toBe("secret-key")
     expect((init.headers as Record<string, string>).Accept).toBe("application/json")
-    expect((init.headers as Record<string, string>)["Content-Type"]).toBeUndefined()
     expect(init.body).toBeUndefined()
   })
 
@@ -117,18 +145,7 @@ describe("DokployClient.post", () => {
     expect(init.body).toBe(JSON.stringify({ name: "New", description: "desc" }))
   })
 
-  it("omits Content-Type and body when no body provided", async () => {
-    fetchMock.mockResolvedValue(mockResponse({ ok: true }))
-    const client = new DokployClient("https://dok.example.com", "k")
-
-    await client.post("application.start").run()
-
-    const [, init] = fetchMock.mock.calls[0] as FetchArgs
-    expect((init.headers as Record<string, string>)["Content-Type"]).toBeUndefined()
-    expect(init.body).toBeUndefined()
-  })
-
-  it("returns Left HttpError with status, method, path, and response text on non-2xx", async () => {
+  it("returns Left HttpStatusError with status, method, url, and response body on non-2xx", async () => {
     fetchMock.mockResolvedValue(
       mockResponse("boom — bad request", { ok: false, status: 400, statusText: "Bad Request" }),
     )
@@ -138,31 +155,12 @@ describe("DokployClient.post", () => {
     expect(either.isLeft()).toBe(true)
     if (either.isLeft()) {
       expect(either.value).toMatchObject({
-        _tag: "HttpError",
+        _tag: "HttpStatusError",
         method: "POST",
-        path: "project.create",
+        url: "https://dok.example.com/api/project.create",
         status: 400,
         statusText: "Bad Request",
-        body: "boom — bad request",
       })
-    }
-  })
-
-  it("falls back to 'Unknown error' body when response text cannot be read", async () => {
-    fetchMock.mockResolvedValue({
-      ok: false,
-      status: 500,
-      statusText: "Internal Server Error",
-      text: async () => {
-        throw new Error("stream closed")
-      },
-    } as unknown as Response)
-    const client = new DokployClient("https://dok.example.com", "k")
-
-    const either = await client.get("project.all").run()
-    expect(either.isLeft()).toBe(true)
-    if (either.isLeft()) {
-      expect(either.value).toMatchObject({ _tag: "HttpError", status: 500, body: "Unknown error" })
     }
   })
 })
@@ -188,15 +186,17 @@ describe("client module state", () => {
   it("initializeDokployClient sets the singleton and clears cached organizationId", async () => {
     const mod = await import("../src/client/dokploy-client")
 
-    // Seed cached organizationId via first lookup
     fetchMock.mockResolvedValueOnce(mockResponse({ organizationId: "org-1" }))
     mod.initializeDokployClient("https://dok.example.com", "k")
-    expect(await mod.getOrganizationId()).toBe("org-1")
+    const first = await mod.getOrganizationId().run()
+    expect(first.isRight()).toBe(true)
+    if (first.isRight()) expect(first.value).toBe("org-1")
 
-    // Re-init should reset cache — next lookup hits fetch again
     mod.initializeDokployClient("https://dok.example.com", "k2")
     fetchMock.mockResolvedValueOnce(mockResponse({ organizationId: "org-2" }))
-    expect(await mod.getOrganizationId()).toBe("org-2")
+    const second = await mod.getOrganizationId().run()
+    expect(second.isRight()).toBe(true)
+    if (second.isRight()) expect(second.value).toBe("org-2")
   })
 
   it("getOrganizationId caches after first success", async () => {
@@ -204,11 +204,11 @@ describe("client module state", () => {
     mod.initializeDokployClient("https://dok.example.com", "k")
     fetchMock.mockResolvedValueOnce(mockResponse({ organizationId: "org-cached" }))
 
-    const first = await mod.getOrganizationId()
-    const second = await mod.getOrganizationId()
+    const first = await mod.getOrganizationId().run()
+    const second = await mod.getOrganizationId().run()
 
-    expect(first).toBe("org-cached")
-    expect(second).toBe("org-cached")
+    expect(first.isRight() && first.value).toBe("org-cached")
+    expect(second.isRight() && second.value).toBe("org-cached")
     expect(fetchMock).toHaveBeenCalledTimes(1)
   })
 
@@ -219,22 +219,26 @@ describe("client module state", () => {
     fetchMock.mockResolvedValueOnce(mockResponse("forbidden", { ok: false, status: 403, statusText: "Forbidden" }))
     fetchMock.mockResolvedValueOnce(mockResponse([{ organizationId: "org-from-project" }]))
 
-    const orgId = await mod.getOrganizationId()
-
-    expect(orgId).toBe("org-from-project")
+    const either = await mod.getOrganizationId().run()
+    expect(either.isRight()).toBe(true)
+    if (either.isRight()) expect(either.value).toBe("org-from-project")
     const firstUrl = (fetchMock.mock.calls[0] as FetchArgs)[0]
     const secondUrl = (fetchMock.mock.calls[1] as FetchArgs)[0]
     expect(firstUrl).toContain("/api/admin.one")
     expect(secondUrl).toContain("/api/project.all")
   })
 
-  it("getOrganizationId throws if fallback finds no projects", async () => {
+  it("getOrganizationId returns Left ValidationError if fallback finds no projects", async () => {
     const mod = await import("../src/client/dokploy-client")
     mod.initializeDokployClient("https://dok.example.com", "k")
 
     fetchMock.mockResolvedValueOnce(mockResponse("forbidden", { ok: false, status: 403, statusText: "Forbidden" }))
     fetchMock.mockResolvedValueOnce(mockResponse([]))
 
-    await expect(mod.getOrganizationId()).rejects.toThrow(/Cannot resolve organizationId/)
+    const either = await mod.getOrganizationId().run()
+    expect(either.isLeft()).toBe(true)
+    if (either.isLeft()) {
+      expect(either.value).toMatchObject({ _tag: "ValidationError" })
+    }
   })
 })

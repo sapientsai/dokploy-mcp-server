@@ -1,7 +1,6 @@
-import { IO } from "functype"
+import { HttpErrors, IO } from "functype"
 import { beforeEach, describe, expect, it, vi } from "vitest"
 
-import { HttpError } from "../src/client/errors"
 import { registerDockerTools } from "../src/tools/docker-tools"
 import { captureTool } from "./support/tool-harness"
 
@@ -77,13 +76,13 @@ describe("dokploy_docker getConfig", () => {
   })
 
   it("returns helpful message on 400 (malformed containerId)", async () => {
-    getMock.mockReturnValueOnce(IO.fail(HttpError("GET", "docker.getConfig", 400, "Bad Request", "")))
+    getMock.mockReturnValueOnce(IO.fail(HttpErrors.httpStatusError("docker.getConfig", "GET", 400, "Bad Request", "")))
     const result = (await tool.execute({ action: "getConfig", containerId: "c1" })) as string
     expect(result).toContain("Ensure the containerId is a valid Docker container ID")
   })
 
   it("returns helpful message on 404 (container not found on server)", async () => {
-    getMock.mockReturnValueOnce(IO.fail(HttpError("GET", "docker.getConfig", 404, "Not Found", "")))
+    getMock.mockReturnValueOnce(IO.fail(HttpErrors.httpStatusError("docker.getConfig", "GET", 404, "Not Found", "")))
     const result = (await tool.execute({ action: "getConfig", containerId: "c1" })) as string
     expect(result).toContain("Ensure the containerId is a valid Docker container ID")
   })
@@ -103,7 +102,7 @@ describe("dokploy_docker getConfig", () => {
   })
 
   it("re-throws 5xx errors", async () => {
-    getMock.mockReturnValueOnce(IO.fail(HttpError("GET", "docker.getConfig", 500, "Internal", "boom")))
+    getMock.mockReturnValueOnce(IO.fail(HttpErrors.httpStatusError("docker.getConfig", "GET", 500, "Internal", "boom")))
     await expect(tool.execute({ action: "getConfig", containerId: "c1" })).rejects.toThrow(/500/)
   })
 })
