@@ -322,4 +322,15 @@ describe("dokploy_database setEnvVars / getEnvKeys / getEnvValuesUnsafe", () => 
     expect(result).toContain("SECRET=hunter2")
     expect(result).toContain("UNSAFE")
   })
+
+  it("search calls {dbType}.search with query fields", async () => {
+    getMock.mockReturnValueOnce(IO.succeed([]))
+    await tool.execute({ action: "search", dbType: "postgres", q: "prod", projectId: "p1", limit: 10 })
+    expect(getMock).toHaveBeenCalledWith("postgres.search", { q: "prod", projectId: "p1", limit: 10 })
+  })
+
+  it("search rejects libsql (no search endpoint) without hitting the API", async () => {
+    await expect(tool.execute({ action: "search", dbType: "libsql", q: "x" })).rejects.toThrow(/libsql/)
+    expect(getMock).not.toHaveBeenCalled()
+  })
 })

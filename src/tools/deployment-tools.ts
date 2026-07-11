@@ -9,7 +9,7 @@ import type { DokployDeployment } from "../types"
 import { formatDeploymentList } from "../utils/formatters"
 import type { ToolServer } from "./types"
 
-const ACTIONS = ["list", "killProcess"] as const
+const ACTIONS = ["list", "queueList", "killProcess", "readLogs", "remove"] as const
 
 const DEPLOYMENT_TYPES = [
   "application",
@@ -29,6 +29,7 @@ type DeploymentArgs = {
   serverId?: string
   type?: (typeof DEPLOYMENT_TYPES)[number]
   id?: string
+  tail?: number
 }
 
 export function buildDeploymentProgram(
@@ -59,10 +60,29 @@ export function buildDeploymentProgram(
       }
       return IO.fail<ApiError>(ValidationError("Provide applicationId, composeId, serverId, or type+id"))
     })
+    .case("queueList", () =>
+      client
+        .get<DokployDeployment[]>("deployment.queueList")
+        .map((queued) =>
+          queued.length === 0
+            ? "Deployment queue is empty."
+            : formatDeploymentList(queued).replace("# Deployments", "# Deployment Queue"),
+        ),
+    )
     .case("killProcess", () =>
       client
         .post<unknown>("deployment.killProcess", { deploymentId: args.deploymentId! })
         .map(() => `Deployment ${args.deploymentId} killed.`),
+    )
+    .case("readLogs", () => {
+      const params: Record<string, string | number> = { deploymentId: args.deploymentId! }
+      if (args.tail !== undefined) params.tail = args.tail
+      return client.get<string>("deployment.readLogs", params).map((logs) => logs || "(no log output)")
+    })
+    .case("remove", () =>
+      client
+        .post<unknown>("deployment.removeDeployment", { deploymentId: args.deploymentId! })
+        .map(() => `Deployment ${args.deploymentId} removed.`),
     )
     .exhaustive()
 }
@@ -71,7 +91,7 @@ export function registerDeploymentTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_deployment",
     description:
-      "Manage deployments. list: applicationId|composeId|serverId|type+id. killProcess: deploymentId. Note: Dokploy does not expose per-deployment log retrieval via API — use dokploy_application (readMonitoring) or the service-scoped *.readLogs endpoints for service logs.",
+      "Manage deployments. list: applicationId|composeId|serverId|type+id. queueList: no params (currently-queued deployments). killProcess: deploymentId (kill an in-flight build). readLogs: deploymentId, tail?. remove: deploymentId (drops the record). Database deployments are listed via the resource itself, not here.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       deploymentId: z.string().optional(),
@@ -85,6 +105,7 @@ export function registerDeploymentTools(server: ToolServer) {
           "Resource type. The Dokploy API accepts only: application | compose | server | schedule | previewDeployment | backup | volumeBackup. Database deployments are listed via the resource itself, not here.",
         ),
       id: z.string().optional().describe("Resource ID (used with type)"),
+      tail: z.number().int().min(1).max(10000).optional().describe("readLogs: tail N lines (default 100)"),
     }),
     execute: async (args) => {
       const either = await buildDeploymentProgram(getDokployClient(), args).run()
