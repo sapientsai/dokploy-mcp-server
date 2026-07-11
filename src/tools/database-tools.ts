@@ -1,15 +1,14 @@
-import type { IO } from "functype"
-import { Match } from "functype"
+import { IO, Match } from "functype"
 import { z } from "zod"
 
 import type { DokployClient } from "../client/dokploy-client"
 import { getDokployClient } from "../client/dokploy-client"
 import type { ApiError } from "../client/errors"
-import { formatApiError } from "../client/errors"
+import { formatApiError, ValidationError } from "../client/errors"
 import type { RequestBody } from "../generated"
 import type { DatabaseType, DokployDatabase } from "../types"
 import { DB_ID_FIELDS, DB_TYPES } from "../types"
-import { formatDatabase } from "../utils/formatters"
+import { formatDatabase, formatDatabaseList } from "../utils/formatters"
 import { formatEnvMutation, listEnvKeys, mergeEnv, pickDefined } from "./tool-utils"
 import type { ToolServer } from "./types"
 
@@ -30,6 +29,18 @@ const ACTIONS = [
   "getEnvKeys",
   "getEnvValuesUnsafe",
   "saveExternalPort",
+  "search",
+] as const
+
+const SEARCH_QUERY_FIELDS = [
+  "q",
+  "name",
+  "appName",
+  "description",
+  "projectId",
+  "environmentId",
+  "limit",
+  "offset",
 ] as const
 
 const CREATE_FIELDS = [
@@ -88,6 +99,10 @@ type DatabaseArgs = {
   sqldNode?: "primary" | "replica"
   sqldPrimaryUrl?: string
   enableNamespaces?: boolean
+  q?: string
+  projectId?: string
+  limit?: number
+  offset?: number
 }
 
 function dbBody(dbType: DatabaseType, databaseId: string): Record<string, unknown> {
@@ -226,6 +241,23 @@ export function buildDatabaseProgram(
         })
         .map(() => `External port set to ${args.externalPort} for database ${args.databaseId}.`)
     })
+    .case("search", () => {
+      // The Dokploy API exposes `search` for postgres/mysql/mariadb/mongo/redis only —
+      // there is no libsql.search endpoint.
+      if (dbType === "libsql") {
+        return IO.fail<ApiError>(
+          ValidationError(
+            "search is not supported for libsql; use dokploy_project or dokploy_environment to locate libsql databases",
+          ),
+        )
+      }
+      return client
+        .get<DokployDatabase[]>(
+          `${dbType}.search`,
+          pickDefined(args, SEARCH_QUERY_FIELDS) as Record<string, string | number | boolean | undefined>,
+        )
+        .map((results) => formatDatabaseList(results, dbType))
+    })
     .exhaustive()
 }
 
@@ -233,7 +265,7 @@ export function registerDatabaseTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_database",
     description:
-      "Manage databases (postgres/mysql/mariadb/mongo/redis/libsql). create: dbType+name+environmentId+databasePassword. Per-engine extras — postgres/mysql/mariadb: REQUIRE databaseName+databaseUser; mysql/mariadb also accept databaseRootPassword. mongo: REQUIRES databaseUser (databaseName not used). redis: only databasePassword (no databaseName/User). libsql: REQUIRES appName+dockerImage+sqldNode (primary|replica); accepts sqldPrimaryUrl+enableNamespaces. get: dbType+databaseId (returns metadata + masked env summary — never values). update: dbType+databaseId+fields. move: dbType+databaseId+targetEnvironmentId. start/stop/deploy/rebuild/remove: dbType+databaseId. reload: dbType+databaseId+appName. changeStatus: dbType+databaseId+applicationStatus (idle|running|done|error). saveEnvironment: dbType+databaseId+env (full replace). setEnvVars: dbType+databaseId + set?/unset? (merge inside the server, masked confirmation only). getEnvKeys: dbType+databaseId — KEY names only. getEnvValuesUnsafe: dbType+databaseId — UNSAFE escape hatch that returns full KEY=VALUE pairs. saveExternalPort: dbType+databaseId+externalPort (libsql also accepts externalGRPCPort/externalAdminPort).",
+      "Manage databases (postgres/mysql/mariadb/mongo/redis/libsql). create: dbType+name+environmentId+databasePassword. Per-engine extras — postgres/mysql/mariadb: REQUIRE databaseName+databaseUser; mysql/mariadb also accept databaseRootPassword. mongo: REQUIRES databaseUser (databaseName not used). redis: only databasePassword (no databaseName/User). libsql: REQUIRES appName+dockerImage+sqldNode (primary|replica); accepts sqldPrimaryUrl+enableNamespaces. get: dbType+databaseId (returns metadata + masked env summary — never values). update: dbType+databaseId+fields. move: dbType+databaseId+targetEnvironmentId. start/stop/deploy/rebuild/remove: dbType+databaseId. reload: dbType+databaseId+appName. changeStatus: dbType+databaseId+applicationStatus (idle|running|done|error). saveEnvironment: dbType+databaseId+env (full replace). setEnvVars: dbType+databaseId + set?/unset? (merge inside the server, masked confirmation only). getEnvKeys: dbType+databaseId — KEY names only. getEnvValuesUnsafe: dbType+databaseId — UNSAFE escape hatch that returns full KEY=VALUE pairs. saveExternalPort: dbType+databaseId+externalPort (libsql also accepts externalGRPCPort/externalAdminPort). search: dbType + q|name|appName|description|projectId|environmentId + limit/offset — searches within the given dbType (not supported for libsql).",
     parameters: z.object({
       action: z.enum(ACTIONS),
       dbType: z.enum(DB_TYPES).describe("postgres, mysql, mariadb, mongo, redis, or libsql"),
@@ -265,6 +297,10 @@ export function registerDatabaseTools(server: ToolServer) {
       sqldNode: z.enum(["primary", "replica"]).optional().describe("libsql sqld role"),
       sqldPrimaryUrl: z.string().optional().describe("libsql replica primary URL"),
       enableNamespaces: z.boolean().optional().describe("libsql multi-tenant namespaces"),
+      q: z.string().optional().describe("search: freeform query"),
+      projectId: z.string().optional().describe("search: filter to a project"),
+      limit: z.number().int().min(1).max(100).optional().describe("search: max results (default 20)"),
+      offset: z.number().int().min(0).optional().describe("search: pagination offset"),
     }),
     execute: async (args) => {
       const either = await buildDatabaseProgram(getDokployClient(), args).run()

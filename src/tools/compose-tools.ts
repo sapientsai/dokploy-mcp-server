@@ -7,7 +7,7 @@ import type { ApiError } from "../client/errors"
 import { formatApiError } from "../client/errors"
 import type { RequestBody } from "../generated"
 import type { DokployCompose } from "../types"
-import { formatCompose } from "../utils/formatters"
+import { formatCompose, formatComposeList } from "../utils/formatters"
 import { formatEnvMutation, listEnvKeys, mergeEnv, pickDefined } from "./tool-utils"
 import type { ToolServer } from "./types"
 
@@ -32,6 +32,18 @@ const ACTIONS = [
   "getEnvKeys",
   "getEnvValuesUnsafe",
   "readLogs",
+  "search",
+] as const
+
+const SEARCH_QUERY_FIELDS = [
+  "q",
+  "name",
+  "appName",
+  "description",
+  "projectId",
+  "environmentId",
+  "limit",
+  "offset",
 ] as const
 
 const UPDATE_FIELDS = [
@@ -86,6 +98,10 @@ type ComposeArgs = {
   tail?: number
   since?: string
   search?: string
+  q?: string
+  projectId?: string
+  limit?: number
+  offset?: number
 }
 
 export function buildComposeProgram(
@@ -245,6 +261,14 @@ export function buildComposeProgram(
         .get<string>("compose.readLogs", params)
         .map((logs) => `# Compose Logs (${args.composeId} / ${args.containerId})\n\n\`\`\`\n${logs}\n\`\`\``)
     })
+    .case("search", () =>
+      client
+        .get<DokployCompose[]>(
+          "compose.search",
+          pickDefined(args, SEARCH_QUERY_FIELDS) as Record<string, string | number | boolean | undefined>,
+        )
+        .map(formatComposeList),
+    )
     .exhaustive()
 }
 
@@ -252,7 +276,7 @@ export function registerComposeTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_compose",
     description:
-      "Manage Docker Compose services. create: name+environmentId. get: composeId (metadata + masked env summary — never values). update: composeId+fields (supports sourceType, composeFile for raw/inline, git source fields, autoDeploy). delete/start/stop/getDefaultCommand: composeId. deploy: composeId, redeploy? (note: first deploy on new services may fail — retry immediately). move: composeId+targetEnvironmentId. loadServices: composeId (must deploy first). loadMounts: composeId+serviceName. saveEnvironment: composeId+env (full replace). setEnvVars: composeId + set?/unset? (merge inside the server, masked confirmation only). getEnvKeys: composeId — KEY names only. getEnvValuesUnsafe: composeId — UNSAFE escape hatch that returns full KEY=VALUE pairs (output goes to the tool transcript). cancelDeployment/cleanQueues/killBuild/refreshToken: composeId. readLogs: composeId+containerId, tail?, since?, search?.",
+      "Manage Docker Compose services. create: name+environmentId. get: composeId (metadata + masked env summary — never values). update: composeId+fields (supports sourceType, composeFile for raw/inline, git source fields, autoDeploy). delete/start/stop/getDefaultCommand: composeId. deploy: composeId, redeploy? (note: first deploy on new services may fail — retry immediately). move: composeId+targetEnvironmentId. loadServices: composeId (must deploy first). loadMounts: composeId+serviceName. saveEnvironment: composeId+env (full replace). setEnvVars: composeId + set?/unset? (merge inside the server, masked confirmation only). getEnvKeys: composeId — KEY names only. getEnvValuesUnsafe: composeId — UNSAFE escape hatch that returns full KEY=VALUE pairs (output goes to the tool transcript). cancelDeployment/cleanQueues/killBuild/refreshToken: composeId. readLogs: composeId+containerId, tail?, since?, search?. search (as action): q|name|appName|description|projectId|environmentId + limit/offset.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       composeId: z.string().optional(),
@@ -312,6 +336,10 @@ export function registerComposeTools(server: ToolServer) {
         .regex(/^[a-zA-Z0-9 ._-]{0,500}$/)
         .optional()
         .describe("Filter log lines by substring"),
+      q: z.string().optional().describe("search: freeform query"),
+      projectId: z.string().optional().describe("search: filter to a project"),
+      limit: z.number().int().min(1).max(100).optional().describe("search: max results (default 20)"),
+      offset: z.number().int().min(0).optional().describe("search: pagination offset"),
     }),
     execute: async (args) => {
       const either = await buildComposeProgram(getDokployClient(), args).run()

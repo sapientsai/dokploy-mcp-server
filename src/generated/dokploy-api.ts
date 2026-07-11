@@ -13,6 +13,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["admin-setupMonitoring"]
     delete?: never
     options?: never
@@ -29,6 +30,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["application-create"]
     delete?: never
     options?: never
@@ -43,6 +45,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["application-one"]
     put?: never
     post?: never
@@ -61,6 +64,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["application-reload"]
     delete?: never
     options?: never
@@ -77,6 +81,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["application-delete"]
     delete?: never
     options?: never
@@ -93,6 +98,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["application-stop"]
     delete?: never
     options?: never
@@ -109,6 +115,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["application-start"]
     delete?: never
     options?: never
@@ -125,6 +132,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["application-redeploy"]
     delete?: never
     options?: never
@@ -141,6 +149,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["application-saveEnvironment"]
     delete?: never
     options?: never
@@ -157,6 +166,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["application-saveBuildType"]
     delete?: never
     options?: never
@@ -173,6 +183,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["application-saveGithubProvider"]
     delete?: never
     options?: never
@@ -189,6 +200,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["application-saveGitlabProvider"]
     delete?: never
     options?: never
@@ -205,6 +217,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["application-saveBitbucketProvider"]
     delete?: never
     options?: never
@@ -221,6 +234,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["application-saveGiteaProvider"]
     delete?: never
     options?: never
@@ -237,6 +251,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["application-saveDockerProvider"]
     delete?: never
     options?: never
@@ -253,6 +268,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["application-saveGitProvider"]
     delete?: never
     options?: never
@@ -269,6 +285,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["application-disconnectGitProvider"]
     delete?: never
     options?: never
@@ -285,6 +302,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["application-markRunning"]
     delete?: never
     options?: never
@@ -301,6 +319,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["application-update"]
     delete?: never
     options?: never
@@ -317,6 +336,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["application-refreshToken"]
     delete?: never
     options?: never
@@ -333,6 +353,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["application-deploy"]
     delete?: never
     options?: never
@@ -349,6 +370,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["application-cleanQueues"]
     delete?: never
     options?: never
@@ -365,6 +387,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["application-clearDeployments"]
     delete?: never
     options?: never
@@ -381,6 +404,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["application-killBuild"]
     delete?: never
     options?: never
@@ -395,6 +419,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["application-readTraefikConfig"]
     put?: never
     post?: never
@@ -413,6 +438,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["application-dropDeployment"]
     delete?: never
     options?: never
@@ -429,6 +455,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["application-updateTraefikConfig"]
     delete?: never
     options?: never
@@ -443,6 +470,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["application-readAppMonitoring"]
     put?: never
     post?: never
@@ -461,6 +489,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["application-move"]
     delete?: never
     options?: never
@@ -477,6 +506,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["application-cancelDeployment"]
     delete?: never
     options?: never
@@ -491,6 +521,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["application-search"]
     put?: never
     post?: never
@@ -507,6 +538,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["application-readLogs"]
     put?: never
     post?: never
@@ -525,6 +557,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["backup-create"]
     delete?: never
     options?: never
@@ -539,6 +572,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["backup-one"]
     put?: never
     post?: never
@@ -557,6 +591,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["backup-update"]
     delete?: never
     options?: never
@@ -573,6 +608,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["backup-remove"]
     delete?: never
     options?: never
@@ -589,6 +625,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["backup-manualBackupPostgres"]
     delete?: never
     options?: never
@@ -605,6 +642,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["backup-manualBackupMySql"]
     delete?: never
     options?: never
@@ -621,6 +659,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["backup-manualBackupMariadb"]
     delete?: never
     options?: never
@@ -637,6 +676,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["backup-manualBackupCompose"]
     delete?: never
     options?: never
@@ -653,6 +693,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["backup-manualBackupMongo"]
     delete?: never
     options?: never
@@ -669,6 +710,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["backup-manualBackupLibsql"]
     delete?: never
     options?: never
@@ -685,6 +727,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["backup-manualBackupWebServer"]
     delete?: never
     options?: never
@@ -699,6 +742,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["backup-listBackupFiles"]
     put?: never
     post?: never
@@ -717,6 +761,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["bitbucket-create"]
     delete?: never
     options?: never
@@ -731,6 +776,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["bitbucket-one"]
     put?: never
     post?: never
@@ -747,6 +793,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["bitbucket-bitbucketProviders"]
     put?: never
     post?: never
@@ -763,6 +810,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["bitbucket-getBitbucketRepositories"]
     put?: never
     post?: never
@@ -779,6 +827,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["bitbucket-getBitbucketBranches"]
     put?: never
     post?: never
@@ -797,6 +846,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["bitbucket-testConnection"]
     delete?: never
     options?: never
@@ -813,6 +863,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["bitbucket-update"]
     delete?: never
     options?: never
@@ -829,6 +880,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["certificates-create"]
     delete?: never
     options?: never
@@ -843,6 +895,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["certificates-one"]
     put?: never
     post?: never
@@ -861,6 +914,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["certificates-remove"]
     delete?: never
     options?: never
@@ -875,6 +929,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["certificates-all"]
     put?: never
     post?: never
@@ -893,6 +948,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["certificates-update"]
     delete?: never
     options?: never
@@ -907,6 +963,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["cluster-getNodes"]
     put?: never
     post?: never
@@ -925,6 +982,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["cluster-removeWorker"]
     delete?: never
     options?: never
@@ -939,6 +997,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["cluster-addWorker"]
     put?: never
     post?: never
@@ -955,6 +1014,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["cluster-addManager"]
     put?: never
     post?: never
@@ -973,6 +1033,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["compose-create"]
     delete?: never
     options?: never
@@ -987,6 +1048,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["compose-one"]
     put?: never
     post?: never
@@ -1005,6 +1067,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["compose-update"]
     delete?: never
     options?: never
@@ -1021,6 +1084,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["compose-saveEnvironment"]
     delete?: never
     options?: never
@@ -1037,6 +1101,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["compose-delete"]
     delete?: never
     options?: never
@@ -1053,6 +1118,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["compose-cleanQueues"]
     delete?: never
     options?: never
@@ -1069,6 +1135,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["compose-clearDeployments"]
     delete?: never
     options?: never
@@ -1085,6 +1152,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["compose-killBuild"]
     delete?: never
     options?: never
@@ -1099,6 +1167,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["compose-loadServices"]
     put?: never
     post?: never
@@ -1115,6 +1184,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["compose-loadMountsByService"]
     put?: never
     post?: never
@@ -1133,6 +1203,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["compose-fetchSourceType"]
     delete?: never
     options?: never
@@ -1149,6 +1220,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["compose-randomizeCompose"]
     delete?: never
     options?: never
@@ -1165,6 +1237,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["compose-isolatedDeployment"]
     delete?: never
     options?: never
@@ -1179,6 +1252,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["compose-getConvertedCompose"]
     put?: never
     post?: never
@@ -1197,6 +1271,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["compose-deploy"]
     delete?: never
     options?: never
@@ -1213,6 +1288,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["compose-redeploy"]
     delete?: never
     options?: never
@@ -1229,6 +1305,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["compose-stop"]
     delete?: never
     options?: never
@@ -1245,6 +1322,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["compose-start"]
     delete?: never
     options?: never
@@ -1259,6 +1337,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["compose-getDefaultCommand"]
     put?: never
     post?: never
@@ -1277,6 +1356,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["compose-refreshToken"]
     delete?: never
     options?: never
@@ -1293,6 +1373,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["compose-deployTemplate"]
     delete?: never
     options?: never
@@ -1307,6 +1388,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["compose-templates"]
     put?: never
     post?: never
@@ -1323,6 +1405,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["compose-getTags"]
     put?: never
     post?: never
@@ -1341,6 +1424,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["compose-disconnectGitProvider"]
     delete?: never
     options?: never
@@ -1357,6 +1441,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["compose-move"]
     delete?: never
     options?: never
@@ -1373,7 +1458,25 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["compose-processTemplate"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/compose.previewTemplate": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["compose-previewTemplate"]
     delete?: never
     options?: never
     head?: never
@@ -1389,6 +1492,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["compose-import"]
     delete?: never
     options?: never
@@ -1405,6 +1509,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["compose-cancelDeployment"]
     delete?: never
     options?: never
@@ -1419,6 +1524,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["compose-search"]
     put?: never
     post?: never
@@ -1435,6 +1541,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["compose-readLogs"]
     put?: never
     post?: never
@@ -1451,6 +1558,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["deployment-all"]
     put?: never
     post?: never
@@ -1467,6 +1575,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["deployment-allByCompose"]
     put?: never
     post?: never
@@ -1483,6 +1592,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["deployment-allByServer"]
     put?: never
     post?: never
@@ -1499,6 +1609,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["deployment-allCentralized"]
     put?: never
     post?: never
@@ -1515,6 +1626,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["deployment-queueList"]
     put?: never
     post?: never
@@ -1531,6 +1643,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["deployment-allByType"]
     put?: never
     post?: never
@@ -1549,6 +1662,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["deployment-killProcess"]
     delete?: never
     options?: never
@@ -1565,7 +1679,25 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["deployment-removeDeployment"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/deployment.readLogs": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description null */
+    get: operations["deployment-readLogs"]
+    put?: never
+    post?: never
     delete?: never
     options?: never
     head?: never
@@ -1581,6 +1713,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["destination-create"]
     delete?: never
     options?: never
@@ -1597,6 +1730,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["destination-testConnection"]
     delete?: never
     options?: never
@@ -1611,6 +1745,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["destination-one"]
     put?: never
     post?: never
@@ -1627,6 +1762,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["destination-all"]
     put?: never
     post?: never
@@ -1645,6 +1781,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["destination-remove"]
     delete?: never
     options?: never
@@ -1661,6 +1798,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["destination-update"]
     delete?: never
     options?: never
@@ -1675,6 +1813,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["docker-getContainers"]
     put?: never
     post?: never
@@ -1693,6 +1832,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["docker-restartContainer"]
     delete?: never
     options?: never
@@ -1709,6 +1849,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["docker-startContainer"]
     delete?: never
     options?: never
@@ -1725,6 +1866,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["docker-stopContainer"]
     delete?: never
     options?: never
@@ -1741,6 +1883,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["docker-killContainer"]
     delete?: never
     options?: never
@@ -1757,6 +1900,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["docker-removeContainer"]
     delete?: never
     options?: never
@@ -1771,6 +1915,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["docker-getConfig"]
     put?: never
     post?: never
@@ -1787,6 +1932,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["docker-getContainersByAppNameMatch"]
     put?: never
     post?: never
@@ -1803,6 +1949,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["docker-getContainersByAppLabel"]
     put?: never
     post?: never
@@ -1819,6 +1966,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["docker-getStackContainersByAppName"]
     put?: never
     post?: never
@@ -1835,6 +1983,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["docker-getServiceContainersByAppName"]
     put?: never
     post?: never
@@ -1853,6 +2002,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["docker-uploadFileToContainer"]
     delete?: never
     options?: never
@@ -1869,6 +2019,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["domain-create"]
     delete?: never
     options?: never
@@ -1883,6 +2034,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["domain-byApplicationId"]
     put?: never
     post?: never
@@ -1899,6 +2051,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["domain-byComposeId"]
     put?: never
     post?: never
@@ -1917,6 +2070,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["domain-generateDomain"]
     delete?: never
     options?: never
@@ -1931,6 +2085,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["domain-canGenerateTraefikMeDomains"]
     put?: never
     post?: never
@@ -1949,6 +2104,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["domain-update"]
     delete?: never
     options?: never
@@ -1963,6 +2119,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["domain-one"]
     put?: never
     post?: never
@@ -1981,6 +2138,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["domain-delete"]
     delete?: never
     options?: never
@@ -1997,6 +2155,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["domain-validateDomain"]
     delete?: never
     options?: never
@@ -2013,6 +2172,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["gitea-create"]
     delete?: never
     options?: never
@@ -2027,6 +2187,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["gitea-one"]
     put?: never
     post?: never
@@ -2043,6 +2204,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["gitea-giteaProviders"]
     put?: never
     post?: never
@@ -2059,6 +2221,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["gitea-getGiteaRepositories"]
     put?: never
     post?: never
@@ -2075,6 +2238,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["gitea-getGiteaBranches"]
     put?: never
     post?: never
@@ -2093,6 +2257,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["gitea-testConnection"]
     delete?: never
     options?: never
@@ -2109,6 +2274,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["gitea-update"]
     delete?: never
     options?: never
@@ -2123,6 +2289,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["gitea-getGiteaUrl"]
     put?: never
     post?: never
@@ -2139,6 +2306,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["gitProvider-getAll"]
     put?: never
     post?: never
@@ -2157,6 +2325,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["gitProvider-toggleShare"]
     delete?: never
     options?: never
@@ -2171,6 +2340,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["gitProvider-allForPermissions"]
     put?: never
     post?: never
@@ -2189,6 +2359,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["gitProvider-remove"]
     delete?: never
     options?: never
@@ -2203,6 +2374,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["github-one"]
     put?: never
     post?: never
@@ -2219,6 +2391,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["github-getGithubRepositories"]
     put?: never
     post?: never
@@ -2235,6 +2408,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["github-getGithubBranches"]
     put?: never
     post?: never
@@ -2251,6 +2425,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["github-githubProviders"]
     put?: never
     post?: never
@@ -2269,6 +2444,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["github-testConnection"]
     delete?: never
     options?: never
@@ -2285,6 +2461,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["github-update"]
     delete?: never
     options?: never
@@ -2301,6 +2478,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["gitlab-create"]
     delete?: never
     options?: never
@@ -2315,6 +2493,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["gitlab-one"]
     put?: never
     post?: never
@@ -2331,6 +2510,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["gitlab-gitlabProviders"]
     put?: never
     post?: never
@@ -2347,6 +2527,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["gitlab-getGitlabRepositories"]
     put?: never
     post?: never
@@ -2363,6 +2544,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["gitlab-getGitlabBranches"]
     put?: never
     post?: never
@@ -2381,6 +2563,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["gitlab-testConnection"]
     delete?: never
     options?: never
@@ -2397,6 +2580,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["gitlab-update"]
     delete?: never
     options?: never
@@ -2413,6 +2597,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["libsql-create"]
     delete?: never
     options?: never
@@ -2427,6 +2612,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["libsql-one"]
     put?: never
     post?: never
@@ -2445,6 +2631,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["libsql-start"]
     delete?: never
     options?: never
@@ -2461,6 +2648,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["libsql-stop"]
     delete?: never
     options?: never
@@ -2477,6 +2665,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["libsql-saveExternalPorts"]
     delete?: never
     options?: never
@@ -2493,6 +2682,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["libsql-deploy"]
     delete?: never
     options?: never
@@ -2509,6 +2699,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["libsql-changeStatus"]
     delete?: never
     options?: never
@@ -2525,6 +2716,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["libsql-remove"]
     delete?: never
     options?: never
@@ -2541,6 +2733,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["libsql-saveEnvironment"]
     delete?: never
     options?: never
@@ -2557,6 +2750,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["libsql-reload"]
     delete?: never
     options?: never
@@ -2573,6 +2767,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["libsql-update"]
     delete?: never
     options?: never
@@ -2589,6 +2784,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["libsql-move"]
     delete?: never
     options?: never
@@ -2605,6 +2801,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["libsql-rebuild"]
     delete?: never
     options?: never
@@ -2619,6 +2816,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["libsql-readLogs"]
     put?: never
     post?: never
@@ -2637,6 +2835,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mariadb-create"]
     delete?: never
     options?: never
@@ -2651,6 +2850,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["mariadb-one"]
     put?: never
     post?: never
@@ -2669,6 +2869,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mariadb-start"]
     delete?: never
     options?: never
@@ -2685,6 +2886,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mariadb-stop"]
     delete?: never
     options?: never
@@ -2701,6 +2903,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mariadb-saveExternalPort"]
     delete?: never
     options?: never
@@ -2717,6 +2920,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mariadb-deploy"]
     delete?: never
     options?: never
@@ -2733,6 +2937,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mariadb-changeStatus"]
     delete?: never
     options?: never
@@ -2749,6 +2954,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mariadb-remove"]
     delete?: never
     options?: never
@@ -2765,6 +2971,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mariadb-saveEnvironment"]
     delete?: never
     options?: never
@@ -2781,6 +2988,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mariadb-reload"]
     delete?: never
     options?: never
@@ -2797,6 +3005,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mariadb-update"]
     delete?: never
     options?: never
@@ -2813,6 +3022,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mariadb-changePassword"]
     delete?: never
     options?: never
@@ -2829,6 +3039,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mariadb-move"]
     delete?: never
     options?: never
@@ -2845,6 +3056,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mariadb-rebuild"]
     delete?: never
     options?: never
@@ -2859,6 +3071,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["mariadb-search"]
     put?: never
     post?: never
@@ -2875,6 +3088,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["mariadb-readLogs"]
     put?: never
     post?: never
@@ -2893,6 +3107,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mongo-create"]
     delete?: never
     options?: never
@@ -2907,6 +3122,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["mongo-one"]
     put?: never
     post?: never
@@ -2925,6 +3141,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mongo-start"]
     delete?: never
     options?: never
@@ -2941,6 +3158,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mongo-stop"]
     delete?: never
     options?: never
@@ -2957,6 +3175,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mongo-saveExternalPort"]
     delete?: never
     options?: never
@@ -2973,6 +3192,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mongo-deploy"]
     delete?: never
     options?: never
@@ -2989,6 +3209,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mongo-changeStatus"]
     delete?: never
     options?: never
@@ -3005,6 +3226,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mongo-reload"]
     delete?: never
     options?: never
@@ -3021,6 +3243,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mongo-remove"]
     delete?: never
     options?: never
@@ -3037,6 +3260,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mongo-saveEnvironment"]
     delete?: never
     options?: never
@@ -3053,6 +3277,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mongo-update"]
     delete?: never
     options?: never
@@ -3069,6 +3294,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mongo-changePassword"]
     delete?: never
     options?: never
@@ -3085,6 +3311,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mongo-move"]
     delete?: never
     options?: never
@@ -3101,6 +3328,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mongo-rebuild"]
     delete?: never
     options?: never
@@ -3115,6 +3343,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["mongo-search"]
     put?: never
     post?: never
@@ -3131,6 +3360,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["mongo-readLogs"]
     put?: never
     post?: never
@@ -3149,6 +3379,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mounts-create"]
     delete?: never
     options?: never
@@ -3165,6 +3396,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mounts-remove"]
     delete?: never
     options?: never
@@ -3179,6 +3411,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["mounts-one"]
     put?: never
     post?: never
@@ -3197,6 +3430,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mounts-update"]
     delete?: never
     options?: never
@@ -3211,6 +3445,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["mounts-allNamedByApplicationId"]
     put?: never
     post?: never
@@ -3227,6 +3462,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["mounts-listByServiceId"]
     put?: never
     post?: never
@@ -3245,6 +3481,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mysql-create"]
     delete?: never
     options?: never
@@ -3259,6 +3496,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["mysql-one"]
     put?: never
     post?: never
@@ -3277,6 +3515,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mysql-start"]
     delete?: never
     options?: never
@@ -3293,6 +3532,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mysql-stop"]
     delete?: never
     options?: never
@@ -3309,6 +3549,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mysql-saveExternalPort"]
     delete?: never
     options?: never
@@ -3325,6 +3566,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mysql-deploy"]
     delete?: never
     options?: never
@@ -3341,6 +3583,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mysql-changeStatus"]
     delete?: never
     options?: never
@@ -3357,6 +3600,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mysql-reload"]
     delete?: never
     options?: never
@@ -3373,6 +3617,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mysql-remove"]
     delete?: never
     options?: never
@@ -3389,6 +3634,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mysql-saveEnvironment"]
     delete?: never
     options?: never
@@ -3405,6 +3651,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mysql-update"]
     delete?: never
     options?: never
@@ -3421,6 +3668,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mysql-changePassword"]
     delete?: never
     options?: never
@@ -3437,6 +3685,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mysql-move"]
     delete?: never
     options?: never
@@ -3453,6 +3702,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["mysql-rebuild"]
     delete?: never
     options?: never
@@ -3467,6 +3717,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["mysql-search"]
     put?: never
     post?: never
@@ -3483,6 +3734,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["mysql-readLogs"]
     put?: never
     post?: never
@@ -3501,6 +3753,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-createSlack"]
     delete?: never
     options?: never
@@ -3517,6 +3770,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-updateSlack"]
     delete?: never
     options?: never
@@ -3533,6 +3787,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-testSlackConnection"]
     delete?: never
     options?: never
@@ -3549,6 +3804,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-createTelegram"]
     delete?: never
     options?: never
@@ -3565,6 +3821,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-updateTelegram"]
     delete?: never
     options?: never
@@ -3581,6 +3838,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-testTelegramConnection"]
     delete?: never
     options?: never
@@ -3597,6 +3855,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-createDiscord"]
     delete?: never
     options?: never
@@ -3613,6 +3872,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-updateDiscord"]
     delete?: never
     options?: never
@@ -3629,6 +3889,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-testDiscordConnection"]
     delete?: never
     options?: never
@@ -3645,6 +3906,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-createEmail"]
     delete?: never
     options?: never
@@ -3661,6 +3923,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-updateEmail"]
     delete?: never
     options?: never
@@ -3677,6 +3940,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-testEmailConnection"]
     delete?: never
     options?: never
@@ -3693,6 +3957,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-createResend"]
     delete?: never
     options?: never
@@ -3709,6 +3974,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-updateResend"]
     delete?: never
     options?: never
@@ -3725,6 +3991,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-testResendConnection"]
     delete?: never
     options?: never
@@ -3741,6 +4008,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-remove"]
     delete?: never
     options?: never
@@ -3755,6 +4023,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["notification-one"]
     put?: never
     post?: never
@@ -3771,6 +4040,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["notification-all"]
     put?: never
     post?: never
@@ -3789,6 +4059,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-receiveNotification"]
     delete?: never
     options?: never
@@ -3805,6 +4076,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-createGotify"]
     delete?: never
     options?: never
@@ -3821,6 +4093,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-updateGotify"]
     delete?: never
     options?: never
@@ -3837,6 +4110,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-testGotifyConnection"]
     delete?: never
     options?: never
@@ -3853,6 +4127,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-createNtfy"]
     delete?: never
     options?: never
@@ -3869,6 +4144,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-updateNtfy"]
     delete?: never
     options?: never
@@ -3885,6 +4161,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-testNtfyConnection"]
     delete?: never
     options?: never
@@ -3901,6 +4178,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-createMattermost"]
     delete?: never
     options?: never
@@ -3917,6 +4195,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-updateMattermost"]
     delete?: never
     options?: never
@@ -3933,6 +4212,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-testMattermostConnection"]
     delete?: never
     options?: never
@@ -3949,6 +4229,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-createCustom"]
     delete?: never
     options?: never
@@ -3965,6 +4246,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-updateCustom"]
     delete?: never
     options?: never
@@ -3981,6 +4263,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-testCustomConnection"]
     delete?: never
     options?: never
@@ -3997,6 +4280,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-createLark"]
     delete?: never
     options?: never
@@ -4013,6 +4297,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-updateLark"]
     delete?: never
     options?: never
@@ -4029,6 +4314,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-testLarkConnection"]
     delete?: never
     options?: never
@@ -4045,6 +4331,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-createTeams"]
     delete?: never
     options?: never
@@ -4061,6 +4348,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-updateTeams"]
     delete?: never
     options?: never
@@ -4077,6 +4365,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-testTeamsConnection"]
     delete?: never
     options?: never
@@ -4093,6 +4382,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-createPushover"]
     delete?: never
     options?: never
@@ -4109,6 +4399,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-updatePushover"]
     delete?: never
     options?: never
@@ -4125,6 +4416,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["notification-testPushoverConnection"]
     delete?: never
     options?: never
@@ -4139,6 +4431,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["notification-getEmailProviders"]
     put?: never
     post?: never
@@ -4157,6 +4450,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["port-create"]
     delete?: never
     options?: never
@@ -4171,6 +4465,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["port-one"]
     put?: never
     post?: never
@@ -4189,6 +4484,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["port-delete"]
     delete?: never
     options?: never
@@ -4205,6 +4501,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["port-update"]
     delete?: never
     options?: never
@@ -4221,6 +4518,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["postgres-create"]
     delete?: never
     options?: never
@@ -4235,6 +4533,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["postgres-one"]
     put?: never
     post?: never
@@ -4253,6 +4552,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["postgres-start"]
     delete?: never
     options?: never
@@ -4269,6 +4569,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["postgres-stop"]
     delete?: never
     options?: never
@@ -4285,6 +4586,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["postgres-saveExternalPort"]
     delete?: never
     options?: never
@@ -4301,6 +4603,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["postgres-deploy"]
     delete?: never
     options?: never
@@ -4317,6 +4620,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["postgres-changeStatus"]
     delete?: never
     options?: never
@@ -4333,6 +4637,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["postgres-remove"]
     delete?: never
     options?: never
@@ -4349,6 +4654,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["postgres-saveEnvironment"]
     delete?: never
     options?: never
@@ -4365,6 +4671,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["postgres-reload"]
     delete?: never
     options?: never
@@ -4381,6 +4688,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["postgres-update"]
     delete?: never
     options?: never
@@ -4397,6 +4705,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["postgres-changePassword"]
     delete?: never
     options?: never
@@ -4413,6 +4722,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["postgres-move"]
     delete?: never
     options?: never
@@ -4429,6 +4739,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["postgres-rebuild"]
     delete?: never
     options?: never
@@ -4443,6 +4754,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["postgres-search"]
     put?: never
     post?: never
@@ -4459,6 +4771,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["postgres-readLogs"]
     put?: never
     post?: never
@@ -4475,6 +4788,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["previewDeployment-all"]
     put?: never
     post?: never
@@ -4491,6 +4805,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["previewDeployment-one"]
     put?: never
     post?: never
@@ -4509,6 +4824,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["previewDeployment-delete"]
     delete?: never
     options?: never
@@ -4525,6 +4841,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["previewDeployment-redeploy"]
     delete?: never
     options?: never
@@ -4541,6 +4858,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["project-create"]
     delete?: never
     options?: never
@@ -4555,6 +4873,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["project-one"]
     put?: never
     post?: never
@@ -4571,6 +4890,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["project-all"]
     put?: never
     post?: never
@@ -4587,7 +4907,25 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["project-allForPermissions"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/project.homeStats": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description null */
+    get: operations["project-homeStats"]
     put?: never
     post?: never
     delete?: never
@@ -4603,6 +4941,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["project-search"]
     put?: never
     post?: never
@@ -4621,6 +4960,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["project-remove"]
     delete?: never
     options?: never
@@ -4637,6 +4977,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["project-update"]
     delete?: never
     options?: never
@@ -4653,6 +4994,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["project-duplicate"]
     delete?: never
     options?: never
@@ -4669,6 +5011,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["redirects-create"]
     delete?: never
     options?: never
@@ -4683,6 +5026,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["redirects-one"]
     put?: never
     post?: never
@@ -4701,6 +5045,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["redirects-delete"]
     delete?: never
     options?: never
@@ -4717,6 +5062,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["redirects-update"]
     delete?: never
     options?: never
@@ -4733,6 +5079,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["redis-create"]
     delete?: never
     options?: never
@@ -4747,6 +5094,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["redis-one"]
     put?: never
     post?: never
@@ -4765,6 +5113,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["redis-start"]
     delete?: never
     options?: never
@@ -4781,6 +5130,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["redis-reload"]
     delete?: never
     options?: never
@@ -4797,6 +5147,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["redis-stop"]
     delete?: never
     options?: never
@@ -4813,6 +5164,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["redis-saveExternalPort"]
     delete?: never
     options?: never
@@ -4829,6 +5181,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["redis-deploy"]
     delete?: never
     options?: never
@@ -4845,6 +5198,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["redis-changeStatus"]
     delete?: never
     options?: never
@@ -4861,6 +5215,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["redis-remove"]
     delete?: never
     options?: never
@@ -4877,6 +5232,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["redis-saveEnvironment"]
     delete?: never
     options?: never
@@ -4893,6 +5249,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["redis-update"]
     delete?: never
     options?: never
@@ -4909,6 +5266,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["redis-changePassword"]
     delete?: never
     options?: never
@@ -4925,6 +5283,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["redis-move"]
     delete?: never
     options?: never
@@ -4941,6 +5300,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["redis-rebuild"]
     delete?: never
     options?: never
@@ -4955,6 +5315,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["redis-search"]
     put?: never
     post?: never
@@ -4971,6 +5332,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["redis-readLogs"]
     put?: never
     post?: never
@@ -4989,6 +5351,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["registry-create"]
     delete?: never
     options?: never
@@ -5005,6 +5368,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["registry-remove"]
     delete?: never
     options?: never
@@ -5021,6 +5385,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["registry-update"]
     delete?: never
     options?: never
@@ -5035,6 +5400,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["registry-all"]
     put?: never
     post?: never
@@ -5051,6 +5417,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["registry-one"]
     put?: never
     post?: never
@@ -5069,6 +5436,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["registry-testRegistry"]
     delete?: never
     options?: never
@@ -5085,6 +5453,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["registry-testRegistryById"]
     delete?: never
     options?: never
@@ -5101,6 +5470,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["security-create"]
     delete?: never
     options?: never
@@ -5115,6 +5485,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["security-one"]
     put?: never
     post?: never
@@ -5133,6 +5504,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["security-delete"]
     delete?: never
     options?: never
@@ -5149,6 +5521,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["security-update"]
     delete?: never
     options?: never
@@ -5165,6 +5538,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["server-create"]
     delete?: never
     options?: never
@@ -5179,6 +5553,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["server-one"]
     put?: never
     post?: never
@@ -5195,6 +5570,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["server-getDefaultCommand"]
     put?: never
     post?: never
@@ -5211,6 +5587,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["server-all"]
     put?: never
     post?: never
@@ -5227,6 +5604,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["server-allForPermissions"]
     put?: never
     post?: never
@@ -5243,6 +5621,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["server-count"]
     put?: never
     post?: never
@@ -5259,6 +5638,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["server-withSSHKey"]
     put?: never
     post?: never
@@ -5275,6 +5655,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["server-buildServers"]
     put?: never
     post?: never
@@ -5293,6 +5674,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["server-setup"]
     delete?: never
     options?: never
@@ -5307,6 +5689,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["server-validate"]
     put?: never
     post?: never
@@ -5323,6 +5706,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["server-security"]
     put?: never
     post?: never
@@ -5341,6 +5725,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["server-setupMonitoring"]
     delete?: never
     options?: never
@@ -5357,6 +5742,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["server-remove"]
     delete?: never
     options?: never
@@ -5373,7 +5759,25 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["server-update"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/server.updateBuildsConcurrency": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["server-updateBuildsConcurrency"]
     delete?: never
     options?: never
     head?: never
@@ -5387,6 +5791,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["server-publicIp"]
     put?: never
     post?: never
@@ -5403,6 +5808,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["server-getServerTime"]
     put?: never
     post?: never
@@ -5419,6 +5825,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["server-getServerMetrics"]
     put?: never
     post?: never
@@ -5435,6 +5842,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["settings-getWebServerSettings"]
     put?: never
     post?: never
@@ -5453,6 +5861,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-reloadServer"]
     delete?: never
     options?: never
@@ -5469,6 +5878,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-cleanRedis"]
     delete?: never
     options?: never
@@ -5485,6 +5895,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-reloadRedis"]
     delete?: never
     options?: never
@@ -5501,6 +5912,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-cleanAllDeploymentQueue"]
     delete?: never
     options?: never
@@ -5517,6 +5929,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-reloadTraefik"]
     delete?: never
     options?: never
@@ -5533,6 +5946,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-toggleDashboard"]
     delete?: never
     options?: never
@@ -5549,6 +5963,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-cleanUnusedImages"]
     delete?: never
     options?: never
@@ -5565,6 +5980,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-cleanUnusedVolumes"]
     delete?: never
     options?: never
@@ -5581,6 +5997,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-cleanStoppedContainers"]
     delete?: never
     options?: never
@@ -5597,6 +6014,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-cleanDockerBuilder"]
     delete?: never
     options?: never
@@ -5613,6 +6031,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-cleanDockerPrune"]
     delete?: never
     options?: never
@@ -5629,6 +6048,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-cleanAll"]
     delete?: never
     options?: never
@@ -5645,6 +6065,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-cleanMonitoring"]
     delete?: never
     options?: never
@@ -5659,6 +6080,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["settings-getDockerDiskUsage"]
     put?: never
     post?: never
@@ -5677,6 +6099,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-saveSSHPrivateKey"]
     delete?: never
     options?: never
@@ -5693,6 +6116,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-assignDomainServer"]
     delete?: never
     options?: never
@@ -5709,6 +6133,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-cleanSSHPrivateKey"]
     delete?: never
     options?: never
@@ -5725,7 +6150,59 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-updateDockerCleanup"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/settings.updateRemoteServersOnly": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["settings-updateRemoteServersOnly"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/settings.updateBuildsConcurrency": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["settings-updateBuildsConcurrency"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/settings.updateEnforceSSO": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["settings-updateEnforceSSO"]
     delete?: never
     options?: never
     head?: never
@@ -5739,6 +6216,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["settings-readTraefikConfig"]
     put?: never
     post?: never
@@ -5757,6 +6235,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-updateTraefikConfig"]
     delete?: never
     options?: never
@@ -5771,6 +6250,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["settings-readWebServerTraefikConfig"]
     put?: never
     post?: never
@@ -5789,6 +6269,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-updateWebServerTraefikConfig"]
     delete?: never
     options?: never
@@ -5803,6 +6284,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["settings-readMiddlewareTraefikConfig"]
     put?: never
     post?: never
@@ -5821,6 +6303,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-updateMiddlewareTraefikConfig"]
     delete?: never
     options?: never
@@ -5837,6 +6320,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-getUpdateData"]
     delete?: never
     options?: never
@@ -5853,6 +6337,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-updateServer"]
     delete?: never
     options?: never
@@ -5867,6 +6352,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["settings-getDokployVersion"]
     put?: never
     post?: never
@@ -5883,6 +6369,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["settings-getReleaseTag"]
     put?: never
     post?: never
@@ -5899,6 +6386,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["settings-readDirectories"]
     put?: never
     post?: never
@@ -5917,6 +6405,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-updateTraefikFile"]
     delete?: never
     options?: never
@@ -5931,6 +6420,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["settings-readTraefikFile"]
     put?: never
     post?: never
@@ -5947,6 +6437,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["settings-getIp"]
     put?: never
     post?: never
@@ -5965,6 +6456,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-updateServerIp"]
     delete?: never
     options?: never
@@ -5979,6 +6471,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["settings-getOpenApiDocument"]
     put?: never
     post?: never
@@ -5995,6 +6488,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["settings-readTraefikEnv"]
     put?: never
     post?: never
@@ -6013,6 +6507,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-writeTraefikEnv"]
     delete?: never
     options?: never
@@ -6027,6 +6522,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["settings-haveTraefikDashboardPortEnabled"]
     put?: never
     post?: never
@@ -6043,6 +6539,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["settings-haveActivateRequests"]
     put?: never
     post?: never
@@ -6061,6 +6558,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-toggleRequests"]
     delete?: never
     options?: never
@@ -6075,6 +6573,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["settings-isCloud"]
     put?: never
     post?: never
@@ -6091,6 +6590,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["settings-isUserSubscribed"]
     put?: never
     post?: never
@@ -6107,6 +6607,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["settings-health"]
     put?: never
     post?: never
@@ -6123,6 +6624,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["settings-checkInfrastructureHealth"]
     put?: never
     post?: never
@@ -6141,6 +6643,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-setupGPU"]
     delete?: never
     options?: never
@@ -6155,6 +6658,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["settings-checkGPUStatus"]
     put?: never
     post?: never
@@ -6173,6 +6677,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-updateTraefikPorts"]
     delete?: never
     options?: never
@@ -6187,6 +6692,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["settings-getTraefikPorts"]
     put?: never
     post?: never
@@ -6205,6 +6711,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["settings-updateLogCleanup"]
     delete?: never
     options?: never
@@ -6219,6 +6726,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["settings-getLogCleanupStatus"]
     put?: never
     post?: never
@@ -6235,6 +6743,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["settings-getDokployCloudIps"]
     put?: never
     post?: never
@@ -6253,6 +6762,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["sshKey-create"]
     delete?: never
     options?: never
@@ -6269,6 +6779,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["sshKey-remove"]
     delete?: never
     options?: never
@@ -6283,6 +6794,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["sshKey-one"]
     put?: never
     post?: never
@@ -6299,6 +6811,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["sshKey-all"]
     put?: never
     post?: never
@@ -6315,6 +6828,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["sshKey-allForApps"]
     put?: never
     post?: never
@@ -6333,6 +6847,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["sshKey-generate"]
     delete?: never
     options?: never
@@ -6349,6 +6864,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["sshKey-update"]
     delete?: never
     options?: never
@@ -6363,6 +6879,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["stripe-getCurrentPlan"]
     put?: never
     post?: never
@@ -6379,6 +6896,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["stripe-getProducts"]
     put?: never
     post?: never
@@ -6397,6 +6915,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["stripe-createCheckoutSession"]
     delete?: never
     options?: never
@@ -6413,6 +6932,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["stripe-createCustomerPortalSession"]
     delete?: never
     options?: never
@@ -6429,6 +6949,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["stripe-upgradeSubscription"]
     delete?: never
     options?: never
@@ -6443,6 +6964,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["stripe-canCreateMoreServers"]
     put?: never
     post?: never
@@ -6461,6 +6983,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["stripe-updateInvoiceNotifications"]
     delete?: never
     options?: never
@@ -6475,6 +6998,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["stripe-getInvoices"]
     put?: never
     post?: never
@@ -6491,6 +7015,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["swarm-getNodes"]
     put?: never
     post?: never
@@ -6507,6 +7032,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["swarm-getNodeInfo"]
     put?: never
     post?: never
@@ -6523,6 +7049,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["swarm-getNodeApps"]
     put?: never
     post?: never
@@ -6539,6 +7066,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["swarm-getContainerStats"]
     put?: never
     post?: never
@@ -6555,6 +7083,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["user-all"]
     put?: never
     post?: never
@@ -6571,6 +7100,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["user-one"]
     put?: never
     post?: never
@@ -6587,6 +7117,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["user-session"]
     put?: never
     post?: never
@@ -6603,6 +7134,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["user-get"]
     put?: never
     post?: never
@@ -6619,6 +7151,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["user-getPermissions"]
     put?: never
     post?: never
@@ -6635,6 +7168,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["user-haveRootAccess"]
     put?: never
     post?: never
@@ -6651,6 +7185,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["user-getBackups"]
     put?: never
     post?: never
@@ -6667,6 +7202,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["user-getServerMetrics"]
     put?: never
     post?: never
@@ -6685,6 +7221,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["user-update"]
     delete?: never
     options?: never
@@ -6699,6 +7236,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["user-getUserByToken"]
     put?: never
     post?: never
@@ -6715,6 +7253,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["user-getMetricsToken"]
     put?: never
     post?: never
@@ -6733,6 +7272,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["user-remove"]
     delete?: never
     options?: never
@@ -6749,6 +7289,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["user-assignPermissions"]
     delete?: never
     options?: never
@@ -6763,6 +7304,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["user-getInvitations"]
     put?: never
     post?: never
@@ -6779,6 +7321,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["user-getContainerMetrics"]
     put?: never
     post?: never
@@ -6797,6 +7340,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["user-generateToken"]
     delete?: never
     options?: never
@@ -6813,6 +7357,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["user-deleteApiKey"]
     delete?: never
     options?: never
@@ -6829,6 +7374,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["user-createApiKey"]
     delete?: never
     options?: never
@@ -6843,6 +7389,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["user-checkUserOrganizations"]
     put?: never
     post?: never
@@ -6861,6 +7408,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["user-createUserWithCredentials"]
     delete?: never
     options?: never
@@ -6877,6 +7425,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["user-sendInvitation"]
     delete?: never
     options?: never
@@ -6891,6 +7440,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["user-getBookmarkedTemplates"]
     put?: never
     post?: never
@@ -6909,6 +7459,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["user-toggleTemplateBookmark"]
     delete?: never
     options?: never
@@ -6923,6 +7474,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["ai-one"]
     put?: never
     post?: never
@@ -6939,6 +7491,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["ai-getModels"]
     put?: never
     post?: never
@@ -6957,6 +7510,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["ai-create"]
     delete?: never
     options?: never
@@ -6973,6 +7527,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["ai-update"]
     delete?: never
     options?: never
@@ -6987,6 +7542,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["ai-getAll"]
     put?: never
     post?: never
@@ -7003,6 +7559,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["ai-get"]
     put?: never
     post?: never
@@ -7021,6 +7578,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["ai-delete"]
     delete?: never
     options?: never
@@ -7035,6 +7593,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["ai-getEnabledProviders"]
     put?: never
     post?: never
@@ -7053,6 +7612,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["ai-analyzeLogs"]
     delete?: never
     options?: never
@@ -7069,6 +7629,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["ai-testConnection"]
     delete?: never
     options?: never
@@ -7085,6 +7646,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["ai-suggest"]
     delete?: never
     options?: never
@@ -7101,6 +7663,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["ai-deploy"]
     delete?: never
     options?: never
@@ -7117,6 +7680,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["organization-create"]
     delete?: never
     options?: never
@@ -7131,6 +7695,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["organization-all"]
     put?: never
     post?: never
@@ -7147,6 +7712,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["organization-one"]
     put?: never
     post?: never
@@ -7165,6 +7731,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["organization-update"]
     delete?: never
     options?: never
@@ -7181,6 +7748,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["organization-delete"]
     delete?: never
     options?: never
@@ -7197,6 +7765,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["organization-inviteMember"]
     delete?: never
     options?: never
@@ -7211,6 +7780,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["organization-allInvitations"]
     put?: never
     post?: never
@@ -7229,6 +7799,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["organization-removeInvitation"]
     delete?: never
     options?: never
@@ -7245,6 +7816,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["organization-updateMemberRole"]
     delete?: never
     options?: never
@@ -7261,6 +7833,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["organization-setDefault"]
     delete?: never
     options?: never
@@ -7275,6 +7848,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["organization-active"]
     put?: never
     post?: never
@@ -7293,6 +7867,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["licenseKey-activate"]
     delete?: never
     options?: never
@@ -7309,6 +7884,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["licenseKey-validate"]
     delete?: never
     options?: never
@@ -7325,6 +7901,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["licenseKey-deactivate"]
     delete?: never
     options?: never
@@ -7339,6 +7916,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["licenseKey-getEnterpriseSettings"]
     put?: never
     post?: never
@@ -7355,6 +7933,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["licenseKey-haveValidLicenseKey"]
     put?: never
     post?: never
@@ -7373,6 +7952,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["licenseKey-updateEnterpriseSettings"]
     delete?: never
     options?: never
@@ -7387,7 +7967,25 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["sso-showSignInWithSSO"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/sso.enforceSSO": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description null */
+    get: operations["sso-enforceSSO"]
     put?: never
     post?: never
     delete?: never
@@ -7403,6 +8001,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["sso-listProviders"]
     put?: never
     post?: never
@@ -7419,6 +8018,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["sso-getTrustedOrigins"]
     put?: never
     post?: never
@@ -7435,6 +8035,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["sso-one"]
     put?: never
     post?: never
@@ -7453,6 +8054,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["sso-update"]
     delete?: never
     options?: never
@@ -7469,6 +8071,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["sso-deleteProvider"]
     delete?: never
     options?: never
@@ -7485,6 +8088,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["sso-register"]
     delete?: never
     options?: never
@@ -7501,6 +8105,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["sso-addTrustedOrigin"]
     delete?: never
     options?: never
@@ -7517,6 +8122,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["sso-removeTrustedOrigin"]
     delete?: never
     options?: never
@@ -7533,7 +8139,229 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["sso-updateTrustedOrigin"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/scim.listProviders": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description null */
+    get: operations["scim-listProviders"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/scim.generateToken": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["scim-generateToken"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/scim.deleteProvider": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["scim-deleteProvider"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/forwardAuth.getAuthDomain": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description null */
+    get: operations["forwardAuth-getAuthDomain"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/forwardAuth.setAuthDomain": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["forwardAuth-setAuthDomain"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/forwardAuth.removeAuthDomain": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["forwardAuth-removeAuthDomain"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/forwardAuth.listProviders": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description null */
+    get: operations["forwardAuth-listProviders"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/forwardAuth.serverStatus": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description null */
+    get: operations["forwardAuth-serverStatus"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/forwardAuth.deployOnServer": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["forwardAuth-deployOnServer"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/forwardAuth.removeOnServer": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["forwardAuth-removeOnServer"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/forwardAuth.status": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description null */
+    get: operations["forwardAuth-status"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/forwardAuth.enable": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["forwardAuth-enable"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/forwardAuth.disable": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["forwardAuth-disable"]
     delete?: never
     options?: never
     head?: never
@@ -7547,6 +8375,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["whitelabeling-get"]
     put?: never
     post?: never
@@ -7565,6 +8394,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["whitelabeling-update"]
     delete?: never
     options?: never
@@ -7581,6 +8411,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["whitelabeling-reset"]
     delete?: never
     options?: never
@@ -7595,6 +8426,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["whitelabeling-getPublic"]
     put?: never
     post?: never
@@ -7611,6 +8443,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["customRole-all"]
     put?: never
     post?: never
@@ -7629,6 +8462,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["customRole-create"]
     delete?: never
     options?: never
@@ -7645,6 +8479,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["customRole-update"]
     delete?: never
     options?: never
@@ -7661,6 +8496,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["customRole-remove"]
     delete?: never
     options?: never
@@ -7675,6 +8511,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["customRole-membersByRole"]
     put?: never
     post?: never
@@ -7691,6 +8528,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["customRole-getStatements"]
     put?: never
     post?: never
@@ -7707,6 +8545,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["auditLog-all"]
     put?: never
     post?: never
@@ -7725,6 +8564,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["schedule-create"]
     delete?: never
     options?: never
@@ -7741,6 +8581,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["schedule-update"]
     delete?: never
     options?: never
@@ -7757,6 +8598,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["schedule-delete"]
     delete?: never
     options?: never
@@ -7771,6 +8613,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["schedule-list"]
     put?: never
     post?: never
@@ -7787,6 +8630,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["schedule-one"]
     put?: never
     post?: never
@@ -7805,6 +8649,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["schedule-runManually"]
     delete?: never
     options?: never
@@ -7821,6 +8666,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["rollback-delete"]
     delete?: never
     options?: never
@@ -7837,6 +8683,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["rollback-rollback"]
     delete?: never
     options?: never
@@ -7851,6 +8698,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["volumeBackups-list"]
     put?: never
     post?: never
@@ -7869,6 +8717,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["volumeBackups-create"]
     delete?: never
     options?: never
@@ -7883,6 +8732,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["volumeBackups-one"]
     put?: never
     post?: never
@@ -7901,6 +8751,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["volumeBackups-delete"]
     delete?: never
     options?: never
@@ -7917,6 +8768,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["volumeBackups-update"]
     delete?: never
     options?: never
@@ -7933,6 +8785,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["volumeBackups-runManually"]
     delete?: never
     options?: never
@@ -7949,6 +8802,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["environment-create"]
     delete?: never
     options?: never
@@ -7963,6 +8817,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["environment-one"]
     put?: never
     post?: never
@@ -7979,6 +8834,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["environment-byProjectId"]
     put?: never
     post?: never
@@ -7997,6 +8853,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["environment-remove"]
     delete?: never
     options?: never
@@ -8013,6 +8870,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["environment-update"]
     delete?: never
     options?: never
@@ -8029,6 +8887,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["environment-duplicate"]
     delete?: never
     options?: never
@@ -8043,6 +8902,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["environment-search"]
     put?: never
     post?: never
@@ -8061,6 +8921,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["tag-create"]
     delete?: never
     options?: never
@@ -8075,6 +8936,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["tag-all"]
     put?: never
     post?: never
@@ -8091,6 +8953,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["tag-one"]
     put?: never
     post?: never
@@ -8109,6 +8972,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["tag-update"]
     delete?: never
     options?: never
@@ -8125,6 +8989,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["tag-remove"]
     delete?: never
     options?: never
@@ -8141,6 +9006,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["tag-assignToProject"]
     delete?: never
     options?: never
@@ -8157,6 +9023,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["tag-removeFromProject"]
     delete?: never
     options?: never
@@ -8173,6 +9040,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["tag-bulkAssign"]
     delete?: never
     options?: never
@@ -8189,6 +9057,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["patch-create"]
     delete?: never
     options?: never
@@ -8203,6 +9072,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["patch-one"]
     put?: never
     post?: never
@@ -8219,6 +9089,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["patch-byEntityId"]
     put?: never
     post?: never
@@ -8237,6 +9108,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["patch-update"]
     delete?: never
     options?: never
@@ -8253,6 +9125,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["patch-delete"]
     delete?: never
     options?: never
@@ -8269,6 +9142,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["patch-toggleEnabled"]
     delete?: never
     options?: never
@@ -8285,6 +9159,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["patch-ensureRepo"]
     delete?: never
     options?: never
@@ -8299,6 +9174,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["patch-readRepoDirectories"]
     put?: never
     post?: never
@@ -8315,6 +9191,7 @@ export type paths = {
       path?: never
       cookie?: never
     }
+    /** @description null */
     get: operations["patch-readRepoFile"]
     put?: never
     post?: never
@@ -8333,6 +9210,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["patch-saveFileAsPatch"]
     delete?: never
     options?: never
@@ -8349,6 +9227,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["patch-markFileForDeletion"]
     delete?: never
     options?: never
@@ -8365,6 +9244,7 @@ export type paths = {
     }
     get?: never
     put?: never
+    /** @description null */
     post: operations["patch-cleanPatchRepos"]
     delete?: never
     options?: never
@@ -9203,10 +10083,10 @@ export interface operations {
         "application/json": {
           applicationId: string
           repository: string | null
-          branch: string | null
           owner: string | null
           buildPath: string | null
           githubId: string | null
+          branch: string
           /**
            * @default push
            * @enum {string}
@@ -9276,13 +10156,13 @@ export interface operations {
       content: {
         "application/json": {
           applicationId: string
-          gitlabBranch: string | null
           gitlabBuildPath: string | null
           gitlabOwner: string | null
           gitlabRepository: string | null
           gitlabId: string | null
           gitlabProjectId: number | null
           gitlabPathNamespace: string | null
+          gitlabBranch: string
           enableSubmodules?: boolean
           watchPaths?: string[] | null
         }
@@ -9346,13 +10226,13 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          bitbucketBranch: string | null
           bitbucketBuildPath: string | null
           bitbucketOwner: string | null
           bitbucketRepository: string | null
           bitbucketRepositorySlug: string | null
           bitbucketId: string | null
           applicationId: string
+          bitbucketBranch: string
           enableSubmodules?: boolean
           watchPaths?: string[] | null
         }
@@ -9417,11 +10297,11 @@ export interface operations {
       content: {
         "application/json": {
           applicationId: string
-          giteaBranch: string | null
           giteaBuildPath: string | null
           giteaOwner: string | null
           giteaRepository: string | null
           giteaId: string | null
+          giteaBranch: string
           enableSubmodules?: boolean
           watchPaths?: string[] | null
         }
@@ -9551,12 +10431,12 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          customGitBranch: string | null
           applicationId: string
           customGitBuildPath: string | null
           customGitUrl: string | null
           watchPaths: string[] | null
           enableSubmodules?: boolean
+          customGitBranch: string
           customGitSSHKeyId?: string | null
         }
       }
@@ -14404,6 +15284,70 @@ export interface operations {
       }
     }
   }
+  "compose-previewTemplate": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          base64: string
+          appName: string
+          serverId?: string
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
   "compose-import": {
     parameters: {
       query?: never
@@ -15184,6 +16128,74 @@ export interface operations {
         }
         content: {
           "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "deployment-readLogs": {
+    parameters: {
+      query: {
+        deploymentId: string
+        tail?: number
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.NOT_FOUND"]
         }
       }
       /** @description Internal server error */
@@ -16418,6 +17430,7 @@ export interface operations {
           internalPath?: string | null
           stripPath?: boolean
           middlewares?: string[] | null
+          forwardAuthEnabled?: boolean
         }
       }
     }
@@ -16756,6 +17769,7 @@ export interface operations {
           internalPath?: string | null
           stripPath?: boolean
           middlewares?: string[] | null
+          forwardAuthEnabled?: boolean
           domainId: string
         }
       }
@@ -28442,6 +29456,71 @@ export interface operations {
       }
     }
   }
+  "project-homeStats": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
   "project-search": {
     parameters: {
       query?: {
@@ -30869,6 +31948,8 @@ export interface operations {
           sshKeyId: string | null
           /** @enum {string} */
           serverType: "deploy" | "build"
+          /** @default true */
+          enableDockerCleanup?: boolean
         }
       }
     }
@@ -31740,7 +32821,72 @@ export interface operations {
           sshKeyId: string | null
           /** @enum {string} */
           serverType: "deploy" | "build"
+          /** @default true */
+          enableDockerCleanup?: boolean
           command?: string
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "server-updateBuildsConcurrency": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          serverId: string
+          buildsConcurrency: number
         }
       }
     }
@@ -33094,6 +34240,192 @@ export interface operations {
         "application/json": {
           enableDockerCleanup: boolean
           serverId?: string
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "settings-updateRemoteServersOnly": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          remoteServersOnly: boolean
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "settings-updateBuildsConcurrency": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          buildsConcurrency: number
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "settings-updateEnforceSSO": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          enforceSSO: boolean
         }
       }
     }
@@ -39892,6 +41224,71 @@ export interface operations {
       }
     }
   }
+  "sso-enforceSSO": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
   "sso-listProviders": {
     parameters: {
       query?: never
@@ -40573,6 +41970,841 @@ export interface operations {
         "application/json": {
           oldOrigin: string
           newOrigin: string
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "scim-listProviders": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "scim-generateToken": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          providerId: string
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "scim-deleteProvider": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          providerId: string
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "forwardAuth-getAuthDomain": {
+    parameters: {
+      query: {
+        serverId: string | null
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "forwardAuth-setAuthDomain": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          serverId: string | null
+          authDomain: string
+          /** @default true */
+          https?: boolean
+          /**
+           * @default letsencrypt
+           * @enum {string}
+           */
+          certificateType?: "none" | "letsencrypt" | "custom"
+          customCertResolver?: string
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "forwardAuth-removeAuthDomain": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          serverId: string | null
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "forwardAuth-listProviders": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "forwardAuth-serverStatus": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "forwardAuth-deployOnServer": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          serverId: string | null
+          providerId: string
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "forwardAuth-removeOnServer": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          serverId: string | null
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "forwardAuth-status": {
+    parameters: {
+      query: {
+        domainId: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "forwardAuth-enable": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          domainId: string
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "forwardAuth-disable": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          domainId: string
         }
       }
     }
@@ -41377,6 +43609,7 @@ export interface operations {
         "application/json": {
           scheduleId?: string
           name: string
+          description?: string | null
           cronExpression: string
           appName?: string
           serviceName?: string | null
@@ -41389,7 +43622,7 @@ export interface operations {
           applicationId?: string | null
           composeId?: string | null
           serverId?: string | null
-          userId?: string | null
+          organizationId?: string | null
           enabled?: boolean
           timezone?: string | null
           createdAt?: string
@@ -41456,6 +43689,7 @@ export interface operations {
         "application/json": {
           scheduleId: string
           name: string
+          description?: string | null
           cronExpression: string
           appName?: string
           serviceName?: string | null
@@ -41468,7 +43702,7 @@ export interface operations {
           applicationId?: string | null
           composeId?: string | null
           serverId?: string | null
-          userId?: string | null
+          organizationId?: string | null
           enabled?: boolean
           timezone?: string | null
           createdAt?: string

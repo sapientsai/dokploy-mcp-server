@@ -9,6 +9,7 @@ import { createLogLayerTelemetry, createServer } from "somamcp"
 import { initializeDokployClient } from "./client/dokploy-client"
 import {
   registerApplicationTools,
+  registerAuditLogTools,
   registerBackupTools,
   registerComposeTools,
   registerDatabaseTools,
@@ -19,11 +20,15 @@ import {
   registerEnvironmentTools,
   registerInfrastructureTools,
   registerMountsTools,
+  registerPreviewDeploymentTools,
   registerProjectTools,
+  registerRedirectsTools,
   registerRegistryTools,
+  registerScheduleTools,
   registerServerTools,
   registerSettingsTools,
   registerSshKeyTools,
+  registerVolumeBackupTools,
 } from "./tools"
 
 dotenv.config()
@@ -64,14 +69,19 @@ const server = createServer({
 
 Available capabilities:
 - Projects: list, create, update, remove, duplicate
-- Applications: create, deploy, redeploy, start, stop, delete, read logs, configure builds, manage environment variables
-- Docker Compose: create, deploy, start, stop, read logs, manage services
-- Databases: unified tools for postgres, mysql, mariadb, mongo, redis, libsql (create, deploy, start, stop, manage)
+- Applications: create, deploy, redeploy, start, stop, delete, read logs, configure builds, manage environment variables, search
+- Docker Compose: create, deploy, start, stop, read logs, manage services, search
+- Databases: unified tools for postgres, mysql, mariadb, mongo, redis, libsql (create, deploy, start, stop, manage, search)
 - Domains: create, configure, validate DNS, generate traefik.me domains
+- Redirects: URL redirect rules on applications (Traefik regex → replacement, 301/302)
 - Docker: list containers, start/stop/kill/restart/remove, inspect configuration
 - Servers: add, configure, monitor remote servers
-- Deployments: list, track, kill deployment processes
+- Deployments: list, queue, read logs, kill process, remove
 - Backups: schedule, trigger manual backups, list backup files
+- Volume Backups: schedule volume-level backups (rclone-based); complements DB-native backups
+- Preview Deployments: PR/branch preview deploys off a parent application
+- Schedules: cron jobs against applications, compose services, servers, or dokploy itself
+- Audit Log: query the audit trail with filters (user/action/resource/date range)
 - Environments: create, duplicate, manage project environments
 - Infrastructure: ports, certificates, basic auth security
 - Mounts: volumes, bind mounts, and file mounts attached to applications/databases/compose services
@@ -87,10 +97,15 @@ registerComposeTools(server)
 registerDeploymentTools(server)
 registerDockerTools(server)
 registerDomainTools(server)
+registerRedirectsTools(server)
 registerServerTools(server)
 registerSettingsTools(server)
 registerDatabaseTools(server)
 registerBackupTools(server)
+registerVolumeBackupTools(server)
+registerPreviewDeploymentTools(server)
+registerScheduleTools(server)
+registerAuditLogTools(server)
 registerEnvironmentTools(server)
 registerInfrastructureTools(server)
 registerMountsTools(server)

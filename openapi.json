@@ -3,7 +3,7 @@
   "info": {
     "title": "Dokploy API",
     "description": "Endpoints for dokploy",
-    "version": "v0.29.0"
+    "version": "v0.29.11"
   },
   "servers": [
     {
@@ -148,6 +148,8 @@
     "/admin.setupMonitoring": {
       "post": {
         "operationId": "admin-setupMonitoring",
+        "summary": null,
+        "description": null,
         "tags": ["admin"],
         "security": [
           {
@@ -311,6 +313,8 @@
     "/application.create": {
       "post": {
         "operationId": "application-create",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -423,6 +427,8 @@
     "/application.one": {
       "get": {
         "operationId": "application-one",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -509,6 +515,8 @@
     "/application.reload": {
       "post": {
         "operationId": "application-reload",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -597,6 +605,8 @@
     "/application.delete": {
       "post": {
         "operationId": "application-delete",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -680,6 +690,8 @@
     "/application.stop": {
       "post": {
         "operationId": "application-stop",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -763,6 +775,8 @@
     "/application.start": {
       "post": {
         "operationId": "application-start",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -846,6 +860,8 @@
     "/application.redeploy": {
       "post": {
         "operationId": "application-redeploy",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -935,6 +951,8 @@
     "/application.saveEnvironment": {
       "post": {
         "operationId": "application-saveEnvironment",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -1050,6 +1068,8 @@
     "/application.saveBuildType": {
       "post": {
         "operationId": "application-saveBuildType",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -1214,6 +1234,8 @@
     "/application.saveGithubProvider": {
       "post": {
         "operationId": "application-saveGithubProvider",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -1232,16 +1254,6 @@
                     "type": "string"
                   },
                   "repository": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
-                  },
-                  "branch": {
                     "anyOf": [
                       {
                         "type": "string"
@@ -1281,6 +1293,11 @@
                       }
                     ]
                   },
+                  "branch": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-zA-Z0-9._\\-/#]+$"
+                  },
                   "triggerType": {
                     "default": "push",
                     "type": "string",
@@ -1303,7 +1320,7 @@
                     ]
                   }
                 },
-                "required": ["applicationId", "repository", "branch", "owner", "buildPath", "githubId", "triggerType"]
+                "required": ["applicationId", "repository", "owner", "buildPath", "githubId", "branch", "triggerType"]
               }
             }
           }
@@ -1367,6 +1384,8 @@
     "/application.saveGitlabProvider": {
       "post": {
         "operationId": "application-saveGitlabProvider",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -1383,16 +1402,6 @@
                 "properties": {
                   "applicationId": {
                     "type": "string"
-                  },
-                  "gitlabBranch": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
                   },
                   "gitlabBuildPath": {
                     "anyOf": [
@@ -1454,6 +1463,11 @@
                       }
                     ]
                   },
+                  "gitlabBranch": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-zA-Z0-9._\\-/#]+$"
+                  },
                   "enableSubmodules": {
                     "type": "boolean"
                   },
@@ -1473,13 +1487,13 @@
                 },
                 "required": [
                   "applicationId",
-                  "gitlabBranch",
                   "gitlabBuildPath",
                   "gitlabOwner",
                   "gitlabRepository",
                   "gitlabId",
                   "gitlabProjectId",
-                  "gitlabPathNamespace"
+                  "gitlabPathNamespace",
+                  "gitlabBranch"
                 ]
               }
             }
@@ -1544,6 +1558,8 @@
     "/application.saveBitbucketProvider": {
       "post": {
         "operationId": "application-saveBitbucketProvider",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -1558,16 +1574,6 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "bitbucketBranch": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
-                  },
                   "bitbucketBuildPath": {
                     "anyOf": [
                       {
@@ -1621,6 +1627,11 @@
                   "applicationId": {
                     "type": "string"
                   },
+                  "bitbucketBranch": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-zA-Z0-9._\\-/#]+$"
+                  },
                   "enableSubmodules": {
                     "type": "boolean"
                   },
@@ -1639,13 +1650,13 @@
                   }
                 },
                 "required": [
-                  "bitbucketBranch",
                   "bitbucketBuildPath",
                   "bitbucketOwner",
                   "bitbucketRepository",
                   "bitbucketRepositorySlug",
                   "bitbucketId",
-                  "applicationId"
+                  "applicationId",
+                  "bitbucketBranch"
                 ]
               }
             }
@@ -1710,6 +1721,8 @@
     "/application.saveGiteaProvider": {
       "post": {
         "operationId": "application-saveGiteaProvider",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -1726,16 +1739,6 @@
                 "properties": {
                   "applicationId": {
                     "type": "string"
-                  },
-                  "giteaBranch": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
                   },
                   "giteaBuildPath": {
                     "anyOf": [
@@ -1777,6 +1780,11 @@
                       }
                     ]
                   },
+                  "giteaBranch": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-zA-Z0-9._\\-/#]+$"
+                  },
                   "enableSubmodules": {
                     "type": "boolean"
                   },
@@ -1796,11 +1804,11 @@
                 },
                 "required": [
                   "applicationId",
-                  "giteaBranch",
                   "giteaBuildPath",
                   "giteaOwner",
                   "giteaRepository",
-                  "giteaId"
+                  "giteaId",
+                  "giteaBranch"
                 ]
               }
             }
@@ -1865,6 +1873,8 @@
     "/application.saveDockerProvider": {
       "post": {
         "operationId": "application-saveDockerProvider",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -1987,6 +1997,8 @@
     "/application.saveGitProvider": {
       "post": {
         "operationId": "application-saveGitProvider",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -2001,16 +2013,6 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "customGitBranch": {
-                    "anyOf": [
-                      {
-                        "type": "string"
-                      },
-                      {
-                        "type": "null"
-                      }
-                    ]
-                  },
                   "applicationId": {
                     "type": "string"
                   },
@@ -2050,6 +2052,11 @@
                   "enableSubmodules": {
                     "type": "boolean"
                   },
+                  "customGitBranch": {
+                    "type": "string",
+                    "minLength": 1,
+                    "pattern": "^[a-zA-Z0-9._\\-/#]+$"
+                  },
                   "customGitSSHKeyId": {
                     "anyOf": [
                       {
@@ -2061,7 +2068,7 @@
                     ]
                   }
                 },
-                "required": ["customGitBranch", "applicationId", "customGitBuildPath", "customGitUrl", "watchPaths"]
+                "required": ["applicationId", "customGitBuildPath", "customGitUrl", "watchPaths", "customGitBranch"]
               }
             }
           }
@@ -2125,6 +2132,8 @@
     "/application.disconnectGitProvider": {
       "post": {
         "operationId": "application-disconnectGitProvider",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -2208,6 +2217,8 @@
     "/application.markRunning": {
       "post": {
         "operationId": "application-markRunning",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -2291,6 +2302,8 @@
     "/application.update": {
       "post": {
         "operationId": "application-update",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -3600,6 +3613,8 @@
     "/application.refreshToken": {
       "post": {
         "operationId": "application-refreshToken",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -3683,6 +3698,8 @@
     "/application.deploy": {
       "post": {
         "operationId": "application-deploy",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -3772,6 +3789,8 @@
     "/application.cleanQueues": {
       "post": {
         "operationId": "application-cleanQueues",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -3855,6 +3874,8 @@
     "/application.clearDeployments": {
       "post": {
         "operationId": "application-clearDeployments",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -3938,6 +3959,8 @@
     "/application.killBuild": {
       "post": {
         "operationId": "application-killBuild",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -4021,6 +4044,8 @@
     "/application.readTraefikConfig": {
       "get": {
         "operationId": "application-readTraefikConfig",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -4107,6 +4132,8 @@
     "/application.dropDeployment": {
       "post": {
         "operationId": "application-dropDeployment",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -4196,6 +4223,8 @@
     "/application.updateTraefikConfig": {
       "post": {
         "operationId": "application-updateTraefikConfig",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -4281,6 +4310,8 @@
     "/application.readAppMonitoring": {
       "get": {
         "operationId": "application-readAppMonitoring",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -4367,6 +4398,8 @@
     "/application.move": {
       "post": {
         "operationId": "application-move",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -4452,6 +4485,8 @@
     "/application.cancelDeployment": {
       "post": {
         "operationId": "application-cancelDeployment",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -4535,6 +4570,8 @@
     "/application.search": {
       "get": {
         "operationId": "application-search",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -4694,6 +4731,8 @@
     "/application.readLogs": {
       "get": {
         "operationId": "application-readLogs",
+        "summary": null,
+        "description": null,
         "tags": ["application"],
         "security": [
           {
@@ -4807,6 +4846,8 @@
     "/backup.create": {
       "post": {
         "operationId": "backup-create",
+        "summary": null,
+        "description": null,
         "tags": ["backup"],
         "security": [
           {
@@ -5016,6 +5057,8 @@
     "/backup.one": {
       "get": {
         "operationId": "backup-one",
+        "summary": null,
+        "description": null,
         "tags": ["backup"],
         "security": [
           {
@@ -5102,6 +5145,8 @@
     "/backup.update": {
       "post": {
         "operationId": "backup-update",
+        "summary": null,
+        "description": null,
         "tags": ["backup"],
         "security": [
           {
@@ -5251,6 +5296,8 @@
     "/backup.remove": {
       "post": {
         "operationId": "backup-remove",
+        "summary": null,
+        "description": null,
         "tags": ["backup"],
         "security": [
           {
@@ -5333,6 +5380,8 @@
     "/backup.manualBackupPostgres": {
       "post": {
         "operationId": "backup-manualBackupPostgres",
+        "summary": null,
+        "description": null,
         "tags": ["backup"],
         "security": [
           {
@@ -5416,6 +5465,8 @@
     "/backup.manualBackupMySql": {
       "post": {
         "operationId": "backup-manualBackupMySql",
+        "summary": null,
+        "description": null,
         "tags": ["backup"],
         "security": [
           {
@@ -5499,6 +5550,8 @@
     "/backup.manualBackupMariadb": {
       "post": {
         "operationId": "backup-manualBackupMariadb",
+        "summary": null,
+        "description": null,
         "tags": ["backup"],
         "security": [
           {
@@ -5582,6 +5635,8 @@
     "/backup.manualBackupCompose": {
       "post": {
         "operationId": "backup-manualBackupCompose",
+        "summary": null,
+        "description": null,
         "tags": ["backup"],
         "security": [
           {
@@ -5665,6 +5720,8 @@
     "/backup.manualBackupMongo": {
       "post": {
         "operationId": "backup-manualBackupMongo",
+        "summary": null,
+        "description": null,
         "tags": ["backup"],
         "security": [
           {
@@ -5748,6 +5805,8 @@
     "/backup.manualBackupLibsql": {
       "post": {
         "operationId": "backup-manualBackupLibsql",
+        "summary": null,
+        "description": null,
         "tags": ["backup"],
         "security": [
           {
@@ -5831,6 +5890,8 @@
     "/backup.manualBackupWebServer": {
       "post": {
         "operationId": "backup-manualBackupWebServer",
+        "summary": null,
+        "description": null,
         "tags": ["backup"],
         "security": [
           {
@@ -5914,6 +5975,8 @@
     "/backup.listBackupFiles": {
       "get": {
         "operationId": "backup-listBackupFiles",
+        "summary": null,
+        "description": null,
         "tags": ["backup"],
         "security": [
           {
@@ -6014,6 +6077,8 @@
     "/bitbucket.create": {
       "post": {
         "operationId": "bitbucket-create",
+        "summary": null,
+        "description": null,
         "tags": ["bitbucket"],
         "security": [
           {
@@ -6124,6 +6189,8 @@
     "/bitbucket.one": {
       "get": {
         "operationId": "bitbucket-one",
+        "summary": null,
+        "description": null,
         "tags": ["bitbucket"],
         "security": [
           {
@@ -6210,6 +6277,8 @@
     "/bitbucket.bitbucketProviders": {
       "get": {
         "operationId": "bitbucket-bitbucketProviders",
+        "summary": null,
+        "description": null,
         "tags": ["bitbucket"],
         "security": [
           {
@@ -6285,6 +6354,8 @@
     "/bitbucket.getBitbucketRepositories": {
       "get": {
         "operationId": "bitbucket-getBitbucketRepositories",
+        "summary": null,
+        "description": null,
         "tags": ["bitbucket"],
         "security": [
           {
@@ -6371,6 +6442,8 @@
     "/bitbucket.getBitbucketBranches": {
       "get": {
         "operationId": "bitbucket-getBitbucketBranches",
+        "summary": null,
+        "description": null,
         "tags": ["bitbucket"],
         "security": [
           {
@@ -6471,6 +6544,8 @@
     "/bitbucket.testConnection": {
       "post": {
         "operationId": "bitbucket-testConnection",
+        "summary": null,
+        "description": null,
         "tags": ["bitbucket"],
         "security": [
           {
@@ -6571,6 +6646,8 @@
     "/bitbucket.update": {
       "post": {
         "operationId": "bitbucket-update",
+        "summary": null,
+        "description": null,
         "tags": ["bitbucket"],
         "security": [
           {
@@ -6681,6 +6758,8 @@
     "/certificates.create": {
       "post": {
         "operationId": "certificates-create",
+        "summary": null,
+        "description": null,
         "tags": ["certificates"],
         "security": [
           {
@@ -6801,6 +6880,8 @@
     "/certificates.one": {
       "get": {
         "operationId": "certificates-one",
+        "summary": null,
+        "description": null,
         "tags": ["certificates"],
         "security": [
           {
@@ -6887,6 +6968,8 @@
     "/certificates.remove": {
       "post": {
         "operationId": "certificates-remove",
+        "summary": null,
+        "description": null,
         "tags": ["certificates"],
         "security": [
           {
@@ -6970,6 +7053,8 @@
     "/certificates.all": {
       "get": {
         "operationId": "certificates-all",
+        "summary": null,
+        "description": null,
         "tags": ["certificates"],
         "security": [
           {
@@ -7045,6 +7130,8 @@
     "/certificates.update": {
       "post": {
         "operationId": "certificates-update",
+        "summary": null,
+        "description": null,
         "tags": ["certificates"],
         "security": [
           {
@@ -7140,6 +7227,8 @@
     "/cluster.getNodes": {
       "get": {
         "operationId": "cluster-getNodes",
+        "summary": null,
+        "description": null,
         "tags": ["cluster"],
         "security": [
           {
@@ -7224,6 +7313,8 @@
     "/cluster.removeWorker": {
       "post": {
         "operationId": "cluster-removeWorker",
+        "summary": null,
+        "description": null,
         "tags": ["cluster"],
         "security": [
           {
@@ -7309,6 +7400,8 @@
     "/cluster.addWorker": {
       "get": {
         "operationId": "cluster-addWorker",
+        "summary": null,
+        "description": null,
         "tags": ["cluster"],
         "security": [
           {
@@ -7393,6 +7486,8 @@
     "/cluster.addManager": {
       "get": {
         "operationId": "cluster-addManager",
+        "summary": null,
+        "description": null,
         "tags": ["cluster"],
         "security": [
           {
@@ -7477,6 +7572,8 @@
     "/compose.create": {
       "post": {
         "operationId": "compose-create",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -7596,6 +7693,8 @@
     "/compose.one": {
       "get": {
         "operationId": "compose-one",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -7682,6 +7781,8 @@
     "/compose.update": {
       "post": {
         "operationId": "compose-update",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -8101,6 +8202,8 @@
     "/compose.saveEnvironment": {
       "post": {
         "operationId": "compose-saveEnvironment",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -8193,6 +8296,8 @@
     "/compose.delete": {
       "post": {
         "operationId": "compose-delete",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -8279,6 +8384,8 @@
     "/compose.cleanQueues": {
       "post": {
         "operationId": "compose-cleanQueues",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -8362,6 +8469,8 @@
     "/compose.clearDeployments": {
       "post": {
         "operationId": "compose-clearDeployments",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -8445,6 +8554,8 @@
     "/compose.killBuild": {
       "post": {
         "operationId": "compose-killBuild",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -8528,6 +8639,8 @@
     "/compose.loadServices": {
       "get": {
         "operationId": "compose-loadServices",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -8623,6 +8736,8 @@
     "/compose.loadMountsByService": {
       "get": {
         "operationId": "compose-loadMountsByService",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -8718,6 +8833,8 @@
     "/compose.fetchSourceType": {
       "post": {
         "operationId": "compose-fetchSourceType",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -8801,6 +8918,8 @@
     "/compose.randomizeCompose": {
       "post": {
         "operationId": "compose-randomizeCompose",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -8887,6 +9006,8 @@
     "/compose.isolatedDeployment": {
       "post": {
         "operationId": "compose-isolatedDeployment",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -8973,6 +9094,8 @@
     "/compose.getConvertedCompose": {
       "get": {
         "operationId": "compose-getConvertedCompose",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -9059,6 +9182,8 @@
     "/compose.deploy": {
       "post": {
         "operationId": "compose-deploy",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -9148,6 +9273,8 @@
     "/compose.redeploy": {
       "post": {
         "operationId": "compose-redeploy",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -9237,6 +9364,8 @@
     "/compose.stop": {
       "post": {
         "operationId": "compose-stop",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -9320,6 +9449,8 @@
     "/compose.start": {
       "post": {
         "operationId": "compose-start",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -9403,6 +9534,8 @@
     "/compose.getDefaultCommand": {
       "get": {
         "operationId": "compose-getDefaultCommand",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -9489,6 +9622,8 @@
     "/compose.refreshToken": {
       "post": {
         "operationId": "compose-refreshToken",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -9572,6 +9707,8 @@
     "/compose.deployTemplate": {
       "post": {
         "operationId": "compose-deployTemplate",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -9663,6 +9800,8 @@
     "/compose.templates": {
       "get": {
         "operationId": "compose-templates",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -9747,6 +9886,8 @@
     "/compose.getTags": {
       "get": {
         "operationId": "compose-getTags",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -9831,6 +9972,8 @@
     "/compose.disconnectGitProvider": {
       "post": {
         "operationId": "compose-disconnectGitProvider",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -9914,6 +10057,8 @@
     "/compose.move": {
       "post": {
         "operationId": "compose-move",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -9999,6 +10144,8 @@
     "/compose.processTemplate": {
       "post": {
         "operationId": "compose-processTemplate",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -10082,9 +10229,101 @@
         }
       }
     },
+    "/compose.previewTemplate": {
+      "post": {
+        "operationId": "compose-previewTemplate",
+        "summary": null,
+        "description": null,
+        "tags": ["compose"],
+        "security": [
+          {
+            "Authorization": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "base64": {
+                    "type": "string"
+                  },
+                  "appName": {
+                    "type": "string"
+                  },
+                  "serverId": {
+                    "type": "string"
+                  }
+                },
+                "required": ["base64", "appName"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.BAD_REQUEST"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authorization not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.FORBIDDEN"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.INTERNAL_SERVER_ERROR"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/compose.import": {
       "post": {
         "operationId": "compose-import",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -10171,6 +10410,8 @@
     "/compose.cancelDeployment": {
       "post": {
         "operationId": "compose-cancelDeployment",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -10254,6 +10495,8 @@
     "/compose.search": {
       "get": {
         "operationId": "compose-search",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -10392,6 +10635,8 @@
     "/compose.readLogs": {
       "get": {
         "operationId": "compose-readLogs",
+        "summary": null,
+        "description": null,
         "tags": ["compose"],
         "security": [
           {
@@ -10515,6 +10760,8 @@
     "/deployment.all": {
       "get": {
         "operationId": "deployment-all",
+        "summary": null,
+        "description": null,
         "tags": ["deployment"],
         "security": [
           {
@@ -10601,6 +10848,8 @@
     "/deployment.allByCompose": {
       "get": {
         "operationId": "deployment-allByCompose",
+        "summary": null,
+        "description": null,
         "tags": ["deployment"],
         "security": [
           {
@@ -10687,6 +10936,8 @@
     "/deployment.allByServer": {
       "get": {
         "operationId": "deployment-allByServer",
+        "summary": null,
+        "description": null,
         "tags": ["deployment"],
         "security": [
           {
@@ -10773,6 +11024,8 @@
     "/deployment.allCentralized": {
       "get": {
         "operationId": "deployment-allCentralized",
+        "summary": null,
+        "description": null,
         "tags": ["deployment"],
         "security": [
           {
@@ -10848,6 +11101,8 @@
     "/deployment.queueList": {
       "get": {
         "operationId": "deployment-queueList",
+        "summary": null,
+        "description": null,
         "tags": ["deployment"],
         "security": [
           {
@@ -10923,6 +11178,8 @@
     "/deployment.allByType": {
       "get": {
         "operationId": "deployment-allByType",
+        "summary": null,
+        "description": null,
         "tags": ["deployment"],
         "security": [
           {
@@ -11018,6 +11275,8 @@
     "/deployment.killProcess": {
       "post": {
         "operationId": "deployment-killProcess",
+        "summary": null,
+        "description": null,
         "tags": ["deployment"],
         "security": [
           {
@@ -11101,6 +11360,8 @@
     "/deployment.removeDeployment": {
       "post": {
         "operationId": "deployment-removeDeployment",
+        "summary": null,
+        "description": null,
         "tags": ["deployment"],
         "security": [
           {
@@ -11181,9 +11442,109 @@
         }
       }
     },
+    "/deployment.readLogs": {
+      "get": {
+        "operationId": "deployment-readLogs",
+        "summary": null,
+        "description": null,
+        "tags": ["deployment"],
+        "security": [
+          {
+            "Authorization": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "deploymentId",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true
+          },
+          {
+            "in": "query",
+            "name": "tail",
+            "schema": {
+              "default": 100,
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 10000
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.BAD_REQUEST"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authorization not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.FORBIDDEN"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.NOT_FOUND"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.INTERNAL_SERVER_ERROR"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/destination.create": {
       "post": {
         "operationId": "destination-create",
+        "summary": null,
+        "description": null,
         "tags": ["destination"],
         "security": [
           {
@@ -11319,6 +11680,8 @@
     "/destination.testConnection": {
       "post": {
         "operationId": "destination-testConnection",
+        "summary": null,
+        "description": null,
         "tags": ["destination"],
         "security": [
           {
@@ -11454,6 +11817,8 @@
     "/destination.one": {
       "get": {
         "operationId": "destination-one",
+        "summary": null,
+        "description": null,
         "tags": ["destination"],
         "security": [
           {
@@ -11540,6 +11905,8 @@
     "/destination.all": {
       "get": {
         "operationId": "destination-all",
+        "summary": null,
+        "description": null,
         "tags": ["destination"],
         "security": [
           {
@@ -11615,6 +11982,8 @@
     "/destination.remove": {
       "post": {
         "operationId": "destination-remove",
+        "summary": null,
+        "description": null,
         "tags": ["destination"],
         "security": [
           {
@@ -11697,6 +12066,8 @@
     "/destination.update": {
       "post": {
         "operationId": "destination-update",
+        "summary": null,
+        "description": null,
         "tags": ["destination"],
         "security": [
           {
@@ -11836,6 +12207,8 @@
     "/docker.getContainers": {
       "get": {
         "operationId": "docker-getContainers",
+        "summary": null,
+        "description": null,
         "tags": ["docker"],
         "security": [
           {
@@ -11920,6 +12293,8 @@
     "/docker.restartContainer": {
       "post": {
         "operationId": "docker-restartContainer",
+        "summary": null,
+        "description": null,
         "tags": ["docker"],
         "security": [
           {
@@ -12007,6 +12382,8 @@
     "/docker.startContainer": {
       "post": {
         "operationId": "docker-startContainer",
+        "summary": null,
+        "description": null,
         "tags": ["docker"],
         "security": [
           {
@@ -12094,6 +12471,8 @@
     "/docker.stopContainer": {
       "post": {
         "operationId": "docker-stopContainer",
+        "summary": null,
+        "description": null,
         "tags": ["docker"],
         "security": [
           {
@@ -12181,6 +12560,8 @@
     "/docker.killContainer": {
       "post": {
         "operationId": "docker-killContainer",
+        "summary": null,
+        "description": null,
         "tags": ["docker"],
         "security": [
           {
@@ -12268,6 +12649,8 @@
     "/docker.removeContainer": {
       "post": {
         "operationId": "docker-removeContainer",
+        "summary": null,
+        "description": null,
         "tags": ["docker"],
         "security": [
           {
@@ -12355,6 +12738,8 @@
     "/docker.getConfig": {
       "get": {
         "operationId": "docker-getConfig",
+        "summary": null,
+        "description": null,
         "tags": ["docker"],
         "security": [
           {
@@ -12449,6 +12834,8 @@
     "/docker.getContainersByAppNameMatch": {
       "get": {
         "operationId": "docker-getContainersByAppNameMatch",
+        "summary": null,
+        "description": null,
         "tags": ["docker"],
         "security": [
           {
@@ -12551,6 +12938,8 @@
     "/docker.getContainersByAppLabel": {
       "get": {
         "operationId": "docker-getContainersByAppLabel",
+        "summary": null,
+        "description": null,
         "tags": ["docker"],
         "security": [
           {
@@ -12654,6 +13043,8 @@
     "/docker.getStackContainersByAppName": {
       "get": {
         "operationId": "docker-getStackContainersByAppName",
+        "summary": null,
+        "description": null,
         "tags": ["docker"],
         "security": [
           {
@@ -12748,6 +13139,8 @@
     "/docker.getServiceContainersByAppName": {
       "get": {
         "operationId": "docker-getServiceContainersByAppName",
+        "summary": null,
+        "description": null,
         "tags": ["docker"],
         "security": [
           {
@@ -12842,6 +13235,8 @@
     "/docker.uploadFileToContainer": {
       "post": {
         "operationId": "docker-uploadFileToContainer",
+        "summary": null,
+        "description": null,
         "tags": ["docker"],
         "security": [
           {
@@ -12867,7 +13262,8 @@
                   },
                   "destinationPath": {
                     "type": "string",
-                    "minLength": 1
+                    "minLength": 1,
+                    "pattern": "^[a-zA-Z0-9.\\-_/]+$"
                   },
                   "serverId": {
                     "type": "string"
@@ -12937,6 +13333,8 @@
     "/domain.create": {
       "post": {
         "operationId": "domain-create",
+        "summary": null,
+        "description": null,
         "tags": ["domain"],
         "security": [
           {
@@ -13081,6 +13479,9 @@
                         "type": "null"
                       }
                     ]
+                  },
+                  "forwardAuthEnabled": {
+                    "type": "boolean"
                   }
                 },
                 "required": ["host"]
@@ -13147,6 +13548,8 @@
     "/domain.byApplicationId": {
       "get": {
         "operationId": "domain-byApplicationId",
+        "summary": null,
+        "description": null,
         "tags": ["domain"],
         "security": [
           {
@@ -13233,6 +13636,8 @@
     "/domain.byComposeId": {
       "get": {
         "operationId": "domain-byComposeId",
+        "summary": null,
+        "description": null,
         "tags": ["domain"],
         "security": [
           {
@@ -13319,6 +13724,8 @@
     "/domain.generateDomain": {
       "post": {
         "operationId": "domain-generateDomain",
+        "summary": null,
+        "description": null,
         "tags": ["domain"],
         "security": [
           {
@@ -13404,6 +13811,8 @@
     "/domain.canGenerateTraefikMeDomains": {
       "get": {
         "operationId": "domain-canGenerateTraefikMeDomains",
+        "summary": null,
+        "description": null,
         "tags": ["domain"],
         "security": [
           {
@@ -13489,6 +13898,8 @@
     "/domain.update": {
       "post": {
         "operationId": "domain-update",
+        "summary": null,
+        "description": null,
         "tags": ["domain"],
         "security": [
           {
@@ -13604,6 +14015,9 @@
                       }
                     ]
                   },
+                  "forwardAuthEnabled": {
+                    "type": "boolean"
+                  },
                   "domainId": {
                     "type": "string"
                   }
@@ -13672,6 +14086,8 @@
     "/domain.one": {
       "get": {
         "operationId": "domain-one",
+        "summary": null,
+        "description": null,
         "tags": ["domain"],
         "security": [
           {
@@ -13758,6 +14174,8 @@
     "/domain.delete": {
       "post": {
         "operationId": "domain-delete",
+        "summary": null,
+        "description": null,
         "tags": ["domain"],
         "security": [
           {
@@ -13841,6 +14259,8 @@
     "/domain.validateDomain": {
       "post": {
         "operationId": "domain-validateDomain",
+        "summary": null,
+        "description": null,
         "tags": ["domain"],
         "security": [
           {
@@ -13926,6 +14346,8 @@
     "/gitea.create": {
       "post": {
         "operationId": "gitea-create",
+        "summary": null,
+        "description": null,
         "tags": ["gitea"],
         "security": [
           {
@@ -14059,6 +14481,8 @@
     "/gitea.one": {
       "get": {
         "operationId": "gitea-one",
+        "summary": null,
+        "description": null,
         "tags": ["gitea"],
         "security": [
           {
@@ -14145,6 +14569,8 @@
     "/gitea.giteaProviders": {
       "get": {
         "operationId": "gitea-giteaProviders",
+        "summary": null,
+        "description": null,
         "tags": ["gitea"],
         "security": [
           {
@@ -14220,6 +14646,8 @@
     "/gitea.getGiteaRepositories": {
       "get": {
         "operationId": "gitea-getGiteaRepositories",
+        "summary": null,
+        "description": null,
         "tags": ["gitea"],
         "security": [
           {
@@ -14306,6 +14734,8 @@
     "/gitea.getGiteaBranches": {
       "get": {
         "operationId": "gitea-getGiteaBranches",
+        "summary": null,
+        "description": null,
         "tags": ["gitea"],
         "security": [
           {
@@ -14408,6 +14838,8 @@
     "/gitea.testConnection": {
       "post": {
         "operationId": "gitea-testConnection",
+        "summary": null,
+        "description": null,
         "tags": ["gitea"],
         "security": [
           {
@@ -14492,6 +14924,8 @@
     "/gitea.update": {
       "post": {
         "operationId": "gitea-update",
+        "summary": null,
+        "description": null,
         "tags": ["gitea"],
         "security": [
           {
@@ -14626,6 +15060,8 @@
     "/gitea.getGiteaUrl": {
       "get": {
         "operationId": "gitea-getGiteaUrl",
+        "summary": null,
+        "description": null,
         "tags": ["gitea"],
         "security": [
           {
@@ -14712,6 +15148,8 @@
     "/gitProvider.getAll": {
       "get": {
         "operationId": "gitProvider-getAll",
+        "summary": null,
+        "description": null,
         "tags": ["gitProvider"],
         "security": [
           {
@@ -14787,6 +15225,8 @@
     "/gitProvider.toggleShare": {
       "post": {
         "operationId": "gitProvider-toggleShare",
+        "summary": null,
+        "description": null,
         "tags": ["gitProvider"],
         "security": [
           {
@@ -14873,6 +15313,8 @@
     "/gitProvider.allForPermissions": {
       "get": {
         "operationId": "gitProvider-allForPermissions",
+        "summary": null,
+        "description": null,
         "tags": ["gitProvider"],
         "security": [
           {
@@ -14948,6 +15390,8 @@
     "/gitProvider.remove": {
       "post": {
         "operationId": "gitProvider-remove",
+        "summary": null,
+        "description": null,
         "tags": ["gitProvider"],
         "security": [
           {
@@ -15031,6 +15475,8 @@
     "/github.one": {
       "get": {
         "operationId": "github-one",
+        "summary": null,
+        "description": null,
         "tags": ["github"],
         "security": [
           {
@@ -15117,6 +15563,8 @@
     "/github.getGithubRepositories": {
       "get": {
         "operationId": "github-getGithubRepositories",
+        "summary": null,
+        "description": null,
         "tags": ["github"],
         "security": [
           {
@@ -15203,6 +15651,8 @@
     "/github.getGithubBranches": {
       "get": {
         "operationId": "github-getGithubBranches",
+        "summary": null,
+        "description": null,
         "tags": ["github"],
         "security": [
           {
@@ -15305,6 +15755,8 @@
     "/github.githubProviders": {
       "get": {
         "operationId": "github-githubProviders",
+        "summary": null,
+        "description": null,
         "tags": ["github"],
         "security": [
           {
@@ -15380,6 +15832,8 @@
     "/github.testConnection": {
       "post": {
         "operationId": "github-testConnection",
+        "summary": null,
+        "description": null,
         "tags": ["github"],
         "security": [
           {
@@ -15463,6 +15917,8 @@
     "/github.update": {
       "post": {
         "operationId": "github-update",
+        "summary": null,
+        "description": null,
         "tags": ["github"],
         "security": [
           {
@@ -15558,6 +16014,8 @@
     "/gitlab.create": {
       "post": {
         "operationId": "gitlab-create",
+        "summary": null,
+        "description": null,
         "tags": ["gitlab"],
         "security": [
           {
@@ -15674,6 +16132,8 @@
     "/gitlab.one": {
       "get": {
         "operationId": "gitlab-one",
+        "summary": null,
+        "description": null,
         "tags": ["gitlab"],
         "security": [
           {
@@ -15760,6 +16220,8 @@
     "/gitlab.gitlabProviders": {
       "get": {
         "operationId": "gitlab-gitlabProviders",
+        "summary": null,
+        "description": null,
         "tags": ["gitlab"],
         "security": [
           {
@@ -15835,6 +16297,8 @@
     "/gitlab.getGitlabRepositories": {
       "get": {
         "operationId": "gitlab-getGitlabRepositories",
+        "summary": null,
+        "description": null,
         "tags": ["gitlab"],
         "security": [
           {
@@ -15921,6 +16385,8 @@
     "/gitlab.getGitlabBranches": {
       "get": {
         "operationId": "gitlab-getGitlabBranches",
+        "summary": null,
+        "description": null,
         "tags": ["gitlab"],
         "security": [
           {
@@ -16028,6 +16494,8 @@
     "/gitlab.testConnection": {
       "post": {
         "operationId": "gitlab-testConnection",
+        "summary": null,
+        "description": null,
         "tags": ["gitlab"],
         "security": [
           {
@@ -16114,6 +16582,8 @@
     "/gitlab.update": {
       "post": {
         "operationId": "gitlab-update",
+        "summary": null,
+        "description": null,
         "tags": ["gitlab"],
         "security": [
           {
@@ -16231,6 +16701,8 @@
     "/libsql.create": {
       "post": {
         "operationId": "libsql-create",
+        "summary": null,
+        "description": null,
         "tags": ["libsql"],
         "security": [
           {
@@ -16276,7 +16748,7 @@
                   },
                   "databasePassword": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
                   },
                   "sqldNode": {
                     "type": "string",
@@ -16390,6 +16862,8 @@
     "/libsql.one": {
       "get": {
         "operationId": "libsql-one",
+        "summary": null,
+        "description": null,
         "tags": ["libsql"],
         "security": [
           {
@@ -16476,6 +16950,8 @@
     "/libsql.start": {
       "post": {
         "operationId": "libsql-start",
+        "summary": null,
+        "description": null,
         "tags": ["libsql"],
         "security": [
           {
@@ -16559,6 +17035,8 @@
     "/libsql.stop": {
       "post": {
         "operationId": "libsql-stop",
+        "summary": null,
+        "description": null,
         "tags": ["libsql"],
         "security": [
           {
@@ -16642,6 +17120,8 @@
     "/libsql.saveExternalPorts": {
       "post": {
         "operationId": "libsql-saveExternalPorts",
+        "summary": null,
+        "description": null,
         "tags": ["libsql"],
         "security": [
           {
@@ -16754,6 +17234,8 @@
     "/libsql.deploy": {
       "post": {
         "operationId": "libsql-deploy",
+        "summary": null,
+        "description": null,
         "tags": ["libsql"],
         "security": [
           {
@@ -16836,6 +17318,8 @@
     "/libsql.changeStatus": {
       "post": {
         "operationId": "libsql-changeStatus",
+        "summary": null,
+        "description": null,
         "tags": ["libsql"],
         "security": [
           {
@@ -16922,6 +17406,8 @@
     "/libsql.remove": {
       "post": {
         "operationId": "libsql-remove",
+        "summary": null,
+        "description": null,
         "tags": ["libsql"],
         "security": [
           {
@@ -17005,6 +17491,8 @@
     "/libsql.saveEnvironment": {
       "post": {
         "operationId": "libsql-saveEnvironment",
+        "summary": null,
+        "description": null,
         "tags": ["libsql"],
         "security": [
           {
@@ -17097,6 +17585,8 @@
     "/libsql.reload": {
       "post": {
         "operationId": "libsql-reload",
+        "summary": null,
+        "description": null,
         "tags": ["libsql"],
         "security": [
           {
@@ -17183,6 +17673,8 @@
     "/libsql.update": {
       "post": {
         "operationId": "libsql-update",
+        "summary": null,
+        "description": null,
         "tags": ["libsql"],
         "security": [
           {
@@ -17225,7 +17717,7 @@
                   },
                   "databasePassword": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
                   },
                   "sqldNode": {
                     "type": "string",
@@ -17810,6 +18302,8 @@
     "/libsql.move": {
       "post": {
         "operationId": "libsql-move",
+        "summary": null,
+        "description": null,
         "tags": ["libsql"],
         "security": [
           {
@@ -17895,6 +18389,8 @@
     "/libsql.rebuild": {
       "post": {
         "operationId": "libsql-rebuild",
+        "summary": null,
+        "description": null,
         "tags": ["libsql"],
         "security": [
           {
@@ -17977,6 +18473,8 @@
     "/libsql.readLogs": {
       "get": {
         "operationId": "libsql-readLogs",
+        "summary": null,
+        "description": null,
         "tags": ["libsql"],
         "security": [
           {
@@ -18090,6 +18588,8 @@
     "/mariadb.create": {
       "post": {
         "operationId": "mariadb-create",
+        "summary": null,
+        "description": null,
         "tags": ["mariadb"],
         "security": [
           {
@@ -18120,7 +18620,7 @@
                   },
                   "databaseRootPassword": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
                   },
                   "environmentId": {
                     "type": "string"
@@ -18145,7 +18645,7 @@
                   },
                   "databasePassword": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
                   },
                   "serverId": {
                     "anyOf": [
@@ -18222,6 +18722,8 @@
     "/mariadb.one": {
       "get": {
         "operationId": "mariadb-one",
+        "summary": null,
+        "description": null,
         "tags": ["mariadb"],
         "security": [
           {
@@ -18308,6 +18810,8 @@
     "/mariadb.start": {
       "post": {
         "operationId": "mariadb-start",
+        "summary": null,
+        "description": null,
         "tags": ["mariadb"],
         "security": [
           {
@@ -18391,6 +18895,8 @@
     "/mariadb.stop": {
       "post": {
         "operationId": "mariadb-stop",
+        "summary": null,
+        "description": null,
         "tags": ["mariadb"],
         "security": [
           {
@@ -18474,6 +18980,8 @@
     "/mariadb.saveExternalPort": {
       "post": {
         "operationId": "mariadb-saveExternalPort",
+        "summary": null,
+        "description": null,
         "tags": ["mariadb"],
         "security": [
           {
@@ -18566,6 +19074,8 @@
     "/mariadb.deploy": {
       "post": {
         "operationId": "mariadb-deploy",
+        "summary": null,
+        "description": null,
         "tags": ["mariadb"],
         "security": [
           {
@@ -18648,6 +19158,8 @@
     "/mariadb.changeStatus": {
       "post": {
         "operationId": "mariadb-changeStatus",
+        "summary": null,
+        "description": null,
         "tags": ["mariadb"],
         "security": [
           {
@@ -18734,6 +19246,8 @@
     "/mariadb.remove": {
       "post": {
         "operationId": "mariadb-remove",
+        "summary": null,
+        "description": null,
         "tags": ["mariadb"],
         "security": [
           {
@@ -18817,6 +19331,8 @@
     "/mariadb.saveEnvironment": {
       "post": {
         "operationId": "mariadb-saveEnvironment",
+        "summary": null,
+        "description": null,
         "tags": ["mariadb"],
         "security": [
           {
@@ -18909,6 +19425,8 @@
     "/mariadb.reload": {
       "post": {
         "operationId": "mariadb-reload",
+        "summary": null,
+        "description": null,
         "tags": ["mariadb"],
         "security": [
           {
@@ -18997,6 +19515,8 @@
     "/mariadb.update": {
       "post": {
         "operationId": "mariadb-update",
+        "summary": null,
+        "description": null,
         "tags": ["mariadb"],
         "security": [
           {
@@ -19045,11 +19565,11 @@
                   },
                   "databasePassword": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
                   },
                   "databaseRootPassword": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
                   },
                   "dockerImage": {
                     "type": "string"
@@ -19639,6 +20159,8 @@
     "/mariadb.changePassword": {
       "post": {
         "operationId": "mariadb-changePassword",
+        "summary": null,
+        "description": null,
         "tags": ["mariadb"],
         "security": [
           {
@@ -19660,7 +20182,7 @@
                   "password": {
                     "type": "string",
                     "minLength": 1,
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
                   },
                   "type": {
                     "default": "user",
@@ -19732,6 +20254,8 @@
     "/mariadb.move": {
       "post": {
         "operationId": "mariadb-move",
+        "summary": null,
+        "description": null,
         "tags": ["mariadb"],
         "security": [
           {
@@ -19817,6 +20341,8 @@
     "/mariadb.rebuild": {
       "post": {
         "operationId": "mariadb-rebuild",
+        "summary": null,
+        "description": null,
         "tags": ["mariadb"],
         "security": [
           {
@@ -19899,6 +20425,8 @@
     "/mariadb.search": {
       "get": {
         "operationId": "mariadb-search",
+        "summary": null,
+        "description": null,
         "tags": ["mariadb"],
         "security": [
           {
@@ -20037,6 +20565,8 @@
     "/mariadb.readLogs": {
       "get": {
         "operationId": "mariadb-readLogs",
+        "summary": null,
+        "description": null,
         "tags": ["mariadb"],
         "security": [
           {
@@ -20150,6 +20680,8 @@
     "/mongo.create": {
       "post": {
         "operationId": "mongo-create",
+        "summary": null,
+        "description": null,
         "tags": ["mongo"],
         "security": [
           {
@@ -20197,7 +20729,7 @@
                   },
                   "databasePassword": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
                   },
                   "serverId": {
                     "anyOf": [
@@ -20285,6 +20817,8 @@
     "/mongo.one": {
       "get": {
         "operationId": "mongo-one",
+        "summary": null,
+        "description": null,
         "tags": ["mongo"],
         "security": [
           {
@@ -20371,6 +20905,8 @@
     "/mongo.start": {
       "post": {
         "operationId": "mongo-start",
+        "summary": null,
+        "description": null,
         "tags": ["mongo"],
         "security": [
           {
@@ -20454,6 +20990,8 @@
     "/mongo.stop": {
       "post": {
         "operationId": "mongo-stop",
+        "summary": null,
+        "description": null,
         "tags": ["mongo"],
         "security": [
           {
@@ -20537,6 +21075,8 @@
     "/mongo.saveExternalPort": {
       "post": {
         "operationId": "mongo-saveExternalPort",
+        "summary": null,
+        "description": null,
         "tags": ["mongo"],
         "security": [
           {
@@ -20629,6 +21169,8 @@
     "/mongo.deploy": {
       "post": {
         "operationId": "mongo-deploy",
+        "summary": null,
+        "description": null,
         "tags": ["mongo"],
         "security": [
           {
@@ -20711,6 +21253,8 @@
     "/mongo.changeStatus": {
       "post": {
         "operationId": "mongo-changeStatus",
+        "summary": null,
+        "description": null,
         "tags": ["mongo"],
         "security": [
           {
@@ -20797,6 +21341,8 @@
     "/mongo.reload": {
       "post": {
         "operationId": "mongo-reload",
+        "summary": null,
+        "description": null,
         "tags": ["mongo"],
         "security": [
           {
@@ -20885,6 +21431,8 @@
     "/mongo.remove": {
       "post": {
         "operationId": "mongo-remove",
+        "summary": null,
+        "description": null,
         "tags": ["mongo"],
         "security": [
           {
@@ -20968,6 +21516,8 @@
     "/mongo.saveEnvironment": {
       "post": {
         "operationId": "mongo-saveEnvironment",
+        "summary": null,
+        "description": null,
         "tags": ["mongo"],
         "security": [
           {
@@ -21060,6 +21610,8 @@
     "/mongo.update": {
       "post": {
         "operationId": "mongo-update",
+        "summary": null,
+        "description": null,
         "tags": ["mongo"],
         "security": [
           {
@@ -21104,7 +21656,7 @@
                   },
                   "databasePassword": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
                   },
                   "dockerImage": {
                     "type": "string"
@@ -21705,6 +22257,8 @@
     "/mongo.changePassword": {
       "post": {
         "operationId": "mongo-changePassword",
+        "summary": null,
+        "description": null,
         "tags": ["mongo"],
         "security": [
           {
@@ -21726,7 +22280,7 @@
                   "password": {
                     "type": "string",
                     "minLength": 1,
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
                   }
                 },
                 "required": ["mongoId", "password"]
@@ -21793,6 +22347,8 @@
     "/mongo.move": {
       "post": {
         "operationId": "mongo-move",
+        "summary": null,
+        "description": null,
         "tags": ["mongo"],
         "security": [
           {
@@ -21878,6 +22434,8 @@
     "/mongo.rebuild": {
       "post": {
         "operationId": "mongo-rebuild",
+        "summary": null,
+        "description": null,
         "tags": ["mongo"],
         "security": [
           {
@@ -21960,6 +22518,8 @@
     "/mongo.search": {
       "get": {
         "operationId": "mongo-search",
+        "summary": null,
+        "description": null,
         "tags": ["mongo"],
         "security": [
           {
@@ -22098,6 +22658,8 @@
     "/mongo.readLogs": {
       "get": {
         "operationId": "mongo-readLogs",
+        "summary": null,
+        "description": null,
         "tags": ["mongo"],
         "security": [
           {
@@ -22211,6 +22773,8 @@
     "/mounts.create": {
       "post": {
         "operationId": "mounts-create",
+        "summary": null,
+        "description": null,
         "tags": ["mounts"],
         "security": [
           {
@@ -22346,6 +22910,8 @@
     "/mounts.remove": {
       "post": {
         "operationId": "mounts-remove",
+        "summary": null,
+        "description": null,
         "tags": ["mounts"],
         "security": [
           {
@@ -22428,6 +22994,8 @@
     "/mounts.one": {
       "get": {
         "operationId": "mounts-one",
+        "summary": null,
+        "description": null,
         "tags": ["mounts"],
         "security": [
           {
@@ -22514,6 +23082,8 @@
     "/mounts.update": {
       "post": {
         "operationId": "mounts-update",
+        "summary": null,
+        "description": null,
         "tags": ["mounts"],
         "security": [
           {
@@ -22729,6 +23299,8 @@
     "/mounts.allNamedByApplicationId": {
       "get": {
         "operationId": "mounts-allNamedByApplicationId",
+        "summary": null,
+        "description": null,
         "tags": ["mounts"],
         "security": [
           {
@@ -22815,6 +23387,8 @@
     "/mounts.listByServiceId": {
       "get": {
         "operationId": "mounts-listByServiceId",
+        "summary": null,
+        "description": null,
         "tags": ["mounts"],
         "security": [
           {
@@ -22910,6 +23484,8 @@
     "/mysql.create": {
       "post": {
         "operationId": "mysql-create",
+        "summary": null,
+        "description": null,
         "tags": ["mysql"],
         "security": [
           {
@@ -22961,11 +23537,11 @@
                   },
                   "databasePassword": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
                   },
                   "databaseRootPassword": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
                   },
                   "serverId": {
                     "anyOf": [
@@ -23042,6 +23618,8 @@
     "/mysql.one": {
       "get": {
         "operationId": "mysql-one",
+        "summary": null,
+        "description": null,
         "tags": ["mysql"],
         "security": [
           {
@@ -23128,6 +23706,8 @@
     "/mysql.start": {
       "post": {
         "operationId": "mysql-start",
+        "summary": null,
+        "description": null,
         "tags": ["mysql"],
         "security": [
           {
@@ -23211,6 +23791,8 @@
     "/mysql.stop": {
       "post": {
         "operationId": "mysql-stop",
+        "summary": null,
+        "description": null,
         "tags": ["mysql"],
         "security": [
           {
@@ -23294,6 +23876,8 @@
     "/mysql.saveExternalPort": {
       "post": {
         "operationId": "mysql-saveExternalPort",
+        "summary": null,
+        "description": null,
         "tags": ["mysql"],
         "security": [
           {
@@ -23386,6 +23970,8 @@
     "/mysql.deploy": {
       "post": {
         "operationId": "mysql-deploy",
+        "summary": null,
+        "description": null,
         "tags": ["mysql"],
         "security": [
           {
@@ -23468,6 +24054,8 @@
     "/mysql.changeStatus": {
       "post": {
         "operationId": "mysql-changeStatus",
+        "summary": null,
+        "description": null,
         "tags": ["mysql"],
         "security": [
           {
@@ -23554,6 +24142,8 @@
     "/mysql.reload": {
       "post": {
         "operationId": "mysql-reload",
+        "summary": null,
+        "description": null,
         "tags": ["mysql"],
         "security": [
           {
@@ -23642,6 +24232,8 @@
     "/mysql.remove": {
       "post": {
         "operationId": "mysql-remove",
+        "summary": null,
+        "description": null,
         "tags": ["mysql"],
         "security": [
           {
@@ -23725,6 +24317,8 @@
     "/mysql.saveEnvironment": {
       "post": {
         "operationId": "mysql-saveEnvironment",
+        "summary": null,
+        "description": null,
         "tags": ["mysql"],
         "security": [
           {
@@ -23817,6 +24411,8 @@
     "/mysql.update": {
       "post": {
         "operationId": "mysql-update",
+        "summary": null,
+        "description": null,
         "tags": ["mysql"],
         "security": [
           {
@@ -23865,11 +24461,11 @@
                   },
                   "databasePassword": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
                   },
                   "databaseRootPassword": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
                   },
                   "dockerImage": {
                     "type": "string"
@@ -24459,6 +25055,8 @@
     "/mysql.changePassword": {
       "post": {
         "operationId": "mysql-changePassword",
+        "summary": null,
+        "description": null,
         "tags": ["mysql"],
         "security": [
           {
@@ -24480,7 +25078,7 @@
                   "password": {
                     "type": "string",
                     "minLength": 1,
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
                   },
                   "type": {
                     "default": "user",
@@ -24552,6 +25150,8 @@
     "/mysql.move": {
       "post": {
         "operationId": "mysql-move",
+        "summary": null,
+        "description": null,
         "tags": ["mysql"],
         "security": [
           {
@@ -24637,6 +25237,8 @@
     "/mysql.rebuild": {
       "post": {
         "operationId": "mysql-rebuild",
+        "summary": null,
+        "description": null,
         "tags": ["mysql"],
         "security": [
           {
@@ -24719,6 +25321,8 @@
     "/mysql.search": {
       "get": {
         "operationId": "mysql-search",
+        "summary": null,
+        "description": null,
         "tags": ["mysql"],
         "security": [
           {
@@ -24857,6 +25461,8 @@
     "/mysql.readLogs": {
       "get": {
         "operationId": "mysql-readLogs",
+        "summary": null,
+        "description": null,
         "tags": ["mysql"],
         "security": [
           {
@@ -24970,6 +25576,8 @@
     "/notification.createSlack": {
       "post": {
         "operationId": "notification-createSlack",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -25095,6 +25703,8 @@
     "/notification.updateSlack": {
       "post": {
         "operationId": "notification-updateSlack",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -25218,6 +25828,8 @@
     "/notification.testSlackConnection": {
       "post": {
         "operationId": "notification-testSlackConnection",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -25304,6 +25916,8 @@
     "/notification.createTelegram": {
       "post": {
         "operationId": "notification-createTelegram",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -25434,6 +26048,8 @@
     "/notification.updateTelegram": {
       "post": {
         "operationId": "notification-updateTelegram",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -25562,6 +26178,8 @@
     "/notification.testTelegramConnection": {
       "post": {
         "operationId": "notification-testTelegramConnection",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -25652,6 +26270,8 @@
     "/notification.createDiscord": {
       "post": {
         "operationId": "notification-createDiscord",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -25777,6 +26397,8 @@
     "/notification.updateDiscord": {
       "post": {
         "operationId": "notification-updateDiscord",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -25901,6 +26523,8 @@
     "/notification.testDiscordConnection": {
       "post": {
         "operationId": "notification-testDiscordConnection",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -25987,6 +26611,8 @@
     "/notification.createEmail": {
       "post": {
         "operationId": "notification-createEmail",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -26136,6 +26762,8 @@
     "/notification.updateEmail": {
       "post": {
         "operationId": "notification-updateEmail",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -26280,6 +26908,8 @@
     "/notification.testEmailConnection": {
       "post": {
         "operationId": "notification-testEmailConnection",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -26386,6 +27016,8 @@
     "/notification.createResend": {
       "post": {
         "operationId": "notification-createResend",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -26520,6 +27152,8 @@
     "/notification.updateResend": {
       "post": {
         "operationId": "notification-updateResend",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -26652,6 +27286,8 @@
     "/notification.testResendConnection": {
       "post": {
         "operationId": "notification-testResendConnection",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -26746,6 +27382,8 @@
     "/notification.remove": {
       "post": {
         "operationId": "notification-remove",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -26829,6 +27467,8 @@
     "/notification.one": {
       "get": {
         "operationId": "notification-one",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -26915,6 +27555,8 @@
     "/notification.all": {
       "get": {
         "operationId": "notification-all",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -26990,6 +27632,8 @@
     "/notification.receiveNotification": {
       "post": {
         "operationId": "notification-receiveNotification",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -27093,6 +27737,8 @@
     "/notification.createGotify": {
       "post": {
         "operationId": "notification-createGotify",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -27224,6 +27870,8 @@
     "/notification.updateGotify": {
       "post": {
         "operationId": "notification-updateGotify",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -27353,6 +28001,8 @@
     "/notification.testGotifyConnection": {
       "post": {
         "operationId": "notification-testGotifyConnection",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -27447,6 +28097,8 @@
     "/notification.createNtfy": {
       "post": {
         "operationId": "notification-createNtfy",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -27578,6 +28230,8 @@
     "/notification.updateNtfy": {
       "post": {
         "operationId": "notification-updateNtfy",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -27707,6 +28361,8 @@
     "/notification.testNtfyConnection": {
       "post": {
         "operationId": "notification-testNtfyConnection",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -27801,6 +28457,8 @@
     "/notification.createMattermost": {
       "post": {
         "operationId": "notification-createMattermost",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -27928,6 +28586,8 @@
     "/notification.updateMattermost": {
       "post": {
         "operationId": "notification-updateMattermost",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -28055,6 +28715,8 @@
     "/notification.testMattermostConnection": {
       "post": {
         "operationId": "notification-testMattermostConnection",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -28144,6 +28806,8 @@
     "/notification.createCustom": {
       "post": {
         "operationId": "notification-createCustom",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -28263,6 +28927,8 @@
     "/notification.updateCustom": {
       "post": {
         "operationId": "notification-updateCustom",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -28393,6 +29059,8 @@
     "/notification.testCustomConnection": {
       "post": {
         "operationId": "notification-testCustomConnection",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -28485,6 +29153,8 @@
     "/notification.createLark": {
       "post": {
         "operationId": "notification-createLark",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -28606,6 +29276,8 @@
     "/notification.updateLark": {
       "post": {
         "operationId": "notification-updateLark",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -28727,6 +29399,8 @@
     "/notification.testLarkConnection": {
       "post": {
         "operationId": "notification-testLarkConnection",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -28810,6 +29484,8 @@
     "/notification.createTeams": {
       "post": {
         "operationId": "notification-createTeams",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -28931,6 +29607,8 @@
     "/notification.updateTeams": {
       "post": {
         "operationId": "notification-updateTeams",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -29052,6 +29730,8 @@
     "/notification.testTeamsConnection": {
       "post": {
         "operationId": "notification-testTeamsConnection",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -29135,6 +29815,8 @@
     "/notification.createPushover": {
       "post": {
         "operationId": "notification-createPushover",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -29278,6 +29960,8 @@
     "/notification.updatePushover": {
       "post": {
         "operationId": "notification-updatePushover",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -29431,6 +30115,8 @@
     "/notification.testPushoverConnection": {
       "post": {
         "operationId": "notification-testPushoverConnection",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -29546,6 +30232,8 @@
     "/notification.getEmailProviders": {
       "get": {
         "operationId": "notification-getEmailProviders",
+        "summary": null,
+        "description": null,
         "tags": ["notification"],
         "security": [
           {
@@ -29621,6 +30309,8 @@
     "/port.create": {
       "post": {
         "operationId": "port-create",
+        "summary": null,
+        "description": null,
         "tags": ["port"],
         "security": [
           {
@@ -29720,6 +30410,8 @@
     "/port.one": {
       "get": {
         "operationId": "port-one",
+        "summary": null,
+        "description": null,
         "tags": ["port"],
         "security": [
           {
@@ -29806,6 +30498,8 @@
     "/port.delete": {
       "post": {
         "operationId": "port-delete",
+        "summary": null,
+        "description": null,
         "tags": ["port"],
         "security": [
           {
@@ -29889,6 +30583,8 @@
     "/port.update": {
       "post": {
         "operationId": "port-update",
+        "summary": null,
+        "description": null,
         "tags": ["port"],
         "security": [
           {
@@ -29988,6 +30684,8 @@
     "/postgres.create": {
       "post": {
         "operationId": "postgres-create",
+        "summary": null,
+        "description": null,
         "tags": ["postgres"],
         "security": [
           {
@@ -30022,7 +30720,7 @@
                   },
                   "databasePassword": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
                   },
                   "dockerImage": {
                     "default": "postgres:18",
@@ -30116,6 +30814,8 @@
     "/postgres.one": {
       "get": {
         "operationId": "postgres-one",
+        "summary": null,
+        "description": null,
         "tags": ["postgres"],
         "security": [
           {
@@ -30202,6 +30902,8 @@
     "/postgres.start": {
       "post": {
         "operationId": "postgres-start",
+        "summary": null,
+        "description": null,
         "tags": ["postgres"],
         "security": [
           {
@@ -30285,6 +30987,8 @@
     "/postgres.stop": {
       "post": {
         "operationId": "postgres-stop",
+        "summary": null,
+        "description": null,
         "tags": ["postgres"],
         "security": [
           {
@@ -30368,6 +31072,8 @@
     "/postgres.saveExternalPort": {
       "post": {
         "operationId": "postgres-saveExternalPort",
+        "summary": null,
+        "description": null,
         "tags": ["postgres"],
         "security": [
           {
@@ -30460,6 +31166,8 @@
     "/postgres.deploy": {
       "post": {
         "operationId": "postgres-deploy",
+        "summary": null,
+        "description": null,
         "tags": ["postgres"],
         "security": [
           {
@@ -30542,6 +31250,8 @@
     "/postgres.changeStatus": {
       "post": {
         "operationId": "postgres-changeStatus",
+        "summary": null,
+        "description": null,
         "tags": ["postgres"],
         "security": [
           {
@@ -30628,6 +31338,8 @@
     "/postgres.remove": {
       "post": {
         "operationId": "postgres-remove",
+        "summary": null,
+        "description": null,
         "tags": ["postgres"],
         "security": [
           {
@@ -30711,6 +31423,8 @@
     "/postgres.saveEnvironment": {
       "post": {
         "operationId": "postgres-saveEnvironment",
+        "summary": null,
+        "description": null,
         "tags": ["postgres"],
         "security": [
           {
@@ -30803,6 +31517,8 @@
     "/postgres.reload": {
       "post": {
         "operationId": "postgres-reload",
+        "summary": null,
+        "description": null,
         "tags": ["postgres"],
         "security": [
           {
@@ -30891,6 +31607,8 @@
     "/postgres.update": {
       "post": {
         "operationId": "postgres-update",
+        "summary": null,
+        "description": null,
         "tags": ["postgres"],
         "security": [
           {
@@ -30929,7 +31647,7 @@
                   },
                   "databasePassword": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
                   },
                   "description": {
                     "anyOf": [
@@ -31529,6 +32247,8 @@
     "/postgres.changePassword": {
       "post": {
         "operationId": "postgres-changePassword",
+        "summary": null,
+        "description": null,
         "tags": ["postgres"],
         "security": [
           {
@@ -31550,7 +32270,7 @@
                   "password": {
                     "type": "string",
                     "minLength": 1,
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
                   }
                 },
                 "required": ["postgresId", "password"]
@@ -31617,6 +32337,8 @@
     "/postgres.move": {
       "post": {
         "operationId": "postgres-move",
+        "summary": null,
+        "description": null,
         "tags": ["postgres"],
         "security": [
           {
@@ -31702,6 +32424,8 @@
     "/postgres.rebuild": {
       "post": {
         "operationId": "postgres-rebuild",
+        "summary": null,
+        "description": null,
         "tags": ["postgres"],
         "security": [
           {
@@ -31784,6 +32508,8 @@
     "/postgres.search": {
       "get": {
         "operationId": "postgres-search",
+        "summary": null,
+        "description": null,
         "tags": ["postgres"],
         "security": [
           {
@@ -31922,6 +32648,8 @@
     "/postgres.readLogs": {
       "get": {
         "operationId": "postgres-readLogs",
+        "summary": null,
+        "description": null,
         "tags": ["postgres"],
         "security": [
           {
@@ -32035,6 +32763,8 @@
     "/previewDeployment.all": {
       "get": {
         "operationId": "previewDeployment-all",
+        "summary": null,
+        "description": null,
         "tags": ["previewDeployment"],
         "security": [
           {
@@ -32121,6 +32851,8 @@
     "/previewDeployment.one": {
       "get": {
         "operationId": "previewDeployment-one",
+        "summary": null,
+        "description": null,
         "tags": ["previewDeployment"],
         "security": [
           {
@@ -32206,6 +32938,8 @@
     "/previewDeployment.delete": {
       "post": {
         "operationId": "previewDeployment-delete",
+        "summary": null,
+        "description": null,
         "tags": ["previewDeployment"],
         "security": [
           {
@@ -32288,6 +33022,8 @@
     "/previewDeployment.redeploy": {
       "post": {
         "operationId": "previewDeployment-redeploy",
+        "summary": null,
+        "description": null,
         "tags": ["previewDeployment"],
         "security": [
           {
@@ -32376,6 +33112,8 @@
     "/project.create": {
       "post": {
         "operationId": "project-create",
+        "summary": null,
+        "description": null,
         "tags": ["project"],
         "security": [
           {
@@ -32472,6 +33210,8 @@
     "/project.one": {
       "get": {
         "operationId": "project-one",
+        "summary": null,
+        "description": null,
         "tags": ["project"],
         "security": [
           {
@@ -32558,6 +33298,8 @@
     "/project.all": {
       "get": {
         "operationId": "project-all",
+        "summary": null,
+        "description": null,
         "tags": ["project"],
         "security": [
           {
@@ -32633,6 +33375,85 @@
     "/project.allForPermissions": {
       "get": {
         "operationId": "project-allForPermissions",
+        "summary": null,
+        "description": null,
+        "tags": ["project"],
+        "security": [
+          {
+            "Authorization": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.BAD_REQUEST"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authorization not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.FORBIDDEN"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.NOT_FOUND"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.INTERNAL_SERVER_ERROR"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/project.homeStats": {
+      "get": {
+        "operationId": "project-homeStats",
+        "summary": null,
+        "description": null,
         "tags": ["project"],
         "security": [
           {
@@ -32708,6 +33529,8 @@
     "/project.search": {
       "get": {
         "operationId": "project-search",
+        "summary": null,
+        "description": null,
         "tags": ["project"],
         "security": [
           {
@@ -32825,6 +33648,8 @@
     "/project.remove": {
       "post": {
         "operationId": "project-remove",
+        "summary": null,
+        "description": null,
         "tags": ["project"],
         "security": [
           {
@@ -32908,6 +33733,8 @@
     "/project.update": {
       "post": {
         "operationId": "project-update",
+        "summary": null,
+        "description": null,
         "tags": ["project"],
         "security": [
           {
@@ -33014,6 +33841,8 @@
     "/project.duplicate": {
       "post": {
         "operationId": "project-duplicate",
+        "summary": null,
+        "description": null,
         "tags": ["project"],
         "security": [
           {
@@ -33126,6 +33955,8 @@
     "/redirects.create": {
       "post": {
         "operationId": "redirects-create",
+        "summary": null,
+        "description": null,
         "tags": ["redirects"],
         "security": [
           {
@@ -33219,6 +34050,8 @@
     "/redirects.one": {
       "get": {
         "operationId": "redirects-one",
+        "summary": null,
+        "description": null,
         "tags": ["redirects"],
         "security": [
           {
@@ -33305,6 +34138,8 @@
     "/redirects.delete": {
       "post": {
         "operationId": "redirects-delete",
+        "summary": null,
+        "description": null,
         "tags": ["redirects"],
         "security": [
           {
@@ -33388,6 +34223,8 @@
     "/redirects.update": {
       "post": {
         "operationId": "redirects-update",
+        "summary": null,
+        "description": null,
         "tags": ["redirects"],
         "security": [
           {
@@ -33482,6 +34319,8 @@
     "/redis.create": {
       "post": {
         "operationId": "redis-create",
+        "summary": null,
+        "description": null,
         "tags": ["redis"],
         "security": [
           {
@@ -33601,6 +34440,8 @@
     "/redis.one": {
       "get": {
         "operationId": "redis-one",
+        "summary": null,
+        "description": null,
         "tags": ["redis"],
         "security": [
           {
@@ -33687,6 +34528,8 @@
     "/redis.start": {
       "post": {
         "operationId": "redis-start",
+        "summary": null,
+        "description": null,
         "tags": ["redis"],
         "security": [
           {
@@ -33770,6 +34613,8 @@
     "/redis.reload": {
       "post": {
         "operationId": "redis-reload",
+        "summary": null,
+        "description": null,
         "tags": ["redis"],
         "security": [
           {
@@ -33858,6 +34703,8 @@
     "/redis.stop": {
       "post": {
         "operationId": "redis-stop",
+        "summary": null,
+        "description": null,
         "tags": ["redis"],
         "security": [
           {
@@ -33941,6 +34788,8 @@
     "/redis.saveExternalPort": {
       "post": {
         "operationId": "redis-saveExternalPort",
+        "summary": null,
+        "description": null,
         "tags": ["redis"],
         "security": [
           {
@@ -34033,6 +34882,8 @@
     "/redis.deploy": {
       "post": {
         "operationId": "redis-deploy",
+        "summary": null,
+        "description": null,
         "tags": ["redis"],
         "security": [
           {
@@ -34115,6 +34966,8 @@
     "/redis.changeStatus": {
       "post": {
         "operationId": "redis-changeStatus",
+        "summary": null,
+        "description": null,
         "tags": ["redis"],
         "security": [
           {
@@ -34201,6 +35054,8 @@
     "/redis.remove": {
       "post": {
         "operationId": "redis-remove",
+        "summary": null,
+        "description": null,
         "tags": ["redis"],
         "security": [
           {
@@ -34284,6 +35139,8 @@
     "/redis.saveEnvironment": {
       "post": {
         "operationId": "redis-saveEnvironment",
+        "summary": null,
+        "description": null,
         "tags": ["redis"],
         "security": [
           {
@@ -34376,6 +35233,8 @@
     "/redis.update": {
       "post": {
         "operationId": "redis-update",
+        "summary": null,
+        "description": null,
         "tags": ["redis"],
         "security": [
           {
@@ -35005,6 +35864,8 @@
     "/redis.changePassword": {
       "post": {
         "operationId": "redis-changePassword",
+        "summary": null,
+        "description": null,
         "tags": ["redis"],
         "security": [
           {
@@ -35026,7 +35887,7 @@
                   "password": {
                     "type": "string",
                     "minLength": 1,
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
                   }
                 },
                 "required": ["redisId", "password"]
@@ -35093,6 +35954,8 @@
     "/redis.move": {
       "post": {
         "operationId": "redis-move",
+        "summary": null,
+        "description": null,
         "tags": ["redis"],
         "security": [
           {
@@ -35178,6 +36041,8 @@
     "/redis.rebuild": {
       "post": {
         "operationId": "redis-rebuild",
+        "summary": null,
+        "description": null,
         "tags": ["redis"],
         "security": [
           {
@@ -35260,6 +36125,8 @@
     "/redis.search": {
       "get": {
         "operationId": "redis-search",
+        "summary": null,
+        "description": null,
         "tags": ["redis"],
         "security": [
           {
@@ -35398,6 +36265,8 @@
     "/redis.readLogs": {
       "get": {
         "operationId": "redis-readLogs",
+        "summary": null,
+        "description": null,
         "tags": ["redis"],
         "security": [
           {
@@ -35511,6 +36380,8 @@
     "/registry.create": {
       "post": {
         "operationId": "registry-create",
+        "summary": null,
+        "description": null,
         "tags": ["registry"],
         "security": [
           {
@@ -35622,6 +36493,8 @@
     "/registry.remove": {
       "post": {
         "operationId": "registry-remove",
+        "summary": null,
+        "description": null,
         "tags": ["registry"],
         "security": [
           {
@@ -35705,6 +36578,8 @@
     "/registry.update": {
       "post": {
         "operationId": "registry-update",
+        "summary": null,
+        "description": null,
         "tags": ["registry"],
         "security": [
           {
@@ -35834,6 +36709,8 @@
     "/registry.all": {
       "get": {
         "operationId": "registry-all",
+        "summary": null,
+        "description": null,
         "tags": ["registry"],
         "security": [
           {
@@ -35909,6 +36786,8 @@
     "/registry.one": {
       "get": {
         "operationId": "registry-one",
+        "summary": null,
+        "description": null,
         "tags": ["registry"],
         "security": [
           {
@@ -35995,6 +36874,8 @@
     "/registry.testRegistry": {
       "post": {
         "operationId": "registry-testRegistry",
+        "summary": null,
+        "description": null,
         "tags": ["registry"],
         "security": [
           {
@@ -36105,6 +36986,8 @@
     "/registry.testRegistryById": {
       "post": {
         "operationId": "registry-testRegistryById",
+        "summary": null,
+        "description": null,
         "tags": ["registry"],
         "security": [
           {
@@ -36190,6 +37073,8 @@
     "/security.create": {
       "post": {
         "operationId": "security-create",
+        "summary": null,
+        "description": null,
         "tags": ["security"],
         "security": [
           {
@@ -36280,6 +37165,8 @@
     "/security.one": {
       "get": {
         "operationId": "security-one",
+        "summary": null,
+        "description": null,
         "tags": ["security"],
         "security": [
           {
@@ -36366,6 +37253,8 @@
     "/security.delete": {
       "post": {
         "operationId": "security-delete",
+        "summary": null,
+        "description": null,
         "tags": ["security"],
         "security": [
           {
@@ -36449,6 +37338,8 @@
     "/security.update": {
       "post": {
         "operationId": "security-update",
+        "summary": null,
+        "description": null,
         "tags": ["security"],
         "security": [
           {
@@ -36540,6 +37431,8 @@
     "/server.create": {
       "post": {
         "operationId": "server-create",
+        "summary": null,
+        "description": null,
         "tags": ["server"],
         "security": [
           {
@@ -36590,6 +37483,10 @@
                   "serverType": {
                     "type": "string",
                     "enum": ["deploy", "build"]
+                  },
+                  "enableDockerCleanup": {
+                    "default": true,
+                    "type": "boolean"
                   }
                 },
                 "required": ["name", "description", "ipAddress", "port", "username", "sshKeyId", "serverType"]
@@ -36656,6 +37553,8 @@
     "/server.one": {
       "get": {
         "operationId": "server-one",
+        "summary": null,
+        "description": null,
         "tags": ["server"],
         "security": [
           {
@@ -36742,6 +37641,8 @@
     "/server.getDefaultCommand": {
       "get": {
         "operationId": "server-getDefaultCommand",
+        "summary": null,
+        "description": null,
         "tags": ["server"],
         "security": [
           {
@@ -36828,6 +37729,8 @@
     "/server.all": {
       "get": {
         "operationId": "server-all",
+        "summary": null,
+        "description": null,
         "tags": ["server"],
         "security": [
           {
@@ -36903,6 +37806,8 @@
     "/server.allForPermissions": {
       "get": {
         "operationId": "server-allForPermissions",
+        "summary": null,
+        "description": null,
         "tags": ["server"],
         "security": [
           {
@@ -36978,6 +37883,8 @@
     "/server.count": {
       "get": {
         "operationId": "server-count",
+        "summary": null,
+        "description": null,
         "tags": ["server"],
         "security": [
           {
@@ -37053,6 +37960,8 @@
     "/server.withSSHKey": {
       "get": {
         "operationId": "server-withSSHKey",
+        "summary": null,
+        "description": null,
         "tags": ["server"],
         "security": [
           {
@@ -37128,6 +38037,8 @@
     "/server.buildServers": {
       "get": {
         "operationId": "server-buildServers",
+        "summary": null,
+        "description": null,
         "tags": ["server"],
         "security": [
           {
@@ -37203,6 +38114,8 @@
     "/server.setup": {
       "post": {
         "operationId": "server-setup",
+        "summary": null,
+        "description": null,
         "tags": ["server"],
         "security": [
           {
@@ -37286,6 +38199,8 @@
     "/server.validate": {
       "get": {
         "operationId": "server-validate",
+        "summary": null,
+        "description": null,
         "tags": ["server"],
         "security": [
           {
@@ -37372,6 +38287,8 @@
     "/server.security": {
       "get": {
         "operationId": "server-security",
+        "summary": null,
+        "description": null,
         "tags": ["server"],
         "security": [
           {
@@ -37458,6 +38375,8 @@
     "/server.setupMonitoring": {
       "post": {
         "operationId": "server-setupMonitoring",
+        "summary": null,
+        "description": null,
         "tags": ["server"],
         "security": [
           {
@@ -37625,6 +38544,8 @@
     "/server.remove": {
       "post": {
         "operationId": "server-remove",
+        "summary": null,
+        "description": null,
         "tags": ["server"],
         "security": [
           {
@@ -37708,6 +38629,8 @@
     "/server.update": {
       "post": {
         "operationId": "server-update",
+        "summary": null,
+        "description": null,
         "tags": ["server"],
         "security": [
           {
@@ -37762,6 +38685,10 @@
                   "serverType": {
                     "type": "string",
                     "enum": ["deploy", "build"]
+                  },
+                  "enableDockerCleanup": {
+                    "default": true,
+                    "type": "boolean"
                   },
                   "command": {
                     "type": "string"
@@ -37837,9 +38764,101 @@
         }
       }
     },
+    "/server.updateBuildsConcurrency": {
+      "post": {
+        "operationId": "server-updateBuildsConcurrency",
+        "summary": null,
+        "description": null,
+        "tags": ["server"],
+        "security": [
+          {
+            "Authorization": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "serverId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "buildsConcurrency": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100
+                  }
+                },
+                "required": ["serverId", "buildsConcurrency"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.BAD_REQUEST"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authorization not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.FORBIDDEN"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.INTERNAL_SERVER_ERROR"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/server.publicIp": {
       "get": {
         "operationId": "server-publicIp",
+        "summary": null,
+        "description": null,
         "tags": ["server"],
         "security": [
           {
@@ -37915,6 +38934,8 @@
     "/server.getServerTime": {
       "get": {
         "operationId": "server-getServerTime",
+        "summary": null,
+        "description": null,
         "tags": ["server"],
         "security": [
           {
@@ -37990,6 +39011,8 @@
     "/server.getServerMetrics": {
       "get": {
         "operationId": "server-getServerMetrics",
+        "summary": null,
+        "description": null,
         "tags": ["server"],
         "security": [
           {
@@ -38091,6 +39114,8 @@
     "/settings.getWebServerSettings": {
       "get": {
         "operationId": "settings-getWebServerSettings",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -38166,6 +39191,8 @@
     "/settings.reloadServer": {
       "post": {
         "operationId": "settings-reloadServer",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -38231,6 +39258,8 @@
     "/settings.cleanRedis": {
       "post": {
         "operationId": "settings-cleanRedis",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -38296,6 +39325,8 @@
     "/settings.reloadRedis": {
       "post": {
         "operationId": "settings-reloadRedis",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -38361,6 +39392,8 @@
     "/settings.cleanAllDeploymentQueue": {
       "post": {
         "operationId": "settings-cleanAllDeploymentQueue",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -38426,6 +39459,8 @@
     "/settings.reloadTraefik": {
       "post": {
         "operationId": "settings-reloadTraefik",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -38507,6 +39542,8 @@
     "/settings.toggleDashboard": {
       "post": {
         "operationId": "settings-toggleDashboard",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -38591,6 +39628,8 @@
     "/settings.cleanUnusedImages": {
       "post": {
         "operationId": "settings-cleanUnusedImages",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -38672,6 +39711,8 @@
     "/settings.cleanUnusedVolumes": {
       "post": {
         "operationId": "settings-cleanUnusedVolumes",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -38753,6 +39794,8 @@
     "/settings.cleanStoppedContainers": {
       "post": {
         "operationId": "settings-cleanStoppedContainers",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -38834,6 +39877,8 @@
     "/settings.cleanDockerBuilder": {
       "post": {
         "operationId": "settings-cleanDockerBuilder",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -38915,6 +39960,8 @@
     "/settings.cleanDockerPrune": {
       "post": {
         "operationId": "settings-cleanDockerPrune",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -38996,6 +40043,8 @@
     "/settings.cleanAll": {
       "post": {
         "operationId": "settings-cleanAll",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -39077,6 +40126,8 @@
     "/settings.cleanMonitoring": {
       "post": {
         "operationId": "settings-cleanMonitoring",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -39142,6 +40193,8 @@
     "/settings.getDockerDiskUsage": {
       "get": {
         "operationId": "settings-getDockerDiskUsage",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -39217,6 +40270,8 @@
     "/settings.saveSSHPrivateKey": {
       "post": {
         "operationId": "settings-saveSSHPrivateKey",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -39299,6 +40354,8 @@
     "/settings.assignDomainServer": {
       "post": {
         "operationId": "settings-assignDomainServer",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -39408,6 +40465,8 @@
     "/settings.cleanSSHPrivateKey": {
       "post": {
         "operationId": "settings-cleanSSHPrivateKey",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -39473,6 +40532,8 @@
     "/settings.updateDockerCleanup": {
       "post": {
         "operationId": "settings-updateDockerCleanup",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -39555,9 +40616,265 @@
         }
       }
     },
+    "/settings.updateRemoteServersOnly": {
+      "post": {
+        "operationId": "settings-updateRemoteServersOnly",
+        "summary": null,
+        "description": null,
+        "tags": ["settings"],
+        "security": [
+          {
+            "Authorization": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "remoteServersOnly": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["remoteServersOnly"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.BAD_REQUEST"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authorization not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.FORBIDDEN"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.INTERNAL_SERVER_ERROR"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/settings.updateBuildsConcurrency": {
+      "post": {
+        "operationId": "settings-updateBuildsConcurrency",
+        "summary": null,
+        "description": null,
+        "tags": ["settings"],
+        "security": [
+          {
+            "Authorization": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "buildsConcurrency": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 100
+                  }
+                },
+                "required": ["buildsConcurrency"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.BAD_REQUEST"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authorization not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.FORBIDDEN"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.INTERNAL_SERVER_ERROR"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/settings.updateEnforceSSO": {
+      "post": {
+        "operationId": "settings-updateEnforceSSO",
+        "summary": null,
+        "description": null,
+        "tags": ["settings"],
+        "security": [
+          {
+            "Authorization": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "enforceSSO": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["enforceSSO"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.BAD_REQUEST"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authorization not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.FORBIDDEN"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.INTERNAL_SERVER_ERROR"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/settings.readTraefikConfig": {
       "get": {
         "operationId": "settings-readTraefikConfig",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -39633,6 +40950,8 @@
     "/settings.updateTraefikConfig": {
       "post": {
         "operationId": "settings-updateTraefikConfig",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -39716,6 +41035,8 @@
     "/settings.readWebServerTraefikConfig": {
       "get": {
         "operationId": "settings-readWebServerTraefikConfig",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -39791,6 +41112,8 @@
     "/settings.updateWebServerTraefikConfig": {
       "post": {
         "operationId": "settings-updateWebServerTraefikConfig",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -39874,6 +41197,8 @@
     "/settings.readMiddlewareTraefikConfig": {
       "get": {
         "operationId": "settings-readMiddlewareTraefikConfig",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -39949,6 +41274,8 @@
     "/settings.updateMiddlewareTraefikConfig": {
       "post": {
         "operationId": "settings-updateMiddlewareTraefikConfig",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -40032,6 +41359,8 @@
     "/settings.getUpdateData": {
       "post": {
         "operationId": "settings-getUpdateData",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -40097,6 +41426,8 @@
     "/settings.updateServer": {
       "post": {
         "operationId": "settings-updateServer",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -40162,6 +41493,8 @@
     "/settings.getDokployVersion": {
       "get": {
         "operationId": "settings-getDokployVersion",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -40237,6 +41570,8 @@
     "/settings.getReleaseTag": {
       "get": {
         "operationId": "settings-getReleaseTag",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -40312,6 +41647,8 @@
     "/settings.readDirectories": {
       "get": {
         "operationId": "settings-readDirectories",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -40396,6 +41733,8 @@
     "/settings.updateTraefikFile": {
       "post": {
         "operationId": "settings-updateTraefikFile",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -40486,6 +41825,8 @@
     "/settings.readTraefikFile": {
       "get": {
         "operationId": "settings-readTraefikFile",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -40579,6 +41920,8 @@
     "/settings.getIp": {
       "get": {
         "operationId": "settings-getIp",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -40654,6 +41997,8 @@
     "/settings.updateServerIp": {
       "post": {
         "operationId": "settings-updateServerIp",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -40736,6 +42081,8 @@
     "/settings.getOpenApiDocument": {
       "get": {
         "operationId": "settings-getOpenApiDocument",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -40811,6 +42158,8 @@
     "/settings.readTraefikEnv": {
       "get": {
         "operationId": "settings-readTraefikEnv",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -40895,6 +42244,8 @@
     "/settings.writeTraefikEnv": {
       "post": {
         "operationId": "settings-writeTraefikEnv",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -40980,6 +42331,8 @@
     "/settings.haveTraefikDashboardPortEnabled": {
       "get": {
         "operationId": "settings-haveTraefikDashboardPortEnabled",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -41064,6 +42417,8 @@
     "/settings.haveActivateRequests": {
       "get": {
         "operationId": "settings-haveActivateRequests",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -41139,6 +42494,8 @@
     "/settings.toggleRequests": {
       "post": {
         "operationId": "settings-toggleRequests",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -41221,6 +42578,8 @@
     "/settings.isCloud": {
       "get": {
         "operationId": "settings-isCloud",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -41296,6 +42655,8 @@
     "/settings.isUserSubscribed": {
       "get": {
         "operationId": "settings-isUserSubscribed",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -41371,6 +42732,8 @@
     "/settings.health": {
       "get": {
         "operationId": "settings-health",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -41446,6 +42809,8 @@
     "/settings.checkInfrastructureHealth": {
       "get": {
         "operationId": "settings-checkInfrastructureHealth",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -41521,6 +42886,8 @@
     "/settings.setupGPU": {
       "post": {
         "operationId": "settings-setupGPU",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -41602,6 +42969,8 @@
     "/settings.checkGPUStatus": {
       "get": {
         "operationId": "settings-checkGPUStatus",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -41686,6 +43055,8 @@
     "/settings.updateTraefikPorts": {
       "post": {
         "operationId": "settings-updateTraefikPorts",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -41787,6 +43158,8 @@
     "/settings.getTraefikPorts": {
       "get": {
         "operationId": "settings-getTraefikPorts",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -41871,6 +43244,8 @@
     "/settings.updateLogCleanup": {
       "post": {
         "operationId": "settings-updateLogCleanup",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -41960,6 +43335,8 @@
     "/settings.getLogCleanupStatus": {
       "get": {
         "operationId": "settings-getLogCleanupStatus",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -42035,6 +43412,8 @@
     "/settings.getDokployCloudIps": {
       "get": {
         "operationId": "settings-getDokployCloudIps",
+        "summary": null,
+        "description": null,
         "tags": ["settings"],
         "security": [
           {
@@ -42110,6 +43489,8 @@
     "/sshKey.create": {
       "post": {
         "operationId": "sshKey-create",
+        "summary": null,
+        "description": null,
         "tags": ["sshKey"],
         "security": [
           {
@@ -42212,6 +43593,8 @@
     "/sshKey.remove": {
       "post": {
         "operationId": "sshKey-remove",
+        "summary": null,
+        "description": null,
         "tags": ["sshKey"],
         "security": [
           {
@@ -42294,6 +43677,8 @@
     "/sshKey.one": {
       "get": {
         "operationId": "sshKey-one",
+        "summary": null,
+        "description": null,
         "tags": ["sshKey"],
         "security": [
           {
@@ -42380,6 +43765,8 @@
     "/sshKey.all": {
       "get": {
         "operationId": "sshKey-all",
+        "summary": null,
+        "description": null,
         "tags": ["sshKey"],
         "security": [
           {
@@ -42455,6 +43842,8 @@
     "/sshKey.allForApps": {
       "get": {
         "operationId": "sshKey-allForApps",
+        "summary": null,
+        "description": null,
         "tags": ["sshKey"],
         "security": [
           {
@@ -42530,6 +43919,8 @@
     "/sshKey.generate": {
       "post": {
         "operationId": "sshKey-generate",
+        "summary": null,
+        "description": null,
         "tags": ["sshKey"],
         "security": [
           {
@@ -42612,6 +44003,8 @@
     "/sshKey.update": {
       "post": {
         "operationId": "sshKey-update",
+        "summary": null,
+        "description": null,
         "tags": ["sshKey"],
         "security": [
           {
@@ -42718,6 +44111,8 @@
     "/stripe.getCurrentPlan": {
       "get": {
         "operationId": "stripe-getCurrentPlan",
+        "summary": null,
+        "description": null,
         "tags": ["stripe"],
         "security": [
           {
@@ -42793,6 +44188,8 @@
     "/stripe.getProducts": {
       "get": {
         "operationId": "stripe-getProducts",
+        "summary": null,
+        "description": null,
         "tags": ["stripe"],
         "security": [
           {
@@ -42868,6 +44265,8 @@
     "/stripe.createCheckoutSession": {
       "post": {
         "operationId": "stripe-createCheckoutSession",
+        "summary": null,
+        "description": null,
         "tags": ["stripe"],
         "security": [
           {
@@ -42961,6 +44360,8 @@
     "/stripe.createCustomerPortalSession": {
       "post": {
         "operationId": "stripe-createCustomerPortalSession",
+        "summary": null,
+        "description": null,
         "tags": ["stripe"],
         "security": [
           {
@@ -43026,6 +44427,8 @@
     "/stripe.upgradeSubscription": {
       "post": {
         "operationId": "stripe-upgradeSubscription",
+        "summary": null,
+        "description": null,
         "tags": ["stripe"],
         "security": [
           {
@@ -43116,6 +44519,8 @@
     "/stripe.canCreateMoreServers": {
       "get": {
         "operationId": "stripe-canCreateMoreServers",
+        "summary": null,
+        "description": null,
         "tags": ["stripe"],
         "security": [
           {
@@ -43191,6 +44596,8 @@
     "/stripe.updateInvoiceNotifications": {
       "post": {
         "operationId": "stripe-updateInvoiceNotifications",
+        "summary": null,
+        "description": null,
         "tags": ["stripe"],
         "security": [
           {
@@ -43273,6 +44680,8 @@
     "/stripe.getInvoices": {
       "get": {
         "operationId": "stripe-getInvoices",
+        "summary": null,
+        "description": null,
         "tags": ["stripe"],
         "security": [
           {
@@ -43348,6 +44757,8 @@
     "/swarm.getNodes": {
       "get": {
         "operationId": "swarm-getNodes",
+        "summary": null,
+        "description": null,
         "tags": ["swarm"],
         "security": [
           {
@@ -43432,6 +44843,8 @@
     "/swarm.getNodeInfo": {
       "get": {
         "operationId": "swarm-getNodeInfo",
+        "summary": null,
+        "description": null,
         "tags": ["swarm"],
         "security": [
           {
@@ -43524,6 +44937,8 @@
     "/swarm.getNodeApps": {
       "get": {
         "operationId": "swarm-getNodeApps",
+        "summary": null,
+        "description": null,
         "tags": ["swarm"],
         "security": [
           {
@@ -43608,6 +45023,8 @@
     "/swarm.getContainerStats": {
       "get": {
         "operationId": "swarm-getContainerStats",
+        "summary": null,
+        "description": null,
         "tags": ["swarm"],
         "security": [
           {
@@ -43692,6 +45109,8 @@
     "/user.all": {
       "get": {
         "operationId": "user-all",
+        "summary": null,
+        "description": null,
         "tags": ["user"],
         "security": [
           {
@@ -43767,6 +45186,8 @@
     "/user.one": {
       "get": {
         "operationId": "user-one",
+        "summary": null,
+        "description": null,
         "tags": ["user"],
         "security": [
           {
@@ -43852,6 +45273,8 @@
     "/user.session": {
       "get": {
         "operationId": "user-session",
+        "summary": null,
+        "description": null,
         "tags": ["user"],
         "security": [
           {
@@ -43927,6 +45350,8 @@
     "/user.get": {
       "get": {
         "operationId": "user-get",
+        "summary": null,
+        "description": null,
         "tags": ["user"],
         "security": [
           {
@@ -44002,6 +45427,8 @@
     "/user.getPermissions": {
       "get": {
         "operationId": "user-getPermissions",
+        "summary": null,
+        "description": null,
         "tags": ["user"],
         "security": [
           {
@@ -44077,6 +45504,8 @@
     "/user.haveRootAccess": {
       "get": {
         "operationId": "user-haveRootAccess",
+        "summary": null,
+        "description": null,
         "tags": ["user"],
         "security": [
           {
@@ -44152,6 +45581,8 @@
     "/user.getBackups": {
       "get": {
         "operationId": "user-getBackups",
+        "summary": null,
+        "description": null,
         "tags": ["user"],
         "security": [
           {
@@ -44227,6 +45658,8 @@
     "/user.getServerMetrics": {
       "get": {
         "operationId": "user-getServerMetrics",
+        "summary": null,
+        "description": null,
         "tags": ["user"],
         "security": [
           {
@@ -44302,6 +45735,8 @@
     "/user.update": {
       "post": {
         "operationId": "user-update",
+        "summary": null,
+        "description": null,
         "tags": ["user"],
         "security": [
           {
@@ -44522,6 +45957,8 @@
     "/user.getUserByToken": {
       "get": {
         "operationId": "user-getUserByToken",
+        "summary": null,
+        "description": null,
         "tags": ["user"],
         "security": [
           {
@@ -44608,6 +46045,8 @@
     "/user.getMetricsToken": {
       "get": {
         "operationId": "user-getMetricsToken",
+        "summary": null,
+        "description": null,
         "tags": ["user"],
         "security": [
           {
@@ -44683,6 +46122,8 @@
     "/user.remove": {
       "post": {
         "operationId": "user-remove",
+        "summary": null,
+        "description": null,
         "tags": ["user"],
         "security": [
           {
@@ -44765,6 +46206,8 @@
     "/user.assignPermissions": {
       "post": {
         "operationId": "user-assignPermissions",
+        "summary": null,
+        "description": null,
         "tags": ["user"],
         "security": [
           {
@@ -44929,6 +46372,8 @@
     "/user.getInvitations": {
       "get": {
         "operationId": "user-getInvitations",
+        "summary": null,
+        "description": null,
         "tags": ["user"],
         "security": [
           {
@@ -45004,6 +46449,8 @@
     "/user.getContainerMetrics": {
       "get": {
         "operationId": "user-getContainerMetrics",
+        "summary": null,
+        "description": null,
         "tags": ["user"],
         "security": [
           {
@@ -45113,6 +46560,8 @@
     "/user.generateToken": {
       "post": {
         "operationId": "user-generateToken",
+        "summary": null,
+        "description": null,
         "tags": ["user"],
         "security": [
           {
@@ -45178,6 +46627,8 @@
     "/user.deleteApiKey": {
       "post": {
         "operationId": "user-deleteApiKey",
+        "summary": null,
+        "description": null,
         "tags": ["user"],
         "security": [
           {
@@ -45260,6 +46711,8 @@
     "/user.createApiKey": {
       "post": {
         "operationId": "user-createApiKey",
+        "summary": null,
+        "description": null,
         "tags": ["user"],
         "security": [
           {
@@ -45376,6 +46829,8 @@
     "/user.checkUserOrganizations": {
       "get": {
         "operationId": "user-checkUserOrganizations",
+        "summary": null,
+        "description": null,
         "tags": ["user"],
         "security": [
           {
@@ -45461,6 +46916,8 @@
     "/user.createUserWithCredentials": {
       "post": {
         "operationId": "user-createUserWithCredentials",
+        "summary": null,
+        "description": null,
         "tags": ["user"],
         "security": [
           {
@@ -45553,6 +47010,8 @@
     "/user.sendInvitation": {
       "post": {
         "operationId": "user-sendInvitation",
+        "summary": null,
+        "description": null,
         "tags": ["user"],
         "security": [
           {
@@ -45640,6 +47099,8 @@
     "/user.getBookmarkedTemplates": {
       "get": {
         "operationId": "user-getBookmarkedTemplates",
+        "summary": null,
+        "description": null,
         "tags": ["user"],
         "security": [
           {
@@ -45715,6 +47176,8 @@
     "/user.toggleTemplateBookmark": {
       "post": {
         "operationId": "user-toggleTemplateBookmark",
+        "summary": null,
+        "description": null,
         "tags": ["user"],
         "security": [
           {
@@ -45798,6 +47261,8 @@
     "/ai.one": {
       "get": {
         "operationId": "ai-one",
+        "summary": null,
+        "description": null,
         "tags": ["ai"],
         "security": [
           {
@@ -45883,6 +47348,8 @@
     "/ai.getModels": {
       "get": {
         "operationId": "ai-getModels",
+        "summary": null,
+        "description": null,
         "tags": ["ai"],
         "security": [
           {
@@ -45977,6 +47444,8 @@
     "/ai.create": {
       "post": {
         "operationId": "ai-create",
+        "summary": null,
+        "description": null,
         "tags": ["ai"],
         "security": [
           {
@@ -46074,6 +47543,8 @@
     "/ai.update": {
       "post": {
         "operationId": "ai-update",
+        "summary": null,
+        "description": null,
         "tags": ["ai"],
         "security": [
           {
@@ -46178,6 +47649,8 @@
     "/ai.getAll": {
       "get": {
         "operationId": "ai-getAll",
+        "summary": null,
+        "description": null,
         "tags": ["ai"],
         "security": [
           {
@@ -46253,6 +47726,8 @@
     "/ai.get": {
       "get": {
         "operationId": "ai-get",
+        "summary": null,
+        "description": null,
         "tags": ["ai"],
         "security": [
           {
@@ -46338,6 +47813,8 @@
     "/ai.delete": {
       "post": {
         "operationId": "ai-delete",
+        "summary": null,
+        "description": null,
         "tags": ["ai"],
         "security": [
           {
@@ -46420,6 +47897,8 @@
     "/ai.getEnabledProviders": {
       "get": {
         "operationId": "ai-getEnabledProviders",
+        "summary": null,
+        "description": null,
         "tags": ["ai"],
         "security": [
           {
@@ -46495,6 +47974,8 @@
     "/ai.analyzeLogs": {
       "post": {
         "operationId": "ai-analyzeLogs",
+        "summary": null,
+        "description": null,
         "tags": ["ai"],
         "security": [
           {
@@ -46586,6 +48067,8 @@
     "/ai.testConnection": {
       "post": {
         "operationId": "ai-testConnection",
+        "summary": null,
+        "description": null,
         "tags": ["ai"],
         "security": [
           {
@@ -46676,6 +48159,8 @@
     "/ai.suggest": {
       "post": {
         "operationId": "ai-suggest",
+        "summary": null,
+        "description": null,
         "tags": ["ai"],
         "security": [
           {
@@ -46764,6 +48249,8 @@
     "/ai.deploy": {
       "post": {
         "operationId": "ai-deploy",
+        "summary": null,
+        "description": null,
         "tags": ["ai"],
         "security": [
           {
@@ -46906,6 +48393,8 @@
     "/organization.create": {
       "post": {
         "operationId": "organization-create",
+        "summary": null,
+        "description": null,
         "tags": ["organization"],
         "security": [
           {
@@ -46991,6 +48480,8 @@
     "/organization.all": {
       "get": {
         "operationId": "organization-all",
+        "summary": null,
+        "description": null,
         "tags": ["organization"],
         "security": [
           {
@@ -47066,6 +48557,8 @@
     "/organization.one": {
       "get": {
         "operationId": "organization-one",
+        "summary": null,
+        "description": null,
         "tags": ["organization"],
         "security": [
           {
@@ -47151,6 +48644,8 @@
     "/organization.update": {
       "post": {
         "operationId": "organization-update",
+        "summary": null,
+        "description": null,
         "tags": ["organization"],
         "security": [
           {
@@ -47239,6 +48734,8 @@
     "/organization.delete": {
       "post": {
         "operationId": "organization-delete",
+        "summary": null,
+        "description": null,
         "tags": ["organization"],
         "security": [
           {
@@ -47321,6 +48818,8 @@
     "/organization.inviteMember": {
       "post": {
         "operationId": "organization-inviteMember",
+        "summary": null,
+        "description": null,
         "tags": ["organization"],
         "security": [
           {
@@ -47409,6 +48908,8 @@
     "/organization.allInvitations": {
       "get": {
         "operationId": "organization-allInvitations",
+        "summary": null,
+        "description": null,
         "tags": ["organization"],
         "security": [
           {
@@ -47484,6 +48985,8 @@
     "/organization.removeInvitation": {
       "post": {
         "operationId": "organization-removeInvitation",
+        "summary": null,
+        "description": null,
         "tags": ["organization"],
         "security": [
           {
@@ -47566,6 +49069,8 @@
     "/organization.updateMemberRole": {
       "post": {
         "operationId": "organization-updateMemberRole",
+        "summary": null,
+        "description": null,
         "tags": ["organization"],
         "security": [
           {
@@ -47652,6 +49157,8 @@
     "/organization.setDefault": {
       "post": {
         "operationId": "organization-setDefault",
+        "summary": null,
+        "description": null,
         "tags": ["organization"],
         "security": [
           {
@@ -47735,6 +49242,8 @@
     "/organization.active": {
       "get": {
         "operationId": "organization-active",
+        "summary": null,
+        "description": null,
         "tags": ["organization"],
         "security": [
           {
@@ -47810,6 +49319,8 @@
     "/licenseKey.activate": {
       "post": {
         "operationId": "licenseKey-activate",
+        "summary": null,
+        "description": null,
         "tags": ["licenseKey"],
         "security": [
           {
@@ -47893,6 +49404,8 @@
     "/licenseKey.validate": {
       "post": {
         "operationId": "licenseKey-validate",
+        "summary": null,
+        "description": null,
         "tags": ["licenseKey"],
         "security": [
           {
@@ -47958,6 +49471,8 @@
     "/licenseKey.deactivate": {
       "post": {
         "operationId": "licenseKey-deactivate",
+        "summary": null,
+        "description": null,
         "tags": ["licenseKey"],
         "security": [
           {
@@ -48023,6 +49538,8 @@
     "/licenseKey.getEnterpriseSettings": {
       "get": {
         "operationId": "licenseKey-getEnterpriseSettings",
+        "summary": null,
+        "description": null,
         "tags": ["licenseKey"],
         "security": [
           {
@@ -48098,6 +49615,8 @@
     "/licenseKey.haveValidLicenseKey": {
       "get": {
         "operationId": "licenseKey-haveValidLicenseKey",
+        "summary": null,
+        "description": null,
         "tags": ["licenseKey"],
         "security": [
           {
@@ -48173,6 +49692,8 @@
     "/licenseKey.updateEnterpriseSettings": {
       "post": {
         "operationId": "licenseKey-updateEnterpriseSettings",
+        "summary": null,
+        "description": null,
         "tags": ["licenseKey"],
         "security": [
           {
@@ -48254,6 +49775,85 @@
     "/sso.showSignInWithSSO": {
       "get": {
         "operationId": "sso-showSignInWithSSO",
+        "summary": null,
+        "description": null,
+        "tags": ["sso"],
+        "security": [
+          {
+            "Authorization": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.BAD_REQUEST"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authorization not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.FORBIDDEN"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.NOT_FOUND"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.INTERNAL_SERVER_ERROR"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/sso.enforceSSO": {
+      "get": {
+        "operationId": "sso-enforceSSO",
+        "summary": null,
+        "description": null,
         "tags": ["sso"],
         "security": [
           {
@@ -48329,6 +49929,8 @@
     "/sso.listProviders": {
       "get": {
         "operationId": "sso-listProviders",
+        "summary": null,
+        "description": null,
         "tags": ["sso"],
         "security": [
           {
@@ -48404,6 +50006,8 @@
     "/sso.getTrustedOrigins": {
       "get": {
         "operationId": "sso-getTrustedOrigins",
+        "summary": null,
+        "description": null,
         "tags": ["sso"],
         "security": [
           {
@@ -48479,6 +50083,8 @@
     "/sso.one": {
       "get": {
         "operationId": "sso-one",
+        "summary": null,
+        "description": null,
         "tags": ["sso"],
         "security": [
           {
@@ -48565,6 +50171,8 @@
     "/sso.update": {
       "post": {
         "operationId": "sso-update",
+        "summary": null,
+        "description": null,
         "tags": ["sso"],
         "security": [
           {
@@ -48885,6 +50493,8 @@
     "/sso.deleteProvider": {
       "post": {
         "operationId": "sso-deleteProvider",
+        "summary": null,
+        "description": null,
         "tags": ["sso"],
         "security": [
           {
@@ -48968,6 +50578,8 @@
     "/sso.register": {
       "post": {
         "operationId": "sso-register",
+        "summary": null,
+        "description": null,
         "tags": ["sso"],
         "security": [
           {
@@ -49288,6 +50900,8 @@
     "/sso.addTrustedOrigin": {
       "post": {
         "operationId": "sso-addTrustedOrigin",
+        "summary": null,
+        "description": null,
         "tags": ["sso"],
         "security": [
           {
@@ -49371,6 +50985,8 @@
     "/sso.removeTrustedOrigin": {
       "post": {
         "operationId": "sso-removeTrustedOrigin",
+        "summary": null,
+        "description": null,
         "tags": ["sso"],
         "security": [
           {
@@ -49454,6 +51070,8 @@
     "/sso.updateTrustedOrigin": {
       "post": {
         "operationId": "sso-updateTrustedOrigin",
+        "summary": null,
+        "description": null,
         "tags": ["sso"],
         "security": [
           {
@@ -49538,9 +51156,1151 @@
         }
       }
     },
+    "/scim.listProviders": {
+      "get": {
+        "operationId": "scim-listProviders",
+        "summary": null,
+        "description": null,
+        "tags": ["scim"],
+        "security": [
+          {
+            "Authorization": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.BAD_REQUEST"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authorization not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.FORBIDDEN"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.NOT_FOUND"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.INTERNAL_SERVER_ERROR"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/scim.generateToken": {
+      "post": {
+        "operationId": "scim-generateToken",
+        "summary": null,
+        "description": null,
+        "tags": ["scim"],
+        "security": [
+          {
+            "Authorization": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "providerId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "pattern": "^[a-z0-9][a-z0-9-]*$"
+                  }
+                },
+                "required": ["providerId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.BAD_REQUEST"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authorization not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.FORBIDDEN"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.INTERNAL_SERVER_ERROR"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/scim.deleteProvider": {
+      "post": {
+        "operationId": "scim-deleteProvider",
+        "summary": null,
+        "description": null,
+        "tags": ["scim"],
+        "security": [
+          {
+            "Authorization": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "providerId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 64,
+                    "pattern": "^[a-z0-9][a-z0-9-]*$"
+                  }
+                },
+                "required": ["providerId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.BAD_REQUEST"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authorization not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.FORBIDDEN"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.INTERNAL_SERVER_ERROR"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/forwardAuth.getAuthDomain": {
+      "get": {
+        "operationId": "forwardAuth-getAuthDomain",
+        "summary": null,
+        "description": null,
+        "tags": ["forwardAuth"],
+        "security": [
+          {
+            "Authorization": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "serverId",
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ]
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.BAD_REQUEST"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authorization not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.FORBIDDEN"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.NOT_FOUND"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.INTERNAL_SERVER_ERROR"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/forwardAuth.setAuthDomain": {
+      "post": {
+        "operationId": "forwardAuth-setAuthDomain",
+        "summary": null,
+        "description": null,
+        "tags": ["forwardAuth"],
+        "security": [
+          {
+            "Authorization": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "serverId": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "authDomain": {
+                    "type": "string"
+                  },
+                  "https": {
+                    "default": true,
+                    "type": "boolean"
+                  },
+                  "certificateType": {
+                    "default": "letsencrypt",
+                    "type": "string",
+                    "enum": ["none", "letsencrypt", "custom"]
+                  },
+                  "customCertResolver": {
+                    "type": "string"
+                  }
+                },
+                "required": ["serverId", "authDomain"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.BAD_REQUEST"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authorization not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.FORBIDDEN"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.INTERNAL_SERVER_ERROR"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/forwardAuth.removeAuthDomain": {
+      "post": {
+        "operationId": "forwardAuth-removeAuthDomain",
+        "summary": null,
+        "description": null,
+        "tags": ["forwardAuth"],
+        "security": [
+          {
+            "Authorization": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "serverId": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": ["serverId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.BAD_REQUEST"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authorization not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.FORBIDDEN"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.INTERNAL_SERVER_ERROR"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/forwardAuth.listProviders": {
+      "get": {
+        "operationId": "forwardAuth-listProviders",
+        "summary": null,
+        "description": null,
+        "tags": ["forwardAuth"],
+        "security": [
+          {
+            "Authorization": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.BAD_REQUEST"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authorization not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.FORBIDDEN"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.NOT_FOUND"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.INTERNAL_SERVER_ERROR"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/forwardAuth.serverStatus": {
+      "get": {
+        "operationId": "forwardAuth-serverStatus",
+        "summary": null,
+        "description": null,
+        "tags": ["forwardAuth"],
+        "security": [
+          {
+            "Authorization": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.BAD_REQUEST"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authorization not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.FORBIDDEN"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.NOT_FOUND"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.INTERNAL_SERVER_ERROR"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/forwardAuth.deployOnServer": {
+      "post": {
+        "operationId": "forwardAuth-deployOnServer",
+        "summary": null,
+        "description": null,
+        "tags": ["forwardAuth"],
+        "security": [
+          {
+            "Authorization": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "serverId": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  },
+                  "providerId": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": ["serverId", "providerId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.BAD_REQUEST"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authorization not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.FORBIDDEN"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.INTERNAL_SERVER_ERROR"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/forwardAuth.removeOnServer": {
+      "post": {
+        "operationId": "forwardAuth-removeOnServer",
+        "summary": null,
+        "description": null,
+        "tags": ["forwardAuth"],
+        "security": [
+          {
+            "Authorization": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "serverId": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
+                  }
+                },
+                "required": ["serverId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.BAD_REQUEST"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authorization not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.FORBIDDEN"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.INTERNAL_SERVER_ERROR"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/forwardAuth.status": {
+      "get": {
+        "operationId": "forwardAuth-status",
+        "summary": null,
+        "description": null,
+        "tags": ["forwardAuth"],
+        "security": [
+          {
+            "Authorization": []
+          }
+        ],
+        "parameters": [
+          {
+            "in": "query",
+            "name": "domainId",
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": true
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.BAD_REQUEST"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authorization not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.FORBIDDEN"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.NOT_FOUND"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.INTERNAL_SERVER_ERROR"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/forwardAuth.enable": {
+      "post": {
+        "operationId": "forwardAuth-enable",
+        "summary": null,
+        "description": null,
+        "tags": ["forwardAuth"],
+        "security": [
+          {
+            "Authorization": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "domainId": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": ["domainId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.BAD_REQUEST"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authorization not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.FORBIDDEN"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.INTERNAL_SERVER_ERROR"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/forwardAuth.disable": {
+      "post": {
+        "operationId": "forwardAuth-disable",
+        "summary": null,
+        "description": null,
+        "tags": ["forwardAuth"],
+        "security": [
+          {
+            "Authorization": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "domainId": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": ["domainId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.BAD_REQUEST"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authorization not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.FORBIDDEN"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.INTERNAL_SERVER_ERROR"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/whitelabeling.get": {
       "get": {
         "operationId": "whitelabeling-get",
+        "summary": null,
+        "description": null,
         "tags": ["whitelabeling"],
         "security": [
           {
@@ -49616,6 +52376,8 @@
     "/whitelabeling.update": {
       "post": {
         "operationId": "whitelabeling-update",
+        "summary": null,
+        "description": null,
         "tags": ["whitelabeling"],
         "security": [
           {
@@ -49834,6 +52596,8 @@
     "/whitelabeling.reset": {
       "post": {
         "operationId": "whitelabeling-reset",
+        "summary": null,
+        "description": null,
         "tags": ["whitelabeling"],
         "security": [
           {
@@ -49899,6 +52663,8 @@
     "/whitelabeling.getPublic": {
       "get": {
         "operationId": "whitelabeling-getPublic",
+        "summary": null,
+        "description": null,
         "tags": ["whitelabeling"],
         "security": [
           {
@@ -49974,6 +52740,8 @@
     "/customRole.all": {
       "get": {
         "operationId": "customRole-all",
+        "summary": null,
+        "description": null,
         "tags": ["customRole"],
         "security": [
           {
@@ -50049,6 +52817,8 @@
     "/customRole.create": {
       "post": {
         "operationId": "customRole-create",
+        "summary": null,
+        "description": null,
         "tags": ["customRole"],
         "security": [
           {
@@ -50145,6 +52915,8 @@
     "/customRole.update": {
       "post": {
         "operationId": "customRole-update",
+        "summary": null,
+        "description": null,
         "tags": ["customRole"],
         "security": [
           {
@@ -50245,6 +53017,8 @@
     "/customRole.remove": {
       "post": {
         "operationId": "customRole-remove",
+        "summary": null,
+        "description": null,
         "tags": ["customRole"],
         "security": [
           {
@@ -50328,6 +53102,8 @@
     "/customRole.membersByRole": {
       "get": {
         "operationId": "customRole-membersByRole",
+        "summary": null,
+        "description": null,
         "tags": ["customRole"],
         "security": [
           {
@@ -50414,6 +53190,8 @@
     "/customRole.getStatements": {
       "get": {
         "operationId": "customRole-getStatements",
+        "summary": null,
+        "description": null,
         "tags": ["customRole"],
         "security": [
           {
@@ -50489,6 +53267,8 @@
     "/auditLog.all": {
       "get": {
         "operationId": "auditLog-all",
+        "summary": null,
+        "description": null,
         "tags": ["auditLog"],
         "security": [
           {
@@ -50652,6 +53432,8 @@
     "/schedule.create": {
       "post": {
         "operationId": "schedule-create",
+        "summary": null,
+        "description": null,
         "tags": ["schedule"],
         "security": [
           {
@@ -50671,6 +53453,16 @@
                   },
                   "name": {
                     "type": "string"
+                  },
+                  "description": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   },
                   "cronExpression": {
                     "type": "string"
@@ -50739,7 +53531,7 @@
                       }
                     ]
                   },
-                  "userId": {
+                  "organizationId": {
                     "anyOf": [
                       {
                         "type": "string"
@@ -50830,6 +53622,8 @@
     "/schedule.update": {
       "post": {
         "operationId": "schedule-update",
+        "summary": null,
+        "description": null,
         "tags": ["schedule"],
         "security": [
           {
@@ -50850,6 +53644,16 @@
                   },
                   "name": {
                     "type": "string"
+                  },
+                  "description": {
+                    "anyOf": [
+                      {
+                        "type": "string"
+                      },
+                      {
+                        "type": "null"
+                      }
+                    ]
                   },
                   "cronExpression": {
                     "type": "string"
@@ -50918,7 +53722,7 @@
                       }
                     ]
                   },
-                  "userId": {
+                  "organizationId": {
                     "anyOf": [
                       {
                         "type": "string"
@@ -51009,6 +53813,8 @@
     "/schedule.delete": {
       "post": {
         "operationId": "schedule-delete",
+        "summary": null,
+        "description": null,
         "tags": ["schedule"],
         "security": [
           {
@@ -51091,6 +53897,8 @@
     "/schedule.list": {
       "get": {
         "operationId": "schedule-list",
+        "summary": null,
+        "description": null,
         "tags": ["schedule"],
         "security": [
           {
@@ -51185,6 +53993,8 @@
     "/schedule.one": {
       "get": {
         "operationId": "schedule-one",
+        "summary": null,
+        "description": null,
         "tags": ["schedule"],
         "security": [
           {
@@ -51270,6 +54080,8 @@
     "/schedule.runManually": {
       "post": {
         "operationId": "schedule-runManually",
+        "summary": null,
+        "description": null,
         "tags": ["schedule"],
         "security": [
           {
@@ -51353,6 +54165,8 @@
     "/rollback.delete": {
       "post": {
         "operationId": "rollback-delete",
+        "summary": null,
+        "description": null,
         "tags": ["rollback"],
         "security": [
           {
@@ -51436,6 +54250,8 @@
     "/rollback.rollback": {
       "post": {
         "operationId": "rollback-rollback",
+        "summary": null,
+        "description": null,
         "tags": ["rollback"],
         "security": [
           {
@@ -51519,6 +54335,8 @@
     "/volumeBackups.list": {
       "get": {
         "operationId": "volumeBackups-list",
+        "summary": null,
+        "description": null,
         "tags": ["volumeBackups"],
         "security": [
           {
@@ -51614,6 +54432,8 @@
     "/volumeBackups.create": {
       "post": {
         "operationId": "volumeBackups-create",
+        "summary": null,
+        "description": null,
         "tags": ["volumeBackups"],
         "security": [
           {
@@ -51831,6 +54651,8 @@
     "/volumeBackups.one": {
       "get": {
         "operationId": "volumeBackups-one",
+        "summary": null,
+        "description": null,
         "tags": ["volumeBackups"],
         "security": [
           {
@@ -51917,6 +54739,8 @@
     "/volumeBackups.delete": {
       "post": {
         "operationId": "volumeBackups-delete",
+        "summary": null,
+        "description": null,
         "tags": ["volumeBackups"],
         "security": [
           {
@@ -52000,6 +54824,8 @@
     "/volumeBackups.update": {
       "post": {
         "operationId": "volumeBackups-update",
+        "summary": null,
+        "description": null,
         "tags": ["volumeBackups"],
         "security": [
           {
@@ -52221,6 +55047,8 @@
     "/volumeBackups.runManually": {
       "post": {
         "operationId": "volumeBackups-runManually",
+        "summary": null,
+        "description": null,
         "tags": ["volumeBackups"],
         "security": [
           {
@@ -52304,6 +55132,8 @@
     "/environment.create": {
       "post": {
         "operationId": "environment-create",
+        "summary": null,
+        "description": null,
         "tags": ["environment"],
         "security": [
           {
@@ -52394,6 +55224,8 @@
     "/environment.one": {
       "get": {
         "operationId": "environment-one",
+        "summary": null,
+        "description": null,
         "tags": ["environment"],
         "security": [
           {
@@ -52480,6 +55312,8 @@
     "/environment.byProjectId": {
       "get": {
         "operationId": "environment-byProjectId",
+        "summary": null,
+        "description": null,
         "tags": ["environment"],
         "security": [
           {
@@ -52565,6 +55399,8 @@
     "/environment.remove": {
       "post": {
         "operationId": "environment-remove",
+        "summary": null,
+        "description": null,
         "tags": ["environment"],
         "security": [
           {
@@ -52648,6 +55484,8 @@
     "/environment.update": {
       "post": {
         "operationId": "environment-update",
+        "summary": null,
+        "description": null,
         "tags": ["environment"],
         "security": [
           {
@@ -52744,6 +55582,8 @@
     "/environment.duplicate": {
       "post": {
         "operationId": "environment-duplicate",
+        "summary": null,
+        "description": null,
         "tags": ["environment"],
         "security": [
           {
@@ -52834,6 +55674,8 @@
     "/environment.search": {
       "get": {
         "operationId": "environment-search",
+        "summary": null,
+        "description": null,
         "tags": ["environment"],
         "security": [
           {
@@ -52958,6 +55800,8 @@
     "/tag.create": {
       "post": {
         "operationId": "tag-create",
+        "summary": null,
+        "description": null,
         "tags": ["tag"],
         "security": [
           {
@@ -53051,6 +55895,8 @@
     "/tag.all": {
       "get": {
         "operationId": "tag-all",
+        "summary": null,
+        "description": null,
         "tags": ["tag"],
         "security": [
           {
@@ -53126,6 +55972,8 @@
     "/tag.one": {
       "get": {
         "operationId": "tag-one",
+        "summary": null,
+        "description": null,
         "tags": ["tag"],
         "security": [
           {
@@ -53212,6 +56060,8 @@
     "/tag.update": {
       "post": {
         "operationId": "tag-update",
+        "summary": null,
+        "description": null,
         "tags": ["tag"],
         "security": [
           {
@@ -53315,6 +56165,8 @@
     "/tag.remove": {
       "post": {
         "operationId": "tag-remove",
+        "summary": null,
+        "description": null,
         "tags": ["tag"],
         "security": [
           {
@@ -53398,6 +56250,8 @@
     "/tag.assignToProject": {
       "post": {
         "operationId": "tag-assignToProject",
+        "summary": null,
+        "description": null,
         "tags": ["tag"],
         "security": [
           {
@@ -53485,6 +56339,8 @@
     "/tag.removeFromProject": {
       "post": {
         "operationId": "tag-removeFromProject",
+        "summary": null,
+        "description": null,
         "tags": ["tag"],
         "security": [
           {
@@ -53572,6 +56428,8 @@
     "/tag.bulkAssign": {
       "post": {
         "operationId": "tag-bulkAssign",
+        "summary": null,
+        "description": null,
         "tags": ["tag"],
         "security": [
           {
@@ -53662,6 +56520,8 @@
     "/patch.create": {
       "post": {
         "operationId": "patch-create",
+        "summary": null,
+        "description": null,
         "tags": ["patch"],
         "security": [
           {
@@ -53775,6 +56635,8 @@
     "/patch.one": {
       "get": {
         "operationId": "patch-one",
+        "summary": null,
+        "description": null,
         "tags": ["patch"],
         "security": [
           {
@@ -53861,6 +56723,8 @@
     "/patch.byEntityId": {
       "get": {
         "operationId": "patch-byEntityId",
+        "summary": null,
+        "description": null,
         "tags": ["patch"],
         "security": [
           {
@@ -53955,6 +56819,8 @@
     "/patch.update": {
       "post": {
         "operationId": "patch-update",
+        "summary": null,
+        "description": null,
         "tags": ["patch"],
         "security": [
           {
@@ -54065,6 +56931,8 @@
     "/patch.delete": {
       "post": {
         "operationId": "patch-delete",
+        "summary": null,
+        "description": null,
         "tags": ["patch"],
         "security": [
           {
@@ -54148,6 +57016,8 @@
     "/patch.toggleEnabled": {
       "post": {
         "operationId": "patch-toggleEnabled",
+        "summary": null,
+        "description": null,
         "tags": ["patch"],
         "security": [
           {
@@ -54234,6 +57104,8 @@
     "/patch.ensureRepo": {
       "post": {
         "operationId": "patch-ensureRepo",
+        "summary": null,
+        "description": null,
         "tags": ["patch"],
         "security": [
           {
@@ -54320,6 +57192,8 @@
     "/patch.readRepoDirectories": {
       "get": {
         "operationId": "patch-readRepoDirectories",
+        "summary": null,
+        "description": null,
         "tags": ["patch"],
         "security": [
           {
@@ -54423,6 +57297,8 @@
     "/patch.readRepoFile": {
       "get": {
         "operationId": "patch-readRepoFile",
+        "summary": null,
+        "description": null,
         "tags": ["patch"],
         "security": [
           {
@@ -54526,6 +57402,8 @@
     "/patch.saveFileAsPatch": {
       "post": {
         "operationId": "patch-saveFileAsPatch",
+        "summary": null,
+        "description": null,
         "tags": ["patch"],
         "security": [
           {
@@ -54624,6 +57502,8 @@
     "/patch.markFileForDeletion": {
       "post": {
         "operationId": "patch-markFileForDeletion",
+        "summary": null,
+        "description": null,
         "tags": ["patch"],
         "security": [
           {
@@ -54714,6 +57594,8 @@
     "/patch.cleanPatchRepos": {
       "post": {
         "operationId": "patch-cleanPatchRepos",
+        "summary": null,
+        "description": null,
         "tags": ["patch"],
         "security": [
           {

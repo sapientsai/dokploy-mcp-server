@@ -269,3 +269,110 @@ export type DokployDestination = {
   serverId?: string
   createdAt?: string
 }
+
+export type DokployRedirect = {
+  redirectId: string
+  regex: string
+  replacement: string
+  permanent: boolean
+  applicationId?: string
+  createdAt?: string
+  uniqueConfigKey?: number
+}
+
+export const SCHEDULE_TYPES = ["application", "compose", "server", "dokploy-server"] as const
+export type ScheduleType = (typeof SCHEDULE_TYPES)[number]
+
+export type DokploySchedule = {
+  scheduleId: string
+  name: string
+  description?: string | null
+  cronExpression: string
+  command: string
+  scheduleType?: ScheduleType | string
+  shellType?: "bash" | "sh"
+  script?: string | null
+  appName?: string
+  serviceName?: string | null
+  applicationId?: string | null
+  composeId?: string | null
+  serverId?: string | null
+  organizationId?: string | null
+  enabled?: boolean
+  timezone?: string | null
+  createdAt?: string
+}
+
+export const AUDIT_ACTIONS = ["create", "update", "delete", "deploy", "cancel", "redeploy", "login", "logout"] as const
+export type AuditAction = (typeof AUDIT_ACTIONS)[number]
+
+export const AUDIT_RESOURCE_TYPES = [
+  "project",
+  "service",
+  "environment",
+  "deployment",
+  "user",
+  "customRole",
+  "domain",
+  "certificate",
+  "registry",
+  "server",
+  "sshKey",
+  "gitProvider",
+  "notification",
+  "settings",
+  "session",
+] as const
+export type AuditResourceType = (typeof AUDIT_RESOURCE_TYPES)[number]
+
+export type DokployAuditLog = {
+  id?: string
+  userId?: string | null
+  userEmail?: string | null
+  action?: AuditAction | string
+  resourceType?: AuditResourceType | string
+  resourceId?: string | null
+  resourceName?: string | null
+  metadata?: unknown
+  createdAt?: string
+}
+
+export type DokployPreviewDeployment = {
+  previewDeploymentId: string
+  branch?: string | null
+  pullRequestId?: string | null
+  pullRequestNumber?: string | null
+  pullRequestTitle?: string | null
+  pullRequestUrl?: string | null
+  previewStatus?: string
+  domainId?: string | null
+  applicationId?: string
+  createdAt?: string
+}
+
+export const VOLUME_BACKUP_SERVICE_TYPES = MOUNT_SERVICE_TYPES
+export type VolumeBackupServiceType = MountServiceType
+
+export type DokployVolumeBackup = {
+  volumeBackupId: string
+  name: string
+  volumeName: string
+  prefix: string
+  cronExpression: string
+  destinationId: string
+  serviceType?: VolumeBackupServiceType | string
+  appName?: string
+  serviceName?: string | null
+  turnOff?: boolean
+  keepLatestCount?: number | null
+  enabled?: boolean | null
+  applicationId?: string | null
+  postgresId?: string | null
+  mariadbId?: string | null
+  mongoId?: string | null
+  mysqlId?: string | null
+  redisId?: string | null
+  libsqlId?: string | null
+  composeId?: string | null
+  createdAt?: string
+}

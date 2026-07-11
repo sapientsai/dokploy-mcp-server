@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A comprehensive MCP (Model Context Protocol) server for [Dokploy](https://dokploy.com/) - the open-source, self-hosted PaaS. Provides **14 tools** (one per category, using action enums) for managing deployments, applications, databases, domains, and servers through AI assistants.
+A comprehensive MCP (Model Context Protocol) server for [Dokploy](https://dokploy.com/) - the open-source, self-hosted PaaS. Provides **21 tools** (one per category, using action enums) for managing deployments, applications, databases, domains, and servers through AI assistants.
 
 Built with **FastMCP**, **ts-builds**, and **Zod**. Supports stdio (default for npx/CLI) and httpStream (for Docker/remote) transports.
 
@@ -50,20 +50,27 @@ src/
 │   └── dokploy-client.ts       # API client (singleton, x-api-key auth, GET/POST)
 ├── tools/
 │   ├── index.ts                # Re-exports all tool registration functions
-│   ├── project-tools.ts        # 1 tool (6 actions) - CRUD + duplicate
-│   ├── application-tools.ts    # 1 tool (18 actions) - full app lifecycle
-│   ├── compose-tools.ts        # 1 tool (11 actions) - Docker Compose management
-│   ├── deployment-tools.ts     # 1 tool (2 actions) - deployment tracking
-│   ├── docker-tools.ts         # 1 tool (4 actions) - container management
-│   ├── domain-tools.ts         # 1 tool (8 actions) - domain/DNS management
-│   ├── server-tools.ts         # 1 tool (8 actions) - remote server management
-│   ├── settings-tools.ts       # 1 tool (5 actions) - health, version, cleanup
-│   ├── database-tools.ts       # 1 tool (13 actions) - unified DB management
-│   ├── backup-tools.ts         # 1 tool (6 actions) - backup scheduling/triggers
-│   ├── environment-tools.ts    # 1 tool (6 actions) - project environments
-│   ├── infrastructure-tools.ts # 1 tool (8 actions) - ports, certs, basic auth
-│   ├── mounts-tools.ts         # 1 tool (6 actions) - volume / bind / file mounts
-│   └── ssh-key-tools.ts        # 1 tool (6 actions) - SSH key management
+│   ├── project-tools.ts             # 1 tool (6 actions) - CRUD + duplicate
+│   ├── application-tools.ts         # 1 tool (23 actions) - full app lifecycle + search
+│   ├── compose-tools.ts             # 1 tool (21 actions) - Docker Compose management + search
+│   ├── deployment-tools.ts          # 1 tool (5 actions) - list, queueList, killProcess, readLogs, remove
+│   ├── docker-tools.ts              # 1 tool (4 actions) - container management
+│   ├── domain-tools.ts              # 1 tool (8 actions) - domain/DNS management
+│   ├── redirects-tools.ts           # 1 tool (4 actions) - URL redirect rules on applications
+│   ├── server-tools.ts              # 1 tool (8 actions) - remote server management
+│   ├── settings-tools.ts            # 1 tool (5 actions) - health, version, cleanup
+│   ├── database-tools.ts            # 1 tool (17 actions) - unified DB management + search
+│   ├── backup-tools.ts              # 1 tool (6 actions) - DB backup scheduling/triggers
+│   ├── volume-backup-tools.ts       # 1 tool (6 actions) - volume-level backup schedules
+│   ├── preview-deployment-tools.ts  # 1 tool (4 actions) - PR/branch preview deploys
+│   ├── schedule-tools.ts            # 1 tool (6 actions) - cron on app/compose/server/dokploy
+│   ├── audit-log-tools.ts           # 1 tool (1 action)  - audit log query with filters
+│   ├── environment-tools.ts         # 1 tool (6 actions) - project environments
+│   ├── infrastructure-tools.ts      # 1 tool (8 actions) - ports, certs, basic auth
+│   ├── mounts-tools.ts              # 1 tool (6 actions) - volume / bind / file mounts
+│   ├── ssh-key-tools.ts             # 1 tool (6 actions) - SSH key management
+│   ├── registry-tools.ts            # 1 tool (7 actions) - container registries
+│   └── destination-tools.ts         # 1 tool (6 actions) - S3-compatible backup destinations
 ├── types.ts                    # TypeScript types + DB type constants
 └── utils/
     └── formatters.ts           # Markdown output formatters

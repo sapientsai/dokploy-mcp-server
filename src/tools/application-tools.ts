@@ -8,7 +8,7 @@ import type { ApiError } from "../client/errors"
 import { formatApiError } from "../client/errors"
 import type { RequestBody } from "../generated"
 import type { DokployApplication } from "../types"
-import { formatApplication } from "../utils/formatters"
+import { formatApplication, formatApplicationList } from "../utils/formatters"
 import { formatEnvMutation, listEnvKeys, mergeEnv, pickDefined } from "./tool-utils"
 import type { ToolServer } from "./types"
 
@@ -35,6 +35,21 @@ const ACTIONS = [
   "traefikConfig",
   "readMonitoring",
   "readLogs",
+  "search",
+] as const
+
+const SEARCH_QUERY_FIELDS = [
+  "q",
+  "name",
+  "appName",
+  "description",
+  "repository",
+  "owner",
+  "dockerImage",
+  "projectId",
+  "environmentId",
+  "limit",
+  "offset",
 ] as const
 
 const UPDATE_FIELDS = [
@@ -95,6 +110,10 @@ type ApplicationArgs = {
   tail?: number
   since?: string
   search?: string
+  q?: string
+  projectId?: string
+  limit?: number
+  offset?: number
 }
 
 export function buildApplicationProgram(
@@ -273,6 +292,14 @@ export function buildApplicationProgram(
         .get<string>("application.readLogs", params)
         .map((logs) => `# Application Logs (${args.applicationId})\n\n\`\`\`\n${logs}\n\`\`\``)
     })
+    .case("search", () =>
+      client
+        .get<DokployApplication[]>(
+          "application.search",
+          pickDefined(args, SEARCH_QUERY_FIELDS) as Record<string, string | number | boolean | undefined>,
+        )
+        .map(formatApplicationList),
+    )
     .exhaustive()
 }
 
@@ -280,7 +307,7 @@ export function registerApplicationTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_application",
     description:
-      "Manage applications. create: name+environmentId. get: applicationId (returns metadata + masked env summary — never values). update: applicationId+fields (supports sourceType, repository, owner, branch, customGitUrl, customGitBranch, githubId, dockerImage, etc.). move: applicationId+targetEnvironmentId. deploy: applicationId, redeploy? (note: first deploy on new services may fail — retry immediately). start/stop/delete/markRunning/refreshToken/cleanQueues/killBuild/cancelDeployment: applicationId. reload: applicationId+appName. saveEnvironment: applicationId+env (KEY=VALUE pairs, full replace). setEnvVars: applicationId + set? (KEY=VALUE pairs to upsert) + unset? (KEY names to remove) — read-modify-write inside the server; result is a masked confirmation with changed key names only. getEnvKeys: applicationId — returns just the KEY names (no values). getEnvValuesUnsafe: applicationId — UNSAFE escape hatch that returns full KEY=VALUE pairs (use only when you need actual values; output goes to the tool transcript and any retained logs). saveBuildType: applicationId+buildType. traefikConfig: applicationId, traefikConfig? (omit to read). readMonitoring: appName. readLogs: applicationId, tail? (default 100), since? ('all' or duration like '1h'), search? (substring filter).",
+      "Manage applications. create: name+environmentId. get: applicationId (returns metadata + masked env summary — never values). update: applicationId+fields (supports sourceType, repository, owner, branch, customGitUrl, customGitBranch, githubId, dockerImage, etc.). move: applicationId+targetEnvironmentId. deploy: applicationId, redeploy? (note: first deploy on new services may fail — retry immediately). start/stop/delete/markRunning/refreshToken/cleanQueues/killBuild/cancelDeployment: applicationId. reload: applicationId+appName. saveEnvironment: applicationId+env (KEY=VALUE pairs, full replace). setEnvVars: applicationId + set? (KEY=VALUE pairs to upsert) + unset? (KEY names to remove) — read-modify-write inside the server; result is a masked confirmation with changed key names only. getEnvKeys: applicationId — returns just the KEY names (no values). getEnvValuesUnsafe: applicationId — UNSAFE escape hatch that returns full KEY=VALUE pairs (use only when you need actual values; output goes to the tool transcript and any retained logs). saveBuildType: applicationId+buildType. traefikConfig: applicationId, traefikConfig? (omit to read). readMonitoring: appName. readLogs: applicationId, tail? (default 100), since? ('all' or duration like '1h'), search? (substring filter). search: any of q|name|appName|description|repository|owner|dockerImage|projectId|environmentId + limit/offset.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       applicationId: z.string().optional(),
@@ -354,6 +381,10 @@ export function registerApplicationTools(server: ToolServer) {
         .regex(/^[a-zA-Z0-9 ._-]{0,500}$/)
         .optional()
         .describe("Filter log lines by substring (alphanumeric + ' ._-' only)"),
+      q: z.string().optional().describe("search: freeform query across name/appName/description/repository/owner"),
+      projectId: z.string().optional().describe("search: filter to a project"),
+      limit: z.number().int().min(1).max(100).optional().describe("search: max results (default 20)"),
+      offset: z.number().int().min(0).optional().describe("search: pagination offset"),
     }),
     execute: async (args) => {
       const either = await buildApplicationProgram(getDokployClient(), args).run()

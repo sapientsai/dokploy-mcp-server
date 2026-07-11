@@ -6,33 +6,40 @@ A comprehensive [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)
 
 ## Why This Server?
 
-The [official Dokploy MCP](https://github.com/Dokploy/mcp) covers only ~5 of 42 API categories. This server provides **14 tools** (one per category with action enums) covering the full DevOps lifecycle with minimal token usage.
+The [official Dokploy MCP](https://github.com/Dokploy/mcp) covers only ~5 of 42 API categories. This server provides **21 tools** (one per category with action enums) covering the full DevOps lifecycle with minimal token usage.
 
 ### Feature Comparison
 
-| Category       | Official MCP        | This Server                   |
-| -------------- | ------------------- | ----------------------------- |
-| Projects       | 6 tools             | 1 tool (6 actions)            |
-| Applications   | 26 tools            | 1 tool (22 actions)           |
-| Compose        | -                   | 1 tool (20 actions)           |
-| Deployments    | -                   | 1 tool (2 actions)            |
-| Docker         | -                   | 1 tool (4 actions)            |
-| Domains        | 9 tools             | 1 tool (8 actions)            |
-| Servers        | -                   | 1 tool (8 actions)            |
-| Settings       | -                   | 1 tool (5 actions)            |
-| Databases      | 26 tools (pg+mysql) | 1 tool (16 actions, all 5 DB) |
-| Backups        | -                   | 1 tool (6 actions)            |
-| Environments   | -                   | 1 tool (6 actions)            |
-| Infrastructure | -                   | 1 tool (8 actions)            |
-| Mounts         | -                   | 1 tool (6 actions)            |
-| SSH Keys       | -                   | 1 tool (6 actions)            |
-| **Total**      | **67 tools**        | **14 tools**                  |
+| Category            | Official MCP        | This Server                   |
+| ------------------- | ------------------- | ----------------------------- |
+| Projects            | 6 tools             | 1 tool (6 actions)            |
+| Applications        | 26 tools            | 1 tool (23 actions)           |
+| Compose             | -                   | 1 tool (21 actions)           |
+| Deployments         | -                   | 1 tool (5 actions)            |
+| Docker              | -                   | 1 tool (4 actions)            |
+| Domains             | 9 tools             | 1 tool (8 actions)            |
+| Redirects           | -                   | 1 tool (4 actions)            |
+| Servers             | -                   | 1 tool (8 actions)            |
+| Settings            | -                   | 1 tool (5 actions)            |
+| Databases           | 26 tools (pg+mysql) | 1 tool (17 actions, all 6 DB) |
+| Backups             | -                   | 1 tool (6 actions)            |
+| Volume Backups      | -                   | 1 tool (6 actions)            |
+| Preview Deployments | -                   | 1 tool (4 actions)            |
+| Schedules           | -                   | 1 tool (6 actions)            |
+| Audit Log           | -                   | 1 tool (1 action)             |
+| Environments        | -                   | 1 tool (6 actions)            |
+| Infrastructure      | -                   | 1 tool (8 actions)            |
+| Mounts              | -                   | 1 tool (6 actions)            |
+| SSH Keys            | -                   | 1 tool (6 actions)            |
+| Registries          | -                   | 1 tool (7 actions)            |
+| Destinations        | -                   | 1 tool (6 actions)            |
+| **Total**           | **67 tools**        | **21 tools**                  |
 
 Key advantages:
 
-- **Minimal token usage** - 14 tools instead of 67+, dramatically reducing context consumption
-- **Unified database tool** - One tool handles all 5 database types (postgres, mysql, mariadb, mongo, redis) via `dbType` + `action` params
-- **Full API coverage** - Docker Compose, containers, servers, deployments, backups, certificates, ports, and basic auth
+- **Minimal token usage** - 21 tools instead of 67+, dramatically reducing context consumption
+- **Unified database tool** - One tool handles all 6 database types (postgres, mysql, mariadb, mongo, redis, libsql) via `dbType` + `action` params
+- **Full API coverage** - Docker Compose, containers, servers, deployments (with per-deployment logs + queue), backups, volume backups, cron schedules, preview deployments, audit log, certificates, ports, and basic auth
 - **Action-based design** - Each tool has an `action` enum parameter; other params are optional based on action
 
 ## Installation

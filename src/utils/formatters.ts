@@ -11,6 +11,7 @@ import { countEnvKeys } from "../tools/tool-utils"
 import type {
   DatabaseType,
   DokployApplication,
+  DokployAuditLog,
   DokployBackup,
   DokployCompose,
   DokployContainer,
@@ -20,10 +21,14 @@ import type {
   DokployDomain,
   DokployEnvironment,
   DokployMount,
+  DokployPreviewDeployment,
   DokployProject,
+  DokployRedirect,
   DokployRegistry,
+  DokploySchedule,
   DokployServer,
   DokploySshKey,
+  DokployVolumeBackup,
 } from "../types"
 import { DB_ID_FIELDS, DB_TYPES } from "../types"
 
@@ -146,6 +151,11 @@ function formatEnvSummary(env: string | null | undefined): string {
   return `${count} var${count === 1 ? "" : "s"} set (values hidden — use getEnvKeys to list names, getEnvValuesUnsafe to reveal values)`
 }
 
+export function formatApplicationList(apps: DokployApplication[]): string {
+  if (apps.length === 0) return "No applications found."
+  return `# Applications (${apps.length})\n\n${apps.map(formatApplication).join("\n\n")}`
+}
+
 export function formatDeployment(dep: DokployDeployment): string {
   return `- ${statusIcon(dep.status)} **${orElse(dep.title, "Deployment")}** (ID: ${dep.deploymentId})
   Status: ${dep.status}
@@ -166,6 +176,11 @@ export function formatCompose(compose: DokployCompose): string {
   Source: ${orElse(compose.sourceType, "N/A")}
   Created: ${formatDate(compose.createdAt)}
   Env: ${formatEnvSummary(compose.env)}`
+}
+
+export function formatComposeList(composes: DokployCompose[]): string {
+  if (composes.length === 0) return "No compose services found."
+  return `# Compose Services (${composes.length})\n\n${composes.map(formatCompose).join("\n\n")}`
 }
 
 export function formatDomain(domain: DokployDomain): string {
@@ -211,6 +226,11 @@ export function formatDatabase(db: DokployDatabase, dbType: string): string {
   External Port: ${db.externalPort ?? "None"}
   Created: ${formatDate(db.createdAt)}
   Env: ${formatEnvSummary(db.env)}`
+}
+
+export function formatDatabaseList(dbs: DokployDatabase[], dbType: string): string {
+  if (dbs.length === 0) return `No ${dbType} databases found.`
+  return `# ${dbType} Databases (${dbs.length})\n\n${dbs.map((db) => formatDatabase(db, dbType)).join("\n\n")}`
 }
 
 export function formatContainer(container: DokployContainer): string {
@@ -297,4 +317,86 @@ export function formatMount(mount: DokployMount): string {
 export function formatMountList(mounts: DokployMount[]): string {
   if (mounts.length === 0) return "No mounts found."
   return `# Mounts (${mounts.length})\n\n${mounts.map(formatMount).join("\n\n")}`
+}
+
+export function formatRedirect(redirect: DokployRedirect): string {
+  return `- **${redirect.regex} → ${redirect.replacement}** (ID: ${redirect.redirectId})
+  Permanent: ${redirect.permanent ? "yes (301)" : "no (302)"}
+  Application: ${orElse(redirect.applicationId, "N/A")}
+  Created: ${formatDate(redirect.createdAt)}`
+}
+
+export function formatSchedule(schedule: DokploySchedule): string {
+  const target =
+    schedule.applicationId ??
+    schedule.composeId ??
+    schedule.serverId ??
+    (schedule.scheduleType === "dokploy-server" ? "dokploy-server" : "N/A")
+  return `- **${schedule.name}** (ID: ${schedule.scheduleId})
+  Cron: ${schedule.cronExpression}${schedule.timezone ? ` (${schedule.timezone})` : ""}
+  Type: ${orElse(schedule.scheduleType, "N/A")} → ${target}
+  Command: ${schedule.command}${schedule.script ? "\n  Script: (defined)" : ""}
+  Enabled: ${schedule.enabled ?? true}
+  Created: ${formatDate(schedule.createdAt)}`
+}
+
+export function formatScheduleList(schedules: DokploySchedule[]): string {
+  if (schedules.length === 0) return "No schedules found."
+  return `# Schedules (${schedules.length})\n\n${schedules.map(formatSchedule).join("\n\n")}`
+}
+
+export function formatAuditLog(entry: DokployAuditLog): string {
+  const who = orElse(entry.userEmail ?? entry.userId, "system")
+  const target = [entry.resourceType, entry.resourceName ?? entry.resourceId].filter(Boolean).join(":")
+  return `- **${orElse(entry.action, "?")}** on ${target || "N/A"}
+  When: ${formatDate(entry.createdAt)}
+  Who: ${who}`
+}
+
+export function formatAuditLogList(entries: DokployAuditLog[]): string {
+  if (entries.length === 0) return "No audit log entries found."
+  return `# Audit Log (${entries.length})\n\n${entries.map(formatAuditLog).join("\n\n")}`
+}
+
+export function formatPreviewDeployment(preview: DokployPreviewDeployment): string {
+  const pr =
+    preview.pullRequestNumber || preview.pullRequestTitle
+      ? `PR #${orElse(preview.pullRequestNumber, "?")}${preview.pullRequestTitle ? ` – ${preview.pullRequestTitle}` : ""}`
+      : "N/A"
+  return `- **${orElse(preview.branch, "unknown branch")}** (ID: ${preview.previewDeploymentId})
+  Status: ${orElse(preview.previewStatus, "N/A")}
+  ${pr}${preview.pullRequestUrl ? `\n  URL: ${preview.pullRequestUrl}` : ""}
+  Created: ${formatDate(preview.createdAt)}`
+}
+
+export function formatPreviewDeploymentList(previews: DokployPreviewDeployment[]): string {
+  if (previews.length === 0) return "No preview deployments found."
+  return `# Preview Deployments (${previews.length})\n\n${previews.map(formatPreviewDeployment).join("\n\n")}`
+}
+
+export function formatVolumeBackup(backup: DokployVolumeBackup): string {
+  const target =
+    backup.applicationId ??
+    backup.composeId ??
+    backup.postgresId ??
+    backup.mysqlId ??
+    backup.mariadbId ??
+    backup.mongoId ??
+    backup.redisId ??
+    backup.libsqlId ??
+    "N/A"
+  return `- **${backup.name}** (ID: ${backup.volumeBackupId})
+  Volume: ${backup.volumeName}
+  Service: ${orElse(backup.serviceType, "?")} → ${target}
+  Cron: ${backup.cronExpression}
+  Prefix: ${backup.prefix}
+  Destination: ${backup.destinationId}
+  Keep Latest: ${backup.keepLatestCount ?? "unlimited"}
+  Enabled: ${backup.enabled ?? true}${backup.turnOff ? " (turnOff: yes)" : ""}
+  Created: ${formatDate(backup.createdAt)}`
+}
+
+export function formatVolumeBackupList(backups: DokployVolumeBackup[]): string {
+  if (backups.length === 0) return "No volume backups found."
+  return `# Volume Backups (${backups.length})\n\n${backups.map(formatVolumeBackup).join("\n\n")}`
 }
