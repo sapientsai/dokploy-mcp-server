@@ -15,6 +15,9 @@ import type { ToolServer } from "./types"
 
 const ACTIONS = ["create", "update", "remove", "get", "list", "runManually"] as const
 
+// Mirrors the API constraint on volumeBackups.create / volumeBackups.update volumeName.
+const VOLUME_NAME_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/
+
 const VOLUME_BACKUP_OPTIONAL_FIELDS = [
   "serviceType",
   "appName",
@@ -127,7 +130,11 @@ export function registerVolumeBackupTools(server: ToolServer) {
       action: z.enum(ACTIONS),
       volumeBackupId: z.string().optional(),
       name: z.string().optional(),
-      volumeName: z.string().optional().describe("Docker volume name to snapshot"),
+      volumeName: z
+        .string()
+        .regex(VOLUME_NAME_PATTERN, "Must start with a letter or digit, then letters, digits, _, . or - only")
+        .optional()
+        .describe("Docker volume name to snapshot"),
       prefix: z.string().optional().describe("Object key prefix on the destination"),
       cronExpression: z.string().optional(),
       destinationId: z.string().optional(),

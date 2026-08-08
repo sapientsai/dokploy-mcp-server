@@ -28,6 +28,7 @@ const CREATE_FIELDS = [
   "databaseType",
   "enabled",
   "keepLatestCount",
+  "includeEncryptionKey",
   "postgresId",
   "mysqlId",
   "mariadbId",
@@ -47,6 +48,7 @@ const UPDATE_FIELDS = [
   "databaseType",
   "enabled",
   "keepLatestCount",
+  "includeEncryptionKey",
 ] as const
 
 type BackupArgs = {
@@ -60,6 +62,7 @@ type BackupArgs = {
   serviceName?: string
   enabled?: boolean
   keepLatestCount?: number
+  includeEncryptionKey?: boolean
   postgresId?: string
   mysqlId?: string
   mariadbId?: string
@@ -126,7 +129,7 @@ export function registerBackupTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_backup",
     description:
-      "Manage backups. create: schedule+prefix+destinationId+database+databaseType. Provide ONE service id matching databaseType: postgres→postgresId, mysql→mysqlId, mariadb→mariadbId, mongo→mongoId, libsql→libsqlId, web-server→(no id). For backups of a db running inside a compose stack: pass composeId+serviceName (and set databaseType to the engine, e.g. postgres). get: backupId. update: backupId+fields. remove: backupId. listFiles: destinationId. manualBackup: backupId+backupType (postgres|mysql|mariadb|mongo|libsql for db backups; compose for whole-stack; webServer for the dokploy server itself).",
+      "Manage backups. create: schedule+prefix+destinationId+database+databaseType. Provide ONE service id matching databaseType: postgres→postgresId, mysql→mysqlId, mariadb→mariadbId, mongo→mongoId, libsql→libsqlId, web-server→(no id). For backups of a db running inside a compose stack: pass composeId+serviceName (and set databaseType to the engine, e.g. postgres). Optional on create/update: includeEncryptionKey to store the database encryption key with the backup. get: backupId. update: backupId+fields. remove: backupId. listFiles: destinationId. manualBackup: backupId+backupType (postgres|mysql|mariadb|mongo|libsql for db backups; compose for whole-stack; webServer for the dokploy server itself).",
     parameters: z.object({
       action: z.enum(ACTIONS),
       backupId: z.string().optional(),
@@ -141,6 +144,7 @@ export function registerBackupTools(server: ToolServer) {
       serviceName: z.string().optional(),
       enabled: z.boolean().optional(),
       keepLatestCount: z.number().optional(),
+      includeEncryptionKey: z.boolean().optional().describe("Store the database encryption key alongside the backup"),
       postgresId: z.string().optional(),
       mysqlId: z.string().optional(),
       mariadbId: z.string().optional(),
