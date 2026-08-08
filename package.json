@@ -70,22 +70,22 @@
   },
   "prettier": "ts-builds/prettier",
   "dependencies": {
-    "@loglayer/transport-pino": "^3.2.0",
+    "@loglayer/transport-pino": "^3.3.0",
     "dotenv": "^17.4.2",
-    "functype": "^1.6.2",
-    "functype-log": "^1.6.2",
-    "loglayer": "^9.3.0",
+    "functype": "^1.8.0",
+    "functype-log": "^1.8.0",
+    "loglayer": "^9.4.0",
     "pino": "^10.3.1",
-    "somamcp": "^1.1.0",
+    "somamcp": "^1.1.2",
     "zod": "^4.4.3"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
     "openapi-typescript": "^7.13.0",
-    "ts-builds": "^3.2.1",
-    "tsdown": "^0.22.4",
-    "tsx": "^4.23.0",
+    "ts-builds": "^3.2.3",
+    "tsdown": "^0.22.14",
+    "tsx": "^4.23.11",
     "vitest": "^4.1.10"
   },
-  "packageManager": "pnpm@11.11.0+sha512.4463f65fd80ed80d69bc1d4bf163ee94f605c7380fc318bb5b2ebe15f8cd12d49c51a4d59e951b401e764d3b6ca751cbf51bc50ed7001a6bcb4935e684c34882"
+  "packageManager": "pnpm@11.20.0+sha512.9a6f330a95b66446ea088faf1521405a8a01f07fde7124cc9958dfed52d4bb436737e65b08f85f37b46fcba375092558ac51262b816844b22f63406ed166bfee"
 }
