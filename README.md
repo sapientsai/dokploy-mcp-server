@@ -16,7 +16,7 @@ The [official Dokploy MCP](https://github.com/Dokploy/mcp) covers only ~5 of 42 
 | Applications        | 26 tools            | 1 tool (23 actions)           |
 | Compose             | -                   | 1 tool (21 actions)           |
 | Deployments         | -                   | 1 tool (5 actions)            |
-| Docker              | -                   | 1 tool (4 actions)            |
+| Docker              | -                   | 1 tool (8 actions)            |
 | Domains             | 9 tools             | 1 tool (8 actions)            |
 | Redirects           | -                   | 1 tool (4 actions)            |
 | Servers             | -                   | 1 tool (8 actions)            |
@@ -102,7 +102,7 @@ docker run -e DOKPLOY_URL=https://dokploy.example.com \
 | `PORT`            | No       | `3000`    | HTTP port (httpStream mode only)         |
 | `HOST`            | No       | `0.0.0.0` | HTTP host (httpStream mode only)         |
 
-## Tools (13)
+## Tools (21)
 
 Each tool uses an `action` enum to select the operation. Parameters are optional and used based on the chosen action.
 
@@ -112,11 +112,11 @@ Actions: `list | get | create | update | remove | duplicate`
 
 Manage projects. `list` and `get` return nested environments with their applications, composes, and databases (with names, IDs, and status), so you can discover service IDs without extra calls. `create` requires `name`. `update` requires `projectId` + fields. `remove` requires `projectId`. `duplicate` requires `sourceEnvironmentId` + `name`.
 
-### `dokploy_application` (22 actions)
+### `dokploy_application` (23 actions)
 
-Actions: `create | get | update | move | deploy | start | stop | delete | markRunning | refreshToken | cleanQueues | killBuild | cancelDeployment | reload | saveEnvironment | setEnvVars | getEnvKeys | getEnvValuesUnsafe | saveBuildType | traefikConfig | readMonitoring | readLogs`
+Actions: `create | get | update | move | deploy | start | stop | delete | markRunning | refreshToken | cleanQueues | killBuild | cancelDeployment | reload | saveEnvironment | setEnvVars | getEnvKeys | getEnvValuesUnsafe | saveBuildType | traefikConfig | readMonitoring | readLogs | search`
 
-Full application lifecycle. Most actions require `applicationId`. `create` requires `name` + `environmentId`. `deploy` supports `redeploy` flag. `readMonitoring` requires `appName`.
+Full application lifecycle. Most actions require `applicationId`. `create` requires `name` + `environmentId`. `deploy` supports `redeploy` flag. `readMonitoring` requires `appName`. `search` finds applications by name.
 
 **Env handling.** `get` returns a masked env summary (count only) — never the values. Three actions cover the rest:
 
@@ -135,9 +135,9 @@ Full application lifecycle. Most actions require `applicationId`. `create` requi
 
 The underlying API also supports `gitlab`/`bitbucket`/`gitea`/`drop` sources, but those need provider-specific fields not yet exposed by this tool.
 
-### `dokploy_compose` (20 actions)
+### `dokploy_compose` (21 actions)
 
-Actions: `create | get | update | delete | deploy | start | stop | move | loadServices | loadMounts | getDefaultCommand | cancelDeployment | cleanQueues | killBuild | refreshToken | saveEnvironment | setEnvVars | getEnvKeys | getEnvValuesUnsafe | readLogs`
+Actions: `create | get | update | delete | deploy | start | stop | move | loadServices | loadMounts | getDefaultCommand | cancelDeployment | cleanQueues | killBuild | refreshToken | saveEnvironment | setEnvVars | getEnvKeys | getEnvValuesUnsafe | readLogs | search`
 
 Docker Compose management. Most actions require `composeId`. `create` requires `name` + `environmentId`. `loadMounts` requires `serviceName`. `cancelDeployment`/`cleanQueues`/`killBuild`/`refreshToken` require `composeId`.
 
@@ -151,9 +151,9 @@ Docker Compose management. Most actions require `composeId`. `create` requires `
 
 The underlying API also supports `gitlab`/`bitbucket`/`gitea` sources, but those need provider-specific fields not yet exposed by this tool.
 
-### `dokploy_database` (16 actions)
+### `dokploy_database` (17 actions)
 
-Actions: `create | get | update | move | start | stop | deploy | rebuild | remove | reload | changeStatus | saveEnvironment | setEnvVars | getEnvKeys | getEnvValuesUnsafe | saveExternalPort`
+Actions: `create | get | update | move | start | stop | deploy | rebuild | remove | reload | changeStatus | saveEnvironment | setEnvVars | getEnvKeys | getEnvValuesUnsafe | saveExternalPort | search`
 
 Unified database management. All actions require `dbType` (`postgres | mysql | mariadb | mongo | redis | libsql`); most also require `databaseId`. `create` baseline: `dbType` + `name` + `environmentId` + `databasePassword`.
 
@@ -166,13 +166,19 @@ Per-engine extras:
 - `redis` — only `databasePassword`.
 - `libsql` — requires `appName` + `dockerImage` + `sqldNode` (`primary | replica`); accepts `sqldPrimaryUrl` + `enableNamespaces`.
 
-`changeStatus` uses `applicationStatus` (`idle | running | done | error`).
+`changeStatus` uses `applicationStatus` (`idle | running | done | error`). `search` covers every engine except `libsql`, which has no search endpoint — locate libsql databases via `dokploy_project` or `dokploy_environment`.
 
 ### `dokploy_domain` (8 actions)
 
 Actions: `create | list | get | update | delete | generate | canGenerateTraefikMe | validate`
 
 Domain/DNS management. `create` requires `host` + `applicationId`|`composeId` (and `serviceName` for compose domains). Enums: `certificateType` (`letsencrypt | none | custom`), `domainType` (`compose | application | preview`). `validate` requires `domain`.
+
+### `dokploy_redirects` (4 actions)
+
+Actions: `create | update | remove | get`
+
+URL redirect rules on an application, expressed as Traefik regex/replacement pairs. `create` requires `regex` + `replacement` + `permanent` + `applicationId`. `update` requires `redirectId` + the rule fields. `remove`/`get` require `redirectId`. Changes take effect only after the application is redeployed.
 
 ### `dokploy_environment` (6 actions)
 
@@ -200,23 +206,47 @@ Backup scheduling and triggers. `create` requires `schedule` + `prefix` + `desti
 - `databaseType: web-server` → no service id (backs up the Dokploy server itself)
 - Backing up a DB inside a compose stack → `composeId` + `serviceName` + the engine as `databaseType`
 
+`create` and `update` also accept `includeEncryptionKey`, which stores the database encryption key alongside the backup.
+
 `manualBackup` requires `backupId` + `backupType`:
 
 - `postgres | mysql | mariadb | mongo | libsql` — individual DB backups
 - `compose` — whole-stack backup
 - `webServer` — Dokploy server backup
 
-### `dokploy_deployment` (2 actions)
+### `dokploy_volume_backup` (6 actions)
 
-Actions: `list | killProcess`
+Actions: `create | update | remove | get | list | runManually`
 
-Deployment tracking. `list` requires `applicationId`|`composeId`|`serverId`|`type`+`id`. `type` enum: `application | compose | server | schedule | previewDeployment | backup | volumeBackup` (database deployments are listed via the database resource itself, not this endpoint). `killProcess` requires `deploymentId`.
+Scheduled volume-level backups, taken with rclone. Distinct from `dokploy_backup`, which takes DB-native dumps.
 
-### `dokploy_docker` (4 actions)
+`create` requires `name` + `volumeName` + `prefix` + `cronExpression` + `destinationId`, and accepts `serviceType` with the matching `*Id`, plus `appName`, `keepLatestCount`, `enabled`, and `turnOff` (stops the service for the backup window). `volumeName` must match `^[a-zA-Z0-9][a-zA-Z0-9_.-]*$` — it is validated before the request is sent. `update` takes `volumeBackupId` plus the same fields. `remove`/`get` take `volumeBackupId`. `list` requires `id` (the parent service id) + `volumeBackupType`. `runManually` triggers a backup immediately from `volumeBackupId`.
 
-Actions: `getContainers | restartContainer | getConfig | findContainers`
+### `dokploy_deployment` (5 actions)
 
-Container management. `findContainers` requires `appName` + `method` (`match | label | stack | service`). For `method=match`, `appType` accepts `stack | docker-compose`. For `method=label`, `type` is **required** and accepts `standalone | swarm` (the API rejects without it).
+Actions: `list | queueList | killProcess | readLogs | remove`
+
+Deployment tracking. `list` requires `applicationId`|`composeId`|`serverId`|`type`+`id`. `type` enum: `application | compose | server | schedule | previewDeployment | backup | volumeBackup` (database deployments are listed via the database resource itself, not this endpoint). `queueList` requires `applicationId`. `killProcess` requires `deploymentId`. `readLogs` reads a single deployment's log file. `remove` deletes a deployment record.
+
+### `dokploy_preview_deployment` (4 actions)
+
+Actions: `list | get | remove | redeploy`
+
+Per-PR and per-branch preview deploys hanging off a parent application. `list` requires `applicationId`. `get`/`remove`/`redeploy` require `previewDeploymentId`; `redeploy` optionally takes `title` and `description` for the deploy record.
+
+### `dokploy_schedule` (6 actions)
+
+Actions: `create | update | remove | get | list | runManually`
+
+Cron schedules that run commands against an application, a compose service, a server, or the Dokploy server itself. `create` requires `name` + `cronExpression` + `command`, plus `scheduleType` and its matching id; it also accepts `shellType` (`bash | sh`), `script` for multi-line commands, and `timezone`. `list` requires `id` (the parent id, or `dokploy-server`) + `scheduleType`. `runManually` fires a schedule immediately from `scheduleId`.
+
+`scheduleType`: `application | compose | server | dokploy-server`.
+
+### `dokploy_docker` (8 actions)
+
+Actions: `getContainers | restartContainer | startContainer | stopContainer | killContainer | removeContainer | getConfig | findContainers`
+
+Container management. The lifecycle actions (`restart`/`start`/`stop`/`kill`/`removeContainer`) and `getConfig` take `containerId`; every action accepts an optional `serverId` to target a remote server. `findContainers` requires `appName` + `method` (`match | label | stack | service`). For `method=match`, `appType` accepts `stack | docker-compose`. For `method=label`, `type` is **required** and accepts `standalone | swarm` (the API rejects without it).
 
 ### `dokploy_infrastructure` (8 actions)
 
@@ -224,11 +254,45 @@ Actions: `createPort | deletePort | createAuth | deleteAuth | listCerts | getCer
 
 Ports, basic auth, and SSL certificates.
 
+### `dokploy_mounts` (6 actions)
+
+Actions: `create | update | remove | get | listByServiceId | allNamedByApplicationId`
+
+Volumes, bind mounts, and file mounts attached to a service. `create` requires `type` + `mountPath` + `serviceId` + `serviceType`, then one field per type: `volumeName` for a volume, `hostPath` for a bind, `filePath` + `content` for a file. `update` takes `mountId` plus any field. `remove`/`get` take `mountId`. `listByServiceId` requires `serviceType` + `serviceId`. `allNamedByApplicationId` lists named volumes for an `applicationId`.
+
+`serviceType`: `application | postgres | mysql | mariadb | mongo | redis | compose | libsql`.
+
+Mount changes require a redeploy of the parent service to take effect.
+
 ### `dokploy_ssh_key` (6 actions)
 
 Actions: `create | list | get | update | remove | generate`
 
 SSH key management for git-based deployments. `create` requires `name` + `privateKey` + `publicKey` + `organizationId`. `get` requires `sshKeyId`. `update` requires `sshKeyId`, optional `name`, `description`, `lastUsedAt`. `remove` requires `sshKeyId`. `generate` uses `type` (rsa|ed25519).
+
+### `dokploy_registry` (7 actions)
+
+Actions: `list | get | create | update | remove | test | testById`
+
+Container registries for pulling private images. `create` requires `registryName` + `username` + `password` + `registryUrl`; `registryType` defaults to `cloud`. `get`/`remove` require `registryId`, `update` takes `registryId` + fields. `test` checks credentials without persisting them; `testById` tests a saved registry by `registryId`, optionally against a `serverId`.
+
+### `dokploy_destination` (6 actions)
+
+Actions: `list | get | create | update | remove | test`
+
+S3-compatible destinations that backups are written to. `create` requires `name` + `accessKey` + `bucket` + `region` + `endpoint` + `secretAccessKey`, and accepts `provider` and `additionalFlags` (passed to rclone). `get`/`remove` require `destinationId`, `update` takes `destinationId` + fields. `test` validates the same fields as `create` without saving.
+
+### `dokploy_audit_log` (1 action)
+
+Actions: `list`
+
+Query the Dokploy audit trail. Every filter is optional: `userId`, `userEmail`, `resourceName`, `auditAction`, `resourceType`, `from`/`to` (ISO timestamps), `limit` (default 50, max 500), and `offset`.
+
+`auditAction`: `create | update | delete | deploy | cancel | redeploy | login | logout`.
+
+`resourceType`: `project | service | environment | deployment | user | customRole | domain | certificate | registry | server | sshKey | gitProvider | notification | settings | session`.
+
+The wire-level query parameter is named `action`; this tool exposes it as `auditAction` so it does not collide with the `action` discriminator every tool uses.
 
 ### `dokploy_settings` (5 actions)
 
