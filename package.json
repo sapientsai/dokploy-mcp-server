@@ -46,7 +46,7 @@
     "LICENSE"
   ],
   "scripts": {
-    "validate": "pnpm check:versions && ts-builds validate",
+    "validate": "pnpm check:versions && pnpm check:readme && ts-builds validate",
     "format": "ts-builds format",
     "format:check": "ts-builds format:check",
     "lint": "ts-builds lint",
@@ -58,6 +58,7 @@
     "build": "NODE_ENV=production ts-builds build",
     "dev": "ts-builds dev",
     "check:versions": "tsx scripts/check-versions.ts",
+    "check:readme": "tsx scripts/check-readme.ts",
     "sync:versions": "tsx scripts/sync-versions.ts",
     "version": "pnpm sync:versions",
     "prepublishOnly": "pnpm check:versions && pnpm validate",
