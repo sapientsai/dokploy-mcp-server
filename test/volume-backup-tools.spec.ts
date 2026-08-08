@@ -1,5 +1,6 @@
 import { IO } from "functype"
 import { beforeEach, describe, expect, it, vi } from "vitest"
+import type { z } from "zod"
 
 import { registerVolumeBackupTools } from "../src/tools/volume-backup-tools"
 import { captureTool } from "./support/tool-harness"
@@ -90,5 +91,21 @@ describe("dokploy_volume_backup", () => {
     const result = (await tool.execute({ action: "runManually", volumeBackupId: "vb1" })) as string
     expect(postMock).toHaveBeenCalledWith("volumeBackups.runManually", { volumeBackupId: "vb1" })
     expect(result).toBe("Volume backup vb1 triggered.")
+  })
+})
+
+describe("dokploy_volume_backup volumeName validation", () => {
+  const schema = tool.parameters as z.ZodType<{ action: string; volumeName?: string }>
+
+  it.each(["my-volume", "vol_1", "app.data", "9lives"])("accepts %s", (volumeName) => {
+    expect(schema.safeParse({ action: "create", volumeName }).success).toBe(true)
+  })
+
+  it.each(["-leading-dash", "_underscore", ".dot", "has space", "bad/slash"])("rejects %s", (volumeName) => {
+    expect(schema.safeParse({ action: "create", volumeName }).success).toBe(false)
+  })
+
+  it("allows volumeName to be omitted", () => {
+    expect(schema.safeParse({ action: "list" }).success).toBe(true)
   })
 })

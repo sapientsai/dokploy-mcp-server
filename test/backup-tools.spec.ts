@@ -24,6 +24,7 @@ type BackupArgs = {
   serviceName?: string
   enabled?: boolean
   keepLatestCount?: number
+  includeEncryptionKey?: boolean
   postgresId?: string
   mysqlId?: string
   mariadbId?: string
@@ -145,5 +146,41 @@ describe("dokploy_backup manualBackup", () => {
   ] as const)("backupType=%s hits %s", async (backupType, endpoint) => {
     await tool.execute({ action: "manualBackup", backupId: "b1", backupType })
     expect(postMock).toHaveBeenCalledWith(endpoint, { backupId: "b1" })
+  })
+})
+
+describe("dokploy_backup includeEncryptionKey", () => {
+  it("forwards includeEncryptionKey on create", async () => {
+    postMock.mockReturnValueOnce(
+      IO.succeed({
+        backupId: "b1",
+        schedule: "0 2 * * *",
+        prefix: "daily",
+        destinationId: "d",
+        database: "mydb",
+        databaseType: "postgres",
+      }),
+    )
+    await tool.execute({
+      action: "create",
+      schedule: "0 2 * * *",
+      prefix: "daily",
+      destinationId: "d",
+      database: "mydb",
+      databaseType: "postgres",
+      postgresId: "pg1",
+      includeEncryptionKey: true,
+    })
+    expect(postMock).toHaveBeenCalledWith("backup.create", expect.objectContaining({ includeEncryptionKey: true }))
+  })
+
+  it("forwards includeEncryptionKey on update", async () => {
+    await tool.execute({ action: "update", backupId: "b1", includeEncryptionKey: false })
+    expect(postMock).toHaveBeenCalledWith("backup.update", { backupId: "b1", includeEncryptionKey: false })
+  })
+
+  it("omits includeEncryptionKey when not supplied", async () => {
+    await tool.execute({ action: "update", backupId: "b1", enabled: true })
+    expect(postMock).toHaveBeenCalledWith("backup.update", { backupId: "b1", enabled: true })
   })
 })
