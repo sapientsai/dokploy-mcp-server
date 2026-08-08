@@ -31,10 +31,25 @@ import {
   registerVolumeBackupTools,
 } from "./tools"
 
-dotenv.config()
+// quiet: dotenv 17 prints a banner to stdout, which under the stdio transport is
+// the JSON-RPC channel itself. Same invariant as the pino-to-stderr setup below.
+dotenv.config({ quiet: true })
 
 declare const __VERSION__: string
 const VERSION = (typeof __VERSION__ !== "undefined" ? __VERSION__ : "0.0.0-dev") as `${number}.${number}.${number}`
+
+// Injected by tsdown from git at build time, so `info` identifies the artifact
+// rather than the host it runs on. Each is left undeclared when git had nothing
+// to report; somamcp then falls back to its SOMAMCP_BUILD_* env vars.
+declare const __BUILD_COMMIT__: string
+declare const __BUILD_BRANCH__: string
+declare const __BUILD_DATE__: string
+
+const BUILD = {
+  branch: typeof __BUILD_BRANCH__ !== "undefined" ? __BUILD_BRANCH__ : undefined,
+  commit: typeof __BUILD_COMMIT__ !== "undefined" ? __BUILD_COMMIT__ : undefined,
+  date: typeof __BUILD_DATE__ !== "undefined" ? __BUILD_DATE__ : undefined,
+}
 
 function setupDokployClient() {
   const baseUrl = process.env.DOKPLOY_URL
@@ -64,6 +79,7 @@ const telemetry = createLogLayerTelemetry(toDirectLogger(logLayerAdapter(logger)
 const server = createServer({
   name: "dokploy-mcp-server",
   version: VERSION,
+  build: BUILD,
   telemetry,
   instructions: `A comprehensive Dokploy MCP server for managing deployments, applications, databases, domains, and infrastructure.
 
