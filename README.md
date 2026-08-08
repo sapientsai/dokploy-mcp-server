@@ -6,41 +6,71 @@ A comprehensive [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)
 
 ## Why This Server?
 
-The [official Dokploy MCP](https://github.com/Dokploy/mcp) covers only ~5 of 42 API categories. This server provides **21 tools** (one per category with action enums) covering the full DevOps lifecycle with minimal token usage.
+The [official Dokploy MCP](https://github.com/Dokploy/mcp) generates one tool per API endpoint — 546 of them, exactly matching the 546 paths in Dokploy's OpenAPI spec. Coverage is complete, and every one of those schemas loads into the model's context before you ask your first question.
+
+This server hand-curates the same API into **21 tools** (one per category, each taking an `action` enum), covering the deploy-and-operate surface most self-hosters use daily.
+
+### Context cost
+
+|                                    | Official `@dokploy/mcp` | This server      |
+| ---------------------------------- | ----------------------- | ---------------- |
+| Tools exposed                      | 546                     | 22 (21 + `info`) |
+| `tools/list` schema payload        | 294,957 bytes           | 34,528 bytes     |
+| Approximate tokens loaded up front | **~74k**                | **~8.6k**        |
+| Median tool schema                 | 388 bytes               | 1,131 bytes      |
+
+Measured 2026-08-08 against `@dokploy/mcp@0.29.14` and `dokploy-mcp-server@1.8.2`, by starting each server, calling `tools/list`, and counting the serialized schema bytes (divided by 4 for a rough token estimate).
+
+On a 200k-token context window, the official server spends more than a third of it before you ask anything. The larger median schema here is deliberate: descriptions carry the workflow knowledge that prevents failed calls, such as which service id pairs with which `databaseType`.
 
 ### Feature Comparison
 
-| Category            | Official MCP        | This Server                   |
-| ------------------- | ------------------- | ----------------------------- |
-| Projects            | 6 tools             | 1 tool (6 actions)            |
-| Applications        | 26 tools            | 1 tool (23 actions)           |
-| Compose             | -                   | 1 tool (21 actions)           |
-| Deployments         | -                   | 1 tool (5 actions)            |
-| Docker              | -                   | 1 tool (8 actions)            |
-| Domains             | 9 tools             | 1 tool (8 actions)            |
-| Redirects           | -                   | 1 tool (4 actions)            |
-| Servers             | -                   | 1 tool (8 actions)            |
-| Settings            | -                   | 1 tool (5 actions)            |
-| Databases           | 26 tools (pg+mysql) | 1 tool (17 actions, all 6 DB) |
-| Backups             | -                   | 1 tool (6 actions)            |
-| Volume Backups      | -                   | 1 tool (6 actions)            |
-| Preview Deployments | -                   | 1 tool (4 actions)            |
-| Schedules           | -                   | 1 tool (6 actions)            |
-| Audit Log           | -                   | 1 tool (1 action)             |
-| Environments        | -                   | 1 tool (6 actions)            |
-| Infrastructure      | -                   | 1 tool (8 actions)            |
-| Mounts              | -                   | 1 tool (6 actions)            |
-| SSH Keys            | -                   | 1 tool (6 actions)            |
-| Registries          | -                   | 1 tool (7 actions)            |
-| Destinations        | -                   | 1 tool (6 actions)            |
-| **Total**           | **67 tools**        | **21 tools**                  |
+Tool counts for the official server are per category, taken from its live `tools/list`.
+
+| Category            | Official MCP           | This Server                   |
+| ------------------- | ---------------------- | ----------------------------- |
+| Projects            | 9 tools                | 1 tool (6 actions)            |
+| Applications        | 31 tools               | 1 tool (23 actions)           |
+| Compose             | 31 tools               | 1 tool (21 actions)           |
+| Deployments         | 9 tools                | 1 tool (5 actions)            |
+| Docker              | 12 tools               | 1 tool (8 actions)            |
+| Domains             | 9 tools                | 1 tool (8 actions)            |
+| Redirects           | 4 tools                | 1 tool (4 actions)            |
+| Servers             | 18 tools               | 1 tool (8 actions)            |
+| Settings            | 54 tools               | 1 tool (5 actions)            |
+| Databases           | 94 tools (6 engines)   | 1 tool (17 actions, all 6 DB) |
+| Backups             | 12 tools               | 1 tool (6 actions)            |
+| Volume Backups      | 6 tools                | 1 tool (6 actions)            |
+| Preview Deployments | 4 tools                | 1 tool (4 actions)            |
+| Schedules           | 6 tools                | 1 tool (6 actions)            |
+| Audit Log           | 1 tool                 | 1 tool (1 action)             |
+| Environments        | 7 tools                | 1 tool (6 actions)            |
+| Infrastructure      | 13 tools (ports+certs) | 1 tool (8 actions)            |
+| Mounts              | 6 tools                | 1 tool (6 actions)            |
+| SSH Keys            | 7 tools                | 1 tool (6 actions)            |
+| Registries          | 7 tools                | 1 tool (7 actions)            |
+| Destinations        | 6 tools                | 1 tool (6 actions)            |
+| **Total**           | **346 tools**          | **21 tools**                  |
 
 Key advantages:
 
-- **Minimal token usage** - 21 tools instead of 67+, dramatically reducing context consumption
+- **Minimal token usage** - 346 endpoints' worth of surface in 21 tools, for roughly an eighth of the context
 - **Unified database tool** - One tool handles all 6 database types (postgres, mysql, mariadb, mongo, redis, libsql) via `dbType` + `action` params
-- **Full API coverage** - Docker Compose, containers, servers, deployments (with per-deployment logs + queue), backups, volume backups, cron schedules, preview deployments, audit log, certificates, ports, and basic auth
+- **Curated descriptions** - Each tool documents which parameters pair with which action, so calls succeed on the first try
 - **Action-based design** - Each tool has an `action` enum parameter; other params are optional based on action
+
+### When to use the official server instead
+
+The official server covers 49 categories to this server's 21. Of its 546 tools, 346 fall inside the categories above; the remaining 200 have no equivalent here:
+
+- **Notifications** (41 tools) - email, Slack, Discord, Telegram, Gotify webhooks
+- **Users, organizations, roles, SSO** (64 tools) - user management, organizations, custom roles, SSO, SCIM, forwardAuth
+- **Git providers** (32 tools) - GitHub, GitLab, Gitea, Bitbucket app configuration
+- **AI providers** (14 tools) - Dokploy's own LLM integration for log analysis and compose generation
+- **Cluster and Swarm** (8 tools), **patch** (12), **tags** (8), **rollback** (2), **admin** (1)
+- **Dokploy Cloud commercial features** (18 tools) - Stripe billing, license keys, whitelabeling
+
+If your workflow needs any of those, use the official server, or run both.
 
 ## Installation
 
