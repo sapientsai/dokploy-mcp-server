@@ -11,6 +11,7 @@ overrides:
 minimumReleaseAgeExclude:
   - functype-log@1.5.0
   - functype@1.5.0
+  - ts-builds@3.2.5
 
 # pnpm 11 ignores `public-hoist-pattern` in .npmrc; the canonical home is here.
 # Hoists CLI tool binaries from transitive deps so ts-builds can find them.
