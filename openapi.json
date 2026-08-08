@@ -3,11 +3,11 @@
   "info": {
     "title": "Dokploy API",
     "description": "Endpoints for dokploy",
-    "version": "v0.29.11"
+    "version": "v0.29.14"
   },
   "servers": [
     {
-      "url": "https://cluster.0x64.us/api"
+      "url": "https://cluster.civalaos.com/api"
     }
   ],
   "tags": [
@@ -142,7 +142,7 @@
     }
   ],
   "externalDocs": {
-    "url": "https://cluster.0x64.us/api/settings.getOpenApiDocument"
+    "url": "https://cluster.civalaos.com/api/settings.getOpenApiDocument"
   },
   "paths": {
     "/admin.setupMonitoring": {
@@ -4984,6 +4984,9 @@
                       }
                     ]
                   },
+                  "includeEncryptionKey": {
+                    "type": "boolean"
+                  },
                   "metadata": {
                     "anyOf": [
                       {},
@@ -5219,6 +5222,9 @@
                   "databaseType": {
                     "type": "string",
                     "enum": ["postgres", "mariadb", "mysql", "mongo", "web-server", "libsql"]
+                  },
+                  "includeEncryptionKey": {
+                    "type": "boolean"
                   }
                 },
                 "required": [
@@ -16748,7 +16754,7 @@
                   },
                   "databasePassword": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
                   },
                   "sqldNode": {
                     "type": "string",
@@ -17717,7 +17723,7 @@
                   },
                   "databasePassword": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
                   },
                   "sqldNode": {
                     "type": "string",
@@ -18620,7 +18626,7 @@
                   },
                   "databaseRootPassword": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
                   },
                   "environmentId": {
                     "type": "string"
@@ -18645,7 +18651,7 @@
                   },
                   "databasePassword": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
                   },
                   "serverId": {
                     "anyOf": [
@@ -19565,11 +19571,11 @@
                   },
                   "databasePassword": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
                   },
                   "databaseRootPassword": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
                   },
                   "dockerImage": {
                     "type": "string"
@@ -20182,7 +20188,7 @@
                   "password": {
                     "type": "string",
                     "minLength": 1,
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
                   },
                   "type": {
                     "default": "user",
@@ -20729,7 +20735,7 @@
                   },
                   "databasePassword": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
                   },
                   "serverId": {
                     "anyOf": [
@@ -21656,7 +21662,7 @@
                   },
                   "databasePassword": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
                   },
                   "dockerImage": {
                     "type": "string"
@@ -22280,7 +22286,7 @@
                   "password": {
                     "type": "string",
                     "minLength": 1,
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
                   }
                 },
                 "required": ["mongoId", "password"]
@@ -23537,11 +23543,11 @@
                   },
                   "databasePassword": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
                   },
                   "databaseRootPassword": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
                   },
                   "serverId": {
                     "anyOf": [
@@ -24461,11 +24467,11 @@
                   },
                   "databasePassword": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
                   },
                   "databaseRootPassword": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
                   },
                   "dockerImage": {
                     "type": "string"
@@ -25078,7 +25084,7 @@
                   "password": {
                     "type": "string",
                     "minLength": 1,
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
                   },
                   "type": {
                     "default": "user",
@@ -30720,7 +30726,7 @@
                   },
                   "databasePassword": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
                   },
                   "dockerImage": {
                     "default": "postgres:18",
@@ -31647,7 +31653,7 @@
                   },
                   "databasePassword": {
                     "type": "string",
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
                   },
                   "description": {
                     "anyOf": [
@@ -32270,7 +32276,7 @@
                   "password": {
                     "type": "string",
                     "minLength": 1,
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
                   }
                 },
                 "required": ["postgresId", "password"]
@@ -35887,7 +35893,7 @@
                   "password": {
                     "type": "string",
                     "minLength": 1,
-                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.\u003C\u003E?~`]*$"
+                    "pattern": "^[a-zA-Z0-9@#%^&*()_+\\-=[\\]{}|;:,.<>?~`]*$"
                   }
                 },
                 "required": ["redisId", "password"]
@@ -46729,7 +46735,8 @@
                 "properties": {
                   "name": {
                     "type": "string",
-                    "minLength": 1
+                    "minLength": 1,
+                    "maxLength": 32
                   },
                   "prefix": {
                     "type": "string"
@@ -47834,6 +47841,181 @@
                   }
                 },
                 "required": ["aiId"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.BAD_REQUEST"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authorization not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.FORBIDDEN"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.INTERNAL_SERVER_ERROR"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai.getCustomProviders": {
+      "get": {
+        "operationId": "ai-getCustomProviders",
+        "summary": null,
+        "description": null,
+        "tags": ["ai"],
+        "security": [
+          {
+            "Authorization": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {},
+                  "additionalProperties": false
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.BAD_REQUEST"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authorization not provided",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.UNAUTHORIZED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Insufficient access",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.FORBIDDEN"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.NOT_FOUND"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Internal server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/error.INTERNAL_SERVER_ERROR"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/ai.saveCustomProviders": {
+      "post": {
+        "operationId": "ai-saveCustomProviders",
+        "summary": null,
+        "description": null,
+        "tags": ["ai"],
+        "security": [
+          {
+            "Authorization": []
+          }
+        ],
+        "parameters": [],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "providers": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "name": {
+                          "type": "string",
+                          "minLength": 1
+                        },
+                        "apiUrl": {
+                          "type": "string",
+                          "format": "uri"
+                        }
+                      },
+                      "required": ["name", "apiUrl"]
+                    }
+                  }
+                },
+                "required": ["providers"]
               }
             }
           }
@@ -54452,7 +54634,8 @@
                     "type": "string"
                   },
                   "volumeName": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.-]*$"
                   },
                   "prefix": {
                     "type": "string"
@@ -54844,7 +55027,8 @@
                     "type": "string"
                   },
                   "volumeName": {
-                    "type": "string"
+                    "type": "string",
+                    "pattern": "^[a-zA-Z0-9][a-zA-Z0-9_.-]*$"
                   },
                   "prefix": {
                     "type": "string"
