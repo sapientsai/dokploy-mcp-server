@@ -1,0 +1,13 @@
+# Hoist CLI tool binaries from peer dependencies.
+# pnpm 11 only reads auth/registry from .npmrc; all other settings live here.
+publicHoistPattern:
+  - "*eslint*"
+  - "*prettier*"
+  - "*vitest*"
+  - "typescript"
+  - "*rimraf*"
+  - "*cross-env*"
+
+# Allow our freshly-published toolchain past the global minimumReleaseAge cooldown
+minimumReleaseAgeExclude:
+  - ts-builds@3.0.1 || 3.2.2
