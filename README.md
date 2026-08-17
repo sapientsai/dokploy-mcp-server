@@ -2,7 +2,9 @@
 
 [![npm version](https://img.shields.io/npm/v/temporal-mcp-server.svg)](https://www.npmjs.com/package/temporal-mcp-server)
 
-MCP server for time, timezone, and duration tools. One codebase, two deployments: **stdio/HTTP on Node** and **Cloudflare Workers**.
+MCP server for time, timezone, and duration tools.
+
+Run it **locally over stdio** (Claude Desktop, Claude Code, any local MCP client), **locally over HTTP**, or **remotely on Cloudflare Workers** — same tools, same code, three ways to run it.
 
 Built on [somamcp](https://github.com/sapientsai/SomaMCP), which supplies the MCP plumbing, telemetry, and health/introspection endpoints for both runtimes. Time logic is pure and functional, using [functype](https://github.com/jordanburke/functype).
 
@@ -25,17 +27,48 @@ Built on [somamcp](https://github.com/sapientsai/SomaMCP), which supplies the MC
 
 **Errors carry a hint.** An unknown timezone returns the bad value _and_ the expected format, so a calling agent can correct itself instead of guessing again.
 
-## Running locally
+## Running as a local MCP server
+
+Stdio is the default and the mode local clients expect. Nothing is hosted, nothing listens on a port — your client launches the process and talks to it over stdin/stdout.
+
+### Claude Code
+
+```bash
+claude mcp add temporal -- npx -y temporal-mcp-server
+```
+
+### Claude Desktop
+
+Add to `claude_desktop_config.json`:
+
+```json
+{
+  "mcpServers": {
+    "temporal": {
+      "command": "npx",
+      "args": ["-y", "temporal-mcp-server"]
+    }
+  }
+}
+```
+
+On macOS that file lives at `~/Library/Application Support/Claude/claude_desktop_config.json`; on Windows, `%APPDATA%\Claude\claude_desktop_config.json`. Restart Claude Desktop after editing it.
+
+### Running from a clone
+
+If you'd rather not go through npm:
 
 ```bash
 pnpm install
 pnpm build
-
-pnpm start          # stdio — for Claude Desktop and most local MCP clients
-pnpm start:http     # HTTP on :3333/mcp (override with PORT)
+pnpm start          # stdio
 ```
 
-### Claude Desktop / Claude Code
+Then point your client at the built entry point:
+
+```bash
+claude mcp add temporal -- node /absolute/path/to/temporal-mcp-server/dist/node.js
+```
 
 ```json
 {
@@ -48,7 +81,33 @@ pnpm start:http     # HTTP on :3333/mcp (override with PORT)
 }
 ```
 
-## Deploying to Cloudflare Workers
+The package also installs a `temporal-mcp-server` binary, so a global install (`npm i -g temporal-mcp-server`) lets you use that name directly as the command.
+
+### Verifying it works
+
+The server speaks JSON-RPC on stdout, so you can drive it by hand:
+
+```bash
+printf '%s\n%s\n%s\n' \
+  '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"smoke","version":"1.0.0"}}}' \
+  '{"jsonrpc":"2.0","method":"notifications/initialized"}' \
+  '{"jsonrpc":"2.0","id":2,"method":"tools/call","params":{"name":"get_current_time","arguments":{"timezone":"Asia/Tokyo"}}}' \
+  | node dist/node.js
+```
+
+Only JSON-RPC goes to stdout; logs go to stderr, so piping is safe.
+
+## Running locally over HTTP
+
+For clients that speak streamable HTTP rather than stdio:
+
+```bash
+pnpm start:http     # http://localhost:3333/mcp — override the port with PORT
+```
+
+This is the same server and the same tools; only the transport differs.
+
+## Running remotely on Cloudflare Workers
 
 ```bash
 pnpm cf:dev         # local workerd runtime
@@ -64,6 +123,21 @@ wrangler secret put MCP_AUTH_TOKEN
 With `MCP_AUTH_TOKEN` set, unauthenticated calls to `/mcp` get a 401. Leave it unset and the endpoint is public — reasonable for a clock, not for much else.
 
 Optional `vars`: `GIT_COMMIT` and `ENVIRONMENT` are surfaced by the `info` tool and `/info`.
+
+### Connecting a client to the deployed worker
+
+```bash
+claude mcp add --transport http temporal https://your-worker.workers.dev/mcp
+```
+
+With a token set, pass it as a header:
+
+```bash
+claude mcp add --transport http temporal https://your-worker.workers.dev/mcp \
+  --header "Authorization: Bearer $MCP_AUTH_TOKEN"
+```
+
+`pnpm cf:dev` serves the same thing on `http://localhost:8787/mcp`, so you can point a client at a local workerd instance before deploying.
 
 ### Why the worker imports `somamcp/edge`
 
