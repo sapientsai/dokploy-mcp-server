@@ -57,6 +57,14 @@ On the edge runtime somamcp converts `isError` results into real JSON-RPC errors
 
 Both entry points pick it up automatically — never register a tool in `node.ts` or `worker.ts`.
 
+## Deployment
+
+Deploys go through **Cloudflare Workers Builds**, not GitHub Actions. Cloudflare connects to the repo via its own GitHub App, so there is no `CLOUDFLARE_API_TOKEN` in GitHub secrets — do not add one, and do not add a deploy workflow alongside it. Two paths deploying the same Worker is worse than either alone.
+
+The dashboard's deploy command is `pnpm cf:deploy`, which is `pnpm build && wrangler deploy`. `pnpm build` runs `check:worker`, so the edge-safety gate lives in the repo rather than in a dashboard field. Keep it that way: if the deploy needs a new gate, add it to the `build` or `cf:deploy` script, not to the Cloudflare UI.
+
+`npm publish` is separate and still runs from `.github/workflows/publish.yml` on `v*` tags.
+
 ## Cloudflare Notes
 
 - `nodejs_compat` is intentionally **off**. A Node built-in reaching the bundle should fail the build, not get shimmed.

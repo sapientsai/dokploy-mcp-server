@@ -38,7 +38,7 @@
     "start": "node dist/node.js",
     "start:http": "node dist/node.js --http",
     "cf:dev": "wrangler dev",
-    "cf:deploy": "wrangler deploy",
+    "cf:deploy": "pnpm build && wrangler deploy",
     "prepublishOnly": "pnpm validate && pnpm check:worker"
   },
   "devDependencies": {

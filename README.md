@@ -111,8 +111,26 @@ This is the same server and the same tools; only the transport differs.
 
 ```bash
 pnpm cf:dev         # local workerd runtime
-pnpm cf:deploy      # deploy
+pnpm cf:deploy      # build + edge-safety check + deploy
 ```
+
+`cf:deploy` runs `pnpm build` first, which includes `check:worker` — so a bundle carrying a Node built-in fails before anything reaches Cloudflare.
+
+### Continuous deployment
+
+Deploys run through **Cloudflare Workers Builds** rather than GitHub Actions, so no Cloudflare API token is stored in GitHub at all — Cloudflare connects to the repo through its own GitHub App.
+
+Set it up once in the dashboard (Workers & Pages → `temporal-mcp-server` → Settings → Build):
+
+| Field          | Value                                |
+| -------------- | ------------------------------------ |
+| Deploy command | `pnpm cf:deploy`                     |
+| Build command  | _(leave empty — `cf:deploy` builds)_ |
+| Root directory | _(repo root)_                        |
+
+Pointing the deploy command at a package script keeps the gating logic in version control; the dashboard holds one stable line. The Worker name in the dashboard must match `name` in `wrangler.jsonc` (`temporal-mcp-server`), or the build fails.
+
+The build image ships pnpm and honours `.nvmrc` (ours pins Node 24). Non-production branches default to `npx wrangler versions upload`, so branch pushes produce preview versions without touching the live deployment.
 
 The MCP endpoint is at `/mcp`. To require a bearer token:
 
