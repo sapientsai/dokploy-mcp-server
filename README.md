@@ -4,7 +4,13 @@
 
 MCP server for time, timezone, and duration tools.
 
-Run it **locally over stdio** (Claude Desktop, Claude Code, any local MCP client), **locally over HTTP**, or **remotely on Cloudflare Workers** — same tools, same code, three ways to run it.
+Run it **locally over stdio** (Claude Desktop, Claude Code, any local MCP client), **locally over HTTP**, or use the **hosted instance** — same tools, same code, three ways to run it.
+
+A public instance runs on Cloudflare Workers at **`https://time.somamcp.com/mcp`**:
+
+```bash
+claude mcp add --transport http temporal https://time.somamcp.com/mcp
+```
 
 Built on [somamcp](https://github.com/sapientsai/SomaMCP), which supplies the MCP plumbing, telemetry, and health/introspection endpoints for both runtimes. Time logic is pure and functional, using [functype](https://github.com/jordanburke/functype).
 
@@ -144,16 +150,20 @@ Optional `vars`: `GIT_COMMIT` and `ENVIRONMENT` are surfaced by the `info` tool 
 
 ### Connecting a client to the deployed worker
 
+The public instance is served from a custom domain:
+
 ```bash
-claude mcp add --transport http temporal https://your-worker.workers.dev/mcp
+claude mcp add --transport http temporal https://time.somamcp.com/mcp
 ```
 
 With a token set, pass it as a header:
 
 ```bash
-claude mcp add --transport http temporal https://your-worker.workers.dev/mcp \
+claude mcp add --transport http temporal https://time.somamcp.com/mcp \
   --header "Authorization: Bearer $MCP_AUTH_TOKEN"
 ```
+
+Health check: [`https://time.somamcp.com/health`](https://time.somamcp.com/health).
 
 `pnpm cf:dev` serves the same thing on `http://localhost:8787/mcp`, so you can point a client at a local workerd instance before deploying.
 

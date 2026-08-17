@@ -59,6 +59,8 @@ Both entry points pick it up automatically — never register a tool in `node.ts
 
 ## Deployment
 
+Live at **`https://time.somamcp.com/mcp`** (custom domain on the `temporal-mcp-server` Worker); the `*.workers.dev` URL still resolves. Health: `https://time.somamcp.com/health`.
+
 Deploys go through **Cloudflare Workers Builds**, not GitHub Actions. Cloudflare connects to the repo via its own GitHub App, so there is no `CLOUDFLARE_API_TOKEN` in GitHub secrets — do not add one, and do not add a deploy workflow alongside it. Two paths deploying the same Worker is worse than either alone.
 
 The dashboard's deploy command is `pnpm cf:deploy`, which is `pnpm build && wrangler deploy`. `pnpm build` runs `check:worker`, so the edge-safety gate lives in the repo rather than in a dashboard field. Keep it that way: if the deploy needs a new gate, add it to the `build` or `cf:deploy` script, not to the Cloudflare UI.
