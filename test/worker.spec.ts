@@ -77,6 +77,41 @@ describe("worker", () => {
     expect(payload.humanized).toBe("1 day, 2 hours")
   })
 
+  it("adds a calendar day across a DST boundary, not 24 hours", async () => {
+    const payload = await payloadOf(
+      await worker.fetch(
+        callTool("add_duration", {
+          duration: "P1D",
+          isoTimestamp: "2026-11-01T00:00:00-04:00",
+          timezone: "America/New_York",
+        }),
+        env,
+      ),
+    )
+    expect(payload.local).toBe("2026-11-02T00:00:00")
+  })
+
+  it("reads a naive timestamp in the supplied timezone", async () => {
+    const payload = await payloadOf(
+      await worker.fetch(
+        callTool("convert_timezone", {
+          isoTimestamp: "2026-11-01T00:00:00",
+          sourceTimezone: "America/New_York",
+          targetTimezone: "UTC",
+        }),
+        env,
+      ),
+    )
+    expect(payload.iso).toBe("2026-11-01T04:00:00.000Z")
+  })
+
+  it("rejects a loose timestamp instead of guessing", async () => {
+    const body = (await (
+      await worker.fetch(callTool("convert_timezone", { isoTimestamp: "17 Aug 2026", targetTimezone: "UTC" }), env)
+    ).json()) as Record<string, unknown>
+    expect(body.error).toBeDefined()
+  })
+
   it("returns a JSON-RPC error for a bad timezone rather than a fake success", async () => {
     const body = (await (
       await worker.fetch(callTool("get_current_time", { timezone: "Mars/Olympus_Mons" }), env)

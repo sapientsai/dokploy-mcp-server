@@ -27,9 +27,26 @@ Built on [somamcp](https://github.com/sapientsai/SomaMCP), which supplies the MC
 
 ### Behaviour worth knowing
 
-**Month arithmetic clamps rather than overflows.** `add_duration` on `2026-01-31` with `P1M` returns `2026-02-28`, not `2026-03-03`. Adding "a month" to the end of a long month lands on the end of the short one.
+**Date units are calendar units; time units are exact.** This is the distinction that makes DST come out right, and it follows ISO-8601 and [Temporal](https://tc39.es/proposal-temporal/docs/duration.html):
+
+| Across US "fall back"              | Result                                                        |
+| ---------------------------------- | ------------------------------------------------------------- |
+| `2026-11-01T00:00-04:00` + `P1D`   | `2026-11-02T00:00` — same wall clock next day (25 real hours) |
+| `2026-11-01T00:00-04:00` + `PT24H` | `2026-11-01T23:00` — exactly 24 hours                         |
+
+Both are correct, and they differ. "Tomorrow" is a calendar idea; "24 hours from now" is a physical one.
+
+**`timezone` governs the arithmetic, not just the rendering.** Calendar units are applied to that zone's wall clock, so `add_duration` in `America/New_York` behaves the way a person in New York expects.
+
+**Month arithmetic clamps rather than overflows.** `P1M` on `2026-01-31` returns `2026-02-28`, not `2026-03-03`.
 
 **Offsets are resolved per instant, not per zone.** `America/New_York` reports `-04:00` in August and `-05:00` in January. DST comes from the runtime's tz database, so there is no offset table here to go stale.
+
+**Naive timestamps are read in the supplied timezone.** `2026-11-01T00:00:00` with `America/New_York` means midnight in New York. It never falls back to the host's zone — that would answer differently on a laptop than on a Worker.
+
+**Timestamp parsing is strict.** Only ISO-8601 forms are accepted; `17 Aug 2026` is rejected with a hint. `new Date()` would have taken it and resolved it against whatever zone the process happened to run in.
+
+**Elapsed components share one sign.** `time_between` returns all of `days`/`hours`/`minutes`/`seconds` negative for a backward interval, so summing them is correct, plus a `direction` of `past`/`future`/`same`.
 
 **Errors carry a hint.** An unknown timezone returns the bad value _and_ the expected format, so a calling agent can correct itself instead of guessing again.
 

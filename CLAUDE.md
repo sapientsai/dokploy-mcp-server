@@ -85,4 +85,19 @@ A checked-in `.mcp.json` registers `dist/node.js` as the `temporal` server, so a
 - `test/clock.spec.ts` — pure logic: DST boundaries, leap years, month clamping, duration parsing.
 - `test/worker.spec.ts` — real `Request` objects through the Worker's `fetch` handler over MCP JSON-RPC, including error paths.
 
-When touching time logic, keep the DST and month-clamping cases: `America/New_York` must report `-04:00` in August and `-05:00` in January, and `2026-01-31 + P1M` must be `2026-02-28`.
+When touching time logic, keep these cases — each one encodes a bug that shipped:
+
+- `America/New_York` reports `-04:00` in August, `-05:00` in January
+- `2026-01-31 + P1M` is `2026-02-28`; `2028-01-31 + P1M` is `2028-02-29`
+- `2026-11-01T00:00-04:00 + P1D` in NY is `2026-11-02T00:00` (25 real hours), while `+ PT24H` is `2026-11-01T23:00`
+- `2026-03-08T00:00-05:00 + P1D` in NY is `2026-03-09T00:00` (23 real hours)
+- a naive timestamp resolves in the supplied zone, never the host's
+- `time_between` components all share one sign and sum to `milliseconds`
+
+## Time semantics
+
+Date units (Y/M/D/W) are **calendar** units, applied to the wall clock in the given zone via `civilToInstant`. Time units (H/M/S) are **exact** milliseconds. Mixing these up is the DST bug that shipped in 0.1.0: `P1D` was `86_400_000` ms, so adding a day across a US DST boundary was off by an hour.
+
+`civilToInstant` inverts a zone conversion by guessing against UTC, reading the real offset at that guess, correcting, and re-checking — there is no closed form, because the offset you need depends on the instant you are solving for. Ambiguous wall clocks (fall back) resolve to the earlier occurrence; skipped ones (spring forward) roll past the gap.
+
+Timestamp parsing is strict ISO-8601 by design. `new Date()` accepts loose formats and resolves naive strings against the host zone, which made results differ between a laptop and the Worker. Do not loosen it without also making it host-independent.

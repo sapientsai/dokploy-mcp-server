@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest"
 
+import type { Duration } from "../src/clock.js"
 import {
   addDuration,
   between,
+  civilInZone,
+  civilToInstant,
   formatInZone,
   offsetInZone,
   parseDuration,
@@ -11,6 +14,15 @@ import {
 } from "../src/clock.js"
 
 const at = (iso: string): Date => new Date(iso)
+
+/** Parse a duration or fail the test — keeps the DST cases readable. */
+const parsed = (iso: string): Duration =>
+  parseDuration(iso).fold(
+    (e) => {
+      throw new Error(e.message)
+    },
+    (d) => d,
+  )
 
 describe("validateTimezone", () => {
   it("accepts IANA identifiers", () => {
@@ -187,6 +199,97 @@ describe("addDuration", () => {
   })
 })
 
+describe("DST-aware arithmetic", () => {
+  const NY = "America/New_York"
+
+  it("adds a calendar day across US fall-back (25 real hours)", () => {
+    // The reported bug: this added exactly 24h and landed on 23:00 the same day.
+    const start = at("2026-11-01T00:00:00-04:00")
+    const result = addDuration(start, parsed("P1D"), NY)
+    expect(formatInZone(result, NY)).toBe("2026-11-02T00:00:00")
+    expect(result.getTime() - start.getTime()).toBe(25 * 3_600_000)
+  })
+
+  it("adds a calendar day across US spring-forward (23 real hours)", () => {
+    // Previously landed on 01:00 the next day.
+    const start = at("2026-03-08T00:00:00-05:00")
+    const result = addDuration(start, parsed("P1D"), NY)
+    expect(formatInZone(result, NY)).toBe("2026-03-09T00:00:00")
+    expect(result.getTime() - start.getTime()).toBe(23 * 3_600_000)
+  })
+
+  it("keeps PT24H exact across the same boundary", () => {
+    // Time units must NOT be calendar-adjusted — 24 hours is 24 hours.
+    const start = at("2026-11-01T00:00:00-04:00")
+    const result = addDuration(start, parsed("PT24H"), NY)
+    expect(result.getTime() - start.getTime()).toBe(24 * 3_600_000)
+    expect(formatInZone(result, NY)).toBe("2026-11-01T23:00:00")
+  })
+
+  it("is unaffected in a zone without DST", () => {
+    const start = at("2026-11-01T00:00:00Z")
+    const result = addDuration(start, parsed("P1D"), "UTC")
+    expect(result.getTime() - start.getTime()).toBe(24 * 3_600_000)
+  })
+
+  it("adds months on the zone's calendar, not UTC's", () => {
+    // 19:00 NY on Jan 31 is Feb 1 in UTC — month arithmetic must follow NY.
+    const result = addDuration(at("2026-01-31T19:00:00-05:00"), parsed("P1M"), NY)
+    expect(formatInZone(result, NY)).toBe("2026-02-28T19:00:00")
+  })
+
+  it("round-trips civil time through a zone", () => {
+    const civil = { day: 17, hour: 14, minute: 30, month: 8, second: 0, year: 2026 }
+    const instant = civilToInstant(civil, NY)
+    expect(civilInZone(instant, NY)).toEqual(civil)
+  })
+
+  it("resolves an ambiguous wall clock to the earlier occurrence", () => {
+    // 01:30 on 2026-11-01 happens twice in New York; take the first (EDT, -04:00).
+    const instant = civilToInstant({ day: 1, hour: 1, minute: 30, month: 11, second: 0, year: 2026 }, NY)
+    expect(offsetInZone(instant, NY)).toBe("-04:00")
+  })
+})
+
+describe("naive timestamp parsing", () => {
+  it("reads a naive timestamp as wall clock in the supplied zone", () => {
+    // Previously resolved against the HOST zone, so this differed between a
+    // laptop and the Worker.
+    parseInstant("2026-11-01T00:00:00", "America/New_York").fold(
+      () => expect.fail("expected a Right"),
+      (d) => expect(d.toISOString()).toBe("2026-11-01T04:00:00.000Z"),
+    )
+  })
+
+  it("defaults a naive timestamp to UTC", () => {
+    parseInstant("2026-11-01T00:00:00").fold(
+      () => expect.fail("expected a Right"),
+      (d) => expect(d.toISOString()).toBe("2026-11-01T00:00:00.000Z"),
+    )
+  })
+
+  it("ignores the zone when the timestamp carries one", () => {
+    parseInstant("2026-11-01T00:00:00Z", "Asia/Tokyo").fold(
+      () => expect.fail("expected a Right"),
+      (d) => expect(d.toISOString()).toBe("2026-11-01T00:00:00.000Z"),
+    )
+  })
+
+  it("rejects loose formats instead of guessing", () => {
+    // `new Date` accepted these and resolved them against the host zone.
+    expect(parseInstant("17 Aug 2026").isLeft()).toBe(true)
+    expect(parseInstant("2026/08/17").isLeft()).toBe(true)
+    expect(parseInstant("August 17, 2026").isLeft()).toBe(true)
+  })
+
+  it("still accepts the documented ISO forms", () => {
+    expect(parseInstant("2026-08-17T14:30:00Z").isRight()).toBe(true)
+    expect(parseInstant("2026-08-17T10:30:00-04:00").isRight()).toBe(true)
+    expect(parseInstant("2026-08-17T14:30").isRight()).toBe(true)
+    expect(parseInstant("2026-08-17T14:30:00.123Z").isRight()).toBe(true)
+  })
+})
+
 describe("between", () => {
   it("breaks an interval into whole units", () => {
     const result = between(at("2026-08-17T00:00:00Z"), at("2026-08-18T02:30:15Z"))
@@ -213,5 +316,32 @@ describe("between", () => {
   it("singularizes correctly", () => {
     const result = between(at("2026-08-17T00:00:00Z"), at("2026-08-17T01:01:01Z"))
     expect(result.humanized).toBe("1 hour, 1 minute, 1 second")
+  })
+
+  it("signs every component the same way, so they sum correctly", () => {
+    // Previously days was negative while hours/minutes/seconds stayed positive,
+    // so naively summing the components gave the wrong magnitude.
+    const result = between(at("2026-08-17T16:56:30Z"), at("2026-07-02T09:00:00Z"))
+    expect(result.milliseconds).toBeLessThan(0)
+    for (const component of [result.days, result.hours, result.minutes, result.seconds]) {
+      expect(component).toBeLessThanOrEqual(0)
+    }
+
+    const summed =
+      result.days * 86_400_000 + result.hours * 3_600_000 + result.minutes * 60_000 + result.seconds * 1_000
+    expect(summed).toBe(result.milliseconds)
+  })
+
+  it("reports direction explicitly", () => {
+    expect(between(at("2026-08-17T00:00:00Z"), at("2026-08-18T00:00:00Z")).direction).toBe("future")
+    expect(between(at("2026-08-18T00:00:00Z"), at("2026-08-17T00:00:00Z")).direction).toBe("past")
+    expect(between(at("2026-08-17T00:00:00Z"), at("2026-08-17T00:00:00Z")).direction).toBe("same")
+  })
+
+  it("sums correctly for forward intervals too", () => {
+    const result = between(at("2026-07-02T09:00:00Z"), at("2026-08-17T16:56:30Z"))
+    const summed =
+      result.days * 86_400_000 + result.hours * 3_600_000 + result.minutes * 60_000 + result.seconds * 1_000
+    expect(summed).toBe(result.milliseconds)
   })
 })
