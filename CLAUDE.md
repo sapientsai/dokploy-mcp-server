@@ -4,93 +4,69 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a TypeScript library template designed to be cloned/forked for creating new npm packages. It uses the `ts-builds` toolchain for standardized build scripts with ESM output.
+MCP server exposing time, timezone, and duration tools. It ships **two entry points from one codebase**: a Node binary (stdio + httpStream) and a Cloudflare Worker.
 
-**Template Usage**: To apply this pattern to other TypeScript projects, see the canonical standardization guide in [ts-builds](https://github.com/jordanburke/ts-builds/blob/main/STANDARDIZATION_GUIDE.md) (or the **ts-builds** skill). This repo is the starting scaffold; ts-builds owns the standards.
+Built on [somamcp](https://github.com/sapientsai/SomaMCP) `^1.2.0`, which provides the MCP backend abstraction, telemetry, and health/introspection surfaces for both runtimes.
 
 ## Development Commands
 
-All commands delegate to `ts-builds` for consistency across projects:
-
 ```bash
-pnpm validate        # Main command: format + lint + test + build (use before commits)
+pnpm validate        # format + lint + typecheck + test + build (run before commits)
+pnpm test            # Vitest
+pnpm check:worker    # verify the worker bundle contains no Node built-ins
 
-pnpm format          # Format code with Prettier
-pnpm format:check    # Check formatting only
-
-pnpm lint            # Fix ESLint issues
-pnpm lint:check      # Check ESLint issues only
-
-pnpm test            # Run tests once
-pnpm test:watch      # Run tests in watch mode
-pnpm test:coverage   # Run tests with coverage
-
-pnpm build           # Production build (outputs to dist/)
-pnpm dev             # Development build with watch mode
-
-pnpm typecheck       # Check TypeScript types
+pnpm start           # stdio server (dist/node.js)
+pnpm start:http      # HTTP on :3333/mcp
+pnpm cf:dev          # local workerd via wrangler
+pnpm cf:deploy       # deploy to Cloudflare
 ```
 
-### Running a Single Test
-
-```bash
-pnpm test -- --testNamePattern="pattern"    # Filter by test name
-pnpm test -- test/specific.spec.ts          # Run specific file
-```
+Run a single test: `pnpm test -- test/clock.spec.ts`
 
 ## Architecture
 
-### Build System: ts-builds + tsdown
-
-- **ts-builds**: Centralized toolchain package providing all build scripts
-- **tsdown**: Underlying bundler configured via `ts-builds/tsdown`
-- **Configuration**: `tsdown.config.ts` imports default config from ts-builds
-- **TypeScript**: `tsconfig.json` extends `ts-builds/tsconfig`
-- **Prettier**: Uses `ts-builds/prettier` shared config
-
-### Output Format
-
-- **dist/**: Production builds containing:
-  - `index.js` - ES module format
-  - `index.d.ts` - TypeScript declarations
-- **lib/**: Development builds (also published)
-
-### Package Exports
-
-```json
-{
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
-    }
-  }
-}
+```
+src/
+  clock.ts    pure time logic — Either<TemporalError, T>
+  tools.ts    MCP tool registration (runtime-agnostic)
+  index.ts    library surface
+  node.ts     entry: somamcp      -> stdio + httpStream
+  worker.ts   entry: somamcp/edge -> export default { fetch }
 ```
 
-### Testing: Vitest
+### The rule that keeps both runtimes working
 
-- Tests located in `test/*.spec.ts`
-- Uses Vitest with configuration from ts-builds
-- Coverage via v8 provider
+**`src/index.ts`, `src/clock.ts`, and `src/tools.ts` must never import a Node built-in**, directly or transitively. They are shared by both entry points; anything Node-only in them breaks the Worker.
 
-## Key Files
+- `src/node.ts` may use `process` and Node APIs.
+- `src/worker.ts` must import from **`somamcp/edge`**, never `somamcp`. The root barrel re-exports `createJsonFileTelemetry` / `imageContent` / `audioContent`, which import `node:fs`.
 
-- `src/index.ts` - Main library entry point
-- `test/*.spec.ts` - Test files
-- `tsdown.config.ts` - Build config (imports from ts-builds)
-- `tsconfig.json` - TypeScript config (extends ts-builds)
-- `.claude/skills/ts-builds-template/` - Claude Code skill for bootstrapping libraries from this template
+`pnpm check:worker` enforces this by walking the import graph from `dist/worker.js` and failing on any `node:` specifier, bare Node built-in (`fs`, `crypto`, `path`…), or root `somamcp` import. It follows the graph rather than matching filenames because the bundler hoists shared code into a chunk with a generated name — a glob would miss it.
 
-## Publishing
+### Error handling
 
-```bash
-npm version patch|minor|major
-npm publish --access public
-```
+Fallible functions in `clock.ts` return `Either<TemporalError, T>` (functype); they never throw. `tools.ts` folds a `Left` into an MCP error result carrying both the message and an actionable hint.
 
-The `prepublishOnly` hook automatically runs `pnpm validate` before publishing.
+On the edge runtime somamcp converts `isError` results into real JSON-RPC errors — `EdgeFastMCP` drops the `isError` flag, so returning it alone would make failures look like successes.
+
+### Adding a tool
+
+1. Add pure logic to `src/clock.ts`, returning `Either`.
+2. Register it in `registerTemporalTools` in `src/tools.ts`, folding errors with `err`.
+3. Cover the logic in `test/clock.spec.ts` and the wire behaviour in `test/worker.spec.ts`.
+
+Both entry points pick it up automatically — never register a tool in `node.ts` or `worker.ts`.
+
+## Cloudflare Notes
+
+- `nodejs_compat` is intentionally **off**. A Node built-in reaching the bundle should fail the build, not get shimmed.
+- The `alias` block in `wrangler.jsonc` points three optional schema libraries (valibot/effect/sury, probed by the transitive `xsschema`) at `cf/empty-module.js`. Only zod is actually used; the aliases exist so esbuild can resolve the dead dynamic imports.
+- The Worker builds its server lazily on first request and reuses it. Workers forbids network I/O at module scope, and Hono seals its router after the first request — so all tool/route registration happens during that one construction.
+- Set `MCP_AUTH_TOKEN` (via `wrangler secret put`) to require a bearer token on `/mcp`. Unset means public.
+
+## Testing
+
+- `test/clock.spec.ts` — pure logic: DST boundaries, leap years, month clamping, duration parsing.
+- `test/worker.spec.ts` — real `Request` objects through the Worker's `fetch` handler over MCP JSON-RPC, including error paths.
+
+When touching time logic, keep the DST and month-clamping cases: `America/New_York` must report `-04:00` in August and `-05:00` in January, and `2026-01-31 + P1M` must be `2026-02-28`.

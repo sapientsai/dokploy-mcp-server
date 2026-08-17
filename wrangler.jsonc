@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "temporal-mcp-server",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-08-17",
+  // The worker uses only web-standard APIs. nodejs_compat is deliberately NOT
+  // enabled — if a Node built-in ever reaches the bundle, the build should fail
+  // loudly rather than be papered over by a compatibility shim.
+  "observability": { "enabled": true },
+  // xsschema (transitive, via fastmcp) probes for every schema library it
+  // supports through dynamic import. We only use zod, so these branches never
+  // execute — but esbuild must still resolve the specifiers. Point them at an
+  // empty module rather than installing three unused schema libraries.
+  "alias": {
+    "@valibot/to-json-schema": "./cf/empty-module.js",
+    "effect": "./cf/empty-module.js",
+    "sury": "./cf/empty-module.js",
+  },
+  "vars": {
+    "ENVIRONMENT": "production",
+  },
+  // Secrets are set out of band, never committed:
+  //   wrangler secret put MCP_AUTH_TOKEN
+}

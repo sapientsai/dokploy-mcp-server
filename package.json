@@ -1,19 +1,26 @@
 {
-  "name": "ts-builds-template",
-  "version": "1.0.0",
-  "description": "A basic template for creating a TypeScript Builds and Publishing it to NPM.",
+  "name": "temporal-mcp-server",
+  "version": "0.1.0",
+  "description": "MCP server for time, timezone, and duration tools. Runs locally over stdio and on Cloudflare Workers.",
   "keywords": [
-    "typescript",
-    "template",
-    "tsdown",
-    "npm"
+    "mcp",
+    "model-context-protocol",
+    "time",
+    "timezone",
+    "duration",
+    "cloudflare-workers",
+    "somamcp",
+    "typescript"
   ],
   "author": "jordan.burke@gmail.com",
   "license": "MIT",
-  "homepage": "https://github.com/jordanburke/ts-builds-template",
+  "homepage": "https://github.com/jordanburke/temporal-mcp-server",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jordanburke/ts-builds-template"
+    "url": "https://github.com/jordanburke/temporal-mcp-server"
+  },
+  "bin": {
+    "temporal-mcp-server": "./dist/node.js"
   },
   "scripts": {
     "validate": "ts-builds validate",
@@ -25,14 +32,20 @@
     "test": "ts-builds test",
     "test:watch": "ts-builds test:watch",
     "test:coverage": "ts-builds test:coverage",
-    "build": "ts-builds build",
+    "build": "ts-builds build && pnpm check:worker",
+    "check:worker": "node scripts/check-worker-bundle.mjs",
     "dev": "ts-builds dev",
-    "prepublishOnly": "pnpm validate"
+    "start": "node dist/node.js",
+    "start:http": "node dist/node.js --http",
+    "cf:dev": "wrangler dev",
+    "cf:deploy": "wrangler deploy",
+    "prepublishOnly": "pnpm validate && pnpm check:worker"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
     "ts-builds": "^3.3.0",
-    "tsdown": "^0.22.14"
+    "tsdown": "^0.22.14",
+    "wrangler": "^4.123.0"
   },
   "type": "module",
   "main": "./dist/index.js",
@@ -43,12 +56,21 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./worker": {
+      "types": "./dist/worker.d.ts",
+      "import": "./dist/worker.js",
+      "default": "./dist/worker.js"
     }
   },
   "files": [
-    "lib",
     "dist"
   ],
   "prettier": "ts-builds/prettier",
-  "packageManager": "pnpm@11.22.0+sha512.1ff870c4c6133dfd88fb2afc46dd13d47f09c9794b438c6fdb47ca98caf3bc16381ee0be93a091b8e3824cf01f889f46d7d9e20910fb0be1ab0fb5baa80dd621"
+  "packageManager": "pnpm@11.22.0+sha512.1ff870c4c6133dfd88fb2afc46dd13d47f09c9794b438c6fdb47ca98caf3bc16381ee0be93a091b8e3824cf01f889f46d7d9e20910fb0be1ab0fb5baa80dd621",
+  "dependencies": {
+    "functype": "^1.8.0",
+    "somamcp": "1.2.0",
+    "zod": "^4.4.3"
+  }
 }

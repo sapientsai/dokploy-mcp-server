@@ -11,3 +11,12 @@ publicHoistPattern:
 # Allow our freshly-published toolchain past the global minimumReleaseAge cooldown
 minimumReleaseAgeExclude:
   - ts-builds@3.0.1 || 3.2.2
+  - somamcp@1.2.0
+
+allowBuilds:
+  # wrangler's bundler and the local Workers runtime — both need their
+  # postinstall to fetch/link the right platform binary.
+  esbuild: true
+  workerd: true
+  # Transitive; its postinstall only refreshes a public-suffix list we never use.
+  tldjs: false
