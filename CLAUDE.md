@@ -65,7 +65,13 @@ Deploys go through **Cloudflare Workers Builds**, not GitHub Actions. Cloudflare
 
 The dashboard's deploy command is `pnpm cf:deploy`, which is `pnpm build && wrangler deploy`. `pnpm build` runs `check:worker`, so the edge-safety gate lives in the repo rather than in a dashboard field. Keep it that way: if the deploy needs a new gate, add it to the `build` or `cf:deploy` script, not to the Cloudflare UI.
 
+`cf:deploy` is `pnpm build && node scripts/deploy.mjs`. The script forwards `GIT_COMMIT`, `GIT_BRANCH`, and `BUILD_DATE` as Worker vars — Workers Builds' own `WORKERS_CI_*` variables exist only during the build and are invisible at runtime, so without forwarding them `info` reports an empty build. Local deploys fall back to `git rev-parse` and mark a dirty tree as `<sha>-dirty`.
+
 `npm publish` is separate and still runs from `.github/workflows/publish.yml` on `v*` tags.
+
+## .mcp.json
+
+A checked-in `.mcp.json` registers `dist/node.js` as the `temporal` server, so a session in this repo exercises local changes rather than the hosted instance. It needs `pnpm build` first. Leave it pointing at the local build — switching it to the hosted URL would silently test production instead of the working tree.
 
 ## Cloudflare Notes
 

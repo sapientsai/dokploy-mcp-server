@@ -11,9 +11,15 @@ import { INSTRUCTIONS, registerTemporalTools, SERVER_NAME, SERVER_VERSION } from
 type Env = {
   /** Optional bearer token. When unset, the MCP endpoint is public. */
   MCP_AUTH_TOKEN?: string
-  /** Populated at deploy time; surfaced by the `info` tool and /info. */
-  GIT_COMMIT?: string
+  /**
+   * Build provenance, forwarded by scripts/deploy.mjs at deploy time — Workers
+   * Builds' own variables are build-only and invisible at runtime. Surfaced by
+   * the `info` tool and /info so you can tell what is actually deployed.
+   */
+  BUILD_DATE?: string
   ENVIRONMENT?: string
+  GIT_BRANCH?: string
+  GIT_COMMIT?: string
 }
 
 /**
@@ -30,7 +36,12 @@ const build = (env: Env): ReturnType<typeof createServer> => {
 
   const server = createServer({
     // Workers has no process.env, so build info comes from the binding.
-    build: { commit: env.GIT_COMMIT, environment: env.ENVIRONMENT },
+    build: {
+      branch: env.GIT_BRANCH,
+      commit: env.GIT_COMMIT,
+      date: env.BUILD_DATE,
+      environment: env.ENVIRONMENT,
+    },
     instructions: INSTRUCTIONS,
     name: SERVER_NAME,
     // Bind a token to gate the MCP endpoint and the protected artifacts.

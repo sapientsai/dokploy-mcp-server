@@ -89,6 +89,23 @@ claude mcp add temporal -- node /absolute/path/to/temporal-mcp-server/dist/node.
 
 The package also installs a `temporal-mcp-server` binary, so a global install (`npm i -g temporal-mcp-server`) lets you use that name directly as the command.
 
+### Working in this repo
+
+A checked-in `.mcp.json` registers the local build as the `temporal` server, so Claude Code picks up **your** changes rather than the hosted instance:
+
+```json
+{
+  "mcpServers": {
+    "temporal": {
+      "command": "node",
+      "args": ["dist/node.js"]
+    }
+  }
+}
+```
+
+Run `pnpm build` first — it points at `dist/`, so an unbuilt checkout has nothing to launch.
+
 ### Verifying it works
 
 The server speaks JSON-RPC on stdout, so you can drive it by hand:
@@ -146,7 +163,15 @@ wrangler secret put MCP_AUTH_TOKEN
 
 With `MCP_AUTH_TOKEN` set, unauthenticated calls to `/mcp` get a 401. Leave it unset and the endpoint is public — reasonable for a clock, not for much else.
 
-Optional `vars`: `GIT_COMMIT` and `ENVIRONMENT` are surfaced by the `info` tool and `/info`.
+### Build provenance
+
+`scripts/deploy.mjs` stamps the deploy with `GIT_COMMIT`, `GIT_BRANCH`, and `BUILD_DATE`, so the `info` tool and `/info` report exactly what is running:
+
+```bash
+curl -s https://time.somamcp.com/info   # protected; also available via the `info` MCP tool
+```
+
+Workers Builds exposes `WORKERS_CI_COMMIT_SHA` and `WORKERS_CI_BRANCH` during the build, but **build variables are not readable at runtime** — they have to be forwarded as Worker vars, which is what the deploy script does. Running `pnpm cf:deploy` locally falls back to `git rev-parse`, and a deploy from a dirty tree is stamped `<sha>-dirty` rather than claiming to be a commit it isn't.
 
 ### Connecting a client to the deployed worker
 
