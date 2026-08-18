@@ -14,7 +14,9 @@ export {
 export { registerTemporalTools } from "./tools.js"
 
 export const SERVER_NAME = "temporal-mcp-server"
-export const SERVER_VERSION = "0.2.1"
+// Generated from package.json so the version reported over the wire cannot
+// drift from the published one. See scripts/sync-version.mjs.
+export { SERVER_VERSION } from "./version.js"
 export const INSTRUCTIONS =
   "Temporal tools: read the current time in any IANA timezone, convert timestamps between zones, " +
   "add or subtract ISO-8601 durations with calendar-aware month arithmetic, and measure elapsed time."

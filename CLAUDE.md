@@ -69,6 +69,18 @@ The dashboard's deploy command is `pnpm cf:deploy`, which is `pnpm build && wran
 
 `npm publish` is separate and still runs from `.github/workflows/publish.yml` on `v*` tags.
 
+## Versioning
+
+`src/version.ts` is **generated** from `package.json` by `scripts/sync-version.mjs` — do not hand-edit it.
+
+The server reports its version over the wire (`info`, `initialize`), and that string used to be maintained by hand in `src/index.ts`. A release could therefore ship a package labelled 0.2.1 that introduced itself to clients as 0.2.0.
+
+- `npm version <patch|minor|major>` regenerates and stages it automatically via the npm `version` lifecycle script.
+- `pnpm sync:version` regenerates it by hand.
+- `pnpm check:version` fails if it is stale, and runs inside `build` and `prepublishOnly`, so drift cannot reach npm.
+
+`package.json` is not imported directly because `tsconfig` sets `rootDir` to `src`, and a build-time define would have to be repeated for tsdown, vitest, and wrangler (which bundles `src/worker.ts` with its own esbuild).
+
 ## .mcp.json
 
 A checked-in `.mcp.json` registers `dist/node.js` as the `temporal` server, so a session in this repo exercises local changes rather than the hosted instance. It needs `pnpm build` first. Leave it pointing at the local build — switching it to the hosted URL would silently test production instead of the working tree.

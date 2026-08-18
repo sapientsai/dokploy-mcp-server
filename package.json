@@ -32,14 +32,17 @@
     "test": "ts-builds test",
     "test:watch": "ts-builds test:watch",
     "test:coverage": "ts-builds test:coverage",
-    "build": "ts-builds build && pnpm check:worker",
+    "build": "pnpm check:version && ts-builds build && pnpm check:worker",
     "check:worker": "node scripts/check-worker-bundle.mjs",
     "dev": "ts-builds dev",
     "start": "node dist/node.js",
     "start:http": "node dist/node.js --http",
     "cf:dev": "wrangler dev",
     "cf:deploy": "pnpm build && node scripts/deploy.mjs",
-    "prepublishOnly": "pnpm validate && pnpm check:worker"
+    "prepublishOnly": "pnpm validate && pnpm check:version && pnpm check:worker",
+    "sync:version": "node scripts/sync-version.mjs",
+    "check:version": "node scripts/sync-version.mjs --check",
+    "version": "node scripts/sync-version.mjs && git add src/version.ts"
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
