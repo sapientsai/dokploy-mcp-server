@@ -12,7 +12,7 @@ A public instance runs on Cloudflare Workers at **`https://time.somamcp.com/mcp`
 claude mcp add --transport http temporal https://time.somamcp.com/mcp
 ```
 
-Built on [somamcp](https://github.com/sapientsai/SomaMCP), which supplies the MCP plumbing, telemetry, and health/introspection endpoints for both runtimes. Time logic is pure and functional, using [functype](https://github.com/jordanburke/functype).
+Built on **somamcp** ([README](https://github.com/sapientsai/SomaMCP#readme) · [npm](https://www.npmjs.com/package/somamcp)), which supplies the MCP plumbing, telemetry, and health/introspection endpoints for both runtimes. Time logic is pure and functional, using [functype](https://github.com/jordanburke/functype).
 
 ## Tools
 
@@ -212,6 +212,8 @@ Health check: [`https://time.somamcp.com/health`](https://time.somamcp.com/healt
 ### Why the worker imports `somamcp/edge`
 
 `somamcp`'s root barrel re-exports helpers that import `node:fs`. Importing it from a Worker drags Node built-ins into the bundle. `src/worker.ts` therefore imports `somamcp/edge`, and `pnpm check:worker` fails the build if a `node:` import, a bare Node built-in, or the root `somamcp` specifier reaches the worker bundle.
+
+See [somamcp's edge runtime docs](https://github.com/sapientsai/SomaMCP#edge-runtimes-cloudflare-workers-deno-deploy-bun) for the full story, including a [feature parity table](https://github.com/sapientsai/SomaMCP#feature-parity) covering what does and does not work on edge — stdio, sessions, `reportProgress`, and multi-result resources are all Node-only.
 
 The check walks the actual import graph from `dist/worker.js` rather than matching filenames — the bundler hoists code shared with the Node entry into a chunk with a generated name, and a filename glob would skip exactly the file most likely to carry a leak.
 
