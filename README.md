@@ -150,11 +150,13 @@ Actions: `list | get | create | update | remove | duplicate`
 
 Manage projects. `list` and `get` return nested environments with their applications, composes, and databases (with names, IDs, and status), so you can discover service IDs without extra calls. `create` requires `name`. `update` requires `projectId` + fields. `remove` requires `projectId`. `duplicate` requires `sourceEnvironmentId` + `name`.
 
+**Reading the status label.** Dokploy's status enum is `idle | running | done | error`, rendered as `[IDLE]`, `[RUNNING]`, `[DONE]`, `[ERROR]`. It describes the **deployment**, not live container state — `[DONE]` means the last deploy finished, and `[IDLE]` means nothing has run, neither of which implies a container is up right now. Check `dokploy_docker` `getContainers` for what is actually running.
+
 ### `dokploy_application` (23 actions)
 
 Actions: `create | get | update | move | deploy | start | stop | delete | markRunning | refreshToken | cleanQueues | killBuild | cancelDeployment | reload | saveEnvironment | setEnvVars | getEnvKeys | getEnvValuesUnsafe | saveBuildType | traefikConfig | readMonitoring | readLogs | search`
 
-Full application lifecycle. Most actions require `applicationId`. `create` requires `name` + `environmentId`. `deploy` supports `redeploy` flag. `readMonitoring` requires `appName`. `search` finds applications by name.
+Full application lifecycle. Most actions require `applicationId`. `create` requires `name` + `environmentId`. `deploy` supports `redeploy` flag. `readMonitoring` requires `appName`. `search` finds applications by `q`/`name`/`appName`/`repository`/`owner`/`dockerImage`/`projectId`/`environmentId`, with `limit` (1–100, default 20) and `offset`; the reply flags a truncated page.
 
 **Env handling.** `get` returns a masked env summary (count only) — never the values. Three actions cover the rest:
 
@@ -177,7 +179,7 @@ The underlying API also supports `gitlab`/`bitbucket`/`gitea`/`drop` sources, bu
 
 Actions: `create | get | update | delete | deploy | start | stop | move | loadServices | loadMounts | getDefaultCommand | cancelDeployment | cleanQueues | killBuild | refreshToken | saveEnvironment | setEnvVars | getEnvKeys | getEnvValuesUnsafe | readLogs | search`
 
-Docker Compose management. Most actions require `composeId`. `create` requires `name` + `environmentId`. `loadMounts` requires `serviceName`. `cancelDeployment`/`cleanQueues`/`killBuild`/`refreshToken` require `composeId`.
+Docker Compose management. Most actions require `composeId`. `create` requires `name` + `environmentId`. `loadMounts` requires `serviceName`. `cancelDeployment`/`cleanQueues`/`killBuild`/`refreshToken` require `composeId`. `search` takes the same query fields as `dokploy_application`.
 
 **Env handling.** Same shape as `dokploy_application`: `get` returns a masked summary, `setEnvVars` merges, `getEnvKeys` lists key names, `getEnvValuesUnsafe` is the escape hatch, `saveEnvironment` full-replaces.
 
@@ -319,6 +321,8 @@ Docker network management. `create` requires `name` and accepts `driver` (`bridg
 Actions: `services | backups | domains`
 
 Read-only rollups spanning every project — no parameters. Use these to orient before drilling in: `services` lists every application, compose service, and database with its status; `backups` every configured backup and schedule; `domains` every domain and what it points at. Dokploy's OpenAPI spec does not describe these response bodies, so the tool renders them as JSON.
+
+**Prefer this over `search` for inventory.** Dokploy's search index is narrower than the project tree — on a test instance holding 1 application and 14 compose services, `application.search` reported 0 matches and `compose.search` reported 5. The `search` actions on `dokploy_application`, `dokploy_compose`, and `dokploy_database` are for finding a service you already know exists; `dokploy_overview` and `dokploy_project` are for enumerating what is there.
 
 ### `dokploy_infrastructure` (8 actions)
 
