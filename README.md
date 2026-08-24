@@ -33,8 +33,8 @@ Tool counts for the official server are per category, taken from its live `tools
 | Applications        | 31 tools               | 1 tool (23 actions)           |
 | Compose             | 31 tools               | 1 tool (21 actions)           |
 | Deployments         | 9 tools                | 1 tool (5 actions)            |
-| Docker              | 12 tools               | 1 tool (8 actions)            |
-| Domains             | 9 tools                | 1 tool (8 actions)            |
+| Docker              | 12 tools               | 1 tool (17 actions)           |
+| Domains             | 9 tools                | 1 tool (9 actions)            |
 | Redirects           | 4 tools                | 1 tool (4 actions)            |
 | Servers             | 18 tools               | 1 tool (8 actions)            |
 | Settings            | 54 tools               | 1 tool (5 actions)            |
@@ -198,11 +198,13 @@ Per-engine extras:
 
 `changeStatus` uses `applicationStatus` (`idle | running | done | error`). `search` covers every engine except `libsql`, which has no search endpoint — locate libsql databases via `dokploy_project` or `dokploy_environment`.
 
-### `dokploy_domain` (8 actions)
+### `dokploy_domain` (9 actions)
 
-Actions: `create | list | get | update | delete | generate | canGenerateTraefikMe | validate`
+Actions: `create | list | get | update | delete | toggleEnable | generate | canGenerateTraefikMe | validate`
 
 Domain/DNS management. `create` requires `host` + `applicationId`|`composeId` (and `serviceName` for compose domains). Enums: `certificateType` (`letsencrypt | none | custom`), `domainType` (`compose | application | preview`). `validate` requires `domain`.
+
+`update` accepts `enabled` to set the domain's enable flag to a known value. `toggleEnable` flips that flag without reporting the result — the API returns an undescribed body — so prefer `update` when you need a deterministic end state.
 
 ### `dokploy_redirects` (4 actions)
 
@@ -272,11 +274,19 @@ Cron schedules that run commands against an application, a compose service, a se
 
 `scheduleType`: `application | compose | server | dokploy-server`.
 
-### `dokploy_docker` (8 actions)
+### `dokploy_docker` (17 actions)
 
-Actions: `getContainers | restartContainer | startContainer | stopContainer | killContainer | removeContainer | getConfig | findContainers`
+Actions: `getContainers | restartContainer | startContainer | stopContainer | killContainer | removeContainer | getConfig | findContainers | listContainerFiles | readContainerFile | writeContainerFile | deleteContainerFile | getEvents | getServerHealth | getDiskUsage | getBuildCache | pruneBuildCache`
 
-Container management. The lifecycle actions (`restart`/`start`/`stop`/`kill`/`removeContainer`) and `getConfig` take `containerId`; every action accepts an optional `serverId` to target a remote server. `findContainers` requires `appName` + `method` (`match | label | stack | service`). For `method=match`, `appType` accepts `stack | docker-compose`. For `method=label`, `type` is **required** and accepts `standalone | swarm` (the API rejects without it).
+Docker daemon management. Every action accepts an optional `serverId` to target a remote server.
+
+**Containers.** The lifecycle actions (`restart`/`start`/`stop`/`kill`/`removeContainer`) and `getConfig` take `containerId`. `findContainers` requires `appName` + `method` (`match | label | stack | service`). For `method=match`, `appType` accepts `stack | docker-compose`. For `method=label`, `type` is **required** and accepts `standalone | swarm` (the API rejects without it).
+
+**Container files.** `listContainerFiles`, `readContainerFile`, `writeContainerFile`, and `deleteContainerFile` take `containerId` + `path` (absolute, inside the container); `writeContainerFile` also takes `content`. `readContainerFile` truncates its output at 100,000 characters. `writeContainerFile` writes into the **running** container — the change is lost on redeploy unless the path lives on a mount.
+
+**Observability.** `getEvents` takes `minutes` (1–1440, default 15). `getServerHealth` takes `sinceHours` (1–168).
+
+**Disk.** `getDiskUsage` is `docker system df` — it covers containers, volumes, images, and build cache, so start here when hunting space. `getBuildCache` details the cache; `pruneBuildCache` clears it (the same effect as `dokploy_settings` `clean` with `cleanType=dockerBuilder`).
 
 ### `dokploy_infrastructure` (8 actions)
 

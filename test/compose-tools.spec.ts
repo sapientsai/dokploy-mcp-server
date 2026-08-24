@@ -36,6 +36,8 @@ type ComposeArgs = {
   composePath?: string
   autoDeploy?: boolean
   appName?: string
+  createEnvFile?: boolean
+  serviceNetworks?: Array<{ serviceName: string; networkIds: string[]; detachDokployNetwork: boolean }>
   deleteVolumes?: boolean
   redeploy?: boolean
   title?: string
@@ -309,5 +311,36 @@ describe("dokploy_compose saveEnvironment / setEnvVars / getEnvKeys / getEnvValu
     const result = (await tool.execute({ action: "getEnvValuesUnsafe", composeId: "c1" })) as string
     expect(result).toContain("SECRET=hunter2")
     expect(result).toContain("UNSAFE")
+  })
+})
+
+describe("dokploy_compose createEnvFile / serviceNetworks", () => {
+  it("saveEnvironment forwards createEnvFile when supplied", async () => {
+    await tool.execute({ action: "saveEnvironment", composeId: "c1", env: "A=1", createEnvFile: true })
+    expect(postMock).toHaveBeenCalledWith("compose.saveEnvironment", {
+      composeId: "c1",
+      env: "A=1",
+      createEnvFile: true,
+    })
+  })
+
+  it("saveEnvironment omits createEnvFile when not supplied", async () => {
+    await tool.execute({ action: "saveEnvironment", composeId: "c1", env: "A=1" })
+    expect(postMock).toHaveBeenCalledWith("compose.saveEnvironment", { composeId: "c1", env: "A=1" })
+  })
+
+  it("saveEnvironment forwards createEnvFile:false rather than dropping it", async () => {
+    await tool.execute({ action: "saveEnvironment", composeId: "c1", env: "A=1", createEnvFile: false })
+    expect(postMock).toHaveBeenCalledWith("compose.saveEnvironment", {
+      composeId: "c1",
+      env: "A=1",
+      createEnvFile: false,
+    })
+  })
+
+  it("update forwards serviceNetworks entries intact", async () => {
+    const serviceNetworks = [{ serviceName: "web", networkIds: ["net-1"], detachDokployNetwork: false }]
+    await tool.execute({ action: "update", composeId: "c1", serviceNetworks })
+    expect(postMock).toHaveBeenCalledWith("compose.update", { composeId: "c1", serviceNetworks })
   })
 })

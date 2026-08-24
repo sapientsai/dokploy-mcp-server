@@ -62,6 +62,8 @@ const UPDATE_FIELDS = [
   "composePath",
   "autoDeploy",
   "appName",
+  "createEnvFile",
+  "serviceNetworks",
 ] as const
 
 type ComposeArgs = {
@@ -87,6 +89,8 @@ type ComposeArgs = {
   composePath?: string
   autoDeploy?: boolean
   appName?: string
+  createEnvFile?: boolean
+  serviceNetworks?: Array<{ serviceName: string; networkIds: string[]; detachDokployNetwork: boolean }>
   deleteVolumes?: boolean
   redeploy?: boolean
   title?: string
@@ -222,6 +226,7 @@ export function buildComposeProgram(
         .post<unknown>("compose.saveEnvironment", {
           composeId: args.composeId!,
           env: args.env ?? null,
+          ...(args.createEnvFile !== undefined && { createEnvFile: args.createEnvFile }),
         })
         .map(() => `Environment saved for compose ${args.composeId}.`),
     )
@@ -276,7 +281,7 @@ export function registerComposeTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_compose",
     description:
-      "Manage Docker Compose services. create: name+environmentId. get: composeId (metadata + masked env summary — never values). update: composeId+fields (supports sourceType, composeFile for raw/inline, git source fields, autoDeploy). delete/start/stop/getDefaultCommand: composeId. deploy: composeId, redeploy? (note: first deploy on new services may fail — retry immediately). move: composeId+targetEnvironmentId. loadServices: composeId (must deploy first). loadMounts: composeId+serviceName. saveEnvironment: composeId+env (full replace). setEnvVars: composeId + set?/unset? (merge inside the server, masked confirmation only). getEnvKeys: composeId — KEY names only. getEnvValuesUnsafe: composeId — UNSAFE escape hatch that returns full KEY=VALUE pairs (output goes to the tool transcript). cancelDeployment/cleanQueues/killBuild/refreshToken: composeId. readLogs: composeId+containerId, tail?, since?, search?. search (as action): q|name|appName|description|projectId|environmentId + limit/offset.",
+      "Manage Docker Compose services. create: name+environmentId. get: composeId (metadata + masked env summary — never values). update: composeId+fields (supports sourceType, composeFile for raw/inline, git source fields, autoDeploy, createEnvFile, serviceNetworks). delete/start/stop/getDefaultCommand: composeId. deploy: composeId, redeploy? (note: first deploy on new services may fail — retry immediately). move: composeId+targetEnvironmentId. loadServices: composeId (must deploy first). loadMounts: composeId+serviceName. saveEnvironment: composeId+env (full replace), createEnvFile? (also write a .env file next to the compose file). setEnvVars: composeId + set?/unset? (merge inside the server, masked confirmation only). getEnvKeys: composeId — KEY names only. getEnvValuesUnsafe: composeId — UNSAFE escape hatch that returns full KEY=VALUE pairs (output goes to the tool transcript). cancelDeployment/cleanQueues/killBuild/refreshToken: composeId. readLogs: composeId+containerId, tail?, since?, search?. search (as action): q|name|appName|description|projectId|environmentId + limit/offset.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       composeId: z.string().optional(),
@@ -284,6 +289,22 @@ export function registerComposeTools(server: ToolServer) {
       environmentId: z.string().optional(),
       description: z.string().optional(),
       composeType: z.string().optional().describe("docker-compose or stack"),
+      createEnvFile: z
+        .boolean()
+        .optional()
+        .describe("update/saveEnvironment: also write the env out to a .env file beside the compose file"),
+      serviceNetworks: z
+        .array(
+          z.object({
+            serviceName: z.string(),
+            networkIds: z.array(z.string()),
+            detachDokployNetwork: z.boolean(),
+          }),
+        )
+        .optional()
+        .describe(
+          "update: per-service Docker network attachments. All three fields are required per entry (see dokploy_network list for IDs).",
+        ),
       composeFile: z
         .string()
         .optional()

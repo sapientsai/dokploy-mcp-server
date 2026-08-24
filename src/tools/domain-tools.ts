@@ -11,7 +11,17 @@ import { formatDomain, formatDomainList } from "../utils/formatters"
 import { pickDefined } from "./tool-utils"
 import type { ToolServer } from "./types"
 
-const ACTIONS = ["create", "list", "get", "update", "delete", "generate", "canGenerateTraefikMe", "validate"] as const
+const ACTIONS = [
+  "create",
+  "list",
+  "get",
+  "update",
+  "delete",
+  "toggleEnable",
+  "generate",
+  "canGenerateTraefikMe",
+  "validate",
+] as const
 
 const DOMAIN_OPTIONAL_FIELDS = [
   "applicationId",
@@ -23,6 +33,9 @@ const DOMAIN_OPTIONAL_FIELDS = [
   "certificateType",
   "domainType",
 ] as const
+
+// `enabled` is accepted by domain.update only — domain.create has no such field.
+const DOMAIN_UPDATE_OPTIONAL_FIELDS = [...DOMAIN_OPTIONAL_FIELDS, "enabled"] as const
 
 type DomainArgs = {
   action: (typeof ACTIONS)[number]
@@ -36,6 +49,7 @@ type DomainArgs = {
   https?: boolean
   certificateType?: "letsencrypt" | "none" | "custom"
   domainType?: "compose" | "application" | "preview"
+  enabled?: boolean
   appName?: string
   serverId?: string
   domain?: string
@@ -74,7 +88,7 @@ export function buildDomainProgram(
         .post<unknown>("domain.update", {
           domainId: args.domainId!,
           host: args.host!,
-          ...pickDefined(args, DOMAIN_OPTIONAL_FIELDS),
+          ...pickDefined(args, DOMAIN_UPDATE_OPTIONAL_FIELDS),
         })
         .map(() => `Domain ${args.domainId} updated.`),
     )
@@ -82,6 +96,13 @@ export function buildDomainProgram(
       client
         .post<unknown>("domain.delete", { domainId: args.domainId! } satisfies RequestBody<"domain-delete">)
         .map(() => `Domain ${args.domainId} deleted.`),
+    )
+    .case("toggleEnable", () =>
+      client
+        .post<unknown>("domain.toggleEnable", { domainId: args.domainId! })
+        // The endpoint flips the flag and returns an undescribed body, so the resulting
+        // state is not knowable from the response — report the flip, not a state.
+        .map(() => `Domain ${args.domainId} enable flag toggled. Use get to read the resulting state.`),
     )
     .case("generate", () =>
       client
@@ -113,7 +134,7 @@ export function registerDomainTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_domain",
     description:
-      "Manage domains. create: host+applicationId|composeId(+serviceName for compose). list: applicationId|composeId. get: domainId. update: domainId+host (include composeId+serviceName for compose domains). delete: domainId. generate: appName. canGenerateTraefikMe: serverId?. validate: domain.",
+      "Manage domains. create: host+applicationId|composeId(+serviceName for compose). list: applicationId|composeId. get: domainId. update: domainId+host (include composeId+serviceName for compose domains). delete: domainId. toggleEnable: domainId — flips the enable flag blind; prefer update with enabled:true|false when you need a known end state. generate: appName. canGenerateTraefikMe: serverId?. validate: domain.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       domainId: z.string().optional(),
@@ -126,6 +147,7 @@ export function registerDomainTools(server: ToolServer) {
       https: z.boolean().optional(),
       certificateType: z.enum(["letsencrypt", "none", "custom"]).optional().describe("letsencrypt | none | custom"),
       domainType: z.enum(["compose", "application", "preview"]).optional().describe("compose | application | preview"),
+      enabled: z.boolean().optional().describe("update only: enable or disable the domain"),
       appName: z.string().optional(),
       serverId: z.string().optional(),
       domain: z.string().optional(),

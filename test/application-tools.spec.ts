@@ -38,6 +38,8 @@ type AppArgs = {
   customGitUrl?: string
   customGitBranch?: string
   githubId?: string
+  networkIds?: string[]
+  detachDokployNetwork?: boolean
   env?: string
   set?: string
   unset?: string[]
@@ -400,5 +402,31 @@ describe("dokploy_application readLogs", () => {
       since: "1h",
       search: "error",
     })
+  })
+})
+
+describe("dokploy_application network attachment", () => {
+  it("update forwards networkIds and detachDokployNetwork", async () => {
+    await tool.execute({
+      action: "update",
+      applicationId: "app-1",
+      networkIds: ["net-1", "net-2"],
+      detachDokployNetwork: true,
+    })
+    expect(postMock).toHaveBeenCalledWith("application.update", {
+      applicationId: "app-1",
+      networkIds: ["net-1", "net-2"],
+      detachDokployNetwork: true,
+    })
+  })
+
+  it("omits both when not supplied", async () => {
+    await tool.execute({ action: "update", applicationId: "app-1", name: "renamed" })
+    expect(postMock).toHaveBeenCalledWith("application.update", { applicationId: "app-1", name: "renamed" })
+  })
+
+  it("forwards an empty networkIds array as a deliberate detach-all", async () => {
+    await tool.execute({ action: "update", applicationId: "app-1", networkIds: [] })
+    expect(postMock).toHaveBeenCalledWith("application.update", { applicationId: "app-1", networkIds: [] })
   })
 })
