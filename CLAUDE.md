@@ -47,24 +47,31 @@ src/
 ├── index.ts                    # FastMCP server setup, tool registration, transport config
 ├── bin.ts                      # CLI entry point (stdio default, --version, --help)
 ├── client/
-│   └── dokploy-client.ts       # API client (singleton, x-api-key auth, GET/POST)
+│   ├── dokploy-client.ts       # API client (singleton, x-api-key auth, GET/POST)
+│   └── errors.ts               # ApiError types, ValidationError, formatApiError
+├── generated/                  # Generated from openapi.json — do not hand-edit
+│   ├── dokploy-api.ts          # openapi-typescript output (pnpm openapi:generate)
+│   ├── helpers.ts              # RequestBody<T> / QueryParams<T> extractors
+│   └── index.ts                # Re-exports the generated types
 ├── tools/
-│   ├── index.ts                # Re-exports all tool registration functions
+│   ├── index.ts                     # Re-exports all tool registration functions
+│   ├── types.ts                     # ToolServer — narrowed SomaServerInstance
+│   ├── tool-utils.ts                # pickDefined, env merge/mask helpers, jsonSection
 │   ├── project-tools.ts             # 1 tool (6 actions) - CRUD + duplicate
 │   ├── application-tools.ts         # 1 tool (23 actions) - full app lifecycle + search
 │   ├── compose-tools.ts             # 1 tool (21 actions) - Docker Compose management + search
 │   ├── deployment-tools.ts          # 1 tool (5 actions) - list, queueList, killProcess, readLogs, remove
-│   ├── docker-tools.ts              # 1 tool (17 actions) - containers, files, events, health, disk
+│   ├── docker-tools.ts              # 1 tool (17 actions) - containers, container files, events, health, disk usage
 │   ├── docker-volume-tools.ts       # 1 tool (8 actions) - volumes + files inside them
 │   ├── docker-image-tools.ts        # 1 tool (3 actions) - image inventory
-│   ├── network-tools.ts             # 1 tool (8 actions) - Docker networks
-│   ├── overview-tools.ts            # 1 tool (3 actions) - fleet-wide rollups
-│   ├── dns-provider-tools.ts        # 1 tool (11 actions) - DNS providers + records
-│   ├── vault-provider-tools.ts      # 1 tool (7 actions) - external secret managers
+│   ├── network-tools.ts             # 1 tool (8 actions) - Docker networks + host import
+│   ├── overview-tools.ts            # 1 tool (3 actions) - fleet-wide rollups (read-only)
+│   ├── dns-provider-tools.ts        # 1 tool (11 actions) - DNS providers + zone/record CRUD
+│   ├── vault-provider-tools.ts      # 1 tool (7 actions) - external secret managers; names never values
 │   ├── domain-tools.ts              # 1 tool (9 actions) - domain/DNS management
 │   ├── redirects-tools.ts           # 1 tool (4 actions) - URL redirect rules on applications
 │   ├── server-tools.ts              # 1 tool (8 actions) - remote server management
-│   ├── settings-tools.ts            # 1 tool (5 actions) - health, version, cleanup
+│   ├── settings-tools.ts            # 1 tool (5 actions) - health, version, cleanup, reload
 │   ├── database-tools.ts            # 1 tool (17 actions) - unified DB management + search
 │   ├── backup-tools.ts              # 1 tool (6 actions) - DB backup scheduling/triggers
 │   ├── volume-backup-tools.ts       # 1 tool (6 actions) - volume-level backup schedules
@@ -119,7 +126,10 @@ src/
 - `src/types.ts` - All TypeScript types + `DB_TYPES` / `DB_ID_FIELDS` constants
 - `src/tools/*.ts` - Tool modules (one per API category)
 - `src/utils/formatters.ts` - Markdown formatters for API responses
-- `test/hello-world.spec.ts` - Tests for client, types, and formatters
+- `test/*.spec.ts` - One spec per tool module, plus client, types, and formatters
+- `test/support/tool-harness.ts` - `captureTool` — drives a register fn with a fake server
+- `scripts/check-readme.ts` - Fails `validate` when README action lists drift from ACTIONS
+- `openapi.json` / `scratch.json` - Fetched API spec dumps; Prettier-ignored to keep diffs readable
 - `tsdown.config.ts` - Custom build config (dual entry, version injection)
 - `.env.example` - Environment variable reference
 

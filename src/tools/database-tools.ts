@@ -9,7 +9,7 @@ import type { RequestBody } from "../generated"
 import type { DatabaseType, DokployDatabase } from "../types"
 import { DB_ID_FIELDS, DB_TYPES } from "../types"
 import { formatDatabase, formatDatabaseList } from "../utils/formatters"
-import { formatEnvMutation, listEnvKeys, mergeEnv, pickDefined } from "./tool-utils"
+import { formatEnvMutation, listEnvKeys, mergeEnv, pickDefined, unwrapSearch, withSearchTotal } from "./tool-utils"
 import type { ToolServer } from "./types"
 
 const ACTIONS = [
@@ -252,11 +252,14 @@ export function buildDatabaseProgram(
         )
       }
       return client
-        .get<DokployDatabase[]>(
+        .get<unknown>(
           `${dbType}.search`,
           pickDefined(args, SEARCH_QUERY_FIELDS) as Record<string, string | number | boolean | undefined>,
         )
-        .map((results) => formatDatabaseList(results, dbType))
+        .map((payload) => {
+          const { items, total } = unwrapSearch<DokployDatabase>(payload)
+          return withSearchTotal(formatDatabaseList(items, dbType), items, total)
+        })
     })
     .exhaustive()
 }
@@ -265,7 +268,7 @@ export function registerDatabaseTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_database",
     description:
-      "Manage databases (postgres/mysql/mariadb/mongo/redis/libsql). create: dbType+name+environmentId+databasePassword. Per-engine extras — postgres/mysql/mariadb: REQUIRE databaseName+databaseUser; mysql/mariadb also accept databaseRootPassword. mongo: REQUIRES databaseUser (databaseName not used). redis: only databasePassword (no databaseName/User). libsql: REQUIRES appName+dockerImage+sqldNode (primary|replica); accepts sqldPrimaryUrl+enableNamespaces. get: dbType+databaseId (returns metadata + masked env summary — never values). update: dbType+databaseId+fields. move: dbType+databaseId+targetEnvironmentId. start/stop/deploy/rebuild/remove: dbType+databaseId. reload: dbType+databaseId+appName. changeStatus: dbType+databaseId+applicationStatus (idle|running|done|error). saveEnvironment: dbType+databaseId+env (full replace). setEnvVars: dbType+databaseId + set?/unset? (merge inside the server, masked confirmation only). getEnvKeys: dbType+databaseId — KEY names only. getEnvValuesUnsafe: dbType+databaseId — UNSAFE escape hatch that returns full KEY=VALUE pairs. saveExternalPort: dbType+databaseId+externalPort (libsql also accepts externalGRPCPort/externalAdminPort). search: dbType + q|name|appName|description|projectId|environmentId + limit/offset — searches within the given dbType (not supported for libsql).",
+      "Manage databases (postgres/mysql/mariadb/mongo/redis/libsql). create: dbType+name+environmentId+databasePassword. Per-engine extras — postgres/mysql/mariadb: REQUIRE databaseName+databaseUser; mysql/mariadb also accept databaseRootPassword. mongo: REQUIRES databaseUser (databaseName not used). redis: only databasePassword (no databaseName/User). libsql: REQUIRES appName+dockerImage+sqldNode (primary|replica); accepts sqldPrimaryUrl+enableNamespaces. get: dbType+databaseId (returns metadata + masked env summary — never values). update: dbType+databaseId+fields. move: dbType+databaseId+targetEnvironmentId. start/stop/deploy/rebuild/remove: dbType+databaseId. reload: dbType+databaseId+appName. changeStatus: dbType+databaseId+applicationStatus (idle|running|done|error). saveEnvironment: dbType+databaseId+env (full replace). setEnvVars: dbType+databaseId + set?/unset? (merge inside the server, masked confirmation only). getEnvKeys: dbType+databaseId — KEY names only. getEnvValuesUnsafe: dbType+databaseId — UNSAFE escape hatch that returns full KEY=VALUE pairs. saveExternalPort: dbType+databaseId+externalPort (libsql also accepts externalGRPCPort/externalAdminPort). search: dbType + q|name|appName|description|projectId|environmentId + limit/offset — searches within the given dbType (not supported for libsql). Note: the API's search index is narrower than the project tree — it can return fewer results than dokploy_project/dokploy_overview list, so use it to find a known service, not to inventory.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       dbType: z.enum(DB_TYPES).describe("postgres, mysql, mariadb, mongo, redis, or libsql"),

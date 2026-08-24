@@ -56,10 +56,21 @@ function formatDate(dateStr?: string): string {
   ).orElse(dateStr)
 }
 
+/**
+ * Renders a Dokploy deployment status.
+ *
+ * Dokploy's enum is `idle | running | done | error`, and these describe the
+ * DEPLOYMENT, not live container state — `done` means the last deploy finished,
+ * not that anything is up. This previously collapsed running/done/idle all into
+ * "[RUNNING]", which reported never-deployed services as running and disagreed
+ * with both `overview.services` and `docker ps`. Keep the four states distinct.
+ */
 function statusIcon(status: string | undefined | null): string {
   if (!status) return "[UNKNOWN]"
   const s = status.toLowerCase()
-  if (s === "running" || s === "done" || s === "idle") return "[RUNNING]"
+  if (s === "running") return "[RUNNING]"
+  if (s === "done") return "[DONE]"
+  if (s === "idle") return "[IDLE]"
   if (s === "error" || s === "failed") return "[ERROR]"
   if (s === "stopped") return "[STOPPED]"
   return `[${status.toUpperCase()}]`

@@ -144,3 +144,31 @@ export function jsonSection(title: string, value: unknown, emptyHint: string): s
   if (Array.isArray(value) && value.length === 0) return emptyHint
   return `# ${title}\n\n\`\`\`json\n${JSON.stringify(value, null, 2)}\n\`\`\``
 }
+
+/**
+ * Unwraps Dokploy's paginated search envelope.
+ *
+ * The `*.search` endpoints return `{ items: [...], total: n }`, not a bare
+ * array — the OpenAPI spec declares their 200 body as `{}`, so nothing caught
+ * this at the type level. Passing the envelope straight to a list formatter
+ * threw inside `IO.map`, which surfaced as an empty error message.
+ *
+ * `total` is the full match count before limit/offset, so it can exceed
+ * `items.length`; callers report it so a truncated page is visible as one.
+ */
+export function unwrapSearch<T>(payload: unknown): { items: T[]; total: number } {
+  if (Array.isArray(payload)) return { items: payload as T[], total: payload.length }
+  if (payload != null && typeof payload === "object") {
+    const p = payload as { items?: unknown; total?: unknown }
+    if (Array.isArray(p.items)) {
+      return { items: p.items as T[], total: typeof p.total === "number" ? p.total : p.items.length }
+    }
+  }
+  return { items: [], total: 0 }
+}
+
+/** Appends a "showing N of M" line when the page is narrower than the match count. */
+export function withSearchTotal(body: string, items: readonly unknown[], total: number): string {
+  if (total <= items.length) return body
+  return `${body}\n\n(showing ${items.length} of ${total} matches — raise limit or set offset for the rest)`
+}
