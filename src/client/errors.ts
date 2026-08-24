@@ -13,7 +13,23 @@ export const ValidationError = (message: string): ValidationError => ({ _tag: "V
  */
 export type ApiError = HttpError | ValidationError
 
-export function formatApiError(err: ApiError): string {
+/**
+ * Renders any failure reaching the SomaMCP boundary.
+ *
+ * Takes `unknown`, not `ApiError`, deliberately. The IO error channel is typed
+ * `ApiError`, but a defect thrown inside `IO.map` — a TypeError from formatting
+ * an unexpected response shape, say — lands in the same Left with no `_tag`.
+ * When the signature claimed `ApiError`, the switch fell through and returned
+ * `undefined`, so the boundary threw `new Error(undefined)`: an empty message
+ * with nothing to diagnose from. Widening the type is what makes the guard
+ * below type-check honestly rather than read as dead code.
+ */
+export function formatApiError(raw: unknown): string {
+  if (raw == null || typeof (raw as { _tag?: unknown })._tag !== "string") {
+    const detail = raw instanceof Error ? `${raw.name}: ${raw.message}` : String(raw)
+    return `Unexpected internal error while handling the Dokploy response: ${detail}`
+  }
+  const err = raw as ApiError
   switch (err._tag) {
     case "NetworkError":
       return `Network error on ${err.method} ${err.url}: ${

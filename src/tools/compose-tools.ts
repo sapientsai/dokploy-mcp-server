@@ -8,7 +8,7 @@ import { formatApiError } from "../client/errors"
 import type { RequestBody } from "../generated"
 import type { DokployCompose } from "../types"
 import { formatCompose, formatComposeList } from "../utils/formatters"
-import { formatEnvMutation, listEnvKeys, mergeEnv, pickDefined } from "./tool-utils"
+import { formatEnvMutation, listEnvKeys, mergeEnv, pickDefined, unwrapSearch, withSearchTotal } from "./tool-utils"
 import type { ToolServer } from "./types"
 
 const ACTIONS = [
@@ -268,11 +268,14 @@ export function buildComposeProgram(
     })
     .case("search", () =>
       client
-        .get<DokployCompose[]>(
+        .get<unknown>(
           "compose.search",
           pickDefined(args, SEARCH_QUERY_FIELDS) as Record<string, string | number | boolean | undefined>,
         )
-        .map(formatComposeList),
+        .map((payload) => {
+          const { items, total } = unwrapSearch<DokployCompose>(payload)
+          return withSearchTotal(formatComposeList(items), items, total)
+        }),
     )
     .exhaustive()
 }
@@ -281,7 +284,7 @@ export function registerComposeTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_compose",
     description:
-      "Manage Docker Compose services. create: name+environmentId. get: composeId (metadata + masked env summary — never values). update: composeId+fields (supports sourceType, composeFile for raw/inline, git source fields, autoDeploy, createEnvFile, serviceNetworks). delete/start/stop/getDefaultCommand: composeId. deploy: composeId, redeploy? (note: first deploy on new services may fail — retry immediately). move: composeId+targetEnvironmentId. loadServices: composeId (must deploy first). loadMounts: composeId+serviceName. saveEnvironment: composeId+env (full replace), createEnvFile? (also write a .env file next to the compose file). setEnvVars: composeId + set?/unset? (merge inside the server, masked confirmation only). getEnvKeys: composeId — KEY names only. getEnvValuesUnsafe: composeId — UNSAFE escape hatch that returns full KEY=VALUE pairs (output goes to the tool transcript). cancelDeployment/cleanQueues/killBuild/refreshToken: composeId. readLogs: composeId+containerId, tail?, since?, search?. search (as action): q|name|appName|description|projectId|environmentId + limit/offset.",
+      "Manage Docker Compose services. create: name+environmentId. get: composeId (metadata + masked env summary — never values). update: composeId+fields (supports sourceType, composeFile for raw/inline, git source fields, autoDeploy, createEnvFile, serviceNetworks). delete/start/stop/getDefaultCommand: composeId. deploy: composeId, redeploy? (note: first deploy on new services may fail — retry immediately). move: composeId+targetEnvironmentId. loadServices: composeId (must deploy first). loadMounts: composeId+serviceName. saveEnvironment: composeId+env (full replace), createEnvFile? (also write a .env file next to the compose file). setEnvVars: composeId + set?/unset? (merge inside the server, masked confirmation only). getEnvKeys: composeId — KEY names only. getEnvValuesUnsafe: composeId — UNSAFE escape hatch that returns full KEY=VALUE pairs (output goes to the tool transcript). cancelDeployment/cleanQueues/killBuild/refreshToken: composeId. readLogs: composeId+containerId, tail?, since?, search?. search (as action): q|name|appName|description|projectId|environmentId + limit/offset. Note: the API's search index is narrower than the project tree — it can return fewer results than dokploy_project/dokploy_overview list, so use it to find a known service, not to inventory.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       composeId: z.string().optional(),

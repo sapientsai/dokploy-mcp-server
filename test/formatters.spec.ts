@@ -148,10 +148,10 @@ describe("formatProject", () => {
     })
     expect(result).toContain("App: **App1** [RUNNING]")
     expect(result).toContain("Compose: **Compose1** [ERROR]")
-    expect(result).toContain("postgres: **PG** [RUNNING]")
+    expect(result).toContain("postgres: **PG** [IDLE]")
     expect(result).toContain("mysql: **MY** [STOPPED]")
     expect(result).toContain("mariadb: **MA** [ERROR]")
-    expect(result).toContain("mongo: **MO** [RUNNING]")
+    expect(result).toContain("mongo: **MO** [DONE]")
     expect(result).toContain("redis: **RE** [PENDING]")
   })
 })
@@ -363,7 +363,7 @@ describe("formatDeployment", () => {
     }
     const result = formatDeployment(dep)
     expect(result).toContain("Build #42")
-    expect(result).toContain("[RUNNING]")
+    expect(result).toContain("[DONE]")
     expect(result).toContain("Merged PR")
     expect(result).toContain("d1")
     expect(result).toContain("2025-05-06 07:08:09 UTC")
@@ -511,7 +511,7 @@ describe("formatDatabase", () => {
     )
     expect(result).toContain("ID: pg-real-1")
     expect(result).toContain("postgres")
-    expect(result).toContain("[RUNNING]")
+    expect(result).toContain("[DONE]")
   })
 
   it.each([
@@ -691,8 +691,8 @@ describe("statusIcon (via formatters)", () => {
 
   it.each([
     ["running", "[RUNNING]"],
-    ["done", "[RUNNING]"],
-    ["idle", "[RUNNING]"],
+    ["done", "[DONE]"],
+    ["idle", "[IDLE]"],
     ["RUNNING", "[RUNNING]"],
     ["error", "[ERROR]"],
     ["failed", "[ERROR]"],
@@ -718,5 +718,18 @@ describe("formatProject edge cases (via list)", () => {
     const project: DokployProject = { projectId: "p1", name: "Bare" }
     const result = formatProject(project)
     expect(result).toContain("Environments: 0")
+  })
+})
+
+describe("statusIcon distinguishes Dokploy's four deployment states", () => {
+  // Dokploy's enum is idle | running | done | error, and it describes the
+  // DEPLOYMENT, not live container state. Collapsing done/idle into [RUNNING]
+  // reported never-deployed services as running and contradicted both
+  // overview.services and `docker ps`.
+  it("never labels idle or done as running", () => {
+    for (const status of ["idle", "done"] as const) {
+      const out = formatApplication({ name: "svc", applicationId: "a1", applicationStatus: status } as never)
+      expect(out).not.toContain("[RUNNING]")
+    }
   })
 })
