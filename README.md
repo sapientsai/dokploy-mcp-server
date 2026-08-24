@@ -21,6 +21,8 @@ This server hand-curates the same API into **27 tools** (one per category, each 
 
 Measured 2026-08-08 against `@dokploy/mcp@0.29.14` and `dokploy-mcp-server@1.8.2`, by starting each server, calling `tools/list`, and counting the serialized schema bytes (divided by 4 for a rough token estimate).
 
+Since that measurement this server grew to 27 tools tracking Dokploy v0.30.2, and its `tools/list` payload is now **47,489 bytes (~11.9k tokens)**. The official server has not been re-measured against 0.30.2, so the table above is left at the paired 0.29.14 figures rather than mixing a new number for one side with an old one for the other.
+
 On a 200k-token context window, the official server spends more than a third of it before you ask anything. The larger median schema here is deliberate: descriptions carry the workflow knowledge that prevents failed calls, such as which service id pairs with which `databaseType`.
 
 ### Feature Comparison
