@@ -129,3 +129,18 @@ export function formatEnvMutation(
     : "unset 0"
   return `Env updated for ${resource} ${resourceId}: ${setLine}; ${unsetLine}; ${total} var${total === 1 ? "" : "s"} total. Values not echoed.`
 }
+
+/**
+ * Renders an API response body that the OpenAPI spec does not describe.
+ *
+ * Dokploy's tRPC→OpenAPI generator emits `{}` for many response schemas, so
+ * these bodies have no typed shape to format against — a JSON block is the
+ * honest rendering. A null/undefined body is Dokploy's usual "not found" for
+ * these routes (see the docker.getConfig note), so it maps to `emptyHint`
+ * rather than a literal `null`.
+ */
+export function jsonSection(title: string, value: unknown, emptyHint: string): string {
+  if (value == null) return emptyHint
+  if (Array.isArray(value) && value.length === 0) return emptyHint
+  return `# ${title}\n\n\`\`\`json\n${JSON.stringify(value, null, 2)}\n\`\`\``
+}

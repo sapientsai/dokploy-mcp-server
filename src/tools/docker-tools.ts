@@ -8,6 +8,7 @@ import type { ApiError } from "../client/errors"
 import { formatApiError, ValidationError } from "../client/errors"
 import type { DokployContainer } from "../types"
 import { formatContainerList } from "../utils/formatters"
+import { jsonSection } from "./tool-utils"
 import type { ToolServer } from "./types"
 
 const ACTIONS = [
@@ -91,12 +92,6 @@ function fileParams(args: DockerArgs): Record<string, string> {
   return params
 }
 
-/** Renders an undescribed JSON response body, treating a null body as "not found". */
-function jsonBlock(title: string, value: unknown, emptyHint: string): string {
-  if (value == null) return emptyHint
-  return `# ${title}\n\n\`\`\`json\n${JSON.stringify(value, null, 2)}\n\`\`\``
-}
-
 export function buildDockerProgram(
   client: Pick<DokployClient, "get" | "post">,
   args: DockerArgs,
@@ -153,7 +148,7 @@ export function buildDockerProgram(
       if (invalid.isSome()) return IO.fail<ApiError>(invalid.value)
       return client
         .get<unknown>("docker.listContainerFiles", fileParams(args))
-        .map((listing) => jsonBlock(`Files in ${args.containerId}:${args.path}`, listing, "(empty directory)"))
+        .map((listing) => jsonSection(`Files in ${args.containerId}:${args.path}`, listing, "(empty directory)"))
     })
     .case("readContainerFile", () => {
       const invalid = fileArgsError(args, false)
@@ -185,7 +180,7 @@ export function buildDockerProgram(
       if (args.minutes !== undefined) params.minutes = args.minutes
       return client
         .get<unknown>("docker.getEvents", params)
-        .map((events) => jsonBlock("Docker Events", events, "(no events in the requested window)"))
+        .map((events) => jsonSection("Docker Events", events, "(no events in the requested window)"))
     })
     .case("getServerHealth", () => {
       const params: Record<string, string | number> = {}
@@ -193,21 +188,21 @@ export function buildDockerProgram(
       if (args.sinceHours !== undefined) params.sinceHours = args.sinceHours
       return client
         .get<unknown>("docker.getServerHealth", params)
-        .map((health) => jsonBlock("Server Health", health, "(no health data available)"))
+        .map((health) => jsonSection("Server Health", health, "(no health data available)"))
     })
     .case("getDiskUsage", () => {
       const params: Record<string, string> = {}
       if (args.serverId) params.serverId = args.serverId
       return client
         .get<unknown>("dockerDiskUsage.getDiskUsage", params)
-        .map((usage) => jsonBlock("Docker Disk Usage", usage, "(no disk usage data available)"))
+        .map((usage) => jsonSection("Docker Disk Usage", usage, "(no disk usage data available)"))
     })
     .case("getBuildCache", () => {
       const params: Record<string, string> = {}
       if (args.serverId) params.serverId = args.serverId
       return client
         .get<unknown>("dockerDiskUsage.getBuildCache", params)
-        .map((cache) => jsonBlock("Docker Build Cache", cache, "(build cache is empty)"))
+        .map((cache) => jsonSection("Docker Build Cache", cache, "(build cache is empty)"))
     })
     .case("pruneBuildCache", () =>
       client

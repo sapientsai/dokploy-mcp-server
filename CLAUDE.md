@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-A comprehensive MCP (Model Context Protocol) server for [Dokploy](https://dokploy.com/) - the open-source, self-hosted PaaS. Provides **21 tools** (one per category, using action enums) for managing deployments, applications, databases, domains, and servers through AI assistants.
+A comprehensive MCP (Model Context Protocol) server for [Dokploy](https://dokploy.com/) - the open-source, self-hosted PaaS. Provides **25 tools** (one per category, using action enums) for managing deployments, applications, databases, domains, and servers through AI assistants.
 
 Built with **FastMCP**, **ts-builds**, and **Zod**. Supports stdio (default for npx/CLI) and httpStream (for Docker/remote) transports.
 
@@ -54,8 +54,12 @@ src/
 │   ├── application-tools.ts         # 1 tool (23 actions) - full app lifecycle + search
 │   ├── compose-tools.ts             # 1 tool (21 actions) - Docker Compose management + search
 │   ├── deployment-tools.ts          # 1 tool (5 actions) - list, queueList, killProcess, readLogs, remove
-│   ├── docker-tools.ts              # 1 tool (4 actions) - container management
-│   ├── domain-tools.ts              # 1 tool (8 actions) - domain/DNS management
+│   ├── docker-tools.ts              # 1 tool (17 actions) - containers, files, events, health, disk
+│   ├── docker-volume-tools.ts       # 1 tool (8 actions) - volumes + files inside them
+│   ├── docker-image-tools.ts        # 1 tool (3 actions) - image inventory
+│   ├── network-tools.ts             # 1 tool (8 actions) - Docker networks
+│   ├── overview-tools.ts            # 1 tool (3 actions) - fleet-wide rollups
+│   ├── domain-tools.ts              # 1 tool (9 actions) - domain/DNS management
 │   ├── redirects-tools.ts           # 1 tool (4 actions) - URL redirect rules on applications
 │   ├── server-tools.ts              # 1 tool (8 actions) - remote server management
 │   ├── settings-tools.ts            # 1 tool (5 actions) - health, version, cleanup
@@ -107,7 +111,7 @@ src/
 
 ## Key Files
 
-- `src/index.ts` - Server entry point, registers all 21 tool modules
+- `src/index.ts` - Server entry point, registers all 25 tool modules
 - `src/bin.ts` - CLI entry point (`npx dokploy-mcp-server`)
 - `src/client/dokploy-client.ts` - Dokploy API client with GET/POST
 - `src/types.ts` - All TypeScript types + `DB_TYPES` / `DB_ID_FIELDS` constants

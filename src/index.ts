@@ -15,11 +15,15 @@ import {
   registerDatabaseTools,
   registerDeploymentTools,
   registerDestinationTools,
+  registerDockerImageTools,
   registerDockerTools,
+  registerDockerVolumeTools,
   registerDomainTools,
   registerEnvironmentTools,
   registerInfrastructureTools,
   registerMountsTools,
+  registerNetworkTools,
+  registerOverviewTools,
   registerPreviewDeploymentTools,
   registerProjectTools,
   registerRedirectsTools,
@@ -91,6 +95,10 @@ Available capabilities:
 - Domains: create, configure, enable/disable, validate DNS, generate traefik.me domains
 - Redirects: URL redirect rules on applications (Traefik regex → replacement, 301/302)
 - Docker: list containers, start/stop/kill/restart/remove, inspect configuration, read/write files inside containers, daemon events, server health, disk usage and build cache
+- Networks: create, inspect, recreate, remove Docker networks; import ones already on the host
+- Docker Volumes: list, size, inspect, remove volumes and read/write files inside them
+- Docker Images: list images, inspect image config, remove images
+- Overview: fleet-wide rollups of services, backups and domains across every project
 - Servers: add, configure, monitor remote servers
 - Deployments: list, queue, read logs, kill process, remove
 - Backups: schedule, trigger manual backups, list backup files
@@ -112,6 +120,10 @@ registerApplicationTools(server)
 registerComposeTools(server)
 registerDeploymentTools(server)
 registerDockerTools(server)
+registerDockerVolumeTools(server)
+registerDockerImageTools(server)
+registerNetworkTools(server)
+registerOverviewTools(server)
 registerDomainTools(server)
 registerRedirectsTools(server)
 registerServerTools(server)
