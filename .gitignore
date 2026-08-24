@@ -3,6 +3,8 @@
 lib
 dist
 
+*.ts-builds
+
 # Logs
 logs
 *.log
