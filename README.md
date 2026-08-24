@@ -8,7 +8,7 @@ A comprehensive [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)
 
 The [official Dokploy MCP](https://github.com/Dokploy/mcp) generates one tool per API endpoint — at the 0.29.14 measurement below, 546 of them, exactly matching the 546 paths in Dokploy's OpenAPI spec at that version. (Dokploy v0.30.2 ships 597 paths; the figures in this section are left at their measured values rather than re-estimated.) Coverage is complete, and every one of those schemas loads into the model's context before you ask your first question.
 
-This server hand-curates the same API into **21 tools** (one per category, each taking an `action` enum), covering the deploy-and-operate surface most self-hosters use daily.
+This server hand-curates the same API into **25 tools** (one per category, each taking an `action` enum), covering the deploy-and-operate surface most self-hosters use daily.
 
 ### Context cost
 
@@ -34,6 +34,10 @@ Tool counts for the official server are per category, taken from its live `tools
 | Compose             | 31 tools               | 1 tool (21 actions)           |
 | Deployments         | 9 tools                | 1 tool (5 actions)            |
 | Docker              | 12 tools               | 1 tool (17 actions)           |
+| Docker Volumes      | n/a (new in 0.30.2)    | 1 tool (8 actions)            |
+| Docker Images       | n/a (new in 0.30.2)    | 1 tool (3 actions)            |
+| Networks            | n/a (new in 0.30.2)    | 1 tool (8 actions)            |
+| Overview            | n/a (new in 0.30.2)    | 1 tool (3 actions)            |
 | Domains             | 9 tools                | 1 tool (9 actions)            |
 | Redirects           | 4 tools                | 1 tool (4 actions)            |
 | Servers             | 18 tools               | 1 tool (8 actions)            |
@@ -50,11 +54,11 @@ Tool counts for the official server are per category, taken from its live `tools
 | SSH Keys            | 7 tools                | 1 tool (6 actions)            |
 | Registries          | 7 tools                | 1 tool (7 actions)            |
 | Destinations        | 6 tools                | 1 tool (6 actions)            |
-| **Total**           | **346 tools**          | **21 tools**                  |
+| **Total**           | **346 tools**          | **25 tools**                  |
 
 Key advantages:
 
-- **Minimal token usage** - 346 endpoints' worth of surface in 21 tools, for roughly an eighth of the context
+- **Minimal token usage** - 346 endpoints' worth of surface in 25 tools, for roughly an eighth of the context
 - **Unified database tool** - One tool handles all 6 database types (postgres, mysql, mariadb, mongo, redis, libsql) via `dbType` + `action` params
 - **Curated descriptions** - Each tool documents which parameters pair with which action, so calls succeed on the first try
 - **Action-based design** - Each tool has an `action` enum parameter; other params are optional based on action
@@ -132,7 +136,7 @@ docker run -e DOKPLOY_URL=https://dokploy.example.com \
 | `PORT`            | No       | `3000`    | HTTP port (httpStream mode only)         |
 | `HOST`            | No       | `0.0.0.0` | HTTP host (httpStream mode only)         |
 
-## Tools (21)
+## Tools (25)
 
 Each tool uses an `action` enum to select the operation. Parameters are optional and used based on the chosen action.
 
@@ -287,6 +291,30 @@ Docker daemon management. Every action accepts an optional `serverId` to target 
 **Observability.** `getEvents` takes `minutes` (1–1440, default 15). `getServerHealth` takes `sinceHours` (1–168).
 
 **Disk.** `getDiskUsage` is `docker system df` — it covers containers, volumes, images, and build cache, so start here when hunting space. `getBuildCache` details the cache; `pruneBuildCache` clears it (the same effect as `dokploy_settings` `clean` with `cleanType=dockerBuilder`).
+
+### `dokploy_docker_volume` (8 actions)
+
+Actions: `getVolumes | getVolumesSize | getVolumeConfig | removeVolume | listVolumeFiles | readVolumeFile | writeVolumeFile | deleteVolumeFile`
+
+Docker volume management and volume file access. Every action accepts an optional `serverId`. `getVolumeConfig` and `removeVolume` take `volumeName`; the file actions take `volumeName` + `path`, and `writeVolumeFile` also takes `content`. `readVolumeFile` truncates at 100,000 characters. `removeVolume` destroys the volume's data — take a `dokploy_volume_backup` first. Unlike a write into a running container, a volume write survives redeploys.
+
+### `dokploy_docker_image` (3 actions)
+
+Actions: `getImages | getImageConfig | removeImage`
+
+Docker image inventory. `getImageConfig` takes `imageRef` (`nginx:latest` or an image ID). `removeImage` requires **all three** of `repository`, `tag`, and `id` — read them off `getImages` — plus optional `force`. Disk usage and build cache live in `dokploy_docker` (`getDiskUsage`, `getBuildCache`, `pruneBuildCache`).
+
+### `dokploy_network` (8 actions)
+
+Actions: `list | get | create | remove | recreate | inspect | import | networksToSync`
+
+Docker network management. `create` requires `name` and accepts `driver` (`bridge | overlay`), `internal`, `attachable`, `enableIPv4`, `enableIPv6`, `mtu` (68–65535), `ipam`, and `serverId`. `get`, `inspect`, `remove`, and `recreate` take `networkId` — `recreate` drops and re-adds the network, so attached services are briefly disconnected. `networksToSync` lists networks that exist on the Docker host but are not yet tracked by Dokploy; `import` brings them in by `names`. Attach networks to workloads via `dokploy_application` `update` `networkIds`, or `dokploy_compose` `update` `serviceNetworks`.
+
+### `dokploy_overview` (3 actions)
+
+Actions: `services | backups | domains`
+
+Read-only rollups spanning every project — no parameters. Use these to orient before drilling in: `services` lists every application, compose service, and database with its status; `backups` every configured backup and schedule; `domains` every domain and what it points at. Dokploy's OpenAPI spec does not describe these response bodies, so the tool renders them as JSON.
 
 ### `dokploy_infrastructure` (8 actions)
 
