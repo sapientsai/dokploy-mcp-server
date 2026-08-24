@@ -6,7 +6,7 @@ A comprehensive [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)
 
 ## Why This Server?
 
-The [official Dokploy MCP](https://github.com/Dokploy/mcp) generates one tool per API endpoint — 546 of them, exactly matching the 546 paths in Dokploy's OpenAPI spec. Coverage is complete, and every one of those schemas loads into the model's context before you ask your first question.
+The [official Dokploy MCP](https://github.com/Dokploy/mcp) generates one tool per API endpoint — at the 0.29.14 measurement below, 546 of them, exactly matching the 546 paths in Dokploy's OpenAPI spec at that version. (Dokploy v0.30.2 ships 597 paths; the figures in this section are left at their measured values rather than re-estimated.) Coverage is complete, and every one of those schemas loads into the model's context before you ask your first question.
 
 This server hand-curates the same API into **21 tools** (one per category, each taking an `action` enum), covering the deploy-and-operate surface most self-hosters use daily.
 
@@ -328,7 +328,7 @@ The wire-level query parameter is named `action`; this tool exposes it as `audit
 
 Actions: `health | version | ip | clean | reload`
 
-System settings. `clean` uses `cleanType` — server-scoped: `all | images | volumes | stoppedContainers | dockerBuilder | dockerPrune` (honor `serverId`); global: `monitoring | redis | deploymentQueue | sshPrivateKey`. `reload` uses `reloadTarget` (`server | traefik | redis`); `serverId` is honored for `traefik`.
+System settings. `clean` uses `cleanType` — server-scoped: `all | images | volumes | stoppedContainers | dockerBuilder | dockerPrune` (honor `serverId`); global: `monitoring | deploymentQueue | sshPrivateKey`. `reload` uses `reloadTarget` (`server | traefik`); `serverId` is honored for `traefik`.
 
 ## Usage Examples
 
