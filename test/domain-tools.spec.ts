@@ -25,6 +25,7 @@ type DomainArgs = {
   https?: boolean
   certificateType?: string
   domainType?: string
+  enabled?: boolean
   appName?: string
   serverId?: string
   domain?: string
@@ -176,5 +177,41 @@ describe("dokploy_domain generate / canGenerateTraefikMe / validate", () => {
     postMock.mockReturnValueOnce(IO.succeed({ ok: true }))
     await tool.execute({ action: "validate", domain: "x.com" })
     expect(postMock).toHaveBeenCalledWith("domain.validateDomain", { domain: "x.com" })
+  })
+})
+
+describe("dokploy_domain toggleEnable", () => {
+  it("POSTs only domainId", async () => {
+    const out = (await tool.execute({ action: "toggleEnable", domainId: "d1" })) as string
+    expect(postMock).toHaveBeenCalledWith("domain.toggleEnable", { domainId: "d1" })
+    expect(out).toContain("toggled")
+  })
+
+  it("does not claim a resulting state, since the response body is undescribed", async () => {
+    const out = (await tool.execute({ action: "toggleEnable", domainId: "d1" })) as string
+    expect(out).not.toMatch(/\b(enabled|disabled)\.$/)
+    expect(out).toContain("Use get to read the resulting state")
+  })
+})
+
+describe("dokploy_domain enabled flag", () => {
+  it("update forwards enabled when supplied", async () => {
+    await tool.execute({ action: "update", domainId: "d1", host: "x.example.com", enabled: false })
+    expect(postMock).toHaveBeenCalledWith("domain.update", {
+      domainId: "d1",
+      host: "x.example.com",
+      enabled: false,
+    })
+  })
+
+  it("update omits enabled when not supplied", async () => {
+    await tool.execute({ action: "update", domainId: "d1", host: "x.example.com" })
+    expect(postMock).toHaveBeenCalledWith("domain.update", { domainId: "d1", host: "x.example.com" })
+  })
+
+  it("create never forwards enabled — domain.create has no such field", async () => {
+    postMock.mockReturnValueOnce(IO.succeed({ domainId: "d9", host: "x.example.com" }))
+    await tool.execute({ action: "create", host: "x.example.com", applicationId: "a1", enabled: true })
+    expect(postMock).toHaveBeenCalledWith("domain.create", { host: "x.example.com", applicationId: "a1" })
   })
 })

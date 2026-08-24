@@ -1,4 +1,5 @@
-import { IO, Match } from "functype"
+import type { Option } from "functype"
+import { IO, Match, None, Some } from "functype"
 import { z } from "zod"
 
 import type { DokployClient } from "../client/dokploy-client"
@@ -18,7 +19,23 @@ const ACTIONS = [
   "removeContainer",
   "getConfig",
   "findContainers",
+  "listContainerFiles",
+  "readContainerFile",
+  "writeContainerFile",
+  "deleteContainerFile",
+  "getEvents",
+  "getServerHealth",
+  "getDiskUsage",
+  "getBuildCache",
+  "pruneBuildCache",
 ] as const
+
+/**
+ * Cap on file content echoed back by readContainerFile. A container file has no
+ * inherent size bound, and the whole body would otherwise land in the model's
+ * context. Mirrors the intent of deployment-tools' `tail` cap.
+ */
+const MAX_FILE_CHARS = 100_000
 
 type DockerArgs = {
   action: (typeof ACTIONS)[number]
@@ -28,6 +45,10 @@ type DockerArgs = {
   method?: "match" | "label" | "stack" | "service"
   appType?: "stack" | "docker-compose"
   type?: "standalone" | "swarm"
+  path?: string
+  content?: string
+  minutes?: number
+  sinceHours?: number
 }
 
 const FIND_CONTAINER_ENDPOINTS: Record<NonNullable<DockerArgs["method"]>, string> = {
@@ -54,6 +75,26 @@ function containerLifecycle(
   const body: Record<string, unknown> = { containerId: args.containerId! }
   if (args.serverId) body.serverId = args.serverId
   return client.post<unknown>(endpoint, body).map(() => `Container ${args.containerId} ${verb}.`)
+}
+
+/** Container file actions all key off containerId + path; write also needs content. */
+function fileArgsError(args: DockerArgs, needsContent: boolean): Option<ApiError> {
+  if (!args.containerId) return Some(ValidationError(`${args.action} requires containerId`))
+  if (!args.path) return Some(ValidationError(`${args.action} requires path (absolute path inside the container)`))
+  if (needsContent && args.content === undefined) return Some(ValidationError("writeContainerFile requires content"))
+  return None()
+}
+
+function fileParams(args: DockerArgs): Record<string, string> {
+  const params: Record<string, string> = { containerId: args.containerId!, path: args.path! }
+  if (args.serverId) params.serverId = args.serverId
+  return params
+}
+
+/** Renders an undescribed JSON response body, treating a null body as "not found". */
+function jsonBlock(title: string, value: unknown, emptyHint: string): string {
+  if (value == null) return emptyHint
+  return `# ${title}\n\n\`\`\`json\n${JSON.stringify(value, null, 2)}\n\`\`\``
 }
 
 export function buildDockerProgram(
@@ -107,6 +148,72 @@ export function buildDockerProgram(
       if (args.type && method === "label") params.type = args.type
       return client.get<DokployContainer[]>(FIND_CONTAINER_ENDPOINTS[method], params).map(formatContainerList)
     })
+    .case("listContainerFiles", () => {
+      const invalid = fileArgsError(args, false)
+      if (invalid.isSome()) return IO.fail<ApiError>(invalid.value)
+      return client
+        .get<unknown>("docker.listContainerFiles", fileParams(args))
+        .map((listing) => jsonBlock(`Files in ${args.containerId}:${args.path}`, listing, "(empty directory)"))
+    })
+    .case("readContainerFile", () => {
+      const invalid = fileArgsError(args, false)
+      if (invalid.isSome()) return IO.fail<ApiError>(invalid.value)
+      return client.get<string>("docker.readContainerFile", fileParams(args)).map((body) => {
+        const text = typeof body === "string" ? body : JSON.stringify(body, null, 2)
+        if (!text) return "(empty file)"
+        if (text.length <= MAX_FILE_CHARS) return text
+        return `${text.slice(0, MAX_FILE_CHARS)}\n\n[truncated: file is ${text.length} chars, showing first ${MAX_FILE_CHARS}]`
+      })
+    })
+    .case("writeContainerFile", () => {
+      const invalid = fileArgsError(args, true)
+      if (invalid.isSome()) return IO.fail<ApiError>(invalid.value)
+      return client
+        .post<unknown>("docker.writeContainerFile", { ...fileParams(args), content: args.content! })
+        .map(() => `Wrote ${args.content!.length} chars to ${args.containerId}:${args.path}.`)
+    })
+    .case("deleteContainerFile", () => {
+      const invalid = fileArgsError(args, false)
+      if (invalid.isSome()) return IO.fail<ApiError>(invalid.value)
+      return client
+        .post<unknown>("docker.deleteContainerFile", fileParams(args))
+        .map(() => `Deleted ${args.containerId}:${args.path}.`)
+    })
+    .case("getEvents", () => {
+      const params: Record<string, string | number> = {}
+      if (args.serverId) params.serverId = args.serverId
+      if (args.minutes !== undefined) params.minutes = args.minutes
+      return client
+        .get<unknown>("docker.getEvents", params)
+        .map((events) => jsonBlock("Docker Events", events, "(no events in the requested window)"))
+    })
+    .case("getServerHealth", () => {
+      const params: Record<string, string | number> = {}
+      if (args.serverId) params.serverId = args.serverId
+      if (args.sinceHours !== undefined) params.sinceHours = args.sinceHours
+      return client
+        .get<unknown>("docker.getServerHealth", params)
+        .map((health) => jsonBlock("Server Health", health, "(no health data available)"))
+    })
+    .case("getDiskUsage", () => {
+      const params: Record<string, string> = {}
+      if (args.serverId) params.serverId = args.serverId
+      return client
+        .get<unknown>("dockerDiskUsage.getDiskUsage", params)
+        .map((usage) => jsonBlock("Docker Disk Usage", usage, "(no disk usage data available)"))
+    })
+    .case("getBuildCache", () => {
+      const params: Record<string, string> = {}
+      if (args.serverId) params.serverId = args.serverId
+      return client
+        .get<unknown>("dockerDiskUsage.getBuildCache", params)
+        .map((cache) => jsonBlock("Docker Build Cache", cache, "(build cache is empty)"))
+    })
+    .case("pruneBuildCache", () =>
+      client
+        .post<unknown>("dockerDiskUsage.pruneBuildCache", args.serverId ? { serverId: args.serverId } : {})
+        .map(() => `Build cache pruned${args.serverId ? ` on server ${args.serverId}` : ""}.`),
+    )
     .exhaustive()
 }
 
@@ -114,7 +221,7 @@ export function registerDockerTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_docker",
     description:
-      "Docker container management. Actions: getContainers (list all containers, serverId?), restartContainer/startContainer/stopContainer/killContainer/removeContainer (containerId, serverId?), getConfig (containerId, serverId?), findContainers (appName+method, serverId?). Method semantics: match → fuzzy name match (optional appType: stack|docker-compose). label → REQUIRES type: standalone|swarm. stack → docker stack lookup. service → swarm service lookup.",
+      "Docker daemon management: containers, files inside them, events, health, and disk usage. Containers: getContainers (list all, serverId?), restartContainer/startContainer/stopContainer/killContainer/removeContainer (containerId, serverId?), getConfig (containerId, serverId?), findContainers (appName+method, serverId?). Method semantics: match → fuzzy name match (optional appType: stack|docker-compose). label → REQUIRES type: standalone|swarm. stack → docker stack lookup. service → swarm service lookup. Container files (containerId+path, serverId?): listContainerFiles, readContainerFile (output truncated at 100k chars), writeContainerFile (+content — writes into the RUNNING container; the change is lost on redeploy unless the path is a mount), deleteContainerFile. Observability: getEvents (minutes? 1-1440, default 15), getServerHealth (sinceHours? 1-168). Disk: getDiskUsage (docker system df — containers, volumes, images and build cache), getBuildCache, pruneBuildCache (same effect as dokploy_settings clean cleanType=dockerBuilder).",
     parameters: z.object({
       action: z.enum(ACTIONS),
       containerId: z.string().optional(),
@@ -126,6 +233,10 @@ export function registerDockerTools(server: ToolServer) {
         .optional()
         .describe("App type filter for method=match only: stack | docker-compose"),
       type: z.enum(["standalone", "swarm"]).optional().describe("Required for method=label: standalone | swarm"),
+      path: z.string().min(1).max(4096).optional().describe("Absolute path inside the container, for the file actions"),
+      content: z.string().optional().describe("writeContainerFile: full new file contents"),
+      minutes: z.number().int().min(1).max(1440).optional().describe("getEvents: look back N minutes (default 15)"),
+      sinceHours: z.number().int().min(1).max(168).optional().describe("getServerHealth: look back N hours (max 168)"),
     }),
     execute: async (args) => {
       const either = await buildDockerProgram(getDokployClient(), args).run()

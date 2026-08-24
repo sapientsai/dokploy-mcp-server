@@ -88,9 +88,9 @@ Available capabilities:
 - Applications: create, deploy, redeploy, start, stop, delete, read logs, configure builds, manage environment variables, search
 - Docker Compose: create, deploy, start, stop, read logs, manage services, search
 - Databases: unified tools for postgres, mysql, mariadb, mongo, redis, libsql (create, deploy, start, stop, manage, search)
-- Domains: create, configure, validate DNS, generate traefik.me domains
+- Domains: create, configure, enable/disable, validate DNS, generate traefik.me domains
 - Redirects: URL redirect rules on applications (Traefik regex → replacement, 301/302)
-- Docker: list containers, start/stop/kill/restart/remove, inspect configuration
+- Docker: list containers, start/stop/kill/restart/remove, inspect configuration, read/write files inside containers, daemon events, server health, disk usage and build cache
 - Servers: add, configure, monitor remote servers
 - Deployments: list, queue, read logs, kill process, remove
 - Backups: schedule, trigger manual backups, list backup files

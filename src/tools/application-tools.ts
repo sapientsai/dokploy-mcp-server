@@ -68,6 +68,8 @@ const UPDATE_FIELDS = [
   "customGitUrl",
   "customGitBranch",
   "githubId",
+  "networkIds",
+  "detachDokployNetwork",
 ] as const
 
 type ApplicationArgs = {
@@ -95,6 +97,8 @@ type ApplicationArgs = {
   customGitUrl?: string
   customGitBranch?: string
   githubId?: string
+  networkIds?: string[]
+  detachDokployNetwork?: boolean
   env?: string
   set?: string
   unset?: string[]
@@ -307,7 +311,7 @@ export function registerApplicationTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_application",
     description:
-      "Manage applications. create: name+environmentId. get: applicationId (returns metadata + masked env summary — never values). update: applicationId+fields (supports sourceType, repository, owner, branch, customGitUrl, customGitBranch, githubId, dockerImage, etc.). move: applicationId+targetEnvironmentId. deploy: applicationId, redeploy? (note: first deploy on new services may fail — retry immediately). start/stop/delete/markRunning/refreshToken/cleanQueues/killBuild/cancelDeployment: applicationId. reload: applicationId+appName. saveEnvironment: applicationId+env (KEY=VALUE pairs, full replace). setEnvVars: applicationId + set? (KEY=VALUE pairs to upsert) + unset? (KEY names to remove) — read-modify-write inside the server; result is a masked confirmation with changed key names only. getEnvKeys: applicationId — returns just the KEY names (no values). getEnvValuesUnsafe: applicationId — UNSAFE escape hatch that returns full KEY=VALUE pairs (use only when you need actual values; output goes to the tool transcript and any retained logs). saveBuildType: applicationId+buildType. traefikConfig: applicationId, traefikConfig? (omit to read). readMonitoring: appName. readLogs: applicationId, tail? (default 100), since? ('all' or duration like '1h'), search? (substring filter). search: any of q|name|appName|description|repository|owner|dockerImage|projectId|environmentId + limit/offset.",
+      "Manage applications. create: name+environmentId. get: applicationId (returns metadata + masked env summary — never values). update: applicationId+fields (supports sourceType, repository, owner, branch, customGitUrl, customGitBranch, githubId, dockerImage, networkIds, detachDokployNetwork, etc.). move: applicationId+targetEnvironmentId. deploy: applicationId, redeploy? (note: first deploy on new services may fail — retry immediately). start/stop/delete/markRunning/refreshToken/cleanQueues/killBuild/cancelDeployment: applicationId. reload: applicationId+appName. saveEnvironment: applicationId+env (KEY=VALUE pairs, full replace). setEnvVars: applicationId + set? (KEY=VALUE pairs to upsert) + unset? (KEY names to remove) — read-modify-write inside the server; result is a masked confirmation with changed key names only. getEnvKeys: applicationId — returns just the KEY names (no values). getEnvValuesUnsafe: applicationId — UNSAFE escape hatch that returns full KEY=VALUE pairs (use only when you need actual values; output goes to the tool transcript and any retained logs). saveBuildType: applicationId+buildType. traefikConfig: applicationId, traefikConfig? (omit to read). readMonitoring: appName. readLogs: applicationId, tail? (default 100), since? ('all' or duration like '1h'), search? (substring filter). search: any of q|name|appName|description|repository|owner|dockerImage|projectId|environmentId + limit/offset.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       applicationId: z.string().optional(),
@@ -336,6 +340,14 @@ export function registerApplicationTools(server: ToolServer) {
       owner: z.string().optional().describe("GitHub org/user"),
       branch: z.string().optional().describe("Branch name"),
       customGitUrl: z.string().optional().describe("Custom git repository URL (for sourceType: git)"),
+      networkIds: z
+        .array(z.string())
+        .optional()
+        .describe("update: Docker network IDs to attach this application to (see dokploy_network list)"),
+      detachDokployNetwork: z
+        .boolean()
+        .optional()
+        .describe("update: detach from the default dokploy-network, leaving only networkIds"),
       customGitBranch: z.string().optional().describe("Branch for custom git source"),
       githubId: z.string().optional().describe("GitHub App provider ID for private repo access"),
       env: z
