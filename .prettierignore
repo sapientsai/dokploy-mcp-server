@@ -1,2 +1,8 @@
 node_modules
 .DS_Store
+
+# API spec dumps fetched verbatim from a Dokploy instance (pnpm openapi:fetch).
+# Prettier collapses their short arrays, which rewrites ~5k lines and makes the
+# version-to-version diff — the whole point of keeping these — unreadable.
+openapi.json
+scratch.json
