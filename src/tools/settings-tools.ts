@@ -18,12 +18,11 @@ const CLEAN_TYPES = [
   "dockerBuilder",
   "dockerPrune",
   "monitoring",
-  "redis",
   "deploymentQueue",
   "sshPrivateKey",
 ] as const
 
-const RELOAD_TARGETS = ["server", "traefik", "redis"] as const
+const RELOAD_TARGETS = ["server", "traefik"] as const
 
 // Map MCP-friendly cleanType to the actual Dokploy endpoint.
 // The dropped/null entries are server-scoped; `null` means no serverId in body.
@@ -35,7 +34,6 @@ const CLEAN_ENDPOINTS: Record<(typeof CLEAN_TYPES)[number], { endpoint: string; 
   dockerBuilder: { endpoint: "settings.cleanDockerBuilder", serverScoped: true },
   dockerPrune: { endpoint: "settings.cleanDockerPrune", serverScoped: true },
   monitoring: { endpoint: "settings.cleanMonitoring", serverScoped: false },
-  redis: { endpoint: "settings.cleanRedis", serverScoped: false },
   deploymentQueue: { endpoint: "settings.cleanAllDeploymentQueue", serverScoped: false },
   sshPrivateKey: { endpoint: "settings.cleanSSHPrivateKey", serverScoped: false },
 }
@@ -43,7 +41,6 @@ const CLEAN_ENDPOINTS: Record<(typeof CLEAN_TYPES)[number], { endpoint: string; 
 const RELOAD_ENDPOINTS: Record<(typeof RELOAD_TARGETS)[number], { endpoint: string; serverScoped: boolean }> = {
   server: { endpoint: "settings.reloadServer", serverScoped: false },
   traefik: { endpoint: "settings.reloadTraefik", serverScoped: true },
-  redis: { endpoint: "settings.reloadRedis", serverScoped: false },
 }
 
 type SettingsArgs = {
@@ -88,7 +85,7 @@ export function registerSettingsTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_settings",
     description:
-      "System settings. health: check status. version: get version. ip: get IP. clean: cleanType (all|images|volumes|stoppedContainers|dockerBuilder|dockerPrune|monitoring|redis|deploymentQueue|sshPrivateKey), serverId? (only honored for docker-related clean types). reload: reloadTarget (server|traefik|redis), serverId? (traefik only).",
+      "System settings. health: check status. version: get version. ip: get IP. clean: cleanType (all|images|volumes|stoppedContainers|dockerBuilder|dockerPrune|monitoring|deploymentQueue|sshPrivateKey), serverId? (only honored for docker-related clean types). reload: reloadTarget (server|traefik), serverId? (traefik only).",
     parameters: z.object({
       action: z.enum(ACTIONS),
       cleanType: z.enum(CLEAN_TYPES).optional(),

@@ -107,7 +107,7 @@ src/
 
 ## Key Files
 
-- `src/index.ts` - Server entry point, registers all 14 tool modules
+- `src/index.ts` - Server entry point, registers all 21 tool modules
 - `src/bin.ts` - CLI entry point (`npx dokploy-mcp-server`)
 - `src/client/dokploy-client.ts` - Dokploy API client with GET/POST
 - `src/types.ts` - All TypeScript types + `DB_TYPES` / `DB_ID_FIELDS` constants

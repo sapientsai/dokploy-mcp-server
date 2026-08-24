@@ -26,10 +26,9 @@ type SettingsArgs = {
     | "dockerBuilder"
     | "dockerPrune"
     | "monitoring"
-    | "redis"
     | "deploymentQueue"
     | "sshPrivateKey"
-  reloadTarget?: "server" | "traefik" | "redis"
+  reloadTarget?: "server" | "traefik"
   serverId?: string
 }
 
@@ -85,7 +84,6 @@ describe("dokploy_settings clean", () => {
 
   it.each([
     ["monitoring", "settings.cleanMonitoring"],
-    ["redis", "settings.cleanRedis"],
     ["deploymentQueue", "settings.cleanAllDeploymentQueue"],
     ["sshPrivateKey", "settings.cleanSSHPrivateKey"],
   ] as const)("non-server-scoped cleanType=%s ignores serverId", async (cleanType, endpoint) => {
@@ -118,10 +116,5 @@ describe("dokploy_settings reload", () => {
   it("reloadTarget=traefik without serverId passes empty body", async () => {
     await tool.execute({ action: "reload", reloadTarget: "traefik" })
     expect(postMock).toHaveBeenCalledWith("settings.reloadTraefik", {})
-  })
-
-  it("reloadTarget=redis calls settings.reloadRedis (no body)", async () => {
-    await tool.execute({ action: "reload", reloadTarget: "redis" })
-    expect(postMock).toHaveBeenCalledWith("settings.reloadRedis")
   })
 })
