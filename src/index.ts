@@ -15,6 +15,7 @@ import {
   registerDatabaseTools,
   registerDeploymentTools,
   registerDestinationTools,
+  registerDnsProviderTools,
   registerDockerImageTools,
   registerDockerTools,
   registerDockerVolumeTools,
@@ -32,6 +33,7 @@ import {
   registerServerTools,
   registerSettingsTools,
   registerSshKeyTools,
+  registerVaultProviderTools,
   registerVolumeBackupTools,
 } from "./tools"
 
@@ -99,6 +101,8 @@ Available capabilities:
 - Docker Volumes: list, size, inspect, remove volumes and read/write files inside them
 - Docker Images: list images, inspect image config, remove images
 - Overview: fleet-wide rollups of services, backups and domains across every project
+- DNS Providers: Cloudflare/Route53 credentials plus DNS zone and record management
+- Vault Providers: external secret managers (HashiCorp, Infisical, AWS, Doppler, Azure, Scaleway); secret names only, never values
 - Servers: add, configure, monitor remote servers
 - Deployments: list, queue, read logs, kill process, remove
 - Backups: schedule, trigger manual backups, list backup files
@@ -124,6 +128,8 @@ registerDockerVolumeTools(server)
 registerDockerImageTools(server)
 registerNetworkTools(server)
 registerOverviewTools(server)
+registerDnsProviderTools(server)
+registerVaultProviderTools(server)
 registerDomainTools(server)
 registerRedirectsTools(server)
 registerServerTools(server)

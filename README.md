@@ -8,7 +8,7 @@ A comprehensive [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)
 
 The [official Dokploy MCP](https://github.com/Dokploy/mcp) generates one tool per API endpoint — at the 0.29.14 measurement below, 546 of them, exactly matching the 546 paths in Dokploy's OpenAPI spec at that version. (Dokploy v0.30.2 ships 597 paths; the figures in this section are left at their measured values rather than re-estimated.) Coverage is complete, and every one of those schemas loads into the model's context before you ask your first question.
 
-This server hand-curates the same API into **25 tools** (one per category, each taking an `action` enum), covering the deploy-and-operate surface most self-hosters use daily.
+This server hand-curates the same API into **27 tools** (one per category, each taking an `action` enum), covering the deploy-and-operate surface most self-hosters use daily.
 
 ### Context cost
 
@@ -38,6 +38,8 @@ Tool counts for the official server are per category, taken from its live `tools
 | Docker Images       | n/a (new in 0.30.2)    | 1 tool (3 actions)            |
 | Networks            | n/a (new in 0.30.2)    | 1 tool (8 actions)            |
 | Overview            | n/a (new in 0.30.2)    | 1 tool (3 actions)            |
+| DNS Providers       | n/a (new in 0.30.2)    | 1 tool (11 actions)           |
+| Vault Providers     | n/a (new in 0.30.2)    | 1 tool (7 actions)            |
 | Domains             | 9 tools                | 1 tool (9 actions)            |
 | Redirects           | 4 tools                | 1 tool (4 actions)            |
 | Servers             | 18 tools               | 1 tool (8 actions)            |
@@ -54,11 +56,11 @@ Tool counts for the official server are per category, taken from its live `tools
 | SSH Keys            | 7 tools                | 1 tool (6 actions)            |
 | Registries          | 7 tools                | 1 tool (7 actions)            |
 | Destinations        | 6 tools                | 1 tool (6 actions)            |
-| **Total**           | **346 tools**          | **25 tools**                  |
+| **Total**           | **346 tools**          | **27 tools**                  |
 
 Key advantages:
 
-- **Minimal token usage** - 346 endpoints' worth of surface in 25 tools, for roughly an eighth of the context
+- **Minimal token usage** - 346 endpoints' worth of surface in 27 tools, for roughly an eighth of the context
 - **Unified database tool** - One tool handles all 6 database types (postgres, mysql, mariadb, mongo, redis, libsql) via `dbType` + `action` params
 - **Curated descriptions** - Each tool documents which parameters pair with which action, so calls succeed on the first try
 - **Action-based design** - Each tool has an `action` enum parameter; other params are optional based on action
@@ -136,7 +138,7 @@ docker run -e DOKPLOY_URL=https://dokploy.example.com \
 | `PORT`            | No       | `3000`    | HTTP port (httpStream mode only)         |
 | `HOST`            | No       | `0.0.0.0` | HTTP host (httpStream mode only)         |
 
-## Tools (25)
+## Tools (27)
 
 Each tool uses an `action` enum to select the operation. Parameters are optional and used based on the chosen action.
 
@@ -361,6 +363,28 @@ Query the Dokploy audit trail. Every filter is optional: `userId`, `userEmail`, 
 `resourceType`: `project | service | environment | deployment | user | customRole | domain | certificate | registry | server | sshKey | gitProvider | notification | settings | session`.
 
 The wire-level query parameter is named `action`; this tool exposes it as `auditAction` so it does not collide with the `action` discriminator every tool uses.
+
+### `dokploy_dns_provider` (11 actions)
+
+Actions: `list | get | create | update | remove | testConnection | listZones | listRecords | createRecord | updateRecord | deleteRecord`
+
+DNS provider credentials plus zone and record management. `config` is discriminated on `providerType`: `cloudflare` (`apiToken`) or `route53` (`accessKeyId`, `secretAccessKey`). `update` requires `dnsProviderId` + `name` + `config` — the API **replaces** the provider rather than patching it, so a rename means re-sending the credentials. `testConnection` takes either a saved `dnsProviderId` or a raw `config` to check credentials before saving.
+
+Records: `listZones` (`dnsProviderId`), `listRecords` (`+ zoneId`), `createRecord`/`updateRecord` (`+ type`, `recordName`, `content`, optional `ttl`, plus `recordId` for update), `deleteRecord` (`+ recordId`). `type` accepts `A` or `CNAME` only. Note `recordName` is the DNS record name — it maps to the API's `name` field, kept distinct here from the provider's `name`.
+
+Provider reads return id, name, and `providerType` only; stored credentials are never rendered into tool output.
+
+### `dokploy_vault_provider` (7 actions)
+
+Actions: `list | get | create | update | remove | testConnection | listSecretNames`
+
+External secret-manager configuration. `config` is discriminated on `providerType` across six backends: `hashicorp`, `infisical`, `aws`, `doppler`, `azure`, `scaleway`. `assignments` is `[{ projectId, environmentIds? }]` naming the Dokploy projects the vault serves.
+
+Watch the overloaded field name: `infisical.projectId` and `scaleway.projectId` are that provider's own project ID, **not** the Dokploy `projectId` used in `assignments`.
+
+`update` requires all four of `vaultProviderId`, `name`, `config`, and `assignments` — like the DNS provider, the API replaces rather than patches, so run `get` first to recover the current name and assignments.
+
+`listSecretNames` (`vaultProviderId` + `projectId`, optional `environmentId`) returns secret **names only**. Dokploy exposes no API to read a secret's value, and provider credentials are never echoed back — the same rule the env tools follow.
 
 ### `dokploy_settings` (5 actions)
 
