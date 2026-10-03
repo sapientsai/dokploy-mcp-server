@@ -6,7 +6,9 @@ A comprehensive [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)
 
 ## Why This Server?
 
-The [official Dokploy MCP](https://github.com/Dokploy/mcp) generates one tool per API endpoint — at the 0.29.14 measurement below, 546 of them, exactly matching the 546 paths in Dokploy's OpenAPI spec at that version. (Dokploy v0.30.2 ships 597 paths; the figures in this section are left at their measured values rather than re-estimated.) Coverage is complete, and every one of those schemas loads into the model's context before you ask your first question.
+> **Tracks Dokploy v0.30.8.** Tools are built against the v0.30.8 OpenAPI spec (604 paths). The comparison below was measured on 2026-10-03.
+
+The [official Dokploy MCP](https://github.com/Dokploy/mcp) generates one tool per API endpoint. Its latest release, `@dokploy/mcp@0.30.7`, exposes 604 tools, one for each of the 604 paths in Dokploy's v0.30.8 OpenAPI spec. Coverage is complete, and every one of those schemas loads into the model's context before you ask your first question.
 
 This server hand-curates the same API into **27 tools** (one per category, each taking an `action` enum), covering the deploy-and-operate surface most self-hosters use daily.
 
@@ -14,69 +16,67 @@ This server hand-curates the same API into **27 tools** (one per category, each 
 
 |                                    | Official `@dokploy/mcp` | This server      |
 | ---------------------------------- | ----------------------- | ---------------- |
-| Tools exposed                      | 546                     | 22 (21 + `info`) |
-| `tools/list` schema payload        | 294,957 bytes           | 34,528 bytes     |
-| Approximate tokens loaded up front | **~74k**                | **~8.6k**        |
-| Median tool schema                 | 388 bytes               | 1,131 bytes      |
+| Tools exposed                      | 604                     | 28 (27 + `info`) |
+| `tools/list` schema payload        | 319,143 bytes           | 51,974 bytes     |
+| Approximate tokens loaded up front | **~80k**                | **~13k**         |
+| Median tool schema                 | 387 bytes               | 1,257 bytes      |
 
-Measured 2026-08-08 against `@dokploy/mcp@0.29.14` and `dokploy-mcp-server@1.8.2`, by starting each server, calling `tools/list`, and counting the serialized schema bytes (divided by 4 for a rough token estimate).
+Measured 2026-10-03 against `@dokploy/mcp@0.30.7` (the latest published) and this server's build tracking Dokploy v0.30.8. Each server was started over stdio, sent `tools/list`, and its serialized tool array counted in bytes (divided by 4 for a rough token estimate).
 
-Since that measurement this server grew to 27 tools tracking Dokploy v0.30.2. Measured the same way — live `tools/list` over stdio — it now exposes 28 tools (27 + `info`) for **48,452 bytes (~12.1k tokens)**. The official server has not been re-measured against 0.30.2, so the table above is left at the paired 0.29.14 figures rather than mixing a new number for one side with an old one for the other.
-
-On a 200k-token context window, the official server spends more than a third of it before you ask anything. The larger median schema here is deliberate: descriptions carry the workflow knowledge that prevents failed calls, such as which service id pairs with which `databaseType`.
+On a 200k-token context window, the official server spends about 40% of it before you ask anything; this server spends about 6.5%. The larger median schema here is deliberate: descriptions carry the workflow knowledge that prevents failed calls, such as which service id pairs with which `databaseType`.
 
 ### Feature Comparison
 
-Tool counts for the official server are per category, taken from its live `tools/list`.
+Tool counts for the official server are per category, taken from its live `tools/list` at `@dokploy/mcp@0.30.7`.
 
-| Category            | Official MCP           | This Server                   |
-| ------------------- | ---------------------- | ----------------------------- |
-| Projects            | 9 tools                | 1 tool (6 actions)            |
-| Applications        | 31 tools               | 1 tool (23 actions)           |
-| Compose             | 31 tools               | 1 tool (21 actions)           |
-| Deployments         | 9 tools                | 1 tool (5 actions)            |
-| Docker              | 12 tools               | 1 tool (17 actions)           |
-| Docker Volumes      | n/a (new in 0.30.2)    | 1 tool (8 actions)            |
-| Docker Images       | n/a (new in 0.30.2)    | 1 tool (3 actions)            |
-| Networks            | n/a (new in 0.30.2)    | 1 tool (8 actions)            |
-| Overview            | n/a (new in 0.30.2)    | 1 tool (3 actions)            |
-| DNS Providers       | n/a (new in 0.30.2)    | 1 tool (11 actions)           |
-| Vault Providers     | n/a (new in 0.30.2)    | 1 tool (7 actions)            |
-| Domains             | 9 tools                | 1 tool (9 actions)            |
-| Redirects           | 4 tools                | 1 tool (4 actions)            |
-| Servers             | 18 tools               | 1 tool (8 actions)            |
-| Settings            | 54 tools               | 1 tool (5 actions)            |
-| Databases           | 94 tools (6 engines)   | 1 tool (17 actions, all 6 DB) |
-| Backups             | 12 tools               | 1 tool (6 actions)            |
-| Volume Backups      | 6 tools                | 1 tool (6 actions)            |
-| Preview Deployments | 4 tools                | 1 tool (4 actions)            |
-| Schedules           | 6 tools                | 1 tool (6 actions)            |
-| Audit Log           | 1 tool                 | 1 tool (1 action)             |
-| Environments        | 7 tools                | 1 tool (6 actions)            |
-| Infrastructure      | 13 tools (ports+certs) | 1 tool (8 actions)            |
-| Mounts              | 6 tools                | 1 tool (6 actions)            |
-| SSH Keys            | 7 tools                | 1 tool (6 actions)            |
-| Registries          | 7 tools                | 1 tool (7 actions)            |
-| Destinations        | 6 tools                | 1 tool (6 actions)            |
-| **Total**           | **346 tools**          | **27 tools**                  |
+| Category            | Official MCP                  | This Server                   |
+| ------------------- | ----------------------------- | ----------------------------- |
+| Projects            | 11 tools                      | 1 tool (6 actions)            |
+| Applications        | 32 tools                      | 1 tool (24 actions)           |
+| Compose             | 31 tools                      | 1 tool (21 actions)           |
+| Deployments         | 9 tools                       | 1 tool (5 actions)            |
+| Docker              | 21 tools (incl. disk usage)   | 1 tool (17 actions)           |
+| Docker Volumes      | 8 tools                       | 1 tool (8 actions)            |
+| Docker Images       | 3 tools                       | 1 tool (3 actions)            |
+| Networks            | 9 tools                       | 1 tool (9 actions)            |
+| Overview            | 3 tools                       | 1 tool (3 actions)            |
+| DNS Providers       | 11 tools                      | 1 tool (11 actions)           |
+| Vault Providers     | 7 tools                       | 1 tool (7 actions)            |
+| Domains             | 10 tools                      | 1 tool (9 actions)            |
+| Redirects           | 4 tools                       | 1 tool (4 actions)            |
+| Servers             | 19 tools                      | 1 tool (9 actions)            |
+| Settings            | 52 tools                      | 1 tool (5 actions)            |
+| Databases           | 94 tools (6 engines)          | 1 tool (17 actions, all 6 DB) |
+| Backups             | 12 tools                      | 1 tool (6 actions)            |
+| Volume Backups      | 6 tools                       | 1 tool (6 actions)            |
+| Preview Deployments | 4 tools                       | 1 tool (4 actions)            |
+| Schedules           | 6 tools                       | 1 tool (6 actions)            |
+| Audit Log           | 1 tool                        | 1 tool (1 action)             |
+| Environments        | 7 tools                       | 1 tool (6 actions)            |
+| Infrastructure      | 13 tools (ports, certs, auth) | 1 tool (8 actions)            |
+| Mounts              | 6 tools                       | 1 tool (6 actions)            |
+| SSH Keys            | 7 tools                       | 1 tool (6 actions)            |
+| Registries          | 7 tools                       | 1 tool (7 actions)            |
+| Destinations        | 6 tools                       | 1 tool (6 actions)            |
+| **Total**           | **399 tools**                 | **27 tools**                  |
 
 Key advantages:
 
-- **Minimal token usage** - 346 endpoints' worth of surface in 27 tools, for roughly an eighth of the context
+- **Minimal token usage** - 399 endpoints' worth of surface in 27 tools, for about a sixth of the context
 - **Unified database tool** - One tool handles all 6 database types (postgres, mysql, mariadb, mongo, redis, libsql) via `dbType` + `action` params
 - **Curated descriptions** - Each tool documents which parameters pair with which action, so calls succeed on the first try
 - **Action-based design** - Each tool has an `action` enum parameter; other params are optional based on action
 
 ### When to use the official server instead
 
-The official server covers 49 categories to this server's 27. Of its 546 tools, 346 fall inside the categories above; the remaining 200 have no equivalent here:
+Of the official server's 604 tools, 399 fall inside the categories above; the remaining 205 have no equivalent here:
 
 - **Notifications** (41 tools) - email, Slack, Discord, Telegram, Gotify webhooks
-- **Users, organizations, roles, SSO** (64 tools) - user management, organizations, custom roles, SSO, SCIM, forwardAuth
+- **Users, organizations, roles, SSO** (67 tools) - user management, organizations, custom roles, SSO, SCIM, forwardAuth
 - **Git providers** (32 tools) - GitHub, GitLab, Gitea, Bitbucket app configuration
 - **AI providers** (14 tools) - Dokploy's own LLM integration for log analysis and compose generation
 - **Cluster and Swarm** (8 tools), **patch** (12), **tags** (8), **rollback** (2), **admin** (1)
-- **Dokploy Cloud commercial features** (18 tools) - Stripe billing, license keys, whitelabeling
+- **Dokploy Cloud commercial features** (20 tools) - Stripe billing, license keys, whitelabeling
 
 If your workflow needs any of those, use the official server, or run both.
 
@@ -152,11 +152,11 @@ Manage projects. `list` and `get` return nested environments with their applicat
 
 **Reading the status label.** Dokploy's status enum is `idle | running | done | error`, rendered as `[IDLE]`, `[RUNNING]`, `[DONE]`, `[ERROR]`. It describes the **deployment**, not live container state — `[DONE]` means the last deploy finished, and `[IDLE]` means nothing has run, neither of which implies a container is up right now. Check `dokploy_docker` `getContainers` for what is actually running.
 
-### `dokploy_application` (23 actions)
+### `dokploy_application` (24 actions)
 
-Actions: `create | get | update | move | deploy | start | stop | delete | markRunning | refreshToken | cleanQueues | killBuild | cancelDeployment | reload | saveEnvironment | setEnvVars | getEnvKeys | getEnvValuesUnsafe | saveBuildType | traefikConfig | readMonitoring | readLogs | search`
+Actions: `create | get | update | move | deploy | start | stop | delete | markRunning | refreshToken | cleanQueues | killBuild | cancelDeployment | reload | saveEnvironment | setEnvVars | getEnvKeys | getEnvValuesUnsafe | saveBuildType | traefikConfig | readMonitoring | readLogs | search | deployNginxQuickstart`
 
-Full application lifecycle. Most actions require `applicationId`. `create` requires `name` + `environmentId`. `deploy` supports `redeploy` flag. `readMonitoring` requires `appName`. `search` finds applications by `q`/`name`/`appName`/`repository`/`owner`/`dockerImage`/`projectId`/`environmentId`, with `limit` (1–100, default 20) and `offset`; the reply flags a truncated page.
+Full application lifecycle. Most actions require `applicationId`. `create` requires `name` + `environmentId`. `deploy` supports `redeploy` flag. `readMonitoring` requires `appName`. `search` finds applications by `q`/`name`/`appName`/`repository`/`owner`/`dockerImage`/`projectId`/`environmentId`, with `limit` (1–100, default 20) and `offset`; the reply flags a truncated page. `deployNginxQuickstart` takes `environmentId` (+ optional `serverId`) and creates and deploys a "Hello World" nginx demo app on a generated traefik.me domain — Dokploy's onboarding smoke test.
 
 **Env handling.** `get` returns a masked env summary (count only) — never the values. Three actions cover the rest:
 
@@ -179,7 +179,7 @@ The underlying API also supports `gitlab`/`bitbucket`/`gitea`/`drop` sources, bu
 
 Actions: `create | get | update | delete | deploy | start | stop | move | loadServices | loadMounts | getDefaultCommand | cancelDeployment | cleanQueues | killBuild | refreshToken | saveEnvironment | setEnvVars | getEnvKeys | getEnvValuesUnsafe | readLogs | search`
 
-Docker Compose management. Most actions require `composeId`. `create` requires `name` + `environmentId`. `loadMounts` requires `serviceName`. `cancelDeployment`/`cleanQueues`/`killBuild`/`refreshToken` require `composeId`. `search` takes the same query fields as `dokploy_application`.
+Docker Compose management. Most actions require `composeId`. `create` requires `name` + `environmentId`. `deploy` takes optional `redeploy` and `freshVolumes` — **`freshVolumes` runs `docker compose down --volumes` first, deleting the service's volume data** (docker-compose type only). `loadMounts` requires `serviceName`. `cancelDeployment`/`cleanQueues`/`killBuild`/`refreshToken` require `composeId`. `search` takes the same query fields as `dokploy_application`.
 
 **Env handling.** Same shape as `dokploy_application`: `get` returns a masked summary, `setEnvVars` merges, `getEnvKeys` lists key names, `getEnvValuesUnsafe` is the escape hatch, `saveEnvironment` full-replaces.
 
@@ -212,7 +212,7 @@ Per-engine extras:
 
 Actions: `create | list | get | update | delete | toggleEnable | generate | canGenerateTraefikMe | validate`
 
-Domain/DNS management. `create` requires `host` + `applicationId`|`composeId` (and `serviceName` for compose domains). Enums: `certificateType` (`letsencrypt | none | custom`), `domainType` (`compose | application | preview`). `validate` requires `domain`.
+Domain/DNS management. `create` requires `host` + `applicationId`|`composeId` (and `serviceName` for compose domains). Enums: `certificateType` (`letsencrypt | none | custom`), `domainType` (`compose | application | preview`). `validate` requires `domain` and optionally takes `serverId` to check DNS against that server's IPs (Dokploy v0.30.8 replaced the old `serverIp` field).
 
 `update` accepts `enabled` to set the domain's enable flag to a known value. `toggleEnable` flips that flag without reporting the result — the API returns an undescribed body — so prefer `update` when you need a deterministic end state.
 
@@ -228,11 +228,11 @@ Actions: `create | get | list | update | remove | duplicate`
 
 Project environment management. `create` requires `projectId` + `name`. `list` requires `projectId`.
 
-### `dokploy_server` (8 actions)
+### `dokploy_server` (9 actions)
 
-Actions: `list | get | create | update | remove | count | publicIp | getMetrics`
+Actions: `list | get | create | update | remove | count | publicIp | getMetrics | getServices`
 
-Server management. `create` requires `name` + `ipAddress` + `port` + `username` + `sshKeyId` + `serverType` (`deploy | build`). `getMetrics` requires `url` + `token`.
+Server management. `create` requires `name` + `ipAddress` + `port` + `username` + `sshKeyId` + `serverType` (`deploy | build`). `getMetrics` requires `url` + `token`. `getServices` requires `serverId` and lists the applications, compose services and databases deployed there — check it before removing a server.
 
 ### `dokploy_backup` (6 actions)
 
@@ -310,11 +310,11 @@ Actions: `getImages | getImageConfig | removeImage`
 
 Docker image inventory. `getImageConfig` takes `imageRef` (`nginx:latest` or an image ID). `removeImage` requires **all three** of `repository`, `tag`, and `id` — read them off `getImages` — plus optional `force`. Disk usage and build cache live in `dokploy_docker` (`getDiskUsage`, `getBuildCache`, `pruneBuildCache`).
 
-### `dokploy_network` (8 actions)
+### `dokploy_network` (9 actions)
 
-Actions: `list | get | create | remove | recreate | inspect | import | networksToSync`
+Actions: `list | get | create | remove | recreate | resync | inspect | import | networksToSync`
 
-Docker network management. `create` requires `name` and accepts `driver` (`bridge | overlay`), `internal`, `attachable`, `enableIPv4`, `enableIPv6`, `mtu` (68–65535), `ipam`, and `serverId`. `get`, `inspect`, `remove`, and `recreate` take `networkId` — `recreate` drops and re-adds the network, so attached services are briefly disconnected. `networksToSync` lists networks that exist on the Docker host but are not yet tracked by Dokploy; `import` brings them in by `names`. Attach networks to workloads via `dokploy_application` `update` `networkIds`, or `dokploy_compose` `update` `serviceNetworks`.
+Docker network management. `create` requires `name` and accepts `driver` (`bridge | overlay`), `internal`, `attachable`, `enableIPv4`, `enableIPv6`, `mtu` (68–65535), `ipam`, and `serverId`. `get`, `inspect`, `remove`, `recreate`, and `resync` take `networkId` — `recreate` drops and re-adds the network, so attached services are briefly disconnected; `resync` re-reads the network from Docker and refreshes Dokploy's stored record without touching the network. `networksToSync` lists networks that exist on the Docker host but are not yet tracked by Dokploy; `import` brings them in by `names`. Attach networks to workloads via `dokploy_application` `update` `networkIds`, or `dokploy_compose` `update` `serviceNetworks`.
 
 ### `dokploy_overview` (3 actions)
 
@@ -374,9 +374,9 @@ The wire-level query parameter is named `action`; this tool exposes it as `audit
 
 Actions: `list | get | create | update | remove | testConnection | listZones | listRecords | createRecord | updateRecord | deleteRecord`
 
-DNS provider credentials plus zone and record management. `config` is discriminated on `providerType`: `cloudflare` (`apiToken`) or `route53` (`accessKeyId`, `secretAccessKey`). `update` requires `dnsProviderId` + `name` + `config` — the API **replaces** the provider rather than patching it, so a rename means re-sending the credentials. `testConnection` takes either a saved `dnsProviderId` or a raw `config` to check credentials before saving.
+DNS provider credentials plus zone and record management. `config` is discriminated on `providerType`: `cloudflare` (`apiToken`), `route53` (`accessKeyId`, `secretAccessKey`), `porkbun` (`apiKey`, `secretApiKey`), `infomaniak` (`apiToken`), or `ovh` (`applicationKey`, `applicationSecret`, `consumerKey`, optional `endpoint`, default `ovh-eu`). `update` requires `dnsProviderId` + `name` + `config` — the API **replaces** the provider rather than patching it, so a rename means re-sending the credentials. `testConnection` takes either a saved `dnsProviderId` or a raw `config` to check credentials before saving.
 
-Records: `listZones` (`dnsProviderId`), `listRecords` (`+ zoneId`), `createRecord`/`updateRecord` (`+ type`, `recordName`, `content`, optional `ttl`, plus `recordId` for update), `deleteRecord` (`+ recordId`). `type` accepts `A` or `CNAME` only. Note `recordName` is the DNS record name — it maps to the API's `name` field, kept distinct here from the provider's `name`.
+Records: `listZones` (`dnsProviderId`), `listRecords` (`+ zoneId`), `createRecord`/`updateRecord` (`+ type`, `recordName`, `content`, optional `ttl` and `proxied`, plus `recordId` for update), `deleteRecord` (`+ recordId`). `type` accepts `A`, `AAAA`, `CNAME`, `MX`, `TXT`, `NS`, `SRV`, `CAA`, or `PTR`. `proxied` only takes effect on Cloudflare. Note `recordName` is the DNS record name — it maps to the API's `name` field, kept distinct here from the provider's `name`.
 
 Provider reads return id, name, and `providerType` only; stored credentials are never rendered into tool output.
 
@@ -384,7 +384,7 @@ Provider reads return id, name, and `providerType` only; stored credentials are 
 
 Actions: `list | get | create | update | remove | testConnection | listSecretNames`
 
-External secret-manager configuration. `config` is discriminated on `providerType` across six backends: `hashicorp`, `infisical`, `aws`, `doppler`, `azure`, `scaleway`. `assignments` is `[{ projectId, environmentIds? }]` naming the Dokploy projects the vault serves.
+External secret-manager configuration. `config` is discriminated on `providerType` across eight backends: `hashicorp`, `infisical`, `aws` (Secrets Manager), `aws-parameter-store` (optional `parameterPath`, must start with `/`), `doppler`, `azure`, `scaleway`, `phase` (`token`, `appId`, `env`, optional `path` and `apiUrl`). `assignments` is `[{ projectId, environmentIds? }]` naming the Dokploy projects the vault serves.
 
 Watch the overloaded field name: `infisical.projectId` and `scaleway.projectId` are that provider's own project ID, **not** the Dokploy `projectId` used in `assignments`.
 

@@ -430,3 +430,24 @@ describe("dokploy_application network attachment", () => {
     expect(postMock).toHaveBeenCalledWith("application.update", { applicationId: "app-1", networkIds: [] })
   })
 })
+
+describe("dokploy_application deployNginxQuickstart", () => {
+  it("POSTs environmentId and serverId and reports the new app", async () => {
+    postMock.mockReturnValueOnce(IO.succeed({ applicationId: "app-9", domainUrl: "http://hello.traefik.me" }))
+    const out = (await tool.execute({ action: "deployNginxQuickstart", environmentId: "e1", serverId: "s1" })) as string
+    expect(postMock).toHaveBeenCalledWith("application.deployNginxQuickstart", { environmentId: "e1", serverId: "s1" })
+    expect(out).toContain("deployment queued")
+    expect(out).toContain("applicationId: app-9")
+    expect(out).toContain("URL: http://hello.traefik.me")
+  })
+
+  it("omits serverId when absent", async () => {
+    await tool.execute({ action: "deployNginxQuickstart", environmentId: "e1" })
+    expect(postMock).toHaveBeenCalledWith("application.deployNginxQuickstart", { environmentId: "e1" })
+  })
+
+  it("requires environmentId", async () => {
+    await expect(tool.execute({ action: "deployNginxQuickstart" })).rejects.toThrow(/requires environmentId/)
+    expect(postMock).not.toHaveBeenCalled()
+  })
+})

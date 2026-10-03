@@ -93,6 +93,7 @@ type ComposeArgs = {
   serviceNetworks?: Array<{ serviceName: string; networkIds: string[]; detachDokployNetwork: boolean }>
   deleteVolumes?: boolean
   redeploy?: boolean
+  freshVolumes?: boolean
   title?: string
   deployDescription?: string
   targetEnvironmentId?: string
@@ -149,6 +150,7 @@ export function buildComposeProgram(
       const body: Record<string, unknown> = { composeId: args.composeId! }
       if (args.title) body.title = args.title
       if (args.deployDescription) body.description = args.deployDescription
+      if (args.freshVolumes !== undefined) body.freshVolumes = args.freshVolumes
       const verb = args.redeploy ? "Redeployment" : "Deployment"
       return client
         .post<unknown>(endpoint, body)
@@ -284,7 +286,7 @@ export function registerComposeTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_compose",
     description:
-      "Manage Docker Compose services. create: name+environmentId. get: composeId (metadata + masked env summary — never values). update: composeId+fields (supports sourceType, composeFile for raw/inline, git source fields, autoDeploy, createEnvFile, serviceNetworks). delete/start/stop/getDefaultCommand: composeId. deploy: composeId, redeploy? (note: first deploy on new services may fail — retry immediately). move: composeId+targetEnvironmentId. loadServices: composeId (must deploy first). loadMounts: composeId+serviceName. saveEnvironment: composeId+env (full replace), createEnvFile? (also write a .env file next to the compose file). setEnvVars: composeId + set?/unset? (merge inside the server, masked confirmation only). getEnvKeys: composeId — KEY names only. getEnvValuesUnsafe: composeId — UNSAFE escape hatch that returns full KEY=VALUE pairs (output goes to the tool transcript). cancelDeployment/cleanQueues/killBuild/refreshToken: composeId. readLogs: composeId+containerId, tail?, since?, search?. search (as action): q|name|appName|description|projectId|environmentId + limit/offset. Note: the API's search index is narrower than the project tree — it can return fewer results than dokploy_project/dokploy_overview list, so use it to find a known service, not to inventory.",
+      "Manage Docker Compose services. create: name+environmentId. get: composeId (metadata + masked env summary — never values). update: composeId+fields (supports sourceType, composeFile for raw/inline, git source fields, autoDeploy, createEnvFile, serviceNetworks). delete/start/stop/getDefaultCommand: composeId. deploy: composeId, redeploy?, freshVolumes? (DESTRUCTIVE: runs `docker compose down --volumes` first, deleting the service's volume data; docker-compose type only, ignored for stack) (note: first deploy on new services may fail — retry immediately). move: composeId+targetEnvironmentId. loadServices: composeId (must deploy first). loadMounts: composeId+serviceName. saveEnvironment: composeId+env (full replace), createEnvFile? (also write a .env file next to the compose file). setEnvVars: composeId + set?/unset? (merge inside the server, masked confirmation only). getEnvKeys: composeId — KEY names only. getEnvValuesUnsafe: composeId — UNSAFE escape hatch that returns full KEY=VALUE pairs (output goes to the tool transcript). cancelDeployment/cleanQueues/killBuild/refreshToken: composeId. readLogs: composeId+containerId, tail?, since?, search?. search (as action): q|name|appName|description|projectId|environmentId + limit/offset. Note: the API's search index is narrower than the project tree — it can return fewer results than dokploy_project/dokploy_overview list, so use it to find a known service, not to inventory.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       composeId: z.string().optional(),
@@ -339,6 +341,10 @@ export function registerComposeTools(server: ToolServer) {
       appName: z.string().optional().describe("Internal app name"),
       deleteVolumes: z.boolean().optional(),
       redeploy: z.boolean().optional(),
+      freshVolumes: z
+        .boolean()
+        .optional()
+        .describe("deploy: delete the service's volumes before deploying — destroys their data"),
       title: z.string().optional(),
       deployDescription: z.string().optional(),
       targetEnvironmentId: z.string().optional(),

@@ -29,7 +29,6 @@ type DomainArgs = {
   appName?: string
   serverId?: string
   domain?: string
-  serverIp?: string
 }
 
 const tool = captureTool<DomainArgs>(registerDomainTools)
@@ -166,14 +165,14 @@ describe("dokploy_domain generate / canGenerateTraefikMe / validate", () => {
 
   it("validate posts domain.validateDomain", async () => {
     postMock.mockReturnValueOnce(IO.succeed({ ok: true }))
-    await tool.execute({ action: "validate", domain: "x.com", serverIp: "1.2.3.4" })
+    await tool.execute({ action: "validate", domain: "x.com", serverId: "srv1" })
     expect(postMock).toHaveBeenCalledWith("domain.validateDomain", {
       domain: "x.com",
-      serverIp: "1.2.3.4",
+      serverId: "srv1",
     })
   })
 
-  it("validate omits serverIp when absent", async () => {
+  it("validate omits serverId when absent", async () => {
     postMock.mockReturnValueOnce(IO.succeed({ ok: true }))
     await tool.execute({ action: "validate", domain: "x.com" })
     expect(postMock).toHaveBeenCalledWith("domain.validateDomain", { domain: "x.com" })

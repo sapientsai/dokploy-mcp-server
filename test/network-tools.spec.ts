@@ -179,3 +179,16 @@ describe("dokploy_network errors", () => {
     await expect(tool.execute({ action: "create", name: "app-net" })).rejects.toThrow()
   })
 })
+
+describe("dokploy_network resync", () => {
+  it("POSTs network.resync with the id", async () => {
+    const out = (await tool.execute({ action: "resync", networkId: "n1" })) as string
+    expect(postMock).toHaveBeenCalledWith("network.resync", { networkId: "n1" })
+    expect(out).toBe("Network n1 resynced from the Docker host.")
+  })
+
+  it("requires networkId", async () => {
+    await expect(tool.execute({ action: "resync" })).rejects.toThrow(/resync requires networkId/)
+    expect(postMock).not.toHaveBeenCalled()
+  })
+})
