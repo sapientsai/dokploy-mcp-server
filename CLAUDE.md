@@ -58,19 +58,19 @@ src/
 │   ├── types.ts                     # ToolServer — narrowed SomaServerInstance
 │   ├── tool-utils.ts                # pickDefined, env merge/mask helpers, jsonSection
 │   ├── project-tools.ts             # 1 tool (6 actions) - CRUD + duplicate
-│   ├── application-tools.ts         # 1 tool (23 actions) - full app lifecycle + search
+│   ├── application-tools.ts         # 1 tool (24 actions) - full app lifecycle + search + nginx quickstart
 │   ├── compose-tools.ts             # 1 tool (21 actions) - Docker Compose management + search
 │   ├── deployment-tools.ts          # 1 tool (5 actions) - list, queueList, killProcess, readLogs, remove
 │   ├── docker-tools.ts              # 1 tool (17 actions) - containers, container files, events, health, disk usage
 │   ├── docker-volume-tools.ts       # 1 tool (8 actions) - volumes + files inside them
 │   ├── docker-image-tools.ts        # 1 tool (3 actions) - image inventory
-│   ├── network-tools.ts             # 1 tool (8 actions) - Docker networks + host import
+│   ├── network-tools.ts             # 1 tool (9 actions) - Docker networks + host import/resync
 │   ├── overview-tools.ts            # 1 tool (3 actions) - fleet-wide rollups (read-only)
 │   ├── dns-provider-tools.ts        # 1 tool (11 actions) - DNS providers + zone/record CRUD
 │   ├── vault-provider-tools.ts      # 1 tool (7 actions) - external secret managers; names never values
 │   ├── domain-tools.ts              # 1 tool (9 actions) - domain/DNS management
 │   ├── redirects-tools.ts           # 1 tool (4 actions) - URL redirect rules on applications
-│   ├── server-tools.ts              # 1 tool (8 actions) - remote server management
+│   ├── server-tools.ts              # 1 tool (9 actions) - remote server management + services on a server
 │   ├── settings-tools.ts            # 1 tool (5 actions) - health, version, cleanup, reload
 │   ├── database-tools.ts            # 1 tool (17 actions) - unified DB management + search
 │   ├── backup-tools.ts              # 1 tool (6 actions) - DB backup scheduling/triggers

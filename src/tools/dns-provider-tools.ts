@@ -23,7 +23,17 @@ const ACTIONS = [
   "deleteRecord",
 ] as const
 
-const RECORD_TYPES = ["A", "CNAME"] as const
+const RECORD_TYPES = ["A", "AAAA", "CNAME", "MX", "TXT", "NS", "SRV", "CAA", "PTR"] as const
+
+const OVH_ENDPOINTS = [
+  "ovh-eu",
+  "ovh-ca",
+  "ovh-us",
+  "kimsufi-eu",
+  "kimsufi-ca",
+  "soyoustart-eu",
+  "soyoustart-ca",
+] as const
 
 /**
  * Provider credentials, discriminated on providerType. Modelled as a union
@@ -41,6 +51,22 @@ const CONFIG_SCHEMA = z.discriminatedUnion("providerType", [
     accessKeyId: z.string().min(1),
     secretAccessKey: z.string().min(1),
   }),
+  z.object({
+    providerType: z.literal("porkbun"),
+    apiKey: z.string().min(1),
+    secretApiKey: z.string().min(1),
+  }),
+  z.object({
+    providerType: z.literal("infomaniak"),
+    apiToken: z.string().min(1),
+  }),
+  z.object({
+    providerType: z.literal("ovh"),
+    endpoint: z.enum(OVH_ENDPOINTS).optional().describe("defaults to ovh-eu"),
+    applicationKey: z.string().min(1),
+    applicationSecret: z.string().min(1),
+    consumerKey: z.string().min(1),
+  }),
 ])
 
 type DnsConfig = z.infer<typeof CONFIG_SCHEMA>
@@ -56,6 +82,7 @@ type DnsArgs = {
   recordName?: string
   content?: string
   ttl?: number
+  proxied?: boolean
 }
 
 function missing(args: DnsArgs, keys: readonly (keyof DnsArgs)[]): Option<ApiError> {
@@ -93,6 +120,7 @@ function recordBody(args: DnsArgs): Record<string, unknown> {
     zoneId: args.zoneId!,
   }
   if (args.ttl !== undefined) body.ttl = args.ttl
+  if (args.proxied !== undefined) body.proxied = args.proxied
   return body
 }
 
@@ -199,7 +227,7 @@ export function registerDnsProviderTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_dns_provider",
     description:
-      "DNS provider configuration and DNS record management. Providers: list, get (dnsProviderId), create (name+config), update (dnsProviderId+name+config — the API REPLACES the provider, so both must be sent even when changing one), remove (dnsProviderId), testConnection (dnsProviderId for a saved provider, or config to check credentials before saving). config is discriminated on providerType: cloudflare{apiToken} or route53{accessKeyId,secretAccessKey}. Records: listZones (dnsProviderId), listRecords (dnsProviderId+zoneId), createRecord/updateRecord (dnsProviderId+zoneId+type+recordName+content, ttl?, plus recordId for update), deleteRecord (dnsProviderId+zoneId+recordId). Record type is A or CNAME only. Provider credentials are never echoed back in tool output; provider reads return id, name and providerType only.",
+      "DNS provider configuration and DNS record management. Providers: list, get (dnsProviderId), create (name+config), update (dnsProviderId+name+config — the API REPLACES the provider, so both must be sent even when changing one), remove (dnsProviderId), testConnection (dnsProviderId for a saved provider, or config to check credentials before saving). config is discriminated on providerType: cloudflare{apiToken}, route53{accessKeyId,secretAccessKey}, porkbun{apiKey,secretApiKey}, infomaniak{apiToken} or ovh{applicationKey,applicationSecret,consumerKey,endpoint?}. Records: listZones (dnsProviderId), listRecords (dnsProviderId+zoneId), createRecord/updateRecord (dnsProviderId+zoneId+type+recordName+content, ttl?, proxied?, plus recordId for update), deleteRecord (dnsProviderId+zoneId+recordId). Record type: A, AAAA, CNAME, MX, TXT, NS, SRV, CAA or PTR. proxied only takes effect on Cloudflare. Provider credentials are never echoed back in tool output; provider reads return id, name and providerType only.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       dnsProviderId: z.string().optional(),
@@ -207,10 +235,11 @@ export function registerDnsProviderTools(server: ToolServer) {
       config: CONFIG_SCHEMA.optional().describe("Provider credentials, keyed by providerType"),
       zoneId: z.string().optional(),
       recordId: z.string().optional(),
-      type: z.enum(RECORD_TYPES).optional().describe("Record type — the API accepts only A or CNAME"),
+      type: z.enum(RECORD_TYPES).optional().describe("Record type"),
       recordName: z.string().optional().describe("DNS record name (sent as `name`; distinct from the provider name)"),
       content: z.string().optional().describe("Record value, e.g. an IP for A or a target host for CNAME"),
       ttl: z.number().int().positive().optional(),
+      proxied: z.boolean().optional().describe("Cloudflare only: route the record through Cloudflare's proxy"),
     }),
     execute: async (args) => {
       const either = await buildDnsProviderProgram(getDokployClient(), args).run()

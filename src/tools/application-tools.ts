@@ -1,11 +1,10 @@
-import type { IO } from "functype"
-import { Match } from "functype"
+import { IO, Match } from "functype"
 import { z } from "zod"
 
 import type { DokployClient } from "../client/dokploy-client"
 import { getDokployClient } from "../client/dokploy-client"
 import type { ApiError } from "../client/errors"
-import { formatApiError } from "../client/errors"
+import { formatApiError, ValidationError } from "../client/errors"
 import type { RequestBody } from "../generated"
 import type { DokployApplication } from "../types"
 import { formatApplication, formatApplicationList } from "../utils/formatters"
@@ -36,6 +35,7 @@ const ACTIONS = [
   "readMonitoring",
   "readLogs",
   "search",
+  "deployNginxQuickstart",
 ] as const
 
 const SEARCH_QUERY_FIELDS = [
@@ -296,6 +296,18 @@ export function buildApplicationProgram(
         .get<string>("application.readLogs", params)
         .map((logs) => `# Application Logs (${args.applicationId})\n\n\`\`\`\n${logs}\n\`\`\``)
     })
+    .case("deployNginxQuickstart", () => {
+      if (!args.environmentId) return IO.fail<ApiError>(ValidationError("deployNginxQuickstart requires environmentId"))
+      return client
+        .post<{ applicationId?: string; domainUrl?: string } | null>("application.deployNginxQuickstart", {
+          environmentId: args.environmentId,
+          ...(args.serverId && { serverId: args.serverId }),
+        } satisfies RequestBody<"application-deployNginxQuickstart">)
+        .map(
+          (result) =>
+            `Nginx demo app ("Hello World", nginxdemos/hello) created in environment ${args.environmentId}; deployment queued.\n\n- applicationId: ${result?.applicationId ?? "(not returned)"}\n- URL: ${result?.domainUrl ?? "(not returned)"}`,
+        )
+    })
     .case("search", () =>
       client
         .get<unknown>(
@@ -314,7 +326,7 @@ export function registerApplicationTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_application",
     description:
-      "Manage applications. create: name+environmentId. get: applicationId (returns metadata + masked env summary — never values). update: applicationId+fields (supports sourceType, repository, owner, branch, customGitUrl, customGitBranch, githubId, dockerImage, networkIds, detachDokployNetwork, etc.). move: applicationId+targetEnvironmentId. deploy: applicationId, redeploy? (note: first deploy on new services may fail — retry immediately). start/stop/delete/markRunning/refreshToken/cleanQueues/killBuild/cancelDeployment: applicationId. reload: applicationId+appName. saveEnvironment: applicationId+env (KEY=VALUE pairs, full replace). setEnvVars: applicationId + set? (KEY=VALUE pairs to upsert) + unset? (KEY names to remove) — read-modify-write inside the server; result is a masked confirmation with changed key names only. getEnvKeys: applicationId — returns just the KEY names (no values). getEnvValuesUnsafe: applicationId — UNSAFE escape hatch that returns full KEY=VALUE pairs (use only when you need actual values; output goes to the tool transcript and any retained logs). saveBuildType: applicationId+buildType. traefikConfig: applicationId, traefikConfig? (omit to read). readMonitoring: appName. readLogs: applicationId, tail? (default 100), since? ('all' or duration like '1h'), search? (substring filter). search: any of q|name|appName|description|repository|owner|dockerImage|projectId|environmentId + limit/offset. Note: the API's search index is narrower than the project tree — it can return fewer results than dokploy_project/dokploy_overview list, so use it to find a known service, not to inventory.",
+      "Manage applications. create: name+environmentId. get: applicationId (returns metadata + masked env summary — never values). update: applicationId+fields (supports sourceType, repository, owner, branch, customGitUrl, customGitBranch, githubId, dockerImage, networkIds, detachDokployNetwork, etc.). move: applicationId+targetEnvironmentId. deploy: applicationId, redeploy? (note: first deploy on new services may fail — retry immediately). start/stop/delete/markRunning/refreshToken/cleanQueues/killBuild/cancelDeployment: applicationId. reload: applicationId+appName. saveEnvironment: applicationId+env (KEY=VALUE pairs, full replace). setEnvVars: applicationId + set? (KEY=VALUE pairs to upsert) + unset? (KEY names to remove) — read-modify-write inside the server; result is a masked confirmation with changed key names only. getEnvKeys: applicationId — returns just the KEY names (no values). getEnvValuesUnsafe: applicationId — UNSAFE escape hatch that returns full KEY=VALUE pairs (use only when you need actual values; output goes to the tool transcript and any retained logs). saveBuildType: applicationId+buildType. traefikConfig: applicationId, traefikConfig? (omit to read). readMonitoring: appName. readLogs: applicationId, tail? (default 100), since? ('all' or duration like '1h'), search? (substring filter). search: any of q|name|appName|description|repository|owner|dockerImage|projectId|environmentId + limit/offset. deployNginxQuickstart: environmentId, serverId? — creates and deploys a \"Hello World\" nginx demo app on a generated traefik.me domain (Dokploy's onboarding smoke test). Note: the API's search index is narrower than the project tree — it can return fewer results than dokploy_project/dokploy_overview list, so use it to find a known service, not to inventory.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       applicationId: z.string().optional(),

@@ -40,6 +40,7 @@ type ComposeArgs = {
   serviceNetworks?: Array<{ serviceName: string; networkIds: string[]; detachDokployNetwork: boolean }>
   deleteVolumes?: boolean
   redeploy?: boolean
+  freshVolumes?: boolean
   title?: string
   deployDescription?: string
   targetEnvironmentId?: string
@@ -136,6 +137,13 @@ describe("dokploy_compose deploy branch", () => {
       title: "t",
       description: "d",
     })
+  })
+
+  it("deploy forwards freshVolumes on both deploy and redeploy", async () => {
+    await tool.execute({ action: "deploy", composeId: "c1", freshVolumes: true })
+    expect(postMock).toHaveBeenCalledWith("compose.deploy", { composeId: "c1", freshVolumes: true })
+    await tool.execute({ action: "deploy", composeId: "c1", redeploy: true, freshVolumes: true })
+    expect(postMock).toHaveBeenCalledWith("compose.redeploy", { composeId: "c1", freshVolumes: true })
   })
 
   it("deploy with redeploy=true posts compose.redeploy", async () => {

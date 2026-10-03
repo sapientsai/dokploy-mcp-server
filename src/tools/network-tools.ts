@@ -9,7 +9,17 @@ import { formatApiError, ValidationError } from "../client/errors"
 import { jsonSection, pickDefined } from "./tool-utils"
 import type { ToolServer } from "./types"
 
-const ACTIONS = ["list", "get", "create", "remove", "recreate", "inspect", "import", "networksToSync"] as const
+const ACTIONS = [
+  "list",
+  "get",
+  "create",
+  "remove",
+  "recreate",
+  "resync",
+  "inspect",
+  "import",
+  "networksToSync",
+] as const
 
 const CREATE_OPTIONAL_FIELDS = [
   "driver",
@@ -94,6 +104,13 @@ export function buildNetworkProgram(
           )
       )
     })
+    .case("resync", () => {
+      const invalid = networkIdError(args)
+      if (invalid.isSome()) return IO.fail<ApiError>(invalid.value)
+      return client
+        .post<unknown>("network.resync", { networkId: args.networkId! })
+        .map(() => `Network ${args.networkId} resynced from the Docker host.`)
+    })
     .case("inspect", () => {
       const invalid = networkIdError(args)
       if (invalid.isSome()) return IO.fail<ApiError>(invalid.value)
@@ -128,7 +145,7 @@ export function registerNetworkTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_network",
     description:
-      "Docker network management. list: serverId? (networks Dokploy knows about). get/inspect/remove/recreate: networkId — inspect returns the raw Docker inspect payload, recreate drops and re-adds the network so attached services are briefly disconnected. create: name (+ driver bridge|overlay, internal, attachable, enableIPv4, enableIPv6, mtu 68-65535, ipam, serverId). networksToSync: serverId? — networks that exist on the Docker host but are not yet tracked by Dokploy. import: names (one or more names from networksToSync), serverId?. Attach networks to workloads with dokploy_application update networkIds, or dokploy_compose update serviceNetworks.",
+      "Docker network management. list: serverId? (networks Dokploy knows about). get/inspect/remove/recreate/resync: networkId — inspect returns the raw Docker inspect payload, recreate drops and re-adds the network so attached services are briefly disconnected, resync re-reads the network from Docker and refreshes Dokploy's stored record without touching the network itself. create: name (+ driver bridge|overlay, internal, attachable, enableIPv4, enableIPv6, mtu 68-65535, ipam, serverId). networksToSync: serverId? — networks that exist on the Docker host but are not yet tracked by Dokploy. import: names (one or more names from networksToSync), serverId?. Attach networks to workloads with dokploy_application update networkIds, or dokploy_compose update serviceNetworks.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       networkId: z.string().optional(),

@@ -38,6 +38,23 @@ export type paths = {
     patch?: never
     trace?: never
   }
+  "/application.deployNginxQuickstart": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["application-deployNginxQuickstart"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/application.one": {
     parameters: {
       query?: never
@@ -984,6 +1001,23 @@ export type paths = {
     put?: never
     /** @description null */
     post: operations["network-recreate"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/network.resync": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["network-resync"]
     delete?: never
     options?: never
     head?: never
@@ -5614,6 +5648,40 @@ export type paths = {
     patch?: never
     trace?: never
   }
+  "/project.onboardingStatus": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description null */
+    get: operations["project-onboardingStatus"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/project.completeOnboarding": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["project-completeOnboarding"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/project.search": {
     parameters: {
       query?: never
@@ -6252,6 +6320,23 @@ export type paths = {
     }
     /** @description null */
     get: operations["server-getDefaultCommand"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/server.getServices": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description null */
+    get: operations["server-getServices"]
     put?: never
     post?: never
     delete?: never
@@ -7529,6 +7614,40 @@ export type paths = {
     get: operations["stripe-getCurrentPlan"]
     put?: never
     post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/stripe.getBillingStatus": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description null */
+    get: operations["stripe-getBillingStatus"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/stripe.startFreeTrial": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["stripe-startFreeTrial"]
     delete?: never
     options?: never
     head?: never
@@ -10406,6 +10525,69 @@ export interface operations {
           serverId?: string | null
           /** @enum {string} */
           sourceType?: "github" | "docker" | "git" | "gitlab" | "bitbucket" | "gitea" | "drop"
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "application-deployNginxQuickstart": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          environmentId: string
+          serverId?: string
         }
       }
     }
@@ -14355,6 +14537,68 @@ export interface operations {
       }
     }
   }
+  "network-resync": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          networkId: string
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
   "network-remove": {
     parameters: {
       query?: never
@@ -15981,6 +16225,7 @@ export interface operations {
           composeId: string
           title?: string
           description?: string
+          freshVolumes?: boolean
         }
       }
     }
@@ -16045,6 +16290,7 @@ export interface operations {
           composeId: string
           title?: string
           description?: string
+          freshVolumes?: boolean
         }
       }
     }
@@ -18089,6 +18335,30 @@ export interface operations {
                 accessKeyId: string
                 secretAccessKey: string
               }
+            | {
+                /** @constant */
+                providerType: "porkbun"
+                apiKey: string
+                secretApiKey: string
+              }
+            | {
+                /** @constant */
+                providerType: "infomaniak"
+                apiToken: string
+              }
+            | {
+                /** @constant */
+                providerType: "ovh"
+                /**
+                 * @default ovh-eu
+                 * @enum {string}
+                 */
+                endpoint?:
+                  "ovh-eu" | "ovh-ca" | "ovh-us" | "kimsufi-eu" | "kimsufi-ca" | "soyoustart-eu" | "soyoustart-ca"
+                applicationKey: string
+                applicationSecret: string
+                consumerKey: string
+              }
         }
       }
     }
@@ -18163,6 +18433,30 @@ export interface operations {
                 providerType: "route53"
                 accessKeyId: string
                 secretAccessKey: string
+              }
+            | {
+                /** @constant */
+                providerType: "porkbun"
+                apiKey: string
+                secretApiKey: string
+              }
+            | {
+                /** @constant */
+                providerType: "infomaniak"
+                apiToken: string
+              }
+            | {
+                /** @constant */
+                providerType: "ovh"
+                /**
+                 * @default ovh-eu
+                 * @enum {string}
+                 */
+                endpoint?:
+                  "ovh-eu" | "ovh-ca" | "ovh-us" | "kimsufi-eu" | "kimsufi-ca" | "soyoustart-eu" | "soyoustart-ca"
+                applicationKey: string
+                applicationSecret: string
+                consumerKey: string
               }
         }
       }
@@ -18432,6 +18726,30 @@ export interface operations {
                 accessKeyId: string
                 secretAccessKey: string
               }
+            | {
+                /** @constant */
+                providerType: "porkbun"
+                apiKey: string
+                secretApiKey: string
+              }
+            | {
+                /** @constant */
+                providerType: "infomaniak"
+                apiToken: string
+              }
+            | {
+                /** @constant */
+                providerType: "ovh"
+                /**
+                 * @default ovh-eu
+                 * @enum {string}
+                 */
+                endpoint?:
+                  "ovh-eu" | "ovh-ca" | "ovh-us" | "kimsufi-eu" | "kimsufi-ca" | "soyoustart-eu" | "soyoustart-ca"
+                applicationKey: string
+                applicationSecret: string
+                consumerKey: string
+              }
         }
       }
     }
@@ -18629,10 +18947,11 @@ export interface operations {
       content: {
         "application/json": {
           /** @enum {string} */
-          type: "A" | "CNAME"
+          type: "A" | "AAAA" | "CNAME" | "MX" | "TXT" | "NS" | "SRV" | "CAA" | "PTR"
           name: string
           content: string
           ttl?: number
+          proxied?: boolean
           dnsProviderId: string
           zoneId: string
         }
@@ -18697,10 +19016,11 @@ export interface operations {
       content: {
         "application/json": {
           /** @enum {string} */
-          type: "A" | "CNAME"
+          type: "A" | "AAAA" | "CNAME" | "MX" | "TXT" | "NS" | "SRV" | "CAA" | "PTR"
           name: string
           content: string
           ttl?: number
+          proxied?: boolean
           dnsProviderId: string
           zoneId: string
           recordId: string
@@ -21562,7 +21882,7 @@ export interface operations {
       content: {
         "application/json": {
           domain: string
-          serverIp?: string
+          serverId?: string
         }
       }
     }
@@ -29568,6 +29888,7 @@ export interface operations {
           name: string
           appDeploy: boolean
           dockerCleanup: boolean
+          serverThreshold: boolean
           serverUrl: string
           appToken: string
           priority: number
@@ -29641,6 +29962,7 @@ export interface operations {
           name?: string
           appDeploy?: boolean
           dockerCleanup?: boolean
+          serverThreshold?: boolean
           serverUrl?: string
           appToken?: string
           priority?: number
@@ -29782,6 +30104,7 @@ export interface operations {
           name: string
           appDeploy: boolean
           dockerCleanup: boolean
+          serverThreshold: boolean
           serverUrl: string
           topic: string
           accessToken: string
@@ -29855,6 +30178,7 @@ export interface operations {
           name?: string
           appDeploy?: boolean
           dockerCleanup?: boolean
+          serverThreshold?: boolean
           serverUrl?: string
           topic?: string
           accessToken?: string
@@ -33131,6 +33455,127 @@ export interface operations {
       }
     }
   }
+  "project-onboardingStatus": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "project-completeOnboarding": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
   "project-search": {
     parameters: {
       query?: {
@@ -35681,6 +36126,73 @@ export interface operations {
     }
   }
   "server-getDefaultCommand": {
+    parameters: {
+      query: {
+        serverId: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "server-getServices": {
     parameters: {
       query: {
         serverId: string
@@ -40549,6 +41061,134 @@ export interface operations {
       }
     }
   }
+  "stripe-getBillingStatus": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "stripe-startFreeTrial": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          /** @enum {string} */
+          tier: "hobby" | "startup"
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
   "stripe-getProducts": {
     parameters: {
       query?: never
@@ -43031,6 +43671,16 @@ export interface operations {
               }
             | {
                 /** @constant */
+                providerType: "aws-parameter-store"
+                region: string
+                accessKeyId: string
+                secretAccessKey: string
+                /** Format: uri */
+                endpoint?: string
+                parameterPath?: string
+              }
+            | {
+                /** @constant */
                 providerType: "doppler"
                 serviceToken: string
                 project?: string
@@ -43055,6 +43705,20 @@ export interface operations {
                 /**
                  * Format: uri
                  * @default https://api.scaleway.com
+                 */
+                apiUrl?: string
+              }
+            | {
+                /** @constant */
+                providerType: "phase"
+                token: string
+                appId: string
+                env: string
+                /** @default / */
+                path?: string
+                /**
+                 * Format: uri
+                 * @default https://api.phase.dev
                  */
                 apiUrl?: string
               }
@@ -43163,6 +43827,16 @@ export interface operations {
               }
             | {
                 /** @constant */
+                providerType: "aws-parameter-store"
+                region: string
+                accessKeyId: string
+                secretAccessKey: string
+                /** Format: uri */
+                endpoint?: string
+                parameterPath?: string
+              }
+            | {
+                /** @constant */
                 providerType: "doppler"
                 serviceToken: string
                 project?: string
@@ -43187,6 +43861,20 @@ export interface operations {
                 /**
                  * Format: uri
                  * @default https://api.scaleway.com
+                 */
+                apiUrl?: string
+              }
+            | {
+                /** @constant */
+                providerType: "phase"
+                token: string
+                appId: string
+                env: string
+                /** @default / */
+                path?: string
+                /**
+                 * Format: uri
+                 * @default https://api.phase.dev
                  */
                 apiUrl?: string
               }
@@ -43488,6 +44176,16 @@ export interface operations {
               }
             | {
                 /** @constant */
+                providerType: "aws-parameter-store"
+                region: string
+                accessKeyId: string
+                secretAccessKey: string
+                /** Format: uri */
+                endpoint?: string
+                parameterPath?: string
+              }
+            | {
+                /** @constant */
                 providerType: "doppler"
                 serviceToken: string
                 project?: string
@@ -43512,6 +44210,20 @@ export interface operations {
                 /**
                  * Format: uri
                  * @default https://api.scaleway.com
+                 */
+                apiUrl?: string
+              }
+            | {
+                /** @constant */
+                providerType: "phase"
+                token: string
+                appId: string
+                env: string
+                /** @default / */
+                path?: string
+                /**
+                 * Format: uri
+                 * @default https://api.phase.dev
                  */
                 apiUrl?: string
               }
@@ -47418,8 +48130,8 @@ export interface operations {
             docsUrl: string | null
             errorPageTitle: string | null
             errorPageDescription: string | null
-            metaTitle: string | null
             footerText: string | null
+            ogImageUrl: string | null
           }
         }
       }

@@ -1,16 +1,16 @@
-import type { IO } from "functype"
-import { Match } from "functype"
+import { IO, Match } from "functype"
 import { z } from "zod"
 
 import type { DokployClient } from "../client/dokploy-client"
 import { getDokployClient } from "../client/dokploy-client"
 import type { ApiError } from "../client/errors"
-import { formatApiError } from "../client/errors"
+import { formatApiError, ValidationError } from "../client/errors"
 import type { DokployServer } from "../types"
 import { formatServer, formatServerList } from "../utils/formatters"
+import { jsonSection } from "./tool-utils"
 import type { ToolServer } from "./types"
 
-const ACTIONS = ["list", "get", "create", "update", "remove", "count", "publicIp", "getMetrics"] as const
+const ACTIONS = ["list", "get", "create", "update", "remove", "count", "publicIp", "getMetrics", "getServices"] as const
 
 type ServerArgs = {
   action: (typeof ACTIONS)[number]
@@ -79,6 +79,12 @@ export function buildServerProgram(
         })
         .map((metrics) => `# Server Metrics\n\n\`\`\`json\n${JSON.stringify(metrics, null, 2)}\n\`\`\``),
     )
+    .case("getServices", () => {
+      if (!args.serverId) return IO.fail<ApiError>(ValidationError("getServices requires serverId"))
+      return client
+        .get<unknown>("server.getServices", { serverId: args.serverId })
+        .map((services) => jsonSection(`Services on server ${args.serverId}`, services, "No services on this server."))
+    })
     .exhaustive()
 }
 
@@ -86,7 +92,7 @@ export function registerServerTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_server",
     description:
-      "Manage servers. list/count/publicIp: no params. get: serverId. create: name+ipAddress+port+username+sshKeyId+serverType. update: serverId+fields. remove: serverId. getMetrics: url+token.",
+      "Manage servers. list/count/publicIp: no params. get: serverId. create: name+ipAddress+port+username+sshKeyId+serverType. update: serverId+fields. remove: serverId. getMetrics: url+token. getServices: serverId — the applications, compose services and databases deployed on that server, with their projects (check before removing a server).",
     parameters: z.object({
       action: z.enum(ACTIONS),
       serverId: z.string().optional(),

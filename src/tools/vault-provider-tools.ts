@@ -44,6 +44,18 @@ const CONFIG_SCHEMA = z.discriminatedUnion("providerType", [
     endpoint: z.string().url().optional(),
   }),
   z.object({
+    providerType: z.literal("aws-parameter-store"),
+    region: z.string().min(1),
+    accessKeyId: z.string().min(1),
+    secretAccessKey: z.string().min(1),
+    endpoint: z.string().url().optional(),
+    parameterPath: z
+      .string()
+      .refine((path) => path === "" || path.startsWith("/"), "parameterPath must start with /")
+      .optional()
+      .describe("parameter discovery path, e.g. '/myapp/prod'"),
+  }),
+  z.object({
     providerType: z.literal("doppler"),
     serviceToken: z.string().min(1),
     project: z.string().optional(),
@@ -62,6 +74,14 @@ const CONFIG_SCHEMA = z.discriminatedUnion("providerType", [
     projectId: z.string().min(1).describe("the Scaleway project, not a Dokploy projectId"),
     secretKey: z.string().min(1),
     apiUrl: z.string().url().optional().describe("defaults to https://api.scaleway.com"),
+  }),
+  z.object({
+    providerType: z.literal("phase"),
+    token: z.string().min(1),
+    appId: z.string().min(1).describe("the Phase app ID"),
+    env: z.string().min(1).describe("Phase environment name, e.g. 'production'"),
+    path: z.string().optional().describe("defaults to '/'"),
+    apiUrl: z.string().url().optional().describe("defaults to https://api.phase.dev"),
   }),
 ])
 
@@ -207,7 +227,7 @@ export function registerVaultProviderTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_vault_provider",
     description:
-      "External secret-manager (vault) configuration. list, get (vaultProviderId), create (name+config+assignments), update (vaultProviderId+name+config+assignments — the API REPLACES the provider, so all four must be sent even when changing one; run get first), remove (vaultProviderId), testConnection (vaultProviderId for a saved provider, or config to check credentials before saving), listSecretNames (vaultProviderId+projectId, environmentId?). config is discriminated on providerType: hashicorp | infisical | aws | doppler | azure | scaleway. Note infisical.projectId and scaleway.projectId are that provider's own project, NOT the Dokploy projectId used in assignments. assignments is [{projectId, environmentIds?}] naming the Dokploy projects the vault serves. listSecretNames returns names only — Dokploy exposes no API to read a secret's value — and provider credentials are never echoed back in tool output.",
+      "External secret-manager (vault) configuration. list, get (vaultProviderId), create (name+config+assignments), update (vaultProviderId+name+config+assignments — the API REPLACES the provider, so all four must be sent even when changing one; run get first), remove (vaultProviderId), testConnection (vaultProviderId for a saved provider, or config to check credentials before saving), listSecretNames (vaultProviderId+projectId, environmentId?). config is discriminated on providerType: hashicorp | infisical | aws | aws-parameter-store | doppler | azure | scaleway | phase. Note infisical.projectId and scaleway.projectId are that provider's own project, NOT the Dokploy projectId used in assignments. assignments is [{projectId, environmentIds?}] naming the Dokploy projects the vault serves. listSecretNames returns names only — Dokploy exposes no API to read a secret's value — and provider credentials are never echoed back in tool output.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       vaultProviderId: z.string().optional(),

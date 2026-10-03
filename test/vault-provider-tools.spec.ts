@@ -140,6 +140,40 @@ describe("dokploy_vault_provider writes", () => {
   })
 })
 
+describe("dokploy_vault_provider config schema", () => {
+  const config = (tool.parameters as { shape: { config: { safeParse: (v: unknown) => { success: boolean } } } }).shape
+    .config
+
+  it("accepts the providers added in Dokploy v0.30.8", () => {
+    expect(
+      config.safeParse({
+        providerType: "aws-parameter-store",
+        region: "us-east-1",
+        accessKeyId: "AKIA",
+        secretAccessKey: "s",
+        parameterPath: "/myapp/prod",
+      }).success,
+    ).toBe(true)
+    expect(config.safeParse({ providerType: "phase", token: "t", appId: "a", env: "production" }).success).toBe(true)
+  })
+
+  it("rejects an aws-parameter-store path that does not start with /", () => {
+    expect(
+      config.safeParse({
+        providerType: "aws-parameter-store",
+        region: "us-east-1",
+        accessKeyId: "AKIA",
+        secretAccessKey: "s",
+        parameterPath: "myapp",
+      }).success,
+    ).toBe(false)
+  })
+
+  it("rejects a phase config missing env", () => {
+    expect(config.safeParse({ providerType: "phase", token: "t", appId: "a" }).success).toBe(false)
+  })
+})
+
 describe("dokploy_vault_provider listSecretNames", () => {
   it("GETs with provider + project, and says names only", async () => {
     getMock.mockReturnValueOnce(IO.succeed(["DB_PASSWORD", "API_KEY"]))

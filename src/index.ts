@@ -97,13 +97,13 @@ Available capabilities:
 - Domains: create, configure, enable/disable, validate DNS, generate traefik.me domains
 - Redirects: URL redirect rules on applications (Traefik regex → replacement, 301/302)
 - Docker: list containers, start/stop/kill/restart/remove, inspect configuration, read/write files inside containers, daemon events, server health, disk usage and build cache
-- Networks: create, inspect, recreate, remove Docker networks; import ones already on the host
+- Networks: create, inspect, recreate, resync, remove Docker networks; import ones already on the host
 - Docker Volumes: list, size, inspect, remove volumes and read/write files inside them
 - Docker Images: list images, inspect image config, remove images
 - Overview: fleet-wide rollups of services, backups and domains across every project
-- DNS Providers: Cloudflare/Route53 credentials plus DNS zone and record management
-- Vault Providers: external secret managers (HashiCorp, Infisical, AWS, Doppler, Azure, Scaleway); secret names only, never values
-- Servers: add, configure, monitor remote servers
+- DNS Providers: Cloudflare, Route53, Porkbun, Infomaniak and OVH credentials plus DNS zone and record management
+- Vault Providers: external secret managers (HashiCorp, Infisical, AWS Secrets Manager, AWS Parameter Store, Doppler, Azure, Scaleway, Phase); secret names only, never values
+- Servers: add, configure, monitor remote servers; list the services deployed on each
 - Deployments: list, queue, read logs, kill process, remove
 - Backups: schedule, trigger manual backups, list backup files
 - Volume Backups: schedule volume-level backups (rclone-based); complements DB-native backups

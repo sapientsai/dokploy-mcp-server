@@ -24,6 +24,7 @@ type DnsArgs = {
   recordName?: string
   content?: string
   ttl?: number
+  proxied?: boolean
 }
 
 const tool = captureTool<DnsArgs>(registerDnsProviderTools)
@@ -225,12 +226,46 @@ describe("dokploy_dns_provider zones and records", () => {
     expect(postMock).not.toHaveBeenCalled()
   })
 
-  it("restricts record types to A and CNAME, matching the API", () => {
-    const shape = tool.parameters as { shape: { type: { options?: unknown[]; def?: { entries?: unknown } } } }
-    const json = JSON.stringify(shape.shape.type)
-    expect(json).toContain("A")
-    expect(json).toContain("CNAME")
-    expect(json).not.toContain("TXT")
+  it("offers every record type the API accepts", () => {
+    const shape = tool.parameters as { shape: { type: { unwrap: () => { options: unknown[] } } } }
+    expect(shape.shape.type.unwrap().options).toEqual(["A", "AAAA", "CNAME", "MX", "TXT", "NS", "SRV", "CAA", "PTR"])
+  })
+
+  it("createRecord forwards proxied when given, including false", async () => {
+    await tool.execute({
+      action: "createRecord",
+      dnsProviderId: "dns-1",
+      zoneId: "z1",
+      type: "A",
+      recordName: "app",
+      content: "203.0.113.10",
+      proxied: false,
+    })
+    expect(postMock).toHaveBeenCalledWith("dnsProvider.createRecord", expect.objectContaining({ proxied: false }))
+  })
+})
+
+describe("dokploy_dns_provider config schema", () => {
+  const config = (tool.parameters as { shape: { config: { safeParse: (v: unknown) => { success: boolean } } } }).shape
+    .config
+
+  it("accepts the providers added in Dokploy v0.30.8", () => {
+    expect(config.safeParse({ providerType: "porkbun", apiKey: "k", secretApiKey: "s" }).success).toBe(true)
+    expect(config.safeParse({ providerType: "infomaniak", apiToken: "t" }).success).toBe(true)
+    expect(
+      config.safeParse({
+        providerType: "ovh",
+        endpoint: "ovh-ca",
+        applicationKey: "a",
+        applicationSecret: "b",
+        consumerKey: "c",
+      }).success,
+    ).toBe(true)
+  })
+
+  it("rejects a provider config missing a required credential", () => {
+    expect(config.safeParse({ providerType: "porkbun", apiKey: "k" }).success).toBe(false)
+    expect(config.safeParse({ providerType: "ovh", applicationKey: "a", applicationSecret: "b" }).success).toBe(false)
   })
 })
 

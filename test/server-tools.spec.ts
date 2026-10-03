@@ -148,3 +148,18 @@ describe("dokploy_server", () => {
     })
   })
 })
+
+describe("dokploy_server getServices", () => {
+  it("GETs server.getServices and renders the result", async () => {
+    getMock.mockReturnValueOnce(IO.succeed({ applications: [{ applicationId: "a1", name: "web" }] }))
+    const out = (await tool.execute({ action: "getServices", serverId: "s1" })) as string
+    expect(getMock).toHaveBeenCalledWith("server.getServices", { serverId: "s1" })
+    expect(out).toContain("# Services on server s1")
+    expect(out).toContain('"applicationId": "a1"')
+  })
+
+  it("requires serverId", async () => {
+    await expect(tool.execute({ action: "getServices" })).rejects.toThrow(/getServices requires serverId/)
+    expect(getMock).not.toHaveBeenCalled()
+  })
+})

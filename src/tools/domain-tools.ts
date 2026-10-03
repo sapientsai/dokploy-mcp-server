@@ -53,7 +53,6 @@ type DomainArgs = {
   appName?: string
   serverId?: string
   domain?: string
-  serverIp?: string
 }
 
 export function buildDomainProgram(
@@ -123,8 +122,8 @@ export function buildDomainProgram(
       client
         .post<unknown>("domain.validateDomain", {
           domain: args.domain!,
-          ...(args.serverIp && { serverIp: args.serverIp }),
-        })
+          ...(args.serverId && { serverId: args.serverId }),
+        } satisfies RequestBody<"domain-validateDomain">)
         .map((result) => `# DNS Validation: ${args.domain}\n\n\`\`\`json\n${JSON.stringify(result, null, 2)}\n\`\`\``),
     )
     .exhaustive()
@@ -134,7 +133,7 @@ export function registerDomainTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_domain",
     description:
-      "Manage domains. create: host+applicationId|composeId(+serviceName for compose). list: applicationId|composeId. get: domainId. update: domainId+host (include composeId+serviceName for compose domains). delete: domainId. toggleEnable: domainId — flips the enable flag blind; prefer update with enabled:true|false when you need a known end state. generate: appName. canGenerateTraefikMe: serverId?. validate: domain.",
+      "Manage domains. create: host+applicationId|composeId(+serviceName for compose). list: applicationId|composeId. get: domainId. update: domainId+host (include composeId+serviceName for compose domains). delete: domainId. toggleEnable: domainId — flips the enable flag blind; prefer update with enabled:true|false when you need a known end state. generate: appName. canGenerateTraefikMe: serverId?. validate: domain, serverId? (checks DNS against that server's IPs; omit for the Dokploy host).",
     parameters: z.object({
       action: z.enum(ACTIONS),
       domainId: z.string().optional(),
@@ -151,7 +150,6 @@ export function registerDomainTools(server: ToolServer) {
       appName: z.string().optional(),
       serverId: z.string().optional(),
       domain: z.string().optional(),
-      serverIp: z.string().optional(),
     }),
     execute: async (args) => {
       const either = await buildDomainProgram(getDokployClient(), args).run()
