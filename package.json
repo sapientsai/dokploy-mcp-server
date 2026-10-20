@@ -73,20 +73,20 @@
   "dependencies": {
     "@loglayer/transport-pino": "^3.3.0",
     "dotenv": "^17.4.2",
-    "functype": "^1.11.0",
-    "functype-log": "^1.11.0",
+    "functype": "^1.18.0",
+    "functype-log": "^1.18.0",
     "loglayer": "^9.4.0",
-    "pino": "^10.3.1",
+    "pino": "^10.4.0",
     "somamcp": "^1.4.1",
-    "zod": "^4.6.5"
+    "zod": "^4.6.7"
   },
   "devDependencies": {
-    "@types/node": "^24.19.1",
+    "@types/node": "^24.19.2",
     "openapi-typescript": "^7.13.0",
     "ts-builds": "^3.4.3",
     "tsdown": "^0.22.14",
     "tsx": "^4.23.15",
-    "vitest": "^4.1.11"
+    "vitest": "^4.1.12"
   },
   "packageManager": "pnpm@11.27.0+sha512.ad12821463bb143295f1fa3ecde77a6b9b97a7990386da800ff57bffc3964dc64b7b1c7559d5dbe5c337aea659ed9c8937d4370bd198ca2009bc6fa0249808e7"
 }
