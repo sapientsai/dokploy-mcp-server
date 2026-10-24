@@ -25,5 +25,11 @@
         }
       ]
     }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://time.somamcp.com/mcp"
+    }
   ]
 }
