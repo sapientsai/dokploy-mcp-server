@@ -1,0 +1,35 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.jordanburke/temporal-mcp-server",
+  "description": "Time, timezone and duration tools — IANA zones, conversion, DST-correct date arithmetic.",
+  "repository": {
+    "url": "https://github.com/jordanburke/temporal-mcp-server",
+    "source": "github"
+  },
+  "version": "0.2.2",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "temporal-mcp-server",
+      "version": "0.2.2",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "PORT",
+          "description": "Port to listen on when started with --http (default 3333). Ignored in the default stdio mode.",
+          "isRequired": false,
+          "format": "number",
+          "isSecret": false
+        }
+      ]
+    }
+  ],
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://time.somamcp.com/mcp"
+    }
+  ]
+}

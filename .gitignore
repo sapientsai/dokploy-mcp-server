@@ -47,3 +47,6 @@ lib/
 
 # Cloudflare Workers local state (wrangler dev caches, miniflare sqlite, bundles)
 .wrangler/
+
+# MCP Registry publisher binary, downloaded by CI
+mcp-publisher
