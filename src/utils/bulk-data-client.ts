@@ -4,16 +4,20 @@
  */
 
 import { unzipSync } from "fflate"
-import { type Either, Left, List, None, Option, Ref, Right, Some, Try } from "functype"
+import { type Either, Left, List, Map, None, Option, Ref, Right, Some, Try } from "functype"
 
 import type { OrangeBookExclusivity, OrangeBookPatent, OrangeBookProduct, PurpleBookEntry } from "../types/fda.js"
 import { toError } from "./errors.js"
-import { isRecord, textField } from "./fields.js"
+import { textField } from "./fields.js"
 import { loggers } from "./logger.js"
 
 const ORANGE_BOOK_ZIP_URL = "https://www.fda.gov/media/76860/download"
-const PURPLE_BOOK_API_URL = "https://purplebooksearch.fda.gov/api/v1/fdaproducts"
-const PURPLE_BOOK_API_TOKEN = "18dd75c5-23c2-4318-970b-ca97c34470cb"
+/** Lists FDA's monthly Purple Book CSV files; the old JSON API (api/v1/fdaproducts) is gone */
+const PURPLE_BOOK_DOWNLOADS_URL = "https://purplebooksearch.fda.gov/downloads"
+const PURPLE_BOOK_CSV_LINK =
+  /https:\/\/www\.accessdata\.fda\.gov\/drugsatfda_docs\/PurpleBook\/(\d{4})\/purplebook-search-([A-Za-z]+)-data-download\.csv/g
+/** How many of the newest monthly files to try: a month can be listed before its file is up */
+const PURPLE_BOOK_CANDIDATES = 2
 
 const ORANGE_BOOK_TTL_MS = 24 * 60 * 60 * 1000 // 24 hours
 const PURPLE_BOOK_TTL_MS = 7 * 24 * 60 * 60 * 1000 // 7 days
@@ -32,8 +36,6 @@ export type OrangeBookData = {
 
 /** A parsed row: column name to cell text */
 export type Row = Readonly<Record<string, string>>
-
-type ApiRecord = Readonly<Record<string, unknown>>
 
 /** The cached data, if it has not expired */
 function fresh<T>(cache: Option<CacheEntry<T>>): Option<T> {
@@ -93,25 +95,38 @@ function toOrangeBookExclusivity(r: Row): OrangeBookExclusivity {
   }
 }
 
-function toPurpleBookEntry(r: ApiRecord): PurpleBookEntry {
-  const licenseType = textField(r, "license_type")
+/** A Purple Book cell: the first of the keys with a value, trimmed; "N/A" counts as empty */
+function cell(r: Row, ...keys: readonly string[]): string {
+  return List(keys)
+    .map((key) => textField(r, key).trim())
+    .map((value) => (value.toUpperCase() === "N/A" ? "" : value))
+    .find((value) => value !== "")
+    .orElse("")
+}
+
+function toPurpleBookEntry(r: Row): PurpleBookEntry {
+  // "351(a)", "351(k) Biosimilar" or "351(k) Interchangeable"; older files call the column "BLA Type"
+  const licenseType = cell(r, "License Type", "BLA Type")
+  const blaType = Option(/^351\([ak]\)/.exec(licenseType))
+    .map(([base]) => base)
+    .orElse(licenseType)
   return {
-    blaNumber: textField(r, "bla_number"),
-    proprietaryName: textField(r, "proprietary_name"),
-    properName: textField(r, "proper_name"),
-    applicant: textField(r, "applicant"),
-    blaType: licenseType,
-    strength: textField(r, "strength"),
-    dosageForm: textField(r, "dosage_form"),
-    route: textField(r, "route_of_administration"),
-    productPresentation: textField(r, "product_presentation"),
-    status: textField(r, "status"),
-    licensingStatus: textField(r, "licensure"),
-    referenceProductBla: textField(r, "ref_product_proper_name").trim(),
-    referenceProductProprietaryName: textField(r, "ref_prod_proprietary_name"),
-    biosimilar: licenseType === "351(k)",
-    interchangeable: textField(r, "interchangeable_approval_date").trim() !== "",
-    approvalDate: textField(r, "approval_date", "date_of_first_licensure"),
+    blaNumber: cell(r, "BLA Number"),
+    proprietaryName: cell(r, "Proprietary Name"),
+    properName: cell(r, "Proper Name"),
+    applicant: cell(r, "Applicant"),
+    blaType,
+    strength: cell(r, "Strength"),
+    dosageForm: cell(r, "Dosage Form"),
+    route: cell(r, "Route of Administration"),
+    productPresentation: cell(r, "Product Presentation"),
+    status: cell(r, "Marketing Status", "Status", "Mkt. Status"),
+    licensingStatus: cell(r, "Licensure", "Product License Status"),
+    referenceProductBla: cell(r, "Ref. Product Proper Name"),
+    referenceProductProprietaryName: cell(r, "Ref. Product Proprietary Name"),
+    biosimilar: blaType === "351(k)",
+    interchangeable: /interchangeable/i.test(licenseType) || cell(r, "Inter. Approval Date") !== "",
+    approvalDate: cell(r, "Approval Date", "Date of First Licensure"),
   }
 }
 
@@ -135,37 +150,63 @@ function parseRows(text: string, splitLine: (line: string) => string[]): Row[] {
     )
 }
 
-function parseCSVLine(line: string): string[] {
-  type ParseState = { readonly fields: readonly string[]; readonly current: string; readonly inQuotes: boolean }
+type CsvState = {
+  readonly records: readonly (readonly string[])[]
+  readonly fields: readonly string[]
+  readonly field: string
+  readonly inQuotes: boolean
+  /** Inside quotes, the last character was a quote: either the closing quote or half of "" */
+  readonly quoteSeen: boolean
+}
 
-  const initial: ParseState = { fields: [], current: "", inQuotes: false }
+function csvStep(state: CsvState, char: string): CsvState {
+  if (state.inQuotes && state.quoteSeen) {
+    if (char === '"') return { ...state, field: `${state.field}"`, quoteSeen: false } // "" is a literal quote
+    return csvStep({ ...state, inQuotes: false, quoteSeen: false }, char) // the quote closed the field
+  }
+  if (state.inQuotes) {
+    if (char === '"') return { ...state, quoteSeen: true }
+    return { ...state, field: state.field + char } // includes line breaks
+  }
+  if (char === '"') return { ...state, inQuotes: true }
+  if (char === ",") return { ...state, fields: [...state.fields, state.field], field: "" }
+  if (char === "\r") return state
+  if (char === "\n")
+    return { ...state, records: [...state.records, [...state.fields, state.field]], fields: [], field: "" }
+  return { ...state, field: state.field + char }
+}
 
-  const final = Array.from(line).reduce<ParseState>((state, char, i) => {
-    if (state.inQuotes) {
-      if (char === '"') {
-        if (i + 1 < line.length && line[i + 1] === '"') {
-          return state // skip — next iteration handles the escaped quote
-        }
-        if (i > 0 && line[i - 1] === '"') {
-          return { ...state, current: `${state.current}"` } // second char of escaped quote
-        }
-        return { ...state, inQuotes: false }
-      }
-      return { ...state, current: state.current + char }
-    }
-    if (char === '"') return { ...state, inQuotes: true }
-    if (char === ",") return { fields: [...state.fields, state.current.trim()], current: "", inQuotes: false }
-    return { ...state, current: state.current + char }
-  }, initial)
+/**
+ * Split CSV text into records of raw cells. A quoted field may hold commas,
+ * line breaks and doubled quotes; CRLF and a leading byte-order mark are fine.
+ * Blank lines are dropped.
+ */
+export function csvRecords(text: string): string[][] {
+  const initial: CsvState = { records: [], fields: [], field: "", inQuotes: false, quoteSeen: false }
+  const end = Array.from(text.replace(/^\uFEFF/, "")).reduce(csvStep, initial)
+  const last = end.fields.length > 0 || end.field !== "" ? [[...end.fields, end.field]] : []
+  return [...end.records, ...last]
+    .filter((record) => record.length > 1 || (record[0] ?? "").trim() !== "")
+    .map((record) => [...record])
+}
 
-  return [...final.fields, final.current.trim()]
+/** Rows keyed by a header record, with header names and cells trimmed */
+function rowsUnder(header: readonly string[], records: readonly (readonly string[])[]): Row[] {
+  const names = header.map((h) => h.trim())
+  return records.map((values): Row => Object.fromEntries(names.map((h, j) => [h, Option(values[j]).orElse("").trim()])))
 }
 
 /** Parse tilde-delimited text (the Orange Book file format) */
 export const parseTildeDelimited = (text: string): Row[] => parseRows(text, (line) => line.split("~"))
 
 /** Parse CSV text, honouring quoted fields and doubled quotes */
-export const parseCSV = (text: string): Row[] => parseRows(text, parseCSVLine)
+export const parseCSV = (text: string): Row[] => {
+  const [header, ...rest] = csvRecords(text)
+  return Option(header).fold(
+    (): Row[] => [],
+    (h) => rowsUnder(h, rest),
+  )
+}
 
 function parseOrangeBookFiles(files: Record<string, Uint8Array>): OrangeBookData {
   const decoder = new TextDecoder("utf-8")
@@ -208,25 +249,87 @@ async function loadOrangeBook(): Promise<Either<Error, OrangeBookData>> {
   return zipData.flatMap((zip) => Try(() => unzipSync(zip)).toEither(toError)).map(parseOrangeBookFiles)
 }
 
-async function loadPurpleBook(): Promise<Either<Error, PurpleBookEntry[]>> {
-  loggers.bulk("Fetching Purple Book data from API...")
+const MONTH_NUMBERS = Map<string, number>(
+  [
+    "january",
+    "february",
+    "march",
+    "april",
+    "may",
+    "june",
+    "july",
+    "august",
+    "september",
+    "october",
+    "november",
+    "december",
+  ].map((name, i): [string, number] => [name, i + 1]),
+)
 
-  const url = `${PURPLE_BOOK_API_URL}?token=${PURPLE_BOOK_API_TOKEN}`
-  const response = await fetchOk(url, (r) => `Failed to fetch Purple Book data: ${r.status} ${r.statusText}`)
-  const records = await response.flatMapAsync(async (r) =>
-    (await Try.fromPromise(r.json() as Promise<unknown>))
-      .toEither(toError)
-      .flatMap((body) =>
-        Array.isArray(body) && body.every(isRecord)
-          ? Right<Error, ApiRecord[]>(body)
-          : Left<Error, ApiRecord[]>(new Error("Unexpected response body from Purple Book API")),
+/** The monthly CSV links on the downloads page, newest first */
+export function purpleBookCsvLinks(html: string): string[] {
+  const links = List(Array.from(html.matchAll(PURPLE_BOOK_CSV_LINK))).flatMap(([url, year, month]) =>
+    MONTH_NUMBERS.get(month.toLowerCase())
+      .map((m) => ({ url, order: Number(year) * 100 + m }))
+      .toList(),
+  )
+  return Array.from(new globalThis.Map(links.toArray().map((l) => [l.url, l])).values())
+    .sort((a, b) => b.order - a.order)
+    .map((l) => l.url)
+}
+
+/** The full product list: the rows under the last "BLA Number" header (the file opens with this month's changes) */
+function purpleBookEntries(text: string): Either<Error, PurpleBookEntry[]> {
+  const records = csvRecords(text)
+  const headerAt = records.findLastIndex((record) => record.some((c) => c.trim() === "BLA Number"))
+  const entriesUnder = (header: readonly string[]): PurpleBookEntry[] =>
+    rowsUnder(header, records.slice(headerAt + 1))
+      .map(toPurpleBookEntry)
+      .filter((entry) => entry.blaNumber !== "")
+  return Option(records[headerAt])
+    .toEither(new Error("Purple Book file has no BLA Number header row"))
+    .map(entriesUnder)
+}
+
+async function downloadText(url: string): Promise<Either<Error, string>> {
+  loggers.bulk(`Downloading: ${url}`)
+  const response = await fetchOk(url, (r) => `Failed to download ${url}: ${r.status} ${r.statusText}`)
+  return response.flatMapAsync(async (r) => (await Try.fromPromise(r.text())).toEither(toError))
+}
+
+async function loadPurpleBook(): Promise<Either<Error, PurpleBookEntry[]>> {
+  loggers.bulk("Finding the latest Purple Book CSV...")
+  const page = await fetchOk(
+    PURPLE_BOOK_DOWNLOADS_URL,
+    (r) => `Failed to load the Purple Book downloads page: ${r.status} ${r.statusText}`,
+  )
+  const html = await page.flatMapAsync(async (r) => (await Try.fromPromise(r.text())).toEither(toError))
+
+  return html.flatMapAsync((pageHtml) =>
+    purpleBookCsvLinks(pageHtml)
+      .slice(0, PURPLE_BOOK_CANDIDATES)
+      .reduce<Promise<Either<Error, PurpleBookEntry[]>>>(
+        async (previous, url) =>
+          (await previous).fold(
+            async () => {
+              const loaded = (await downloadText(url)).flatMap(purpleBookEntries)
+              loaded.fold(
+                (error) => loggers.bulk(`Purple Book file unusable, ${error.message}`),
+                () => undefined,
+              )
+              return loaded
+            },
+            (entries) => Promise.resolve(Right<Error, PurpleBookEntry[]>(entries)),
+          ),
+        Promise.resolve(Left(new Error(`No Purple Book CSV download found at ${PURPLE_BOOK_DOWNLOADS_URL}`))),
+      )
+      .then((loaded) =>
+        loaded.map((entries) => {
+          loggers.bulk(`Parsed ${entries.length} Purple Book entries`)
+          return entries
+        }),
       ),
   )
-
-  return records.map((raw) => {
-    loggers.bulk(`Received ${raw.length} Purple Book entries from API`)
-    return raw.map(toPurpleBookEntry)
-  })
 }
 
 /** Serve from the cache while fresh; otherwise load, and cache only a success */
