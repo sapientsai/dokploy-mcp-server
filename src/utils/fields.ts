@@ -2,7 +2,7 @@
  * Field access for loosely-typed rows (parsed bulk files, JSON API records)
  */
 
-import { List, None, type Option, Some } from "functype"
+import { List, None, Option, Some } from "functype"
 
 const asText = (value: unknown): Option<string> => {
   if (typeof value === "string") return Some(value)
@@ -24,3 +24,18 @@ export const textField = (row: Readonly<Record<string, unknown>>, ...keys: reado
     .find((key) => asText(row[key]).isSome())
     .flatMap((key) => asText(row[key]))
     .orElse("")
+
+/** The first n items of a list from an FDA record, mapped; [] when the list is missing or not an array */
+export const mapFirst = <T, U>(items: readonly T[] | undefined, n: number, f: (item: T) => U): U[] =>
+  Option(items)
+    .filter((xs) => Array.isArray(xs))
+    .fold(
+      (): U[] => [],
+      (xs) => List(xs).take(n).map(f).toArray(),
+    )
+
+/** The first n items of a list from an FDA record; [] when the list is missing */
+export const takeFirst = <T>(items: readonly T[] | undefined, n: number): T[] => mapFirst(items, n, (item) => item)
+
+/** A text field that is present and not empty */
+export const nonEmpty = (value: string | undefined): Option<string> => Option(value).filter((v) => v !== "")

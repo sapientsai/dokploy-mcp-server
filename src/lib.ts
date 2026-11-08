@@ -46,10 +46,25 @@ export {
 export { toolSchemas } from "./tools/index.js"
 
 // API client export
-export { FDAAPIClient, fdaAPIClient } from "./utils/api-client.js"
+export {
+  createFDAAPIClient,
+  FDAAPIClient,
+  fdaAPIClient,
+  type FDAClient,
+  type RateLimitInfo,
+} from "./utils/api-client.js"
 
 // Bulk data client export
-export { BulkDataClient, bulkDataClient } from "./utils/bulk-data-client.js"
+export {
+  type BulkClient,
+  BulkDataClient,
+  bulkDataClient,
+  createBulkDataClient,
+  type OrangeBookData,
+  parseCSV,
+  parseTildeDelimited,
+  type Row,
+} from "./utils/bulk-data-client.js"
 
 // Type exports
 export type {

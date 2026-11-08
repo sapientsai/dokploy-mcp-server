@@ -12,12 +12,14 @@ import type {
   SearchParams,
 } from "../types/fda.js"
 import { fdaAPIClient } from "../utils/api-client.js"
+import { mapFirst } from "../utils/fields.js"
 import { loggers } from "../utils/logger.js"
 import {
   buildDateQuery,
   buildSearchQuery,
   escapeSearchTerm,
   joinQueries,
+  type SearchTerm,
   toSearchResponse,
   truncateText,
 } from "./query.js"
@@ -71,7 +73,7 @@ export async function handleSearchDevice510K(
 ): Promise<FDAToolResponse<FormattedDevice510K[]>> {
   loggers.tools("searchDevice510K", params)
 
-  const searchTerms: Array<{ field: string; value?: string }> = [
+  const searchTerms: SearchTerm[] = [
     { field: "device_name", value: params.deviceName },
     { field: "applicant", value: params.applicant },
     { field: "product_code", value: params.productCode },
@@ -135,7 +137,7 @@ export async function handleSearchDeviceClassifications(
 ): Promise<FDAToolResponse<FormattedDeviceClassification[]>> {
   loggers.tools("searchDeviceClassifications", params)
 
-  const searchTerms: Array<{ field: string; value?: string }> = [
+  const searchTerms: SearchTerm[] = [
     { field: "device_name", value: params.deviceName },
     { field: "device_class", value: params.deviceClass },
     { field: "medical_specialty", value: params.medicalSpecialty },
@@ -200,20 +202,18 @@ function formatDeviceAdverseEvent(event: DeviceAdverseEvent): FormattedDeviceAdv
     eventType: event.event_type,
     adverseEventFlag: event.adverse_event_flag === "Y",
     productProblemFlag: event.product_problem_flag === "Y",
-    devices:
-      event.device?.slice(0, 3).map((d) => ({
-        brandName: d.brand_name,
-        genericName: d.generic_name,
-        manufacturerName: d.manufacturer_d_name,
-        modelNumber: d.model_number,
-        productCode: d.device_report_product_code,
-        deviceClass: d.openfda?.device_class,
-      })) ?? [],
-    mdrText:
-      event.mdr_text?.slice(0, 2).map((t) => ({
-        textType: t.text_type_code,
-        text: truncateText(t.text, 300).orUndefined(),
-      })) ?? [],
+    devices: mapFirst(event.device, 3, (d) => ({
+      brandName: d.brand_name,
+      genericName: d.generic_name,
+      manufacturerName: d.manufacturer_d_name,
+      modelNumber: d.model_number,
+      productCode: d.device_report_product_code,
+      deviceClass: d.openfda?.device_class,
+    })),
+    mdrText: mapFirst(event.mdr_text, 2, (t) => ({
+      textType: t.text_type_code,
+      text: truncateText(t.text, 300).orUndefined(),
+    })),
   }
 }
 
@@ -236,7 +236,7 @@ export async function handleSearchDeviceAdverseEvents(
     )
   }
 
-  const searchTerms: Array<{ field: string; value?: string }> = [
+  const searchTerms: SearchTerm[] = [
     { field: "device.generic_name", value: params.deviceName },
     { field: "device.brand_name", value: params.brandName },
     { field: "device.manufacturer_d_name", value: params.manufacturerName },
@@ -309,7 +309,7 @@ export async function handleSearchDeviceEnforcement(
 ): Promise<FDAToolResponse<FormattedDeviceEnforcement[]>> {
   loggers.tools("searchDeviceEnforcement", params)
 
-  const searchTerms: Array<{ field: string; value?: string }> = [
+  const searchTerms: SearchTerm[] = [
     { field: "recalling_firm", value: params.recallingFirm },
     { field: "product_description", value: params.productDescription },
     { field: "classification", value: params.classification },

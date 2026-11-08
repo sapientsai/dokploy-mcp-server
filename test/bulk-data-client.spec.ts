@@ -1,7 +1,13 @@
 import { zipSync } from "fflate"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { BulkDataClient } from "../src/utils/bulk-data-client.js"
+import {
+  BulkDataClient,
+  bulkDataClient,
+  createBulkDataClient,
+  parseCSV,
+  parseTildeDelimited,
+} from "../src/utils/bulk-data-client.js"
 
 describe("BulkDataClient", () => {
   describe("parseTildeDelimited", () => {
@@ -149,5 +155,44 @@ describe("BulkDataClient fetching", () => {
     })
     const [entry] = (await new BulkDataClient().getPurpleBookData()).orThrow()
     expect(entry).toMatchObject({ blaNumber: "761024", proprietaryName: "AMJEVITA", biosimilar: true, strength: "" })
+  })
+})
+
+describe("createBulkDataClient", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it("gives each client its own cache, and clearCache empties it", async () => {
+    const text = (s: string): Uint8Array => new TextEncoder().encode(s)
+    stubFetch({ status: 200, bytes: zipSync({ "products.txt": text("Trade_Name\nLIPITOR") }) })
+    const first = createBulkDataClient()
+    expect((await first.getOrangeBookData()).isRight()).toBe(true)
+
+    stubFetch(new Error("network down"))
+    expect((await first.getOrangeBookData()).isRight()).toBe(true)
+    expect((await createBulkDataClient().getOrangeBookData()).isLeft()).toBe(true)
+
+    first.clearCache()
+    expect((await first.getOrangeBookData()).isLeft()).toBe(true)
+  })
+
+  it("does not cache a failure", async () => {
+    const client = createBulkDataClient()
+    stubFetch({ status: 503, statusText: "Service Unavailable" })
+    expect((await client.getPurpleBookData()).isLeft()).toBe(true)
+    stubFetch({ status: 200, json: async () => [{ bla_number: "1" }] })
+    expect((await client.getPurpleBookData()).isRight()).toBe(true)
+  })
+
+  it("exposes the same parsers as module functions", () => {
+    expect(parseTildeDelimited("A~B\n1~2")).toEqual(new BulkDataClient().parseTildeDelimited("A~B\n1~2"))
+    expect(parseCSV('A,B\n"x, y",2')).toEqual([{ A: "x, y", B: "2" }])
+  })
+})
+
+describe("bulkDataClient", () => {
+  it("is a BulkDataClient instance, as in 2.0.0", () => {
+    expect(bulkDataClient).toBeInstanceOf(BulkDataClient)
   })
 })

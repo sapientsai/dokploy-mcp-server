@@ -4,7 +4,7 @@
  */
 
 import { unzipSync } from "fflate"
-import { type Either, Left, None, Option, Right, Some, Try } from "functype"
+import { type Either, Left, List, None, Option, Ref, Right, Some, Try } from "functype"
 
 import type { OrangeBookExclusivity, OrangeBookPatent, OrangeBookProduct, PurpleBookEntry } from "../types/fda.js"
 import { toError } from "./errors.js"
@@ -24,7 +24,7 @@ type CacheEntry<T> = {
   ttlMs: number
 }
 
-type OrangeBookData = {
+export type OrangeBookData = {
   products: OrangeBookProduct[]
   patents: OrangeBookPatent[]
   exclusivities: OrangeBookExclusivity[]
@@ -115,153 +115,199 @@ function toPurpleBookEntry(r: ApiRecord): PurpleBookEntry {
   }
 }
 
-export class BulkDataClient {
-  private orangeBookCache: Option<CacheEntry<OrangeBookData>> = None()
-  private purpleBookCache: Option<CacheEntry<PurpleBookEntry[]>> = None()
-
-  async downloadBinary(url: string): Promise<Either<Error, Uint8Array>> {
-    loggers.bulk(`Downloading: ${url}`)
-    const response = await fetchOk(url, (r) => `Failed to download ${url}: ${r.status} ${r.statusText}`)
-    return response.flatMapAsync(async (r) =>
-      (await Try.fromPromise(r.arrayBuffer())).toEither(toError).map((buffer) => new Uint8Array(buffer)),
+/** Split delimited text into rows keyed by the header line; [] without a header and one row */
+function parseRows(text: string, splitLine: (line: string) => string[]): Row[] {
+  const lines = List(text.split("\n")).filter((line) => line.trim() !== "")
+  return lines.headOption
+    .filter(() => lines.size >= 2)
+    .fold(
+      (): Row[] => [],
+      (headerLine) => {
+        const headers = splitLine(headerLine).map((h) => h.trim())
+        return lines
+          .slice(1, lines.size)
+          .map((line): Row => {
+            const values = splitLine(line)
+            return Object.fromEntries(headers.map((h, j) => [h, Option(values[j]).orElse("").trim()]))
+          })
+          .toArray()
+      },
     )
-  }
+}
 
-  parseTildeDelimited(text: string): Row[] {
-    return this.parseRows(text, (line) => line.split("~"))
-  }
+function parseCSVLine(line: string): string[] {
+  type ParseState = { readonly fields: readonly string[]; readonly current: string; readonly inQuotes: boolean }
 
-  parseCSV(text: string): Row[] {
-    return this.parseRows(text, (line) => this.parseCSVLine(line))
-  }
+  const initial: ParseState = { fields: [], current: "", inQuotes: false }
 
-  private parseRows(text: string, splitLine: (line: string) => string[]): Row[] {
-    const lines = text.split("\n").filter((line) => line.trim() !== "")
-    if (lines.length < 2) return []
-
-    const headers = splitLine(lines[0]).map((h) => h.trim())
-
-    return lines.slice(1).map((line) => {
-      const values = splitLine(line)
-      return Object.fromEntries(headers.map((h, j) => [h, (values[j] ?? "").trim()]))
-    })
-  }
-
-  private parseCSVLine(line: string): string[] {
-    type ParseState = { readonly fields: readonly string[]; readonly current: string; readonly inQuotes: boolean }
-
-    const initial: ParseState = { fields: [], current: "", inQuotes: false }
-
-    const final = Array.from(line).reduce<ParseState>((state, char, i) => {
-      if (state.inQuotes) {
-        if (char === '"') {
-          if (i + 1 < line.length && line[i + 1] === '"') {
-            return state // skip — next iteration handles the escaped quote
-          }
-          if (i > 0 && line[i - 1] === '"') {
-            return { ...state, current: `${state.current}"` } // second char of escaped quote
-          }
-          return { ...state, inQuotes: false }
+  const final = Array.from(line).reduce<ParseState>((state, char, i) => {
+    if (state.inQuotes) {
+      if (char === '"') {
+        if (i + 1 < line.length && line[i + 1] === '"') {
+          return state // skip — next iteration handles the escaped quote
         }
-        return { ...state, current: state.current + char }
+        if (i > 0 && line[i - 1] === '"') {
+          return { ...state, current: `${state.current}"` } // second char of escaped quote
+        }
+        return { ...state, inQuotes: false }
       }
-      if (char === '"') return { ...state, inQuotes: true }
-      if (char === ",") return { fields: [...state.fields, state.current.trim()], current: "", inQuotes: false }
       return { ...state, current: state.current + char }
-    }, initial)
+    }
+    if (char === '"') return { ...state, inQuotes: true }
+    if (char === ",") return { fields: [...state.fields, state.current.trim()], current: "", inQuotes: false }
+    return { ...state, current: state.current + char }
+  }, initial)
 
-    return [...final.fields, final.current.trim()]
-  }
+  return [...final.fields, final.current.trim()]
+}
 
-  private parseOrangeBookFiles(files: Record<string, Uint8Array>): OrangeBookData {
-    const decoder = new TextDecoder("utf-8")
+/** Parse tilde-delimited text (the Orange Book file format) */
+export const parseTildeDelimited = (text: string): Row[] => parseRows(text, (line) => line.split("~"))
 
-    const fileEntries = Object.entries(files).map(([filename, content]) => ({
-      name: filename.toLowerCase(),
-      text: decoder.decode(content),
-    }))
+/** Parse CSV text, honouring quoted fields and doubled quotes */
+export const parseCSV = (text: string): Row[] => parseRows(text, parseCSVLine)
 
-    const rowsOf = (namePart: string): Row[] =>
-      Option(fileEntries.find((f) => f.name.includes(namePart)))
-        .map((f) => this.parseTildeDelimited(f.text))
-        .orElse([])
+function parseOrangeBookFiles(files: Record<string, Uint8Array>): OrangeBookData {
+  const decoder = new TextDecoder("utf-8")
 
-    const products = rowsOf("products").map(toOrangeBookProduct)
-    loggers.bulk(`Parsed ${products.length} Orange Book products`)
+  const fileEntries = List(Object.entries(files)).map(([filename, content]) => ({
+    name: filename.toLowerCase(),
+    text: decoder.decode(content),
+  }))
 
-    const patents = rowsOf("patent").map(toOrangeBookPatent)
-    loggers.bulk(`Parsed ${patents.length} Orange Book patents`)
+  const rowsOf = (namePart: string): Row[] =>
+    fileEntries
+      .find((f) => f.name.includes(namePart))
+      .map((f) => parseTildeDelimited(f.text))
+      .orElse([])
 
-    const exclusivities = rowsOf("exclusivity").map(toOrangeBookExclusivity)
-    loggers.bulk(`Parsed ${exclusivities.length} Orange Book exclusivities`)
+  const products = rowsOf("products").map(toOrangeBookProduct)
+  loggers.bulk(`Parsed ${products.length} Orange Book products`)
 
-    return { products, patents, exclusivities }
-  }
+  const patents = rowsOf("patent").map(toOrangeBookPatent)
+  loggers.bulk(`Parsed ${patents.length} Orange Book patents`)
 
-  async getOrangeBookData(): Promise<Either<Error, OrangeBookData>> {
-    return fresh(this.orangeBookCache).fold(
-      () => this.loadOrangeBook(),
-      (data) => {
-        loggers.bulk("Using cached Orange Book data")
-        return Promise.resolve(Right<Error, OrangeBookData>(data))
-      },
-    )
-  }
+  const exclusivities = rowsOf("exclusivity").map(toOrangeBookExclusivity)
+  loggers.bulk(`Parsed ${exclusivities.length} Orange Book exclusivities`)
 
-  private async loadOrangeBook(): Promise<Either<Error, OrangeBookData>> {
-    loggers.bulk("Downloading Orange Book ZIP...")
-    const zipData = await this.downloadBinary(ORANGE_BOOK_ZIP_URL)
+  return { products, patents, exclusivities }
+}
 
-    return zipData
-      .flatMap((zip) => Try(() => unzipSync(zip)).toEither(toError))
-      .map((files) => this.parseOrangeBookFiles(files))
-      .map((data) => {
-        this.orangeBookCache = cacheEntry(data, ORANGE_BOOK_TTL_MS)
-        return data
-      })
-  }
+async function downloadBinary(url: string): Promise<Either<Error, Uint8Array>> {
+  loggers.bulk(`Downloading: ${url}`)
+  const response = await fetchOk(url, (r) => `Failed to download ${url}: ${r.status} ${r.statusText}`)
+  return response.flatMapAsync(async (r) =>
+    (await Try.fromPromise(r.arrayBuffer())).toEither(toError).map((buffer) => new Uint8Array(buffer)),
+  )
+}
 
-  async getPurpleBookData(): Promise<Either<Error, PurpleBookEntry[]>> {
-    return fresh(this.purpleBookCache).fold(
-      () => this.loadPurpleBook(),
-      (data) => {
-        loggers.bulk("Using cached Purple Book data")
-        return Promise.resolve(Right<Error, PurpleBookEntry[]>(data))
-      },
-    )
-  }
+async function loadOrangeBook(): Promise<Either<Error, OrangeBookData>> {
+  loggers.bulk("Downloading Orange Book ZIP...")
+  const zipData = await downloadBinary(ORANGE_BOOK_ZIP_URL)
 
-  private async loadPurpleBook(): Promise<Either<Error, PurpleBookEntry[]>> {
-    loggers.bulk("Fetching Purple Book data from API...")
+  return zipData.flatMap((zip) => Try(() => unzipSync(zip)).toEither(toError)).map(parseOrangeBookFiles)
+}
 
-    const url = `${PURPLE_BOOK_API_URL}?token=${PURPLE_BOOK_API_TOKEN}`
-    const response = await fetchOk(url, (r) => `Failed to fetch Purple Book data: ${r.status} ${r.statusText}`)
-    const records = await response.flatMapAsync(async (r) =>
-      (await Try.fromPromise(r.json() as Promise<unknown>))
-        .toEither(toError)
-        .flatMap((body) =>
-          Array.isArray(body) && body.every(isRecord)
-            ? Right<Error, ApiRecord[]>(body)
-            : Left<Error, ApiRecord[]>(new Error("Unexpected response body from Purple Book API")),
-        ),
-    )
+async function loadPurpleBook(): Promise<Either<Error, PurpleBookEntry[]>> {
+  loggers.bulk("Fetching Purple Book data from API...")
 
-    return records
-      .map((raw) => {
-        loggers.bulk(`Received ${raw.length} Purple Book entries from API`)
-        return raw.map(toPurpleBookEntry)
-      })
-      .map((entries) => {
-        this.purpleBookCache = cacheEntry(entries, PURPLE_BOOK_TTL_MS)
-        return entries
-      })
-  }
+  const url = `${PURPLE_BOOK_API_URL}?token=${PURPLE_BOOK_API_TOKEN}`
+  const response = await fetchOk(url, (r) => `Failed to fetch Purple Book data: ${r.status} ${r.statusText}`)
+  const records = await response.flatMapAsync(async (r) =>
+    (await Try.fromPromise(r.json() as Promise<unknown>))
+      .toEither(toError)
+      .flatMap((body) =>
+        Array.isArray(body) && body.every(isRecord)
+          ? Right<Error, ApiRecord[]>(body)
+          : Left<Error, ApiRecord[]>(new Error("Unexpected response body from Purple Book API")),
+      ),
+  )
 
-  clearCache(): void {
-    this.orangeBookCache = None()
-    this.purpleBookCache = None()
+  return records.map((raw) => {
+    loggers.bulk(`Received ${raw.length} Purple Book entries from API`)
+    return raw.map(toPurpleBookEntry)
+  })
+}
+
+/** Serve from the cache while fresh; otherwise load, and cache only a success */
+async function cached<T>(
+  cache: Ref<Option<CacheEntry<T>>>,
+  ttlMs: number,
+  label: string,
+  load: () => Promise<Either<Error, T>>,
+): Promise<Either<Error, T>> {
+  return fresh(cache.get()).fold(
+    async () => {
+      const loaded = await load()
+      loaded.forEach((data) => cache.set(cacheEntry(data, ttlMs)))
+      return loaded
+    },
+    (data) => {
+      loggers.bulk(`Using cached ${label} data`)
+      return Promise.resolve(Right<Error, T>(data))
+    },
+  )
+}
+
+/** A client for the FDA bulk files. Orange Book and Purple Book data are cached per client. */
+export type BulkClient = {
+  downloadBinary: (url: string) => Promise<Either<Error, Uint8Array>>
+  parseTildeDelimited: (text: string) => Row[]
+  parseCSV: (text: string) => Row[]
+  getOrangeBookData: () => Promise<Either<Error, OrangeBookData>>
+  getPurpleBookData: () => Promise<Either<Error, PurpleBookEntry[]>>
+  clearCache: () => void
+}
+
+/** Create a bulk data client with its own empty cache */
+export function createBulkDataClient(): BulkClient {
+  const orangeBookCache = Ref<Option<CacheEntry<OrangeBookData>>>(None())
+  const purpleBookCache = Ref<Option<CacheEntry<PurpleBookEntry[]>>>(None())
+
+  return {
+    downloadBinary,
+    parseTildeDelimited,
+    parseCSV,
+    getOrangeBookData: () => cached(orangeBookCache, ORANGE_BOOK_TTL_MS, "Orange Book", loadOrangeBook),
+    getPurpleBookData: () => cached(purpleBookCache, PURPLE_BOOK_TTL_MS, "Purple Book", loadPurpleBook),
+    clearCache: () => {
+      orangeBookCache.set(None())
+      purpleBookCache.set(None())
+    },
   }
 }
 
-// Singleton instance
-export const bulkDataClient = new BulkDataClient()
+/**
+ * Class form of {@link createBulkDataClient}. It delegates to the factory, so
+ * both behave the same; prefer the factory in new code.
+ */
+export class BulkDataClient implements BulkClient {
+  private readonly client: BulkClient = createBulkDataClient()
+
+  downloadBinary(url: string): Promise<Either<Error, Uint8Array>> {
+    return this.client.downloadBinary(url)
+  }
+
+  parseTildeDelimited(text: string): Row[] {
+    return this.client.parseTildeDelimited(text)
+  }
+
+  parseCSV(text: string): Row[] {
+    return this.client.parseCSV(text)
+  }
+
+  getOrangeBookData(): Promise<Either<Error, OrangeBookData>> {
+    return this.client.getOrangeBookData()
+  }
+
+  getPurpleBookData(): Promise<Either<Error, PurpleBookEntry[]>> {
+    return this.client.getPurpleBookData()
+  }
+
+  clearCache(): void {
+    this.client.clearCache()
+  }
+}
+
+/** The shared client the tool handlers use */
+export const bulkDataClient: BulkDataClient = new BulkDataClient()
