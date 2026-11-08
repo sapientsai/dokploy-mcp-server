@@ -1,3 +1,4 @@
+import { Left, Right } from "functype"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
@@ -121,13 +122,15 @@ const mockPurpleBookEntries: PurpleBookEntry[] = [
 ]
 
 // Mock the bulkDataClient methods
-vi.spyOn(bulkDataClient, "getOrangeBookData").mockResolvedValue({
-  products: mockProducts,
-  patents: mockPatents,
-  exclusivities: mockExclusivities,
-})
+const orangeBookSpy = vi.spyOn(bulkDataClient, "getOrangeBookData").mockResolvedValue(
+  Right({
+    products: mockProducts,
+    patents: mockPatents,
+    exclusivities: mockExclusivities,
+  }),
+)
 
-vi.spyOn(bulkDataClient, "getPurpleBookData").mockResolvedValue(mockPurpleBookEntries)
+const purpleBookSpy = vi.spyOn(bulkDataClient, "getPurpleBookData").mockResolvedValue(Right(mockPurpleBookEntries))
 
 afterEach(() => {
   vi.clearAllMocks()
@@ -248,5 +251,27 @@ describe("handleSearchDrugPatentExpiry", () => {
     expect(result.success).toBe(true)
     const purpleEntries = result.data!.filter((e) => e.source === "Purple Book")
     expect(purpleEntries.length).toBeGreaterThan(0)
+  })
+})
+
+describe("bulk data errors", () => {
+  it("returns a failure response when the Orange Book download fails", async () => {
+    orangeBookSpy.mockResolvedValueOnce(Left(new Error("Failed to download: 503 Service Unavailable")))
+    const result = await handleSearchOrangeBook({ drugName: "lipitor" })
+    expect(result).toEqual({ success: false, error: "Failed to download: 503 Service Unavailable" })
+  })
+
+  it("returns a failure response when the Purple Book fetch fails", async () => {
+    purpleBookSpy.mockResolvedValueOnce(Left(new Error("Failed to fetch Purple Book data: 500 Server Error")))
+    const result = await handleSearchPurpleBook({ productName: "humira" })
+    expect(result).toEqual({ success: false, error: "Failed to fetch Purple Book data: 500 Server Error" })
+  })
+
+  it("still returns Orange Book patents when the Purple Book is unavailable", async () => {
+    purpleBookSpy.mockResolvedValueOnce(Left(new Error("Purple Book down")))
+    const result = await handleSearchDrugPatentExpiry({ drugName: "lipitor", includePurpleBook: true })
+    expect(result.success).toBe(true)
+    expect(result.data?.every((entry) => entry.source === "Orange Book")).toBe(true)
+    expect(result.data?.length).toBeGreaterThan(0)
   })
 })

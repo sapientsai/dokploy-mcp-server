@@ -3,6 +3,8 @@
  * HTTP client for interacting with FDA OpenAPI endpoints
  */
 
+import { type Either, Left, Option, Right, Try } from "functype"
+
 import type {
   Device510K,
   DeviceAdverseEvent,
@@ -17,6 +19,7 @@ import type {
   FDAResponse,
   SearchParams,
 } from "../types/fda.js"
+import { toError } from "./errors.js"
 import { loggers } from "./logger.js"
 
 const FDA_BASE_URL = "https://api.fda.gov"
@@ -35,12 +38,29 @@ type FDAEndpoint =
   | "/device/event.json"
   | "/device/enforcement.json"
 
+type RateLimitInfo = { authenticated: boolean; rateLimit: string }
+
+type ErrorBody = { error?: { message?: string } }
+
+/** The error for a non-OK status other than 404, which means "no results" */
+function errorForStatus(status: number, statusText: string, body: unknown): Error {
+  if (status === 429) return new Error("Rate limit exceeded. Consider using an API key for higher limits.")
+  if (status === 400) {
+    const message = Option(body as ErrorBody | null)
+      .flatMap((b) => Option(b.error))
+      .flatMap((e) => Option(e.message))
+      .orElse("Bad request parameters")
+    return new Error(`Invalid request: ${message}`)
+  }
+  return new Error(`FDA API error: ${status} ${statusText}`)
+}
+
 export class FDAAPIClient {
-  private apiKey: string | undefined
-  private baseUrl: string
+  private readonly apiKey: Option<string>
+  private readonly baseUrl: string
 
   constructor() {
-    this.apiKey = process.env.OPENFDA_API_KEY
+    this.apiKey = Option(process.env.OPENFDA_API_KEY).filter((key) => key !== "")
     this.baseUrl = FDA_BASE_URL
   }
 
@@ -65,105 +85,97 @@ export class FDAAPIClient {
       urlParams.set("skip", String(params.skip))
     }
 
-    if (this.apiKey) {
-      urlParams.set("api_key", this.apiKey)
-    }
+    this.apiKey.toArray().forEach((key) => urlParams.set("api_key", key))
 
     return urlParams
+  }
+
+  private redact(url: string): string {
+    return this.apiKey.fold(
+      () => url,
+      (key) => url.replace(key, "[REDACTED]"),
+    )
   }
 
   /**
    * Make a request to an FDA API endpoint
    */
-  private async request<T>(endpoint: FDAEndpoint, params: SearchParams): Promise<FDAResponse<T>> {
+  private async request<T>(endpoint: FDAEndpoint, params: SearchParams): Promise<Either<Error, FDAResponse<T>>> {
     const urlParams = this.buildSearchParams(params)
     const url = `${this.baseUrl}${endpoint}?${urlParams.toString()}`
 
-    loggers.api(`Request: ${url.replace(this.apiKey ?? "", "[REDACTED]")}`)
+    loggers.api(`Request: ${this.redact(url)}`)
 
-    try {
-      const response = await fetch(url)
+    const fetched = (await Try.fromPromise(fetch(url))).toEither(toError)
+    return fetched.flatMapAsync((response) => this.readResponse<T>(response))
+  }
 
-      if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}))
+  private async readResponse<T>(response: Response): Promise<Either<Error, FDAResponse<T>>> {
+    if (response.status === 404) return Right({ results: [] }) // No results found
 
-        if (response.status === 429) {
-          throw new Error("Rate limit exceeded. Consider using an API key for higher limits.")
-        }
-        if (response.status === 404) {
-          return { results: [] } // No results found
-        }
-        if (response.status === 400) {
-          throw new Error(
-            `Invalid request: ${(errorData as { error?: { message?: string } }).error?.message ?? "Bad request parameters"}`,
-          )
-        }
+    if (!response.ok) {
+      const body = (await Try.fromPromise(response.json() as Promise<unknown>)).orElse({})
+      return Left(errorForStatus(response.status, response.statusText, body))
+    }
 
-        throw new Error(`FDA API error: ${response.status} ${response.statusText}`)
-      }
-
-      const data = (await response.json()) as FDAResponse<T>
+    const parsed = (await Try.fromPromise(response.json() as Promise<FDAResponse<T>>)).toEither(toError)
+    return parsed.map((data) => {
       loggers.api(`Response: ${data.meta?.results?.total ?? 0} total results`)
       return data
-    } catch (error) {
-      if (error instanceof Error) {
-        throw error
-      }
-      throw new Error(`Failed to fetch from FDA API: ${String(error)}`, { cause: error })
-    }
+    })
   }
 
   /**
    * Get rate limit info based on authentication status
    */
-  getRateLimitInfo(): { authenticated: boolean; rateLimit: string } {
-    return {
-      authenticated: !!this.apiKey,
-      rateLimit: this.apiKey ? "240/minute, 120,000/hour" : "40/minute, 1,000/hour",
-    }
+  getRateLimitInfo(): RateLimitInfo {
+    return this.apiKey.fold(
+      (): RateLimitInfo => ({ authenticated: false, rateLimit: "40/minute, 1,000/hour" }),
+      (): RateLimitInfo => ({ authenticated: true, rateLimit: "240/minute, 120,000/hour" }),
+    )
   }
 
   // Drug endpoints
 
-  async searchDrugAdverseEvents(params: SearchParams): Promise<FDAResponse<DrugAdverseEvent>> {
+  async searchDrugAdverseEvents(params: SearchParams): Promise<Either<Error, FDAResponse<DrugAdverseEvent>>> {
     return this.request<DrugAdverseEvent>("/drug/event.json", params)
   }
 
-  async searchDrugLabels(params: SearchParams): Promise<FDAResponse<DrugLabel>> {
+  async searchDrugLabels(params: SearchParams): Promise<Either<Error, FDAResponse<DrugLabel>>> {
     return this.request<DrugLabel>("/drug/label.json", params)
   }
 
-  async searchDrugNDC(params: SearchParams): Promise<FDAResponse<DrugNDC>> {
+  async searchDrugNDC(params: SearchParams): Promise<Either<Error, FDAResponse<DrugNDC>>> {
     return this.request<DrugNDC>("/drug/ndc.json", params)
   }
 
-  async searchDrugEnforcement(params: SearchParams): Promise<FDAResponse<DrugEnforcement>> {
+  async searchDrugEnforcement(params: SearchParams): Promise<Either<Error, FDAResponse<DrugEnforcement>>> {
     return this.request<DrugEnforcement>("/drug/enforcement.json", params)
   }
 
-  async searchDrugsFDA(params: SearchParams): Promise<FDAResponse<DrugsFDA>> {
+  async searchDrugsFDA(params: SearchParams): Promise<Either<Error, FDAResponse<DrugsFDA>>> {
     return this.request<DrugsFDA>("/drug/drugsfda.json", params)
   }
 
-  async searchDrugShortages(params: SearchParams): Promise<FDAResponse<DrugShortage>> {
+  async searchDrugShortages(params: SearchParams): Promise<Either<Error, FDAResponse<DrugShortage>>> {
     return this.request<DrugShortage>("/drug/shortages.json", params)
   }
 
   // Device endpoints
 
-  async searchDevice510K(params: SearchParams): Promise<FDAResponse<Device510K>> {
+  async searchDevice510K(params: SearchParams): Promise<Either<Error, FDAResponse<Device510K>>> {
     return this.request<Device510K>("/device/510k.json", params)
   }
 
-  async searchDeviceClassifications(params: SearchParams): Promise<FDAResponse<DeviceClassification>> {
+  async searchDeviceClassifications(params: SearchParams): Promise<Either<Error, FDAResponse<DeviceClassification>>> {
     return this.request<DeviceClassification>("/device/classification.json", params)
   }
 
-  async searchDeviceAdverseEvents(params: SearchParams): Promise<FDAResponse<DeviceAdverseEvent>> {
+  async searchDeviceAdverseEvents(params: SearchParams): Promise<Either<Error, FDAResponse<DeviceAdverseEvent>>> {
     return this.request<DeviceAdverseEvent>("/device/event.json", params)
   }
 
-  async searchDeviceEnforcement(params: SearchParams): Promise<FDAResponse<DeviceEnforcement>> {
+  async searchDeviceEnforcement(params: SearchParams): Promise<Either<Error, FDAResponse<DeviceEnforcement>>> {
     return this.request<DeviceEnforcement>("/device/enforcement.json", params)
   }
 }
