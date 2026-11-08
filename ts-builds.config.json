@@ -1,4 +1,8 @@
 {
   "srcDir": "./src",
-  "validateChain": ["format", "lint", "typecheck", "test", "build"]
+  "validateChain": ["format", "lint", "typecheck", "test", "build", "check:version", "check:worker"],
+  "commands": {
+    "check:version": "node scripts/sync-version.mjs --check",
+    "check:worker": "node scripts/check-worker-bundle.mjs"
+  }
 }

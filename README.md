@@ -237,8 +237,8 @@ Failures are values. Every fallible function in `clock.ts` returns `Either<Tempo
 ## Development
 
 ```bash
-pnpm validate       # format + lint + typecheck + test + build
-pnpm test           # 81 tests
+pnpm validate       # format + lint + typecheck + test + build + version and worker checks
+pnpm test           # 87 tests
 pnpm check:worker   # verify the worker bundle is edge-safe
 ```
 

@@ -11,7 +11,7 @@ Built on [somamcp](https://github.com/sapientsai/SomaMCP) `^2.6.0`, which provid
 ## Development Commands
 
 ```bash
-pnpm validate        # format + lint + typecheck + test + build (run before commits)
+pnpm validate        # format + lint + typecheck + test + build + check:version + check:worker (run before commits; CI runs it)
 pnpm test            # Vitest
 pnpm check:worker    # verify the worker bundle contains no Node built-ins
 
@@ -96,6 +96,7 @@ A checked-in `.mcp.json` registers `dist/node.js` as the `temporal` server, so a
 
 - `test/clock.spec.ts` — pure logic: DST boundaries, leap years, month clamping, duration parsing.
 - `test/worker.spec.ts` — real `Request` objects through the Worker's `fetch` handler over MCP JSON-RPC, including error paths.
+- `test/worker-auth.spec.ts` — the same Worker with `MCP_AUTH_TOKEN` bound: 401 without the right bearer token, `/health` public. Its own file because `src/worker.ts` builds its server once per module instance.
 
 When touching time logic, keep these cases — each one encodes a bug that shipped:
 
