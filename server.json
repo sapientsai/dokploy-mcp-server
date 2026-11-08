@@ -6,12 +6,12 @@
     "url": "https://github.com/jordanburke/temporal-mcp-server",
     "source": "github"
   },
-  "version": "0.2.3",
+  "version": "0.3.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "temporal-mcp-server",
-      "version": "0.2.3",
+      "version": "0.3.0",
       "transport": {
         "type": "stdio"
       },
