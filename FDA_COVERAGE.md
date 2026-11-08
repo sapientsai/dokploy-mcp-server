@@ -4,7 +4,7 @@ Reference: <https://www.fda.gov/drugs/development-approval-process-drugs/drug-ap
 
 ## Supported
 
-These FDA databases are currently accessible via the openFDA API and implemented as MCP tools.
+These FDA databases are implemented as MCP tools, through the openFDA API or, below, FDA's bulk data files.
 
 | FDA Database                 | MCP Tool                     | openFDA Endpoint         |
 | ---------------------------- | ---------------------------- | ------------------------ |
