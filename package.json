@@ -1,6 +1,6 @@
 {
   "name": "rescuetime-mcp-server",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "A Model Context Protocol (MCP) server for RescueTime - access productivity data, focus sessions, highlights, and activity tracking.",
   "keywords": [
     "mcp",
