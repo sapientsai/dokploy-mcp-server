@@ -1,9 +1,9 @@
 /**
  * OpenFDA MCP Server
- * FastMCP server implementation with FDA tools
+ * SomaMCP server implementation with FDA tools
  */
 
-import { FastMCP } from "fastmcp"
+import { createServer, type SomaServerInstance } from "somamcp/node"
 
 import {
   handleSearchDrugPatentExpiry,
@@ -51,12 +51,12 @@ export type ServerOptions = {
 /**
  * Create and configure the OpenFDA MCP server
  */
-export function createOpenFDAServer(options: ServerOptions = {}): FastMCP {
+export function createOpenFDAServer(options: ServerOptions = {}): SomaServerInstance {
   const { name = "openfda-mcp-server", version = "0.1.0" as `${number}.${number}.${number}` } = options
 
   loggers.core(`Creating OpenFDA MCP server: ${name} v${version}`)
 
-  const server = new FastMCP({
+  const server = createServer({
     name,
     version,
   })
@@ -269,7 +269,7 @@ export function createOpenFDAServer(options: ServerOptions = {}): FastMCP {
     },
   })
 
-  loggers.core("OpenFDA MCP server configured with 14 tools")
+  loggers.core("OpenFDA MCP server configured with 14 FDA tools plus SomaMCP's info tool")
 
   return server
 }

@@ -38,6 +38,7 @@ program
           httpStream: {
             endpoint: "/mcp" as `/${string}`,
             port: portNum,
+            host,
           },
         })
 

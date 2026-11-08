@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-This is an MCP (Model Context Protocol) server that provides access to U.S. FDA public datasets including drugs, medical devices, adverse events, recalls, and more. Built with TypeScript and FastMCP.
+This is an MCP (Model Context Protocol) server that provides access to U.S. FDA public datasets including drugs, medical devices, adverse events, recalls, and more. Built with TypeScript and [SomaMCP](https://github.com/sapientsai/SomaMCP) (`createServer` from `somamcp/node`).
 
 ## Development Commands
 
@@ -36,7 +36,7 @@ pnpm serve:test:http # Run server locally (HTTP mode)
 ```
 src/
 ├── index.ts              # CLI entry point (Commander.js)
-├── server.ts             # FastMCP server creation with all 14 tools
+├── server.ts             # SomaMCP server creation with all 14 tools
 ├── lib.ts                # Library exports for programmatic use
 ├── types/
 │   └── fda.ts            # FDA API type definitions
@@ -76,6 +76,10 @@ src/
 - `search_fda_orange_book_patents` - Patent info for drug products (Orange Book)
 - `search_fda_purple_book` - Licensed biological products (Purple Book)
 - `search_fda_drug_patent_expiry` - Unified patent expiry + exclusivity view
+
+**Built-in (SomaMCP):**
+
+- `info` - Server identity, version, build and capability counts (auto-registered by SomaMCP)
 
 ### Key Patterns
 

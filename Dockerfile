@@ -1,13 +1,14 @@
 # Build stage
-FROM node:22-alpine AS builder
+FROM node:24-alpine AS builder
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Install pnpm (corepack uses the version pinned in package.json's packageManager)
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable
 
 WORKDIR /app
 
 # Copy package files
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 # Install all dependencies (including dev dependencies for build)
 RUN pnpm install --frozen-lockfile
@@ -20,15 +21,16 @@ COPY src/ ./src/
 RUN pnpm exec tsdown --outDir dist
 
 # Production stage
-FROM node:22-alpine AS production
+FROM node:24-alpine AS production
 
 # Install pnpm for production install
-RUN corepack enable && corepack prepare pnpm@latest --activate
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable
 
 WORKDIR /app
 
 # Copy package files
-COPY package.json pnpm-lock.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 
 # Install production dependencies only
 RUN pnpm install --frozen-lockfile --prod
@@ -44,4 +46,4 @@ EXPOSE 3000
 
 # Default command runs in HTTP mode
 ENTRYPOINT ["node", "dist/index.js"]
-CMD ["--transport", "http", "--port", "3000"]
+CMD ["--transport", "http", "--port", "3000", "--host", "0.0.0.0"]

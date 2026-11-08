@@ -72,6 +72,12 @@ Get a free API key at: https://open.fda.gov/apis/authentication/
 | `search_device_adverse_events`  | Search MDR adverse event reports. Retrieve specific report by `reportNumber`. |
 | `search_device_recalls`         | Search device recall enforcement reports                                      |
 
+### Built-in Tools
+
+| Tool   | Description                                                                             |
+| ------ | --------------------------------------------------------------------------------------- |
+| `info` | Server name, version, build and capability counts. Registered automatically by SomaMCP. |
+
 ## Tool Parameters
 
 ### search_drug_labels
