@@ -1,4 +1,5 @@
-import { describe, expect, it } from "vitest"
+import { zipSync } from "fflate"
+import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { BulkDataClient } from "../src/utils/bulk-data-client.js"
 
@@ -58,5 +59,95 @@ describe("BulkDataClient", () => {
       const result = client.parseCSV(text)
       expect(result[0]).toEqual({ A: "", B: "hello", C: "" })
     })
+  })
+})
+
+type Stub = { status: number; statusText?: string; json?: () => Promise<unknown>; bytes?: Uint8Array }
+
+function stubFetch(stub: Stub | Error): void {
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => {
+      if (stub instanceof Error) throw stub
+      return {
+        ok: stub.status >= 200 && stub.status < 300,
+        status: stub.status,
+        statusText: stub.statusText ?? "",
+        json: stub.json ?? (async () => ({})),
+        arrayBuffer: async () => (stub.bytes ?? new Uint8Array()).buffer,
+      }
+    }),
+  )
+}
+
+function leftMessage<T>(result: { fold: <U>(l: (e: Error) => U, r: (v: T) => U) => U }): string {
+  return result.fold(
+    (error) => error.message,
+    () => "expected Left",
+  )
+}
+
+describe("BulkDataClient fetching", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+  })
+
+  it("parses the Orange Book ZIP and caches it", async () => {
+    const text = (s: string): Uint8Array => new TextEncoder().encode(s)
+    const zip = zipSync({
+      "products.txt": text("Trade_Name~Appl_Type~Appl_No~Product_No\nLIPITOR~N~020702~001"),
+      "patent.txt": text("Appl_Type~Appl_No~Product_No~Patent_No\nN~020702~001~5273995"),
+      "exclusivity.txt": text("Appl_Type~Appl_No~Product_No~Exclusivity_Code\nN~020702~001~NCE"),
+    })
+    stubFetch({ status: 200, bytes: zip })
+    const client = new BulkDataClient()
+
+    const data = (await client.getOrangeBookData()).orThrow()
+    expect(data.products[0]).toMatchObject({ tradeName: "LIPITOR", applNo: "020702", ingredient: "" })
+    expect(data.patents[0]?.patentNo).toBe("5273995")
+    expect(data.exclusivities[0]?.exclusivityCode).toBe("NCE")
+
+    stubFetch(new Error("should use the cache"))
+    expect((await client.getOrangeBookData()).isRight()).toBe(true)
+  })
+
+  it("returns Left when the Orange Book download fails", async () => {
+    stubFetch({ status: 503, statusText: "Service Unavailable" })
+    expect(leftMessage(await new BulkDataClient().getOrangeBookData())).toBe(
+      "Failed to download https://www.fda.gov/media/76860/download: 503 Service Unavailable",
+    )
+  })
+
+  it("returns Left when the Orange Book ZIP is corrupt", async () => {
+    stubFetch({ status: 200, bytes: new Uint8Array([1, 2, 3, 4]) })
+    expect((await new BulkDataClient().getOrangeBookData()).isLeft()).toBe(true)
+  })
+
+  it("returns Left when the Purple Book body is not JSON", async () => {
+    stubFetch({
+      status: 200,
+      json: async () => {
+        throw new SyntaxError("Unexpected token '<'")
+      },
+    })
+    expect(leftMessage(await new BulkDataClient().getPurpleBookData())).toBe("Unexpected token '<'")
+  })
+
+  it("returns Left when the Purple Book body is not a list of records", async () => {
+    for (const body of [null, {}, [null, 5, "x"]]) {
+      stubFetch({ status: 200, json: async () => body })
+      expect(leftMessage(await new BulkDataClient().getPurpleBookData())).toBe(
+        "Unexpected response body from Purple Book API",
+      )
+    }
+  })
+
+  it("maps Purple Book records, keeping numeric ids as text", async () => {
+    stubFetch({
+      status: 200,
+      json: async () => [{ bla_number: 761024, proprietary_name: "AMJEVITA", license_type: "351(k)", strength: null }],
+    })
+    const [entry] = (await new BulkDataClient().getPurpleBookData()).orThrow()
+    expect(entry).toMatchObject({ blaNumber: "761024", proprietaryName: "AMJEVITA", biosimilar: true, strength: "" })
   })
 })

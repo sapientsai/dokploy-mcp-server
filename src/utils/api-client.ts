@@ -20,6 +20,7 @@ import type {
   SearchParams,
 } from "../types/fda.js"
 import { toError } from "./errors.js"
+import { isRecord } from "./fields.js"
 import { loggers } from "./logger.js"
 
 const FDA_BASE_URL = "https://api.fda.gov"
@@ -111,14 +112,23 @@ export class FDAAPIClient {
   }
 
   private async readResponse<T>(response: Response): Promise<Either<Error, FDAResponse<T>>> {
-    if (response.status === 404) return Right({ results: [] }) // No results found
+    if (response.status === 404) {
+      await Try.fromPromise(response.body?.cancel() ?? Promise.resolve()) // release the connection
+      return Right({ results: [] }) // No results found
+    }
 
     if (!response.ok) {
       const body = (await Try.fromPromise(response.json() as Promise<unknown>)).orElse({})
       return Left(errorForStatus(response.status, response.statusText, body))
     }
 
-    const parsed = (await Try.fromPromise(response.json() as Promise<FDAResponse<T>>)).toEither(toError)
+    const parsed = (await Try.fromPromise(response.json() as Promise<unknown>))
+      .toEither(toError)
+      .flatMap((body) =>
+        isRecord(body)
+          ? Right<Error, FDAResponse<T>>(body as FDAResponse<T>)
+          : Left<Error, FDAResponse<T>>(new Error("Unexpected response body from FDA API")),
+      )
     return parsed.map((data) => {
       loggers.api(`Response: ${data.meta?.results?.total ?? 0} total results`)
       return data

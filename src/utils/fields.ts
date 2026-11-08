@@ -10,6 +10,10 @@ const asText = (value: unknown): Option<string> => {
   return None()
 }
 
+/** A plain JSON object (not null, not an array) */
+export const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
+  typeof value === "object" && value !== null && !Array.isArray(value)
+
 /**
  * The value of the first key that holds text, or "" when none does.
  * An empty string counts as present, as it did with `??` chains; null,

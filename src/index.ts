@@ -46,7 +46,7 @@ program
       return server.start({ transportType: "stdio" })
     }
 
-    const started = await Try.fromPromise(start())
+    const started = await Try.async(start)
     started.fold(
       (error) => {
         console.error("Failed to start server:", error)

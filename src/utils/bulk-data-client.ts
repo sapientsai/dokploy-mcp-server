@@ -8,7 +8,7 @@ import { type Either, Left, None, Option, Right, Some, Try } from "functype"
 
 import type { OrangeBookExclusivity, OrangeBookPatent, OrangeBookProduct, PurpleBookEntry } from "../types/fda.js"
 import { toError } from "./errors.js"
-import { textField } from "./fields.js"
+import { isRecord, textField } from "./fields.js"
 import { loggers } from "./logger.js"
 
 const ORANGE_BOOK_ZIP_URL = "https://www.fda.gov/media/76860/download"
@@ -237,7 +237,13 @@ export class BulkDataClient {
     const url = `${PURPLE_BOOK_API_URL}?token=${PURPLE_BOOK_API_TOKEN}`
     const response = await fetchOk(url, (r) => `Failed to fetch Purple Book data: ${r.status} ${r.statusText}`)
     const records = await response.flatMapAsync(async (r) =>
-      (await Try.fromPromise(r.json() as Promise<ApiRecord[]>)).toEither(toError),
+      (await Try.fromPromise(r.json() as Promise<unknown>))
+        .toEither(toError)
+        .flatMap((body) =>
+          Array.isArray(body) && body.every(isRecord)
+            ? Right<Error, ApiRecord[]>(body)
+            : Left<Error, ApiRecord[]>(new Error("Unexpected response body from Purple Book API")),
+        ),
     )
 
     return records

@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { FDAAPIClient } from "../src/utils/api-client.js"
+import { loggers } from "../src/utils/logger.js"
 
 type StubResponse = { status: number; statusText?: string; body?: unknown }
 
@@ -32,6 +33,7 @@ function errorMessage(result: Awaited<ReturnType<FDAAPIClient["searchDrugNDC"]>>
 afterEach(() => {
   vi.unstubAllGlobals()
   vi.unstubAllEnvs()
+  vi.restoreAllMocks()
 })
 
 describe("FDAAPIClient", () => {
@@ -78,6 +80,27 @@ describe("FDAAPIClient", () => {
   it("returns Left when a 200 body is not JSON", async () => {
     stubFetch({ status: 200 })
     expect(errorMessage(await new FDAAPIClient().searchDrugNDC({}))).toBe("Unexpected end of JSON input")
+  })
+
+  it("returns Left when a 200 body is JSON but not an object", async () => {
+    stubFetch({ status: 200, body: null })
+    expect(errorMessage(await new FDAAPIClient().searchDrugNDC({}))).toBe("Unexpected response body from FDA API")
+  })
+
+  it("logs the request URL unchanged when no API key is set", async () => {
+    vi.stubEnv("OPENFDA_API_KEY", "")
+    stubFetch({ status: 200, body: { results: [] } })
+    const logged = vi.spyOn(loggers, "api").mockImplementation(() => undefined)
+    await new FDAAPIClient().searchDrugNDC({ limit: 1 })
+    expect(logged.mock.calls[0]?.[0]).toBe("Request: https://api.fda.gov/drug/ndc.json?limit=1")
+  })
+
+  it("redacts the API key in the logged URL", async () => {
+    vi.stubEnv("OPENFDA_API_KEY", "secret-key")
+    stubFetch({ status: 200, body: { results: [] } })
+    const logged = vi.spyOn(loggers, "api").mockImplementation(() => undefined)
+    await new FDAAPIClient().searchDrugNDC({ limit: 1 })
+    expect(logged.mock.calls[0]?.[0]).toBe("Request: https://api.fda.gov/drug/ndc.json?limit=1&api_key=[REDACTED]")
   })
 
   it("sends the API key when one is set", async () => {
