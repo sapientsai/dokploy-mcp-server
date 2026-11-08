@@ -1,5 +1,5 @@
-import type { FastMCP } from "fastmcp"
 import { IO } from "functype"
+import type { SomaServerInstance } from "somamcp"
 import { z } from "zod"
 
 import { getClient } from "../client/rescuetime-client"
@@ -8,7 +8,7 @@ function unwrapClient() {
   return getClient().toEither(new Error("RescueTime client not initialized. Is RESCUETIME_API_KEY set?"))
 }
 
-export function registerOfflineTools(server: FastMCP): void {
+export function registerOfflineTools(server: SomaServerInstance): void {
   server.addTool({
     name: "log_offline_time",
     description:

@@ -1,5 +1,5 @@
-import type { FastMCP } from "fastmcp"
 import { IO } from "functype"
+import type { SomaServerInstance } from "somamcp"
 import { z } from "zod"
 
 import { getClient } from "../client/rescuetime-client"
@@ -9,7 +9,7 @@ function unwrapClient() {
   return getClient().toEither(new Error("RescueTime client not initialized. Is RESCUETIME_API_KEY set?"))
 }
 
-export function registerHighlightTools(server: FastMCP): void {
+export function registerHighlightTools(server: SomaServerInstance): void {
   server.addTool({
     name: "get_highlights",
     description: "Get recent RescueTime highlights (accomplishments/milestones logged by the user). Premium feature.",
@@ -22,7 +22,6 @@ export function registerHighlightTools(server: FastMCP): void {
       }).runOrThrow(),
   })
 
-  // eslint-disable-next-line functype/prefer-do-notation -- already using IO.gen
   server.addTool({
     name: "post_highlight",
     description: "Log a new highlight (accomplishment/milestone) in RescueTime. Max 255 characters. Premium feature.",

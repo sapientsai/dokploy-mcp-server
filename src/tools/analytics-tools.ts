@@ -1,5 +1,5 @@
-import type { FastMCP } from "fastmcp"
 import { IO, Left, Right } from "functype"
+import type { SomaServerInstance } from "somamcp"
 import { z } from "zod"
 
 import { getClient } from "../client/rescuetime-client"
@@ -10,7 +10,7 @@ function unwrapClient() {
   return getClient().toEither(new Error("RescueTime client not initialized. Is RESCUETIME_API_KEY set?"))
 }
 
-export function registerAnalyticsTools(server: FastMCP): void {
+export function registerAnalyticsTools(server: SomaServerInstance): void {
   server.addTool({
     name: "get_activity_data",
     description:
