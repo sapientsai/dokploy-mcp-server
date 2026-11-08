@@ -52,6 +52,19 @@ describe("drug adverse event formatting", () => {
     expect(event?.reactions.map((r) => r.reaction)).toEqual(["R0", "R1", "R2"])
   })
 
+  it("combines every filter into one openFDA query", async () => {
+    const spy = vi.spyOn(fdaAPIClient, "searchDrugAdverseEvents").mockResolvedValue(respond([]))
+    await handleSearchDrugAdverseEvents({
+      drugName: "aspirin",
+      serious: true,
+      dateFrom: "2024-01-01",
+      dateTo: "2024-01-31",
+    })
+    expect(spy.mock.calls[0]?.[0].search).toBe(
+      'patient.drug.medicinalproduct:"aspirin" AND serious:"1" AND receivedate:[20240101 TO 20240131]',
+    )
+  })
+
   it("adds the serious filter only when it is given", async () => {
     const spy = vi.spyOn(fdaAPIClient, "searchDrugAdverseEvents").mockResolvedValue(respond([]))
     await handleSearchDrugAdverseEvents({ serious: false })

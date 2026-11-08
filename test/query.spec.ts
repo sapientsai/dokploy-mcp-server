@@ -31,14 +31,14 @@ describe("buildDateQuery", () => {
   })
 
   it("fills an open bound with *", () => {
-    expect(buildDateQuery("receivedate", "2024-01-01").orElse("")).toBe("receivedate:[20240101+TO+*]")
-    expect(buildDateQuery("receivedate", undefined, "2024-12-31").orElse("")).toBe("receivedate:[*+TO+20241231]")
+    expect(buildDateQuery("receivedate", "2024-01-01").orElse("")).toBe("receivedate:[20240101 TO *]")
+    expect(buildDateQuery("receivedate", undefined, "2024-12-31").orElse("")).toBe("receivedate:[* TO 20241231]")
   })
 })
 
 describe("joinQueries", () => {
-  it("joins the non-empty parts with +AND+", () => {
-    expect(joinQueries("a:1", Option("b:2"), None())).toBe("a:1+AND+b:2")
+  it("joins the non-empty parts with AND", () => {
+    expect(joinQueries("a:1", Option("b:2"), None())).toBe("a:1 AND b:2")
     expect(joinQueries("", Option("b:2"))).toBe("b:2")
     expect(joinQueries("", None())).toBe("")
   })
@@ -48,11 +48,20 @@ describe("buildSearchQuery", () => {
   it("skips blank values and escapes the rest", () => {
     expect(
       buildSearchQuery([
-        { field: "brand_name", value: "Tylenol PM" },
+        { field: "brand_name", value: "Tylenol  PM" },
         { field: "route", value: "  " },
         { field: "x", value: undefined },
       ]),
-    ).toBe('brand_name:"Tylenol+PM"')
+    ).toBe('brand_name:"Tylenol PM"')
+  })
+
+  it("joins several terms with AND", () => {
+    expect(
+      buildSearchQuery([
+        { field: "a", value: "x" },
+        { field: "b", value: "y" },
+      ]),
+    ).toBe('a:"x" AND b:"y"')
   })
 })
 

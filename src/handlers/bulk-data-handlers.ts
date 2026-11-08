@@ -80,12 +80,42 @@ function applyPagination<T>(items: List<T>, limit?: number, skip?: number): { it
   }
 }
 
-/** Patents with no expiry date sort last; the rest compare as text */
+const MONTHS = Map<string, string>([
+  ["Jan", "01"],
+  ["Feb", "02"],
+  ["Mar", "03"],
+  ["Apr", "04"],
+  ["May", "05"],
+  ["Jun", "06"],
+  ["Jul", "07"],
+  ["Aug", "08"],
+  ["Sep", "09"],
+  ["Oct", "10"],
+  ["Nov", "11"],
+  ["Dec", "12"],
+])
+
+/** An Orange Book date ("Apr 28, 2037") as a sortable "20370428"; None when missing or unreadable */
+function expiryKey(date: string): Option<string> {
+  return Option(/^([A-Z][a-z]{2}) (\d{1,2}), (\d{4})$/.exec(date.trim())).flatMap(([, month, day, year]) =>
+    MONTHS.get(month).map((mm) => `${year}${mm}${day.padStart(2, "0")}`),
+  )
+}
+
+/** Earliest expiry first; patents with no readable expiry date sort last, in their original order */
 function compareExpiry(a: string, b: string): number {
-  if (a === "" && b === "") return 0
-  if (a === "") return 1
-  if (b === "") return -1
-  return a.localeCompare(b)
+  return expiryKey(a).fold(
+    () =>
+      expiryKey(b).fold(
+        () => 0,
+        () => 1,
+      ),
+    (keyA) =>
+      expiryKey(b).fold(
+        () => -1,
+        (keyB) => keyA.localeCompare(keyB),
+      ),
+  )
 }
 
 const ORANGE_BOOK_SOURCE = {

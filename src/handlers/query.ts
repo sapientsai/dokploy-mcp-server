@@ -12,9 +12,15 @@ import { nonEmpty } from "../utils/fields.js"
 
 export type SearchTerm = { field: string; value?: string }
 
-/** Escape characters that have meaning in openFDA's search syntax */
+/**
+ * Escape characters that have meaning in openFDA's search syntax.
+ *
+ * Queries use real spaces (`a:"x" AND b:[1 TO 2]`). URLSearchParams sends a
+ * space as `+`, which openFDA reads as a space; a literal `+` would arrive as
+ * `%2B`, which openFDA does not read as an operator separator.
+ */
 export function escapeSearchTerm(term: string): string {
-  return term.replace(/[+\-&|!(){}[\]^"~*?:\\]/g, "\\$&").replace(/\s+/g, "+")
+  return term.replace(/[+\-&|!(){}[\]^"~*?:\\]/g, "\\$&").replace(/\s+/g, " ")
 }
 
 /** AND together the terms that have a non-blank value */
@@ -26,7 +32,7 @@ export function buildSearchQuery(terms: readonly SearchTerm[]): string {
         .map((value) => `${term.field}:"${escapeSearchTerm(value)}"`)
         .toArray(),
     )
-    .join("+AND+")
+    .join(" AND ")
 }
 
 /** A date range clause, or None when neither bound is given. openFDA dates are YYYYMMDD. */
@@ -38,12 +44,12 @@ export function buildDateQuery(field: string, dateFrom?: string, dateTo?: string
 
   const hasBound = [dateFrom, dateTo].some((date) => nonEmpty(date).isSome())
 
-  return hasBound ? Some(`${field}:[${bound(dateFrom)}+TO+${bound(dateTo)}]`) : None()
+  return hasBound ? Some(`${field}:[${bound(dateFrom)} TO ${bound(dateTo)}]`) : None()
 }
 
 /** Join a search query with optional extra clauses, skipping empty parts */
 export function joinQueries(searchQuery: string, ...clauses: readonly Option<string>[]): string {
-  return [searchQuery, ...clauses.flatMap((clause) => clause.toArray())].filter((part) => part !== "").join("+AND+")
+  return [searchQuery, ...clauses.flatMap((clause) => clause.toArray())].filter((part) => part !== "").join(" AND ")
 }
 
 /** Shorten long text for display; None for missing or empty text */
