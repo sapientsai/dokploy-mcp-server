@@ -1,5 +1,5 @@
 import dotenv from "dotenv"
-import { FastMCP } from "fastmcp"
+import { createServer } from "somamcp/node"
 
 import { initializeClient } from "./client/rescuetime-client"
 import { registerAnalyticsTools, registerFocusTools, registerHighlightTools, registerOfflineTools } from "./tools"
@@ -23,7 +23,7 @@ console.error(`[Setup] RescueTime MCP Server v${VERSION}`)
 console.error("[Setup] Client initialized with API key")
 
 // Create server
-const server = new FastMCP({
+const server = createServer({
   name: "rescuetime-mcp-server",
   version: VERSION,
   instructions: `RescueTime MCP Server — provides access to RescueTime productivity data.
@@ -55,9 +55,6 @@ registerOfflineTools(server)
 const transportType = (process.env.TRANSPORT_TYPE ?? "stdio") as "stdio" | "httpStream"
 const port = Number(process.env.PORT ?? 3000)
 
-void server.start({
-  transportType,
-  ...(transportType === "httpStream" ? { httpStream: { port } } : {}),
-})
+void server.start(transportType === "httpStream" ? { transportType, httpStream: { port } } : { transportType: "stdio" })
 
 console.error(`[Setup] Server started with ${transportType} transport`)

@@ -17,6 +17,7 @@ A Model Context Protocol (MCP) server for RescueTime - access productivity data,
 | **Highlights** | `get_highlights`         | Get logged highlights/accomplishments (Premium)                                                   |
 |                | `post_highlight`         | Log a new highlight                                                                               |
 | **Offline**    | `log_offline_time`       | Log offline activities (meetings, breaks, up to 4 hours)                                          |
+| **Server**     | `info`                   | Server name, version, build, and capability counts (built into SomaMCP)                           |
 
 ## Quick Start
 
@@ -145,7 +146,7 @@ pnpm dev             # Development build with watch mode
 
 ### Architecture
 
-Built with [FastMCP](https://github.com/punkpeye/fastmcp), [functype](https://github.com/jordanburke/functype) (IO, Option, Either, Try), and [Zod](https://zod.dev/).
+Built with [SomaMCP](https://github.com/sapientsai/SomaMCP), [functype](https://github.com/jordanburke/functype) (IO, Option, Either, Try), and [Zod](https://zod.dev/).
 
 - **IO effects**: API calls return `IO<never, Error, T>` — lazy, composable, with built-in retry/timeout
 - **IO.gen do-notation**: Complex tool handlers use generator-based do-notation for readable effect composition

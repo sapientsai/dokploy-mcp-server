@@ -1,0 +1,12 @@
+publicHoistPattern:
+  - "*eslint*"
+  - "*prettier*"
+  - "*vitest*"
+  - "typescript"
+  - "*rimraf*"
+  - "*cross-env*"
+
+minimumReleaseAgeExclude:
+  - "*functype*"
+  - ts-builds
+  - somamcp

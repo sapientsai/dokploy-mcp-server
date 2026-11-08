@@ -4,9 +4,9 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-RescueTime MCP Server — a Model Context Protocol server providing AI assistants access to RescueTime productivity data. Built with FastMCP, functype (IO, Option, Either, Try), and Zod.
+RescueTime MCP Server — a Model Context Protocol server providing AI assistants access to RescueTime productivity data. Built with SomaMCP, functype (IO, Option, Either, Try), and Zod.
 
-**Key patterns**: functype `IO<never, Error, T>` for lazy composable API effects with `IO.gen` do-notation, `Option<T>` for singleton client, `Try` for safe formatting, `.runOrThrow()` at tool boundaries.
+**Key patterns**: functype `IO<never, Error, T>` for lazy composable API effects with `IO.gen` do-notation, `Ref<Option<T>>` for singleton client, `Try` for safe formatting, `.runOrThrow()` at tool boundaries.
 
 ## Development Commands
 
@@ -31,7 +31,7 @@ pnpm test -- test/specific.spec.ts
 
 ```
 src/
-  index.ts                        # FastMCP server setup, tool registration
+  index.ts                        # SomaMCP server setup (createServer from somamcp/node), tool registration
   bin.ts                          # CLI entry point (stdio transport)
   types.ts                        # All domain types (readonly, immutable)
   errors.ts                       # Sealed error union types (_kind discriminator)
@@ -49,7 +49,7 @@ src/
 
 ### Key Patterns
 
-- **Client singleton**: `Option<RescueTimeClient>` with `initializeClient()` / `getClient()`
+- **Client singleton**: `Ref<Option<RescueTimeClient>>` with `initializeClient()` / `getClient()`
 - **API calls**: Return `IO<never, Error, T>` via `IO.tryPromise()` + `IO.fromEither()` — lazy until `.run()`
 - **Tool boundary**: `IO.gen(function* () { ... }).runOrThrow()` — do-notation with no explicit throws
 - **Client unwrap**: `getClient().toEither(err)` → `IO.fromEither()` — stays in the IO pipeline
@@ -71,10 +71,11 @@ src/
 | `TRANSPORT_TYPE`     | No       | `stdio` (default) or `httpStream`        |
 | `PORT`               | No       | HTTP port (default: 3000)                |
 
-## MCP Tools (9 total)
+## MCP Tools (9 RescueTime tools + SomaMCP `info`)
 
 | Tool                     | Description                                                     |
 | ------------------------ | --------------------------------------------------------------- |
+| `info`                   | SomaMCP introspection: name, version, build, capability counts  |
 | `get_activity_data`      | Query activity data with filters (date, category, productivity) |
 | `get_daily_summary`      | Last 2 weeks of daily productivity summaries                    |
 | `get_productivity_score` | Single-day productivity pulse and breakdown                     |

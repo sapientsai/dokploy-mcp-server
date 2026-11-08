@@ -1,8 +1,10 @@
-import type { FastMCP } from "fastmcp"
 import { IO, Left, Right } from "functype"
+import type { SomaServerInstance } from "somamcp"
+import { UserError } from "somamcp"
 import { z } from "zod"
 
 import { getClient } from "../client/rescuetime-client"
+import { toUserError } from "../errors"
 import type { DailySummary } from "../types"
 import { formatActivityData, formatDailySummary, formatProductivityScore } from "../utils/formatters"
 
@@ -10,7 +12,7 @@ function unwrapClient() {
   return getClient().toEither(new Error("RescueTime client not initialized. Is RESCUETIME_API_KEY set?"))
 }
 
-export function registerAnalyticsTools(server: FastMCP): void {
+export function registerAnalyticsTools(server: SomaServerInstance): void {
   server.addTool({
     name: "get_activity_data",
     description:
@@ -49,6 +51,7 @@ export function registerAnalyticsTools(server: FastMCP): void {
           }),
         )
         .map((data) => formatActivityData(data, { perspective: args.perspective, restrict_kind: args.restrict_kind }))
+        .mapError(toUserError)
         .runOrThrow(),
   })
 
@@ -61,6 +64,7 @@ export function registerAnalyticsTools(server: FastMCP): void {
       IO.fromEither(unwrapClient())
         .flatMap((client) => client.getDailySummary())
         .map(formatDailySummary)
+        .mapError(toUserError)
         .runOrThrow(),
   })
 
@@ -81,9 +85,13 @@ export function registerAnalyticsTools(server: FastMCP): void {
           match
             ? Right<Error, string>(formatProductivityScore(match))
             : Left<Error, string>(
-                new Error(`No productivity data found for ${target}. Data is available for the last 2 weeks.`),
+                new UserError(`No productivity data found for ${target}. Data is available for the last 2 weeks.`, {
+                  category: "not_found",
+                }),
               ),
         )
-      }).runOrThrow(),
+      })
+        .mapError(toUserError)
+        .runOrThrow(),
   })
 }

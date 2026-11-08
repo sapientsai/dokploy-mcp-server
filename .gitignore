@@ -41,3 +41,5 @@ node_modules/
 
 # Claude Code
 .claude/settings.local.json
+# ts-builds reports
+.ts-builds/

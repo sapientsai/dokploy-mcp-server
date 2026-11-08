@@ -1,4 +1,4 @@
-import { IO, Left, Option, Right } from "functype"
+import { IO, Left, Option, Ref, Right } from "functype"
 
 import { toError } from "../errors"
 import type {
@@ -14,16 +14,16 @@ import type {
 
 const DEFAULT_BASE_URL = "https://www.rescuetime.com"
 
-let clientInstance: Option<RescueTimeClient> = Option.none()
+const clientInstance = Ref<Option<RescueTimeClient>>(Option.none())
 
 export function initializeClient(config: RescueTimeClientConfig): RescueTimeClient {
   const client = new RescueTimeClient(config)
-  clientInstance = Option(client)
+  clientInstance.set(Option(client))
   return client
 }
 
 export function getClient(): Option<RescueTimeClient> {
-  return clientInstance
+  return clientInstance.get()
 }
 
 function buildQuery(params: Record<string, string | number | undefined>): string {
