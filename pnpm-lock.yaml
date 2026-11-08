@@ -195,8 +195,8 @@ importers:
         specifier: ^24.19.2
         version: 24.19.2
       ts-builds:
-        specifier: ^4.2.0
-        version: 4.2.0(@types/node@24.19.2)(@typescript-eslint/eslint-plugin@8.72.1(@typescript-eslint/parser@8.72.1(eslint@10.14.0)(typescript@6.0.3))(eslint@10.14.0)(typescript@6.0.3))(@typescript-eslint/parser@8.72.1(eslint@10.14.0)(typescript@6.0.3))(tsdown@0.23.7(tsx@4.23.15)(typescript@6.0.3))(vite@8.3.6(@types/node@24.19.2)(esbuild@0.28.2)(tsx@4.23.15))
+        specifier: ^4.3.0
+        version: 4.3.0(@types/node@24.19.2)(@typescript-eslint/eslint-plugin@8.72.1(@typescript-eslint/parser@8.72.1(eslint@10.14.0)(typescript@6.0.3))(eslint@10.14.0)(typescript@6.0.3))(@typescript-eslint/parser@8.72.1(eslint@10.14.0)(typescript@6.0.3))(tsdown@0.23.7(tsx@4.23.15)(typescript@6.0.3))(vite@8.3.6(@types/node@24.19.2)(esbuild@0.28.2)(tsx@4.23.15))
       tsdown:
         specifier: ^0.23.7
         version: 0.23.7(tsx@4.23.15)(typescript@6.0.3)
@@ -1538,8 +1538,8 @@ packages:
     peerDependencies:
       typescript: '>=4.8.4'
 
-  ts-builds@4.2.0:
-    resolution: {integrity: sha512-ektzgTpDSSOL7L7tuIYrlgdZX/7kjbepoJI14WWoy/uL9fvHLeDbUO49CaEaOmgm1GE+ipY8b1fVAVPThVYhhg==}
+  ts-builds@4.3.0:
+    resolution: {integrity: sha512-iBIPkG1r1oUdTIi1dcNo68ag4ygKNT5KjxzLSiTNmpZquSoJ0RKxDn0UuuFu13bx9T3vTcabsRwW2iHAaXZnnw==}
     engines: {node: ^22.12.0 || ^24.0.0 || >=26.0.0}
     hasBin: true
     peerDependencies:
@@ -2875,7 +2875,7 @@ snapshots:
     dependencies:
       typescript: 6.0.3
 
-  ts-builds@4.2.0(@types/node@24.19.2)(@typescript-eslint/eslint-plugin@8.72.1(@typescript-eslint/parser@8.72.1(eslint@10.14.0)(typescript@6.0.3))(eslint@10.14.0)(typescript@6.0.3))(@typescript-eslint/parser@8.72.1(eslint@10.14.0)(typescript@6.0.3))(tsdown@0.23.7(tsx@4.23.15)(typescript@6.0.3))(vite@8.3.6(@types/node@24.19.2)(esbuild@0.28.2)(tsx@4.23.15)):
+  ts-builds@4.3.0(@types/node@24.19.2)(@typescript-eslint/eslint-plugin@8.72.1(@typescript-eslint/parser@8.72.1(eslint@10.14.0)(typescript@6.0.3))(eslint@10.14.0)(typescript@6.0.3))(@typescript-eslint/parser@8.72.1(eslint@10.14.0)(typescript@6.0.3))(tsdown@0.23.7(tsx@4.23.15)(typescript@6.0.3))(vite@8.3.6(@types/node@24.19.2)(esbuild@0.28.2)(tsx@4.23.15)):
     dependencies:
       '@eslint/js': 10.0.1(eslint@10.14.0)
       '@vitest/coverage-v8': 5.1.0(vitest@5.1.0)
