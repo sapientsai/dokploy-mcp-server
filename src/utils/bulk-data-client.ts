@@ -125,7 +125,7 @@ function parseRows(text: string, splitLine: (line: string) => string[]): Row[] {
       (headerLine) => {
         const headers = splitLine(headerLine).map((h) => h.trim())
         return lines
-          .slice(1, lines.size)
+          .drop(1)
           .map((line): Row => {
             const values = splitLine(line)
             return Object.fromEntries(headers.map((h, j) => [h, Option(values[j]).orElse("").trim()]))

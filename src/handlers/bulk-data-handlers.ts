@@ -13,18 +13,12 @@ import { loggers } from "../utils/logger.js"
 
 /** True when no filter is given, or the value contains it, ignoring case */
 function matchesFilter(value: string, filter: string | undefined): boolean {
-  return nonEmpty(filter).fold(
-    () => true,
-    (f) => value.toLowerCase().includes(f.toLowerCase()),
-  )
+  return nonEmpty(filter).every((f) => value.toLowerCase().includes(f.toLowerCase()))
 }
 
 /** True when no filter is given, or the value equals it */
 function matchesExact(value: string, filter: string | undefined): boolean {
-  return nonEmpty(filter).fold(
-    () => true,
-    (f) => value === f,
-  )
+  return nonEmpty(filter).every((f) => value === f)
 }
 
 /** True when no filter is given, or either value contains it */
@@ -34,10 +28,7 @@ function matchesEither(a: string, b: string, filter: string | undefined): boolea
 
 /** True when no flag is given, or the value equals it */
 function matchesFlag(value: boolean, flag: boolean | undefined): boolean {
-  return Option(flag).fold(
-    () => true,
-    (f) => value === f,
-  )
+  return Option(flag).every((f) => value === f)
 }
 
 /**
@@ -45,10 +36,7 @@ function matchesFlag(value: boolean, flag: boolean | undefined): boolean {
  * patent passes; with one, the patent's product must exist and match it.
  */
 function productMatches(product: Option<OrangeBookProduct>, drugName: string | undefined): boolean {
-  return nonEmpty(drugName).fold(
-    () => true,
-    (name) => product.exists((p) => matchesEither(p.tradeName, p.ingredient, name)),
-  )
+  return nonEmpty(drugName).every((name) => product.exists((p) => matchesEither(p.tradeName, p.ingredient, name)))
 }
 
 // Join key for Orange Book records
