@@ -1,4 +1,4 @@
-import { Right } from "functype"
+import { type Either, Right } from "functype"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
 import { handleSearchDeviceAdverseEvents } from "../src/handlers/device-handlers.js"
@@ -7,14 +7,14 @@ import {
   handleSearchDrugLabels,
   handleSearchDrugsFDA,
 } from "../src/handlers/drug-handlers.js"
-import type { DeviceAdverseEvent, DrugAdverseEvent, DrugLabel, DrugsFDA } from "../src/types/fda.js"
+import type { DeviceAdverseEvent, DrugAdverseEvent, DrugLabel, DrugsFDA, FDAResponse } from "../src/types/fda.js"
 import { fdaAPIClient } from "../src/utils/api-client.js"
 
 afterEach(() => {
   vi.restoreAllMocks()
 })
 
-const respond = <T>(results: T[]) => Right({ results })
+const respond = <T>(results: T[]): Either<Error, FDAResponse<T>> => Right({ results })
 
 async function adverseEvent(event: DrugAdverseEvent) {
   vi.spyOn(fdaAPIClient, "searchDrugAdverseEvents").mockResolvedValue(respond([event]))
