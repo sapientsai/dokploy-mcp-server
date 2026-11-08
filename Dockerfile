@@ -1,8 +1,9 @@
 # Build stage
 FROM node:24-alpine AS builder
 
-# Install pnpm
-RUN corepack enable && corepack prepare pnpm@latest --activate
+# Install pnpm (corepack uses the version pinned in package.json's packageManager)
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable
 
 WORKDIR /app
 
@@ -23,7 +24,8 @@ RUN pnpm exec tsdown --outDir dist
 FROM node:24-alpine AS production
 
 # Install pnpm for production install
-RUN corepack enable && corepack prepare pnpm@latest --activate
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
+RUN corepack enable
 
 WORKDIR /app
 
@@ -44,4 +46,4 @@ EXPOSE 3000
 
 # Default command runs in HTTP mode
 ENTRYPOINT ["node", "dist/index.js"]
-CMD ["--transport", "http", "--port", "3000"]
+CMD ["--transport", "http", "--port", "3000", "--host", "0.0.0.0"]

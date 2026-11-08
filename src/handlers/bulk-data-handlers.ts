@@ -22,6 +22,8 @@ function obJoinKey(record: { applType: string; applNo: string; productNo: string
 
 // Group items by key in one linear pass (Object.groupBy). List.groupBy is much
 // slower on Orange Book-sized inputs, and these maps are rebuilt per query.
+// Object.entries lists integer-like keys first, in ascending order; obJoinKey
+// keys are never integer-like, and these maps are only used for lookups.
 function groupEntries<T>(items: readonly T[], keyFn: (item: T) => string): [string, T[]][] {
   return Object.entries(Object.groupBy(items, keyFn)).map(([key, group]): [string, T[]] => [key, group ?? []])
 }
