@@ -5,9 +5,9 @@ import { registerTemporalTools } from "../../src/tools.js"
 
 // Drives the tool layer in process: register the real tools against a stub
 // server, validate arguments through each tool's own schema, and surface an
-// `isError` result as a rejection — which is what somamcp/edge does on the wire
-// (it rethrows so the client gets a JSON-RPC error). Tests therefore exercise
-// the same contract a client sees, without HTTP.
+// `isError` result as a rejection, so a test fails loudly on a tool error. On the
+// wire, somamcp returns that result as is (`isError: true`), which
+// test/worker.spec.ts covers.
 
 type StandardSchema = {
   readonly "~standard": {

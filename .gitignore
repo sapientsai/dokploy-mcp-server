@@ -50,3 +50,6 @@ lib/
 
 # MCP Registry publisher binary, downloaded by CI
 mcp-publisher
+
+# ts-builds run output (lint report)
+.ts-builds/

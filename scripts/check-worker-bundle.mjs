@@ -4,15 +4,15 @@
 // The worker deliberately runs without `nodejs_compat`, so any Node built-in
 // reaching dist/worker.js is a deploy-time failure that neither typecheck nor
 // the unit tests would catch. The most likely regression is an accidental
-// `from "somamcp"` (the root barrel re-exports node:fs-backed helpers) instead
-// of `from "somamcp/edge"`.
+// `from "somamcp/node"` (the port listener, stdio and file helpers) instead of
+// `from "somamcp"`, whose main entry is web-standard only.
 
 import { readFile } from "node:fs/promises"
 
 const DIST = "dist"
 
-// `somamcp/edge` is the allowed one; the root barrel is not.
-const FORBIDDEN_MODULES = ["somamcp"]
+// `somamcp` is the allowed one; its Node entry is not.
+const FORBIDDEN_MODULES = ["somamcp/node"]
 
 // Node built-ins are importable with or without the `node:` prefix, and real
 // packages use the bare form — checking only `node:` would miss them.
@@ -126,7 +126,7 @@ while (queue.length > 0) {
     } else if (isBareNodeBuiltin(specifier)) {
       problems.push(`${path} imports Node built-in "${specifier}" (bare, no node: prefix)`)
     } else if (FORBIDDEN_MODULES.includes(specifier)) {
-      problems.push(`${path} imports "${specifier}" — the worker must import "somamcp/edge"`)
+      problems.push(`${path} imports "${specifier}" — the worker must import "somamcp"`)
     }
   }
 }
