@@ -6,7 +6,7 @@
 //
 // The seam is test/helpers/mcp.ts, which registers the real tools against a stub
 // server, validates arguments through each tool's own schema, and rejects on an
-// `isError` result — the same contract somamcp/edge presents on the wire.
+// `isError` result. test/worker.spec.ts covers the same results on the wire.
 
 import { describe, expect, it } from "vitest"
 

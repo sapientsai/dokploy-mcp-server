@@ -1,10 +1,10 @@
 // Cloudflare Workers entry point.
 //
-// Imports `somamcp/edge`, never `somamcp` — the root barrel re-exports helpers
-// that pull in `node:fs`, which would break the Workers bundle. The tools
-// themselves are the same registration used by the Node entry point.
+// Imports `somamcp`, never `somamcp/node`. The main entry uses web-standard APIs
+// only; `somamcp/node` adds the port listener and stdio, which would break the
+// Workers bundle. The tools are the same registration the Node entry uses.
 
-import { createServer } from "somamcp/edge"
+import { createServer, getRequestHeader } from "somamcp"
 
 import { INSTRUCTIONS, registerTemporalTools, SERVER_NAME, SERVER_VERSION } from "./index.js"
 
@@ -49,9 +49,8 @@ const build = (env: Env): ReturnType<typeof createServer> => {
     ...(token === undefined
       ? {}
       : {
-          authenticate: async (request: unknown) => {
-            const header = (request as Request).headers?.get("authorization")
-            if (header !== `Bearer ${token}`) throw new Error("unauthorized")
+          authenticate: async (request: Request | undefined) => {
+            if (getRequestHeader(request, "authorization") !== `Bearer ${token}`) throw new Error("unauthorized")
             return { user: "mcp-client" }
           },
         }),

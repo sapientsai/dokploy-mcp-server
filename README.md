@@ -209,19 +209,15 @@ Health check: [`https://time.somamcp.com/health`](https://time.somamcp.com/healt
 
 `pnpm cf:dev` serves the same thing on `http://localhost:8787/mcp`, so you can point a client at a local workerd instance before deploying.
 
-### Why the worker imports `somamcp/edge`
+### Why the worker imports `somamcp`, and the Node entry `somamcp/node`
 
-`somamcp`'s root barrel re-exports helpers that import `node:fs`. Importing it from a Worker drags Node built-ins into the bundle. `src/worker.ts` therefore imports `somamcp/edge`, and `pnpm check:worker` fails the build if a `node:` import, a bare Node built-in, or the root `somamcp` specifier reaches the worker bundle.
+`somamcp`'s main entry uses web-standard APIs only. `somamcp/node` adds what only Node can do: the port listener, stdio, and file helpers. So `src/worker.ts` imports `somamcp`, `src/node.ts` imports `somamcp/node`, and `pnpm check:worker` fails the build if a `node:` import, a bare Node built-in, or `somamcp/node` reaches the worker bundle.
 
-See [somamcp's edge runtime docs](https://github.com/sapientsai/SomaMCP#edge-runtimes-cloudflare-workers-deno-deploy-bun) for the full story, including a [feature parity table](https://github.com/sapientsai/SomaMCP#feature-parity) covering what does and does not work on edge — stdio, sessions, `reportProgress`, and multi-result resources are all Node-only.
+See [somamcp on Workers](https://github.com/sapientsai/SomaMCP#on-workers) for the full story.
 
 The check walks the actual import graph from `dist/worker.js` rather than matching filenames — the bundler hoists code shared with the Node entry into a chunk with a generated name, and a filename glob would skip exactly the file most likely to carry a leak.
 
 `nodejs_compat` is deliberately **not** enabled in `wrangler.jsonc`. If a Node built-in ever arrives, the build should fail loudly rather than be silently shimmed.
-
-### The `alias` block in wrangler.jsonc
-
-`xsschema` (transitive, via fastmcp) probes for every schema library it supports — valibot, effect, sury — through dynamic import. We only use zod, so those branches never run, but esbuild still has to resolve the specifiers. They are aliased to an empty module instead of installing three unused libraries.
 
 ## Architecture
 
@@ -230,8 +226,8 @@ src/
   clock.ts    pure time logic — Either<TemporalError, T>, no I/O, no globals
   tools.ts    MCP tool registration; takes a server, creates none
   index.ts    library surface (runtime-agnostic)
-  node.ts     entry: somamcp      -> stdio + httpStream
-  worker.ts   entry: somamcp/edge -> export default { fetch }
+  node.ts     entry: somamcp/node -> stdio + httpStream
+  worker.ts   entry: somamcp      -> export default { fetch }
 ```
 
 `registerTemporalTools(server)` takes the server rather than building one, so both entry points register identical tools. Nothing in `clock.ts`, `tools.ts`, or `index.ts` touches `process`, the filesystem, or any Node built-in.
@@ -242,7 +238,7 @@ Failures are values. Every fallible function in `clock.ts` returns `Either<Tempo
 
 ```bash
 pnpm validate       # format + lint + typecheck + test + build
-pnpm test           # 34 tests
+pnpm test           # 81 tests
 pnpm check:worker   # verify the worker bundle is edge-safe
 ```
 

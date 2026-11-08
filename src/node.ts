@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Node entry point: stdio for desktop MCP clients, httpStream for everything else.
 
-import { createServer } from "somamcp"
+import { createServer } from "somamcp/node"
 
 import { INSTRUCTIONS, registerTemporalTools, SERVER_NAME, SERVER_VERSION } from "./index.js"
 

@@ -13,7 +13,7 @@ export default defineConfig({
     node: "src/node.ts",
     worker: "src/worker.ts",
   },
-  external: ["somamcp", /^somamcp\//, "functype", /^functype\//, "zod"],
+  deps: { neverBundle: ["somamcp", /^somamcp\//, "functype", /^functype\//, "zod"] },
   format: ["esm"],
   minify: isProduction,
   outDir: "dist",

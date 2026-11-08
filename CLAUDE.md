@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 MCP server exposing time, timezone, and duration tools. It ships **two entry points from one codebase**: a Node binary (stdio + httpStream) and a Cloudflare Worker.
 
-Built on [somamcp](https://github.com/sapientsai/SomaMCP) `^1.2.0`, which provides the MCP backend abstraction, telemetry, and health/introspection surfaces for both runtimes.
+Built on [somamcp](https://github.com/sapientsai/SomaMCP) `^2.6.0`, which provides the MCP backend abstraction, telemetry, and health/introspection surfaces for both runtimes.
 
 ## Development Commands
 
@@ -30,8 +30,8 @@ src/
   clock.ts    pure time logic — Either<TemporalError, T>
   tools.ts    MCP tool registration (runtime-agnostic)
   index.ts    library surface
-  node.ts     entry: somamcp      -> stdio + httpStream
-  worker.ts   entry: somamcp/edge -> export default { fetch }
+  node.ts     entry: somamcp/node -> stdio + httpStream
+  worker.ts   entry: somamcp      -> export default { fetch }
 ```
 
 ### The rule that keeps both runtimes working
@@ -39,15 +39,16 @@ src/
 **`src/index.ts`, `src/clock.ts`, and `src/tools.ts` must never import a Node built-in**, directly or transitively. They are shared by both entry points; anything Node-only in them breaks the Worker.
 
 - `src/node.ts` may use `process` and Node APIs.
-- `src/worker.ts` must import from **`somamcp/edge`**, never `somamcp`. The root barrel re-exports `createJsonFileTelemetry` / `imageContent` / `audioContent`, which import `node:fs`.
+- `src/worker.ts` must import from **`somamcp`**, never `somamcp/node`. The main entry is web-standard only; `somamcp/node` adds the port listener, stdio and file helpers. (`somamcp/edge` is a 2.x alias of `somamcp`, removed in 3.0; don't use it.)
+- `src/node.ts` imports `somamcp/node`, which re-exports everything in `somamcp` plus `start()` for stdio and httpStream.
 
-`pnpm check:worker` enforces this by walking the import graph from `dist/worker.js` and failing on any `node:` specifier, bare Node built-in (`fs`, `crypto`, `path`…), or root `somamcp` import. It follows the graph rather than matching filenames because the bundler hoists shared code into a chunk with a generated name — a glob would miss it.
+`pnpm check:worker` enforces this by walking the import graph from `dist/worker.js` and failing on any `node:` specifier, bare Node built-in (`fs`, `crypto`, `path`…), or `somamcp/node` import. It follows the graph rather than matching filenames because the bundler hoists shared code into a chunk with a generated name — a glob would miss it.
 
 ### Error handling
 
 Fallible functions in `clock.ts` return `Either<TemporalError, T>` (functype); they never throw. `tools.ts` folds a `Left` into an MCP error result carrying both the message and an actionable hint.
 
-On the edge runtime somamcp converts `isError` results into real JSON-RPC errors — `EdgeFastMCP` drops the `isError` flag, so returning it alone would make failures look like successes.
+somamcp returns an `isError` result to the client as is, on both runtimes: a `tools/call` result with `isError: true`, not a JSON-RPC error. That is what the MCP spec asks for, and it lets the client's model read the message and hint and try again. `test/worker.spec.ts` checks it on the wire.
 
 ### Adding a tool
 
@@ -88,7 +89,6 @@ A checked-in `.mcp.json` registers `dist/node.js` as the `temporal` server, so a
 ## Cloudflare Notes
 
 - `nodejs_compat` is intentionally **off**. A Node built-in reaching the bundle should fail the build, not get shimmed.
-- The `alias` block in `wrangler.jsonc` points three optional schema libraries (valibot/effect/sury, probed by the transitive `xsschema`) at `cf/empty-module.js`. Only zod is actually used; the aliases exist so esbuild can resolve the dead dynamic imports.
 - The Worker builds its server lazily on first request and reuses it. Workers forbids network I/O at module scope, and Hono seals its router after the first request — so all tool/route registration happens during that one construction.
 - Set `MCP_AUTH_TOKEN` (via `wrangler secret put`) to require a bearer token on `/mcp`. Unset means public.
 
