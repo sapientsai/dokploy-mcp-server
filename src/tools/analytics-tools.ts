@@ -1,8 +1,10 @@
 import { IO, Left, Right } from "functype"
 import type { SomaServerInstance } from "somamcp"
+import { UserError } from "somamcp"
 import { z } from "zod"
 
 import { getClient } from "../client/rescuetime-client"
+import { toUserError } from "../errors"
 import type { DailySummary } from "../types"
 import { formatActivityData, formatDailySummary, formatProductivityScore } from "../utils/formatters"
 
@@ -49,6 +51,7 @@ export function registerAnalyticsTools(server: SomaServerInstance): void {
           }),
         )
         .map((data) => formatActivityData(data, { perspective: args.perspective, restrict_kind: args.restrict_kind }))
+        .mapError(toUserError)
         .runOrThrow(),
   })
 
@@ -61,6 +64,7 @@ export function registerAnalyticsTools(server: SomaServerInstance): void {
       IO.fromEither(unwrapClient())
         .flatMap((client) => client.getDailySummary())
         .map(formatDailySummary)
+        .mapError(toUserError)
         .runOrThrow(),
   })
 
@@ -81,9 +85,13 @@ export function registerAnalyticsTools(server: SomaServerInstance): void {
           match
             ? Right<Error, string>(formatProductivityScore(match))
             : Left<Error, string>(
-                new Error(`No productivity data found for ${target}. Data is available for the last 2 weeks.`),
+                new UserError(`No productivity data found for ${target}. Data is available for the last 2 weeks.`, {
+                  category: "not_found",
+                }),
               ),
         )
-      }).runOrThrow(),
+      })
+        .mapError(toUserError)
+        .runOrThrow(),
   })
 }

@@ -3,6 +3,7 @@ import type { SomaServerInstance } from "somamcp"
 import { z } from "zod"
 
 import { getClient } from "../client/rescuetime-client"
+import { toUserError } from "../errors"
 import { formatFocusSessions } from "../utils/formatters"
 
 function unwrapClient() {
@@ -32,6 +33,7 @@ export function registerFocusTools(server: SomaServerInstance): void {
           const durationText = args.duration === -1 ? "until end of day" : `${args.duration} minutes`
           return `Focus session started for ${durationText}. Distracting sites and apps will be blocked.`
         })
+        .mapError(toUserError)
         .runOrThrow(),
   })
 
@@ -44,6 +46,7 @@ export function registerFocusTools(server: SomaServerInstance): void {
       IO.fromEither(unwrapClient())
         .flatMap((client) => client.endFocusSession())
         .map(() => "Focus session ended. Distracting sites and apps are no longer blocked.")
+        .mapError(toUserError)
         .runOrThrow(),
   })
 
@@ -59,6 +62,7 @@ export function registerFocusTools(server: SomaServerInstance): void {
             .zip(client.getFocusSessionsEnded())
             .map(([started, ended]) => formatFocusSessions(started, ended)),
         )
+        .mapError(toUserError)
         .runOrThrow(),
   })
 }

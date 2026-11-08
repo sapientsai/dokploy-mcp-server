@@ -1,3 +1,5 @@
+import { UserError } from "somamcp"
+
 export type ApiError = {
   readonly _kind: "ApiError"
   readonly message: string
@@ -35,3 +37,6 @@ export const rateLimitError = (message: string, retryAfter?: number): RateLimitE
 })
 
 export const toError = (e: unknown): Error => (e instanceof Error ? e : new Error(String(e)))
+
+/** Report a tool failure to the client as-is, so SomaMCP doesn't label it an internal server error. */
+export const toUserError = (e: Error): UserError => (e instanceof UserError ? e : new UserError(e.message))

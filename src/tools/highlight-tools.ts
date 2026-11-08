@@ -3,6 +3,7 @@ import type { SomaServerInstance } from "somamcp"
 import { z } from "zod"
 
 import { getClient } from "../client/rescuetime-client"
+import { toUserError } from "../errors"
 import { formatHighlights } from "../utils/formatters"
 
 function unwrapClient() {
@@ -19,7 +20,9 @@ export function registerHighlightTools(server: SomaServerInstance): void {
         const client = yield* IO.fromEither(unwrapClient())
         const highlights = yield* client.getHighlights()
         return formatHighlights(highlights)
-      }).runOrThrow(),
+      })
+        .mapError(toUserError)
+        .runOrThrow(),
   })
 
   server.addTool({
@@ -40,6 +43,8 @@ export function registerHighlightTools(server: SomaServerInstance): void {
         })
         const date = args.highlight_date ?? new Date().toISOString().slice(0, 10)
         return `Highlight logged for ${date}: "${args.description}"`
-      }).runOrThrow(),
+      })
+        .mapError(toUserError)
+        .runOrThrow(),
   })
 }

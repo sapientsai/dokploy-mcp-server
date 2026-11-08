@@ -3,6 +3,7 @@ import type { SomaServerInstance } from "somamcp"
 import { z } from "zod"
 
 import { getClient } from "../client/rescuetime-client"
+import { toUserError } from "../errors"
 
 function unwrapClient() {
   return getClient().toEither(new Error("RescueTime client not initialized. Is RESCUETIME_API_KEY set?"))
@@ -36,6 +37,7 @@ export function registerOfflineTools(server: SomaServerInstance): void {
           }),
         )
         .map(() => `Offline time logged: "${args.activity_name}" from ${args.start_time} to ${args.end_time}`)
+        .mapError(toUserError)
         .runOrThrow(),
   })
 }
