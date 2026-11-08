@@ -150,3 +150,24 @@ describe("fdaAPIClient", () => {
     expect(fdaAPIClient).toBeInstanceOf(FDAAPIClient)
   })
 })
+
+describe("request URL encoding", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.unstubAllEnvs()
+  })
+
+  it("sends spaces in the search as +, so openFDA reads AND and TO as operators", async () => {
+    vi.stubEnv("OPENFDA_API_KEY", "")
+    const fetchMock = stubFetch({ status: 200, body: { results: [] } })
+    await createFDAAPIClient().searchDrugAdverseEvents({
+      search: 'patient.drug.medicinalproduct:"aspirin" AND receivedate:[20240101 TO *]',
+      limit: 1,
+    })
+    const url = String(fetchMock.mock.calls[0]?.[0])
+    expect(url).toBe(
+      "https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct%3A%22aspirin%22+AND+receivedate%3A%5B20240101+TO+*%5D&limit=1",
+    )
+    expect(url).not.toContain("%2B")
+  })
+})

@@ -90,6 +90,7 @@ src/
 - **Handlers**: Each endpoint has a dedicated handler that builds queries, calls the API, and formats results
 - **Clients are factories**: `createFDAAPIClient()` and `createBulkDataClient()` return object literals; the bulk caches live in functype `Ref`s. `FDAAPIClient` and `BulkDataClient` are class forms that delegate to them. The shared `fdaAPIClient` and `bulkDataClient` stay class instances, as in 2.0.0, so `./lib` callers typed against the classes keep compiling (tests `vi.spyOn` them)
 - **Collections**: bulk handlers filter, sort and page through functype `List`, and convert with `.toArray()` at the response boundary. No `List`, `Option` or `Map` may reach `FDAToolResponse.data`.
+- **openFDA queries use real spaces**: build `a:"x" AND b:[1 TO 2]` with spaces, never `+AND+`. `URLSearchParams` sends a space as `+`, which openFDA reads as a space; a literal `+` goes out as `%2B`, and openFDA then answers 404 (read as "no results") or 500
 - **Zod Schemas**: All tool parameters validated with Zod
 - **Rate Limiting**: API client is aware of FDA rate limits (40/min without key, 240/min with key)
 - **Error Handling**: Clients return `Either<Error, T>` (functype) instead of throwing; handlers `fold` it into `FDAToolResponse<T>` with success/error status. Lint runs with `--max-warnings=0`, so the functype rules (`prefer-try`, `prefer-option`, `prefer-either`) are enforced
