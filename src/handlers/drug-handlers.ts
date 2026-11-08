@@ -3,6 +3,8 @@
  * Query handlers for FDA drug-related endpoints
  */
 
+import { None, Some } from "functype"
+
 import type {
   DrugAdverseEvent,
   DrugEnforcement,
@@ -15,37 +17,14 @@ import type {
 } from "../types/fda.js"
 import { fdaAPIClient } from "../utils/api-client.js"
 import { loggers } from "../utils/logger.js"
-
-// Helper to build date range query
-function buildDateQuery(field: string, dateFrom?: string, dateTo?: string): string | undefined {
-  if (!dateFrom && !dateTo) return undefined
-
-  // FDA date format is YYYYMMDD
-  const from = dateFrom?.replace(/-/g, "") ?? "*"
-  const to = dateTo?.replace(/-/g, "") ?? "*"
-
-  return `${field}:[${from}+TO+${to}]`
-}
-
-// Helper to escape special characters in search terms
-function escapeSearchTerm(term: string): string {
-  // Escape special characters that have meaning in FDA's search syntax
-  return term.replace(/[+\-&|!(){}[\]^"~*?:\\]/g, "\\$&").replace(/\s+/g, "+")
-}
-
-// Helper to build a search query from multiple terms
-function buildSearchQuery(terms: Array<{ field: string; value?: string }>): string {
-  const validTerms = terms.filter((t) => t.value !== undefined && t.value.trim() !== "")
-  if (validTerms.length === 0) return ""
-
-  return validTerms.map((t) => `${t.field}:"${escapeSearchTerm(t.value!)}"`).join("+AND+")
-}
-
-// Format truncated text
-function truncateText(text: string | undefined, maxLength = 200): string | undefined {
-  if (!text) return undefined
-  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text
-}
+import {
+  buildDateQuery,
+  buildSearchQuery,
+  escapeSearchTerm,
+  joinQueries,
+  toSearchResponse,
+  truncateText,
+} from "./query.js"
 
 // Drug Adverse Events Handler
 export type DrugAdverseEventsParams = {
@@ -111,64 +90,45 @@ export async function handleSearchDrugAdverseEvents(
 ): Promise<FDAToolResponse<FormattedDrugAdverseEvent[]>> {
   loggers.tools("searchDrugAdverseEvents", params)
 
-  try {
-    // If safetyReportId is provided, do a direct lookup
-    if (params.safetyReportId) {
-      const searchParams: SearchParams = {
-        search: `safetyreportid:"${escapeSearchTerm(params.safetyReportId)}"`,
-        limit: 1,
-      }
-
-      const response = await fdaAPIClient.searchDrugAdverseEvents(searchParams)
-      const results = response.results ?? []
-
-      return {
-        success: true,
-        data: results.map(formatDrugAdverseEvent),
-        totalResults: response.meta?.results?.total,
-        displayedResults: results.length,
-        searchParams,
-        apiUsage: fdaAPIClient.getRateLimitInfo(),
-      }
-    }
-
-    const searchTerms: Array<{ field: string; value?: string }> = [
-      { field: "patient.drug.medicinalproduct", value: params.drugName },
-      { field: "patient.reaction.reactionmeddrapt", value: params.reaction },
-      { field: "patient.drug.openfda.manufacturer_name", value: params.manufacturer },
-    ]
-
-    if (params.serious !== undefined) {
-      searchTerms.push({ field: "serious", value: params.serious ? "1" : "2" })
-    }
-
-    const searchQuery = buildSearchQuery(searchTerms)
-    const dateQuery = buildDateQuery("receivedate", params.dateFrom, params.dateTo)
-    const fullQuery = [searchQuery, dateQuery].filter(Boolean).join("+AND+")
-
+  // If safetyReportId is provided, do a direct lookup
+  if (params.safetyReportId) {
     const searchParams: SearchParams = {
-      search: fullQuery || undefined,
-      limit: params.limit,
-      skip: params.skip,
+      search: `safetyreportid:"${escapeSearchTerm(params.safetyReportId)}"`,
+      limit: 1,
     }
 
-    const response = await fdaAPIClient.searchDrugAdverseEvents(searchParams)
-    const results = response.results ?? []
-
-    return {
-      success: true,
-      data: results.map(formatDrugAdverseEvent),
-      totalResults: response.meta?.results?.total,
-      displayedResults: results.length,
+    return toSearchResponse(
+      await fdaAPIClient.searchDrugAdverseEvents(searchParams),
       searchParams,
-      apiUsage: fdaAPIClient.getRateLimitInfo(),
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    }
+      formatDrugAdverseEvent,
+    )
   }
+
+  const searchTerms: Array<{ field: string; value?: string }> = [
+    { field: "patient.drug.medicinalproduct", value: params.drugName },
+    { field: "patient.reaction.reactionmeddrapt", value: params.reaction },
+    { field: "patient.drug.openfda.manufacturer_name", value: params.manufacturer },
+  ]
+
+  if (params.serious !== undefined) {
+    searchTerms.push({ field: "serious", value: params.serious ? "1" : "2" })
+  }
+
+  const searchQuery = buildSearchQuery(searchTerms)
+  const dateQuery = buildDateQuery("receivedate", params.dateFrom, params.dateTo)
+  const fullQuery = joinQueries(searchQuery, dateQuery)
+
+  const searchParams: SearchParams = {
+    search: fullQuery || undefined,
+    limit: params.limit,
+    skip: params.skip,
+  }
+
+  return toSearchResponse(
+    await fdaAPIClient.searchDrugAdverseEvents(searchParams),
+    searchParams,
+    formatDrugAdverseEvent,
+  )
 }
 
 // Drug Labels Handler
@@ -217,25 +177,39 @@ function formatDrugLabel(label: DrugLabel, sections?: string[]): FormattedDrugLa
     genericName: label.openfda?.generic_name?.[0],
     manufacturer: label.openfda?.manufacturer_name?.[0],
     activeIngredients: label.openfda?.substance_name?.slice(0, 5) ?? [],
-    boxedWarning: includeSection("boxed_warning") ? truncateText(label.boxed_warning?.[0], 500) : undefined,
-    indications: includeSection("indications_and_usage") ? truncateText(label.indications_and_usage?.[0]) : undefined,
-    warnings: includeSection("warnings") ? truncateText(label.warnings?.[0]) : undefined,
-    contraindications: includeSection("contraindications") ? truncateText(label.contraindications?.[0]) : undefined,
-    adverseReactions: includeSection("adverse_reactions") ? truncateText(label.adverse_reactions?.[0]) : undefined,
-    drugInteractions: includeSection("drug_interactions") ? truncateText(label.drug_interactions?.[0]) : undefined,
+    boxedWarning: includeSection("boxed_warning")
+      ? truncateText(label.boxed_warning?.[0], 500).orUndefined()
+      : undefined,
+    indications: includeSection("indications_and_usage")
+      ? truncateText(label.indications_and_usage?.[0]).orUndefined()
+      : undefined,
+    warnings: includeSection("warnings") ? truncateText(label.warnings?.[0]).orUndefined() : undefined,
+    contraindications: includeSection("contraindications")
+      ? truncateText(label.contraindications?.[0]).orUndefined()
+      : undefined,
+    adverseReactions: includeSection("adverse_reactions")
+      ? truncateText(label.adverse_reactions?.[0]).orUndefined()
+      : undefined,
+    drugInteractions: includeSection("drug_interactions")
+      ? truncateText(label.drug_interactions?.[0]).orUndefined()
+      : undefined,
     dosageAndAdministration: includeSection("dosage_and_administration")
-      ? truncateText(label.dosage_and_administration?.[0])
+      ? truncateText(label.dosage_and_administration?.[0]).orUndefined()
       : undefined,
     clinicalPharmacology: includeSection("clinical_pharmacology")
-      ? truncateText(label.clinical_pharmacology?.[0])
+      ? truncateText(label.clinical_pharmacology?.[0]).orUndefined()
       : undefined,
-    mechanismOfAction: includeSection("mechanism_of_action") ? truncateText(label.mechanism_of_action?.[0]) : undefined,
-    pharmacokinetics: includeSection("pharmacokinetics") ? truncateText(label.pharmacokinetics?.[0]) : undefined,
-    overdosage: includeSection("overdosage") ? truncateText(label.overdosage?.[0]) : undefined,
-    description: includeSection("description") ? truncateText(label.description?.[0]) : undefined,
-    howSupplied: includeSection("how_supplied") ? truncateText(label.how_supplied?.[0]) : undefined,
+    mechanismOfAction: includeSection("mechanism_of_action")
+      ? truncateText(label.mechanism_of_action?.[0]).orUndefined()
+      : undefined,
+    pharmacokinetics: includeSection("pharmacokinetics")
+      ? truncateText(label.pharmacokinetics?.[0]).orUndefined()
+      : undefined,
+    overdosage: includeSection("overdosage") ? truncateText(label.overdosage?.[0]).orUndefined() : undefined,
+    description: includeSection("description") ? truncateText(label.description?.[0]).orUndefined() : undefined,
+    howSupplied: includeSection("how_supplied") ? truncateText(label.how_supplied?.[0]).orUndefined() : undefined,
     storageAndHandling: includeSection("storage_and_handling")
-      ? truncateText(label.storage_and_handling?.[0])
+      ? truncateText(label.storage_and_handling?.[0]).orUndefined()
       : undefined,
     route: label.openfda?.route?.slice(0, 3) ?? [],
   }
@@ -244,64 +218,41 @@ function formatDrugLabel(label: DrugLabel, sections?: string[]): FormattedDrugLa
 export async function handleSearchDrugLabels(params: DrugLabelsParams): Promise<FDAToolResponse<FormattedDrugLabel[]>> {
   loggers.tools("searchDrugLabels", params)
 
-  try {
-    // If setId is provided, do a direct lookup
-    if (params.setId) {
-      const searchParams: SearchParams = {
-        search: `set_id:"${escapeSearchTerm(params.setId)}"`,
-        limit: 1,
-      }
-
-      const response = await fdaAPIClient.searchDrugLabels(searchParams)
-      const results = response.results ?? []
-
-      return {
-        success: true,
-        data: results.map((label) => formatDrugLabel(label, params.sections)),
-        totalResults: response.meta?.results?.total,
-        displayedResults: results.length,
-        searchParams,
-        apiUsage: fdaAPIClient.getRateLimitInfo(),
-      }
-    }
-
-    const searchTerms: Array<{ field: string; value?: string }> = [
-      { field: "openfda.brand_name", value: params.drugName },
-      { field: "indications_and_usage", value: params.indication },
-      { field: "openfda.substance_name", value: params.activeIngredient },
-      { field: "openfda.route", value: params.route },
-    ]
-
-    const searchQuery = buildSearchQuery(searchTerms)
-
-    // Build boxed warning existence query
-    const boxedWarningQuery = params.hasBoxedWarning ? "_exists_:boxed_warning" : undefined
-
-    const fullQuery = [searchQuery, boxedWarningQuery].filter(Boolean).join("+AND+")
-
+  // If setId is provided, do a direct lookup
+  if (params.setId) {
     const searchParams: SearchParams = {
-      search: fullQuery || undefined,
-      limit: params.limit,
-      skip: params.skip,
+      search: `set_id:"${escapeSearchTerm(params.setId)}"`,
+      limit: 1,
     }
 
-    const response = await fdaAPIClient.searchDrugLabels(searchParams)
-    const results = response.results ?? []
-
-    return {
-      success: true,
-      data: results.map((label) => formatDrugLabel(label, params.sections)),
-      totalResults: response.meta?.results?.total,
-      displayedResults: results.length,
-      searchParams,
-      apiUsage: fdaAPIClient.getRateLimitInfo(),
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    }
+    return toSearchResponse(await fdaAPIClient.searchDrugLabels(searchParams), searchParams, (label) =>
+      formatDrugLabel(label, params.sections),
+    )
   }
+
+  const searchTerms: Array<{ field: string; value?: string }> = [
+    { field: "openfda.brand_name", value: params.drugName },
+    { field: "indications_and_usage", value: params.indication },
+    { field: "openfda.substance_name", value: params.activeIngredient },
+    { field: "openfda.route", value: params.route },
+  ]
+
+  const searchQuery = buildSearchQuery(searchTerms)
+
+  // Build boxed warning existence query
+  const boxedWarningQuery = params.hasBoxedWarning ? Some("_exists_:boxed_warning") : None<string>()
+
+  const fullQuery = joinQueries(searchQuery, boxedWarningQuery)
+
+  const searchParams: SearchParams = {
+    search: fullQuery || undefined,
+    limit: params.limit,
+    skip: params.skip,
+  }
+
+  return toSearchResponse(await fdaAPIClient.searchDrugLabels(searchParams), searchParams, (label) =>
+    formatDrugLabel(label, params.sections),
+  )
 }
 
 // Drug NDC Handler
@@ -349,41 +300,24 @@ function formatDrugNDC(ndc: DrugNDC): FormattedDrugNDC {
 export async function handleSearchDrugNDC(params: DrugNDCParams): Promise<FDAToolResponse<FormattedDrugNDC[]>> {
   loggers.tools("searchDrugNDC", params)
 
-  try {
-    const searchTerms: Array<{ field: string; value?: string }> = [
-      { field: "product_ndc", value: params.productNdc },
-      { field: "brand_name", value: params.brandName },
-      { field: "generic_name", value: params.genericName },
-      { field: "labeler_name", value: params.labelerName },
-      { field: "dosage_form", value: params.dosageForm },
-      { field: "route", value: params.route },
-    ]
+  const searchTerms: Array<{ field: string; value?: string }> = [
+    { field: "product_ndc", value: params.productNdc },
+    { field: "brand_name", value: params.brandName },
+    { field: "generic_name", value: params.genericName },
+    { field: "labeler_name", value: params.labelerName },
+    { field: "dosage_form", value: params.dosageForm },
+    { field: "route", value: params.route },
+  ]
 
-    const searchQuery = buildSearchQuery(searchTerms)
+  const searchQuery = buildSearchQuery(searchTerms)
 
-    const searchParams: SearchParams = {
-      search: searchQuery || undefined,
-      limit: params.limit,
-      skip: params.skip,
-    }
-
-    const response = await fdaAPIClient.searchDrugNDC(searchParams)
-    const results = response.results ?? []
-
-    return {
-      success: true,
-      data: results.map(formatDrugNDC),
-      totalResults: response.meta?.results?.total,
-      displayedResults: results.length,
-      searchParams,
-      apiUsage: fdaAPIClient.getRateLimitInfo(),
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    }
+  const searchParams: SearchParams = {
+    search: searchQuery || undefined,
+    limit: params.limit,
+    skip: params.skip,
   }
+
+  return toSearchResponse(await fdaAPIClient.searchDrugNDC(searchParams), searchParams, formatDrugNDC)
 }
 
 // Drug Enforcement (Recalls) Handler
@@ -417,10 +351,10 @@ function formatDrugEnforcement(recall: DrugEnforcement): FormattedDrugEnforcemen
     recallingFirm: recall.recalling_firm,
     classification: recall.classification,
     status: recall.status,
-    productDescription: truncateText(recall.product_description),
-    reasonForRecall: truncateText(recall.reason_for_recall),
+    productDescription: truncateText(recall.product_description).orUndefined(),
+    reasonForRecall: truncateText(recall.reason_for_recall).orUndefined(),
     recallInitiationDate: recall.recall_initiation_date,
-    distributionPattern: truncateText(recall.distribution_pattern),
+    distributionPattern: truncateText(recall.distribution_pattern).orUndefined(),
     city: recall.city,
     state: recall.state,
   }
@@ -431,41 +365,24 @@ export async function handleSearchDrugEnforcement(
 ): Promise<FDAToolResponse<FormattedDrugEnforcement[]>> {
   loggers.tools("searchDrugEnforcement", params)
 
-  try {
-    const searchTerms: Array<{ field: string; value?: string }> = [
-      { field: "recalling_firm", value: params.recallingFirm },
-      { field: "classification", value: params.classification },
-      { field: "status", value: params.status },
-      { field: "state", value: params.state },
-    ]
+  const searchTerms: Array<{ field: string; value?: string }> = [
+    { field: "recalling_firm", value: params.recallingFirm },
+    { field: "classification", value: params.classification },
+    { field: "status", value: params.status },
+    { field: "state", value: params.state },
+  ]
 
-    const searchQuery = buildSearchQuery(searchTerms)
-    const dateQuery = buildDateQuery("recall_initiation_date", params.dateFrom, params.dateTo)
-    const fullQuery = [searchQuery, dateQuery].filter(Boolean).join("+AND+")
+  const searchQuery = buildSearchQuery(searchTerms)
+  const dateQuery = buildDateQuery("recall_initiation_date", params.dateFrom, params.dateTo)
+  const fullQuery = joinQueries(searchQuery, dateQuery)
 
-    const searchParams: SearchParams = {
-      search: fullQuery || undefined,
-      limit: params.limit,
-      skip: params.skip,
-    }
-
-    const response = await fdaAPIClient.searchDrugEnforcement(searchParams)
-    const results = response.results ?? []
-
-    return {
-      success: true,
-      data: results.map(formatDrugEnforcement),
-      totalResults: response.meta?.results?.total,
-      displayedResults: results.length,
-      searchParams,
-      apiUsage: fdaAPIClient.getRateLimitInfo(),
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    }
+  const searchParams: SearchParams = {
+    search: fullQuery || undefined,
+    limit: params.limit,
+    skip: params.skip,
   }
+
+  return toSearchResponse(await fdaAPIClient.searchDrugEnforcement(searchParams), searchParams, formatDrugEnforcement)
 }
 
 // Drugs@FDA Handler
@@ -528,39 +445,22 @@ function formatDrugsFDA(drug: DrugsFDA): FormattedDrugsFDA {
 export async function handleSearchDrugsFDA(params: DrugsFDAParams): Promise<FDAToolResponse<FormattedDrugsFDA[]>> {
   loggers.tools("searchDrugsFDA", params)
 
-  try {
-    const searchTerms: Array<{ field: string; value?: string }> = [
-      { field: "sponsor_name", value: params.sponsorName },
-      { field: "application_number", value: params.applicationNumber },
-      { field: "products.brand_name", value: params.brandName },
-      { field: "products.marketing_status", value: params.marketingStatus },
-    ]
+  const searchTerms: Array<{ field: string; value?: string }> = [
+    { field: "sponsor_name", value: params.sponsorName },
+    { field: "application_number", value: params.applicationNumber },
+    { field: "products.brand_name", value: params.brandName },
+    { field: "products.marketing_status", value: params.marketingStatus },
+  ]
 
-    const searchQuery = buildSearchQuery(searchTerms)
+  const searchQuery = buildSearchQuery(searchTerms)
 
-    const searchParams: SearchParams = {
-      search: searchQuery || undefined,
-      limit: params.limit,
-      skip: params.skip,
-    }
-
-    const response = await fdaAPIClient.searchDrugsFDA(searchParams)
-    const results = response.results ?? []
-
-    return {
-      success: true,
-      data: results.map(formatDrugsFDA),
-      totalResults: response.meta?.results?.total,
-      displayedResults: results.length,
-      searchParams,
-      apiUsage: fdaAPIClient.getRateLimitInfo(),
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    }
+  const searchParams: SearchParams = {
+    search: searchQuery || undefined,
+    limit: params.limit,
+    skip: params.skip,
   }
+
+  return toSearchResponse(await fdaAPIClient.searchDrugsFDA(searchParams), searchParams, formatDrugsFDA)
 }
 
 // Drug Shortages Handler
@@ -585,7 +485,7 @@ function formatDrugShortage(shortage: DrugShortage): FormattedDrugShortage {
     genericName: shortage.generic_name,
     proprietaryName: shortage.proprietary_name,
     status: shortage.status,
-    description: truncateText(shortage.description),
+    description: truncateText(shortage.description).orUndefined(),
     initialPostingDate: shortage.initial_posting_date,
     resolvedShortageDate: shortage.resolved_shortage_date,
   }
@@ -596,35 +496,18 @@ export async function handleSearchDrugShortages(
 ): Promise<FDAToolResponse<FormattedDrugShortage[]>> {
   loggers.tools("searchDrugShortages", params)
 
-  try {
-    const searchTerms: Array<{ field: string; value?: string }> = [
-      { field: "generic_name", value: params.genericName },
-      { field: "status", value: params.status },
-    ]
+  const searchTerms: Array<{ field: string; value?: string }> = [
+    { field: "generic_name", value: params.genericName },
+    { field: "status", value: params.status },
+  ]
 
-    const searchQuery = buildSearchQuery(searchTerms)
+  const searchQuery = buildSearchQuery(searchTerms)
 
-    const searchParams: SearchParams = {
-      search: searchQuery || undefined,
-      limit: params.limit,
-      skip: params.skip,
-    }
-
-    const response = await fdaAPIClient.searchDrugShortages(searchParams)
-    const results = response.results ?? []
-
-    return {
-      success: true,
-      data: results.map(formatDrugShortage),
-      totalResults: response.meta?.results?.total,
-      displayedResults: results.length,
-      searchParams,
-      apiUsage: fdaAPIClient.getRateLimitInfo(),
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    }
+  const searchParams: SearchParams = {
+    search: searchQuery || undefined,
+    limit: params.limit,
+    skip: params.skip,
   }
+
+  return toSearchResponse(await fdaAPIClient.searchDrugShortages(searchParams), searchParams, formatDrugShortage)
 }

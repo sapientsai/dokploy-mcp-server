@@ -7,6 +7,7 @@ import { Map } from "functype"
 
 import type { FDAToolResponse, OrangeBookExclusivity } from "../types/fda.js"
 import { bulkDataClient } from "../utils/bulk-data-client.js"
+import { failure } from "../utils/errors.js"
 import { loggers } from "../utils/logger.js"
 
 // Helper for case-insensitive substring matching
@@ -104,56 +105,52 @@ export async function handleSearchOrangeBook(
 ): Promise<FDAToolResponse<FormattedOrangeBookProduct[]>> {
   loggers.tools("searchOrangeBook", params)
 
-  try {
-    const { products, patents, exclusivities } = await bulkDataClient.getOrangeBookData()
+  return (await bulkDataClient.getOrangeBookData()).fold(
+    failure<FormattedOrangeBookProduct[]>,
+    ({ products, patents, exclusivities }) => {
+      const patentCounts = buildCountMap(patents, obJoinKey)
+      const exclusivityCounts = buildCountMap(exclusivities, obJoinKey)
 
-    const patentCounts = buildCountMap(patents, obJoinKey)
-    const exclusivityCounts = buildCountMap(exclusivities, obJoinKey)
+      const filtered = products.filter((p) => {
+        if (!matchesFilter(p.tradeName, params.drugName) && !matchesFilter(p.ingredient, params.drugName)) return false
+        if (!matchesFilter(p.applicant, params.applicant) && !matchesFilter(p.applicantFullName, params.applicant))
+          return false
+        if (params.applNo && p.applNo !== params.applNo) return false
+        if (!matchesFilter(p.teCode, params.teCode)) return false
+        return true
+      })
 
-    const filtered = products.filter((p) => {
-      if (!matchesFilter(p.tradeName, params.drugName) && !matchesFilter(p.ingredient, params.drugName)) return false
-      if (!matchesFilter(p.applicant, params.applicant) && !matchesFilter(p.applicantFullName, params.applicant))
-        return false
-      if (params.applNo && p.applNo !== params.applNo) return false
-      if (!matchesFilter(p.teCode, params.teCode)) return false
-      return true
-    })
+      const { items, total } = applyPagination(filtered, params.limit, params.skip)
 
-    const { items, total } = applyPagination(filtered, params.limit, params.skip)
+      const formatted: FormattedOrangeBookProduct[] = items.map((p) => {
+        const key = obJoinKey(p)
+        return {
+          tradeName: p.tradeName,
+          ingredient: p.ingredient,
+          applicant: p.applicant,
+          applicantFullName: p.applicantFullName,
+          applType: p.applType,
+          applNo: p.applNo,
+          productNo: p.productNo,
+          dfRoute: p.dfRoute,
+          teCode: p.teCode,
+          approvalDate: p.approvalDate,
+          rld: p.rld,
+          type: p.type,
+          patentCount: patentCounts.getOrElse(key, 0),
+          exclusivityCount: exclusivityCounts.getOrElse(key, 0),
+        }
+      })
 
-    const formatted: FormattedOrangeBookProduct[] = items.map((p) => {
-      const key = obJoinKey(p)
       return {
-        tradeName: p.tradeName,
-        ingredient: p.ingredient,
-        applicant: p.applicant,
-        applicantFullName: p.applicantFullName,
-        applType: p.applType,
-        applNo: p.applNo,
-        productNo: p.productNo,
-        dfRoute: p.dfRoute,
-        teCode: p.teCode,
-        approvalDate: p.approvalDate,
-        rld: p.rld,
-        type: p.type,
-        patentCount: patentCounts.getOrElse(key, 0),
-        exclusivityCount: exclusivityCounts.getOrElse(key, 0),
+        success: true,
+        data: formatted,
+        totalResults: total,
+        displayedResults: items.length,
+        dataSource: ORANGE_BOOK_SOURCE,
       }
-    })
-
-    return {
-      success: true,
-      data: formatted,
-      totalResults: total,
-      displayedResults: items.length,
-      dataSource: ORANGE_BOOK_SOURCE,
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    }
-  }
+    },
+  )
 }
 
 // ============================================================
@@ -188,62 +185,58 @@ export async function handleSearchOrangeBookPatents(
 ): Promise<FDAToolResponse<FormattedOrangeBookPatent[]>> {
   loggers.tools("searchOrangeBookPatents", params)
 
-  try {
-    const { products, patents, exclusivities } = await bulkDataClient.getOrangeBookData()
+  return (await bulkDataClient.getOrangeBookData()).fold(
+    failure<FormattedOrangeBookPatent[]>,
+    ({ products, patents, exclusivities }) => {
+      const productMap = buildLookupMap(products, obJoinKey)
+      const exclusivityMap = buildGroupMap(exclusivities, obJoinKey)
 
-    const productMap = buildLookupMap(products, obJoinKey)
-    const exclusivityMap = buildGroupMap(exclusivities, obJoinKey)
+      const filtered = patents.filter((pat) => {
+        if (params.patentNo && pat.patentNo !== params.patentNo) return false
+        if (params.applNo && pat.applNo !== params.applNo) return false
 
-    const filtered = patents.filter((pat) => {
-      if (params.patentNo && pat.patentNo !== params.patentNo) return false
-      if (params.applNo && pat.applNo !== params.applNo) return false
+        if (params.drugName) {
+          const product = productMap.get(obJoinKey(pat)).orUndefined()
+          if (!product) return false
+          if (!matchesFilter(product.tradeName, params.drugName) && !matchesFilter(product.ingredient, params.drugName))
+            return false
+        }
 
-      if (params.drugName) {
-        const product = productMap.get(obJoinKey(pat)).orUndefined()
-        if (!product) return false
-        if (!matchesFilter(product.tradeName, params.drugName) && !matchesFilter(product.ingredient, params.drugName))
-          return false
-      }
+        return true
+      })
 
-      return true
-    })
+      const { items, total } = applyPagination(filtered, params.limit, params.skip)
 
-    const { items, total } = applyPagination(filtered, params.limit, params.skip)
+      const formatted: FormattedOrangeBookPatent[] = items.map((pat) => {
+        const key = obJoinKey(pat)
+        const product = productMap.get(key).orUndefined()
+        const excl = exclusivityMap.getOrElse(key, [])
 
-    const formatted: FormattedOrangeBookPatent[] = items.map((pat) => {
-      const key = obJoinKey(pat)
-      const product = productMap.get(key).orUndefined()
-      const excl = exclusivityMap.getOrElse(key, [])
+        return {
+          patentNo: pat.patentNo,
+          patentExpireDate: pat.patentExpireDate,
+          drugSubstanceFlag: pat.drugSubstanceFlag,
+          drugProductFlag: pat.drugProductFlag,
+          patentUseCode: pat.patentUseCode,
+          applType: pat.applType,
+          applNo: pat.applNo,
+          productNo: pat.productNo,
+          tradeName: product?.tradeName ?? "",
+          ingredient: product?.ingredient ?? "",
+          submissionDate: pat.submissionDate,
+          exclusivities: excl.map((e) => ({ code: e.exclusivityCode, date: e.exclusivityDate })),
+        }
+      })
 
       return {
-        patentNo: pat.patentNo,
-        patentExpireDate: pat.patentExpireDate,
-        drugSubstanceFlag: pat.drugSubstanceFlag,
-        drugProductFlag: pat.drugProductFlag,
-        patentUseCode: pat.patentUseCode,
-        applType: pat.applType,
-        applNo: pat.applNo,
-        productNo: pat.productNo,
-        tradeName: product?.tradeName ?? "",
-        ingredient: product?.ingredient ?? "",
-        submissionDate: pat.submissionDate,
-        exclusivities: excl.map((e) => ({ code: e.exclusivityCode, date: e.exclusivityDate })),
+        success: true,
+        data: formatted,
+        totalResults: total,
+        displayedResults: items.length,
+        dataSource: ORANGE_BOOK_SOURCE,
       }
-    })
-
-    return {
-      success: true,
-      data: formatted,
-      totalResults: total,
-      displayedResults: items.length,
-      dataSource: ORANGE_BOOK_SOURCE,
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    }
-  }
+    },
+  )
 }
 
 // ============================================================
@@ -284,9 +277,7 @@ export async function handleSearchPurpleBook(
 ): Promise<FDAToolResponse<FormattedPurpleBookEntry[]>> {
   loggers.tools("searchPurpleBook", params)
 
-  try {
-    const entries = await bulkDataClient.getPurpleBookData()
-
+  return (await bulkDataClient.getPurpleBookData()).fold(failure<FormattedPurpleBookEntry[]>, (entries) => {
     const filtered = entries.filter((e) => {
       if (!matchesFilter(e.proprietaryName, params.productName) && !matchesFilter(e.properName, params.productName))
         return false
@@ -325,12 +316,7 @@ export async function handleSearchPurpleBook(
       displayedResults: items.length,
       dataSource: PURPLE_BOOK_SOURCE,
     }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    }
-  }
+  })
 }
 
 // ============================================================
@@ -364,101 +350,98 @@ export async function handleSearchDrugPatentExpiry(
 ): Promise<FDAToolResponse<PatentExpiryEntry[]>> {
   loggers.tools("searchDrugPatentExpiry", params)
 
-  try {
-    const includeExclusivity = params.includeExclusivity !== false
-    const includePurpleBook = params.includePurpleBook === true
+  const includeExclusivity = params.includeExclusivity !== false
+  const includePurpleBook = params.includePurpleBook === true
 
-    const { products, patents, exclusivities } = await bulkDataClient.getOrangeBookData()
+  return (await bulkDataClient.getOrangeBookData()).fold(
+    (error) => Promise.resolve(failure<PatentExpiryEntry[]>(error)),
+    async ({ products, patents, exclusivities }) => {
+      const productMap = buildLookupMap(products, obJoinKey)
+      const exclusivityMap = includeExclusivity
+        ? buildGroupMap(exclusivities, obJoinKey)
+        : Map.empty<string, OrangeBookExclusivity[]>()
 
-    const productMap = buildLookupMap(products, obJoinKey)
-    const exclusivityMap = includeExclusivity
-      ? buildGroupMap(exclusivities, obJoinKey)
-      : Map.empty<string, OrangeBookExclusivity[]>()
+      // Filter patents by drug name / applNo
+      const filteredPatents = patents.filter((pat) => {
+        if (params.applNo && pat.applNo !== params.applNo) return false
+        if (params.drugName) {
+          const product = productMap.get(obJoinKey(pat)).orUndefined()
+          if (!product) return false
+          if (!matchesFilter(product.tradeName, params.drugName) && !matchesFilter(product.ingredient, params.drugName))
+            return false
+        }
+        return true
+      })
 
-    // Filter patents by drug name / applNo
-    const filteredPatents = patents.filter((pat) => {
-      if (params.applNo && pat.applNo !== params.applNo) return false
-      if (params.drugName) {
-        const product = productMap.get(obJoinKey(pat)).orUndefined()
-        if (!product) return false
-        if (!matchesFilter(product.tradeName, params.drugName) && !matchesFilter(product.ingredient, params.drugName))
-          return false
-      }
-      return true
-    })
+      const orangeEntries: PatentExpiryEntry[] = filteredPatents.map((pat) => {
+        const key = obJoinKey(pat)
+        const product = productMap.get(key).orUndefined()
+        const excl = exclusivityMap.getOrElse(key, [])
 
-    const orangeEntries: PatentExpiryEntry[] = filteredPatents.map((pat) => {
-      const key = obJoinKey(pat)
-      const product = productMap.get(key).orUndefined()
-      const excl = exclusivityMap.getOrElse(key, [])
+        return {
+          source: "Orange Book",
+          tradeName: product?.tradeName ?? "",
+          ingredient: product?.ingredient ?? "",
+          applNo: pat.applNo,
+          patentNo: pat.patentNo,
+          patentExpireDate: pat.patentExpireDate,
+          drugSubstanceFlag: pat.drugSubstanceFlag,
+          drugProductFlag: pat.drugProductFlag,
+          patentUseCode: pat.patentUseCode,
+          exclusivities: excl.map((e) => ({ code: e.exclusivityCode, date: e.exclusivityDate })),
+        }
+      })
+
+      // Optionally add Purple Book entries that match
+      const purpleEntries: PatentExpiryEntry[] = includePurpleBook ? await getPurpleBookPatentEntries(params) : []
+
+      const entries = [...orangeEntries, ...purpleEntries].sort((a, b) => {
+        if (!a.patentExpireDate && !b.patentExpireDate) return 0
+        if (!a.patentExpireDate) return 1
+        if (!b.patentExpireDate) return -1
+        return a.patentExpireDate.localeCompare(b.patentExpireDate)
+      })
+
+      const { items, total } = applyPagination(entries, params.limit, params.skip)
 
       return {
-        source: "Orange Book",
-        tradeName: product?.tradeName ?? "",
-        ingredient: product?.ingredient ?? "",
-        applNo: pat.applNo,
-        patentNo: pat.patentNo,
-        patentExpireDate: pat.patentExpireDate,
-        drugSubstanceFlag: pat.drugSubstanceFlag,
-        drugProductFlag: pat.drugProductFlag,
-        patentUseCode: pat.patentUseCode,
-        exclusivities: excl.map((e) => ({ code: e.exclusivityCode, date: e.exclusivityDate })),
+        success: true,
+        data: items,
+        totalResults: total,
+        displayedResults: items.length,
+        dataSource: ORANGE_BOOK_SOURCE,
       }
-    })
-
-    // Optionally add Purple Book entries that match
-    const purpleEntries: PatentExpiryEntry[] = includePurpleBook ? await getPurpleBookPatentEntries(params) : []
-
-    const entries = [...orangeEntries, ...purpleEntries].sort((a, b) => {
-      if (!a.patentExpireDate && !b.patentExpireDate) return 0
-      if (!a.patentExpireDate) return 1
-      if (!b.patentExpireDate) return -1
-      return a.patentExpireDate.localeCompare(b.patentExpireDate)
-    })
-
-    const { items, total } = applyPagination(entries, params.limit, params.skip)
-
-    return {
-      success: true,
-      data: items,
-      totalResults: total,
-      displayedResults: items.length,
-      dataSource: ORANGE_BOOK_SOURCE,
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    }
-  }
+    },
+  )
 }
 
 async function getPurpleBookPatentEntries(params: DrugPatentExpiryParams): Promise<PatentExpiryEntry[]> {
-  try {
-    const purpleEntries = await bulkDataClient.getPurpleBookData()
-    return purpleEntries
-      .filter((e) => {
-        if (params.drugName) {
-          if (!matchesFilter(e.proprietaryName, params.drugName) && !matchesFilter(e.properName, params.drugName))
-            return false
-        }
-        if (params.applNo && e.blaNumber !== params.applNo) return false
-        return true
-      })
-      .map((pe) => ({
-        source: "Purple Book",
-        tradeName: pe.proprietaryName,
-        ingredient: pe.properName,
-        applNo: pe.blaNumber,
-        patentNo: "",
-        patentExpireDate: "",
-        drugSubstanceFlag: "",
-        drugProductFlag: "",
-        patentUseCode: "",
-        exclusivities: [],
-      }))
-  } catch (error) {
-    loggers.bulk(`Purple Book data unavailable: ${error instanceof Error ? error.message : String(error)}`)
-    return []
-  }
+  return (await bulkDataClient.getPurpleBookData()).fold(
+    (error) => {
+      loggers.bulk(`Purple Book data unavailable: ${error.message}`)
+      return []
+    },
+    (purpleEntries) =>
+      purpleEntries
+        .filter((e) => {
+          if (params.drugName) {
+            if (!matchesFilter(e.proprietaryName, params.drugName) && !matchesFilter(e.properName, params.drugName))
+              return false
+          }
+          if (params.applNo && e.blaNumber !== params.applNo) return false
+          return true
+        })
+        .map((pe): PatentExpiryEntry => ({
+          source: "Purple Book",
+          tradeName: pe.proprietaryName,
+          ingredient: pe.properName,
+          applNo: pe.blaNumber,
+          patentNo: "",
+          patentExpireDate: "",
+          drugSubstanceFlag: "",
+          drugProductFlag: "",
+          patentUseCode: "",
+          exclusivities: [],
+        })),
+  )
 }

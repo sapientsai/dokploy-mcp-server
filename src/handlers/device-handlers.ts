@@ -13,36 +13,14 @@ import type {
 } from "../types/fda.js"
 import { fdaAPIClient } from "../utils/api-client.js"
 import { loggers } from "../utils/logger.js"
-
-// Helper to build date range query
-function buildDateQuery(field: string, dateFrom?: string, dateTo?: string): string | undefined {
-  if (!dateFrom && !dateTo) return undefined
-
-  // FDA date format is YYYYMMDD
-  const from = dateFrom?.replace(/-/g, "") ?? "*"
-  const to = dateTo?.replace(/-/g, "") ?? "*"
-
-  return `${field}:[${from}+TO+${to}]`
-}
-
-// Helper to escape special characters in search terms
-function escapeSearchTerm(term: string): string {
-  return term.replace(/[+\-&|!(){}[\]^"~*?:\\]/g, "\\$&").replace(/\s+/g, "+")
-}
-
-// Helper to build a search query from multiple terms
-function buildSearchQuery(terms: Array<{ field: string; value?: string }>): string {
-  const validTerms = terms.filter((t) => t.value !== undefined && t.value.trim() !== "")
-  if (validTerms.length === 0) return ""
-
-  return validTerms.map((t) => `${t.field}:"${escapeSearchTerm(t.value!)}"`).join("+AND+")
-}
-
-// Format truncated text
-function truncateText(text: string | undefined, maxLength = 200): string | undefined {
-  if (!text) return undefined
-  return text.length > maxLength ? `${text.substring(0, maxLength)}...` : text
-}
+import {
+  buildDateQuery,
+  buildSearchQuery,
+  escapeSearchTerm,
+  joinQueries,
+  toSearchResponse,
+  truncateText,
+} from "./query.js"
 
 // Device 510(k) Handler
 export type Device510KParams = {
@@ -93,41 +71,24 @@ export async function handleSearchDevice510K(
 ): Promise<FDAToolResponse<FormattedDevice510K[]>> {
   loggers.tools("searchDevice510K", params)
 
-  try {
-    const searchTerms: Array<{ field: string; value?: string }> = [
-      { field: "device_name", value: params.deviceName },
-      { field: "applicant", value: params.applicant },
-      { field: "product_code", value: params.productCode },
-      { field: "clearance_type", value: params.clearanceType },
-    ]
+  const searchTerms: Array<{ field: string; value?: string }> = [
+    { field: "device_name", value: params.deviceName },
+    { field: "applicant", value: params.applicant },
+    { field: "product_code", value: params.productCode },
+    { field: "clearance_type", value: params.clearanceType },
+  ]
 
-    const searchQuery = buildSearchQuery(searchTerms)
-    const dateQuery = buildDateQuery("decision_date", params.decisionDateFrom, params.decisionDateTo)
-    const fullQuery = [searchQuery, dateQuery].filter(Boolean).join("+AND+")
+  const searchQuery = buildSearchQuery(searchTerms)
+  const dateQuery = buildDateQuery("decision_date", params.decisionDateFrom, params.decisionDateTo)
+  const fullQuery = joinQueries(searchQuery, dateQuery)
 
-    const searchParams: SearchParams = {
-      search: fullQuery || undefined,
-      limit: params.limit,
-      skip: params.skip,
-    }
-
-    const response = await fdaAPIClient.searchDevice510K(searchParams)
-    const results = response.results ?? []
-
-    return {
-      success: true,
-      data: results.map(formatDevice510K),
-      totalResults: response.meta?.results?.total,
-      displayedResults: results.length,
-      searchParams,
-      apiUsage: fdaAPIClient.getRateLimitInfo(),
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    }
+  const searchParams: SearchParams = {
+    search: fullQuery || undefined,
+    limit: params.limit,
+    skip: params.skip,
   }
+
+  return toSearchResponse(await fdaAPIClient.searchDevice510K(searchParams), searchParams, formatDevice510K)
 }
 
 // Device Classification Handler
@@ -158,7 +119,7 @@ function formatDeviceClassification(classification: DeviceClassification): Forma
   return {
     deviceName: classification.device_name,
     deviceClass: classification.device_class,
-    definition: truncateText(classification.definition),
+    definition: truncateText(classification.definition).orUndefined(),
     medicalSpecialty: classification.medical_specialty,
     medicalSpecialtyDescription: classification.medical_specialty_description,
     productCode: classification.product_code,
@@ -174,40 +135,27 @@ export async function handleSearchDeviceClassifications(
 ): Promise<FDAToolResponse<FormattedDeviceClassification[]>> {
   loggers.tools("searchDeviceClassifications", params)
 
-  try {
-    const searchTerms: Array<{ field: string; value?: string }> = [
-      { field: "device_name", value: params.deviceName },
-      { field: "device_class", value: params.deviceClass },
-      { field: "medical_specialty", value: params.medicalSpecialty },
-      { field: "product_code", value: params.productCode },
-      { field: "regulation_number", value: params.regulationNumber },
-    ]
+  const searchTerms: Array<{ field: string; value?: string }> = [
+    { field: "device_name", value: params.deviceName },
+    { field: "device_class", value: params.deviceClass },
+    { field: "medical_specialty", value: params.medicalSpecialty },
+    { field: "product_code", value: params.productCode },
+    { field: "regulation_number", value: params.regulationNumber },
+  ]
 
-    const searchQuery = buildSearchQuery(searchTerms)
+  const searchQuery = buildSearchQuery(searchTerms)
 
-    const searchParams: SearchParams = {
-      search: searchQuery || undefined,
-      limit: params.limit,
-      skip: params.skip,
-    }
-
-    const response = await fdaAPIClient.searchDeviceClassifications(searchParams)
-    const results = response.results ?? []
-
-    return {
-      success: true,
-      data: results.map(formatDeviceClassification),
-      totalResults: response.meta?.results?.total,
-      displayedResults: results.length,
-      searchParams,
-      apiUsage: fdaAPIClient.getRateLimitInfo(),
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    }
+  const searchParams: SearchParams = {
+    search: searchQuery || undefined,
+    limit: params.limit,
+    skip: params.skip,
   }
+
+  return toSearchResponse(
+    await fdaAPIClient.searchDeviceClassifications(searchParams),
+    searchParams,
+    formatDeviceClassification,
+  )
 }
 
 // Device Adverse Events (MDR) Handler
@@ -264,7 +212,7 @@ function formatDeviceAdverseEvent(event: DeviceAdverseEvent): FormattedDeviceAdv
     mdrText:
       event.mdr_text?.slice(0, 2).map((t) => ({
         textType: t.text_type_code,
-        text: truncateText(t.text, 300),
+        text: truncateText(t.text, 300).orUndefined(),
       })) ?? [],
   }
 }
@@ -274,61 +222,42 @@ export async function handleSearchDeviceAdverseEvents(
 ): Promise<FDAToolResponse<FormattedDeviceAdverseEvent[]>> {
   loggers.tools("searchDeviceAdverseEvents", params)
 
-  try {
-    // If reportNumber is provided, do a direct lookup
-    if (params.reportNumber) {
-      const searchParams: SearchParams = {
-        search: `report_number:"${escapeSearchTerm(params.reportNumber)}"`,
-        limit: 1,
-      }
-
-      const response = await fdaAPIClient.searchDeviceAdverseEvents(searchParams)
-      const results = response.results ?? []
-
-      return {
-        success: true,
-        data: results.map(formatDeviceAdverseEvent),
-        totalResults: response.meta?.results?.total,
-        displayedResults: results.length,
-        searchParams,
-        apiUsage: fdaAPIClient.getRateLimitInfo(),
-      }
-    }
-
-    const searchTerms: Array<{ field: string; value?: string }> = [
-      { field: "device.generic_name", value: params.deviceName },
-      { field: "device.brand_name", value: params.brandName },
-      { field: "device.manufacturer_d_name", value: params.manufacturerName },
-      { field: "event_type", value: params.eventType },
-    ]
-
-    const searchQuery = buildSearchQuery(searchTerms)
-    const dateQuery = buildDateQuery("date_received", params.dateFrom, params.dateTo)
-    const fullQuery = [searchQuery, dateQuery].filter(Boolean).join("+AND+")
-
+  // If reportNumber is provided, do a direct lookup
+  if (params.reportNumber) {
     const searchParams: SearchParams = {
-      search: fullQuery || undefined,
-      limit: params.limit,
-      skip: params.skip,
+      search: `report_number:"${escapeSearchTerm(params.reportNumber)}"`,
+      limit: 1,
     }
 
-    const response = await fdaAPIClient.searchDeviceAdverseEvents(searchParams)
-    const results = response.results ?? []
-
-    return {
-      success: true,
-      data: results.map(formatDeviceAdverseEvent),
-      totalResults: response.meta?.results?.total,
-      displayedResults: results.length,
+    return toSearchResponse(
+      await fdaAPIClient.searchDeviceAdverseEvents(searchParams),
       searchParams,
-      apiUsage: fdaAPIClient.getRateLimitInfo(),
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    }
+      formatDeviceAdverseEvent,
+    )
   }
+
+  const searchTerms: Array<{ field: string; value?: string }> = [
+    { field: "device.generic_name", value: params.deviceName },
+    { field: "device.brand_name", value: params.brandName },
+    { field: "device.manufacturer_d_name", value: params.manufacturerName },
+    { field: "event_type", value: params.eventType },
+  ]
+
+  const searchQuery = buildSearchQuery(searchTerms)
+  const dateQuery = buildDateQuery("date_received", params.dateFrom, params.dateTo)
+  const fullQuery = joinQueries(searchQuery, dateQuery)
+
+  const searchParams: SearchParams = {
+    search: fullQuery || undefined,
+    limit: params.limit,
+    skip: params.skip,
+  }
+
+  return toSearchResponse(
+    await fdaAPIClient.searchDeviceAdverseEvents(searchParams),
+    searchParams,
+    formatDeviceAdverseEvent,
+  )
 }
 
 // Device Enforcement (Recalls) Handler
@@ -364,10 +293,10 @@ function formatDeviceEnforcement(recall: DeviceEnforcement): FormattedDeviceEnfo
     recallingFirm: recall.recalling_firm,
     classification: recall.classification,
     status: recall.status,
-    productDescription: truncateText(recall.product_description),
-    reasonForRecall: truncateText(recall.reason_for_recall),
+    productDescription: truncateText(recall.product_description).orUndefined(),
+    reasonForRecall: truncateText(recall.reason_for_recall).orUndefined(),
     recallInitiationDate: recall.recall_initiation_date,
-    distributionPattern: truncateText(recall.distribution_pattern),
+    distributionPattern: truncateText(recall.distribution_pattern).orUndefined(),
     city: recall.city,
     state: recall.state,
     deviceName: recall.openfda?.device_name,
@@ -380,39 +309,26 @@ export async function handleSearchDeviceEnforcement(
 ): Promise<FDAToolResponse<FormattedDeviceEnforcement[]>> {
   loggers.tools("searchDeviceEnforcement", params)
 
-  try {
-    const searchTerms: Array<{ field: string; value?: string }> = [
-      { field: "recalling_firm", value: params.recallingFirm },
-      { field: "product_description", value: params.productDescription },
-      { field: "classification", value: params.classification },
-      { field: "status", value: params.status },
-    ]
+  const searchTerms: Array<{ field: string; value?: string }> = [
+    { field: "recalling_firm", value: params.recallingFirm },
+    { field: "product_description", value: params.productDescription },
+    { field: "classification", value: params.classification },
+    { field: "status", value: params.status },
+  ]
 
-    const searchQuery = buildSearchQuery(searchTerms)
-    const dateQuery = buildDateQuery("recall_initiation_date", params.dateFrom, params.dateTo)
-    const fullQuery = [searchQuery, dateQuery].filter(Boolean).join("+AND+")
+  const searchQuery = buildSearchQuery(searchTerms)
+  const dateQuery = buildDateQuery("recall_initiation_date", params.dateFrom, params.dateTo)
+  const fullQuery = joinQueries(searchQuery, dateQuery)
 
-    const searchParams: SearchParams = {
-      search: fullQuery || undefined,
-      limit: params.limit,
-      skip: params.skip,
-    }
-
-    const response = await fdaAPIClient.searchDeviceEnforcement(searchParams)
-    const results = response.results ?? []
-
-    return {
-      success: true,
-      data: results.map(formatDeviceEnforcement),
-      totalResults: response.meta?.results?.total,
-      displayedResults: results.length,
-      searchParams,
-      apiUsage: fdaAPIClient.getRateLimitInfo(),
-    }
-  } catch (error) {
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : String(error),
-    }
+  const searchParams: SearchParams = {
+    search: fullQuery || undefined,
+    limit: params.limit,
+    skip: params.skip,
   }
+
+  return toSearchResponse(
+    await fdaAPIClient.searchDeviceEnforcement(searchParams),
+    searchParams,
+    formatDeviceEnforcement,
+  )
 }

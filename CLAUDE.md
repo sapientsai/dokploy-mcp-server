@@ -43,12 +43,16 @@ src/
 ├── handlers/
 │   ├── drug-handlers.ts  # Drug query handlers (6 tools)
 │   ├── device-handlers.ts # Device query handlers (4 tools)
-│   └── bulk-data-handlers.ts # Orange Book & Purple Book handlers (4 tools)
+│   ├── bulk-data-handlers.ts # Orange Book & Purple Book handlers (4 tools)
+│   └── query.ts          # Shared query building and toSearchResponse
+├── version.ts            # Package version read from package.json
 ├── tools/
 │   └── index.ts          # Zod schemas for all tools
 └── utils/
-    ├── api-client.ts     # FDA API HTTP client
-    ├── bulk-data-client.ts # Orange Book/Purple Book download, parse, cache
+    ├── api-client.ts     # FDA API HTTP client (returns Either)
+    ├── bulk-data-client.ts # Orange Book/Purple Book download, parse, cache (returns Either)
+    ├── errors.ts         # toError and the failure tool response
+    ├── fields.ts         # textField: Option-based access to loosely typed rows
     └── logger.ts         # Debug logger setup
 ```
 
@@ -86,7 +90,7 @@ src/
 - **Handlers**: Each endpoint has a dedicated handler that builds queries, calls the API, and formats results
 - **Zod Schemas**: All tool parameters validated with Zod
 - **Rate Limiting**: API client is aware of FDA rate limits (40/min without key, 240/min with key)
-- **Error Handling**: All handlers return `FDAToolResponse<T>` with success/error status
+- **Error Handling**: Clients return `Either<Error, T>` (functype) instead of throwing; handlers `fold` it into `FDAToolResponse<T>` with success/error status. Lint runs with `--max-warnings=0`, so the functype rules (`prefer-try`, `prefer-option`, `prefer-either`) are enforced
 
 ## Environment Variables
 
@@ -105,9 +109,9 @@ pnpm test:coverage     # Coverage report
 
 ## Publishing
 
+CI publishes to npm on a `v*` tag (`.github/workflows/publish.yml`, OIDC trusted publishing). Never run `npm publish` locally.
+
 ```bash
 npm version patch|minor|major
-npm publish --access public
+git push --follow-tags
 ```
-
-The `prepublishOnly` hook automatically runs `pnpm validate`.
