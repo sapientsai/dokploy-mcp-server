@@ -3,6 +3,8 @@
  * Query handlers for FDA Orange Book and Purple Book data
  */
 
+import { Map } from "functype"
+
 import type { FDAToolResponse, OrangeBookExclusivity } from "../types/fda.js"
 import { bulkDataClient } from "../utils/bulk-data-client.js"
 import { loggers } from "../utils/logger.js"
@@ -18,26 +20,25 @@ function obJoinKey(record: { applType: string; applNo: string; productNo: string
   return `${record.applType}-${record.applNo}-${record.productNo}`
 }
 
-// Build a counting map from an array using a key function
-function buildCountMap<T>(items: readonly T[], keyFn: (item: T) => string): Map<string, number> {
-  return items.reduce((map, item) => {
-    const key = keyFn(item)
-    return map.set(key, (map.get(key) ?? 0) + 1)
-  }, new Map<string, number>())
+// Group items by key in one linear pass (Object.groupBy). List.groupBy is much
+// slower on Orange Book-sized inputs, and these maps are rebuilt per query.
+function groupEntries<T>(items: readonly T[], keyFn: (item: T) => string): [string, T[]][] {
+  return Object.entries(Object.groupBy(items, keyFn)).map(([key, group]): [string, T[]] => [key, group ?? []])
 }
 
-// Build a lookup map from an array using a key function
+// Build a counting map from an array using a key function
+function buildCountMap<T>(items: readonly T[], keyFn: (item: T) => string): Map<string, number> {
+  return Map(groupEntries(items, keyFn).map(([key, group]): [string, number] => [key, group.length]))
+}
+
+// Build a lookup map from an array using a key function (last item wins on duplicate keys)
 function buildLookupMap<T>(items: readonly T[], keyFn: (item: T) => string): Map<string, T> {
-  return new Map(items.map((item) => [keyFn(item), item]))
+  return Map(items.map((item): [string, T] => [keyFn(item), item]))
 }
 
 // Build a grouped map from an array using a key function
 function buildGroupMap<T>(items: readonly T[], keyFn: (item: T) => string): Map<string, T[]> {
-  return items.reduce((map, item) => {
-    const key = keyFn(item)
-    const existing = map.get(key) ?? []
-    return map.set(key, [...existing, item])
-  }, new Map<string, T[]>())
+  return Map(groupEntries(items, keyFn))
 }
 
 // Default pagination values
@@ -133,8 +134,8 @@ export async function handleSearchOrangeBook(
         approvalDate: p.approvalDate,
         rld: p.rld,
         type: p.type,
-        patentCount: patentCounts.get(key) ?? 0,
-        exclusivityCount: exclusivityCounts.get(key) ?? 0,
+        patentCount: patentCounts.getOrElse(key, 0),
+        exclusivityCount: exclusivityCounts.getOrElse(key, 0),
       }
     })
 
@@ -196,7 +197,7 @@ export async function handleSearchOrangeBookPatents(
       if (params.applNo && pat.applNo !== params.applNo) return false
 
       if (params.drugName) {
-        const product = productMap.get(obJoinKey(pat))
+        const product = productMap.get(obJoinKey(pat)).orUndefined()
         if (!product) return false
         if (!matchesFilter(product.tradeName, params.drugName) && !matchesFilter(product.ingredient, params.drugName))
           return false
@@ -209,8 +210,8 @@ export async function handleSearchOrangeBookPatents(
 
     const formatted: FormattedOrangeBookPatent[] = items.map((pat) => {
       const key = obJoinKey(pat)
-      const product = productMap.get(key)
-      const excl = exclusivityMap.get(key) ?? []
+      const product = productMap.get(key).orUndefined()
+      const excl = exclusivityMap.getOrElse(key, [])
 
       return {
         patentNo: pat.patentNo,
@@ -370,13 +371,13 @@ export async function handleSearchDrugPatentExpiry(
     const productMap = buildLookupMap(products, obJoinKey)
     const exclusivityMap = includeExclusivity
       ? buildGroupMap(exclusivities, obJoinKey)
-      : new Map<string, OrangeBookExclusivity[]>()
+      : Map.empty<string, OrangeBookExclusivity[]>()
 
     // Filter patents by drug name / applNo
     const filteredPatents = patents.filter((pat) => {
       if (params.applNo && pat.applNo !== params.applNo) return false
       if (params.drugName) {
-        const product = productMap.get(obJoinKey(pat))
+        const product = productMap.get(obJoinKey(pat)).orUndefined()
         if (!product) return false
         if (!matchesFilter(product.tradeName, params.drugName) && !matchesFilter(product.ingredient, params.drugName))
           return false
@@ -386,8 +387,8 @@ export async function handleSearchDrugPatentExpiry(
 
     const orangeEntries: PatentExpiryEntry[] = filteredPatents.map((pat) => {
       const key = obJoinKey(pat)
-      const product = productMap.get(key)
-      const excl = exclusivityMap.get(key) ?? []
+      const product = productMap.get(key).orUndefined()
+      const excl = exclusivityMap.getOrElse(key, [])
 
       return {
         source: "Orange Book",
