@@ -134,3 +134,10 @@ describe("Drugs@FDA and device formatting", () => {
     expect(empty).toMatchObject({ devices: [], mdrText: [] })
   })
 })
+
+describe("malformed lists", () => {
+  it("treats a non-array list field as missing", async () => {
+    const event = { patient: { drug: "notarray" } } as unknown as DrugAdverseEvent
+    expect((await adverseEvent(event))?.drugs).toEqual([])
+  })
+})

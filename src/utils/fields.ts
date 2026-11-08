@@ -25,12 +25,14 @@ export const textField = (row: Readonly<Record<string, unknown>>, ...keys: reado
     .flatMap((key) => asText(row[key]))
     .orElse("")
 
-/** The first n items of a list from an FDA record, mapped; [] when the list is missing */
+/** The first n items of a list from an FDA record, mapped; [] when the list is missing or not an array */
 export const mapFirst = <T, U>(items: readonly T[] | undefined, n: number, f: (item: T) => U): U[] =>
-  Option(items).fold(
-    (): U[] => [],
-    (xs) => List(xs).take(n).map(f).toArray(),
-  )
+  Option(items)
+    .filter((xs) => Array.isArray(xs))
+    .fold(
+      (): U[] => [],
+      (xs) => List(xs).take(n).map(f).toArray(),
+    )
 
 /** The first n items of a list from an FDA record; [] when the list is missing */
 export const takeFirst = <T>(items: readonly T[] | undefined, n: number): T[] => mapFirst(items, n, (item) => item)

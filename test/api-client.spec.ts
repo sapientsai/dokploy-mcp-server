@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { createFDAAPIClient, FDAAPIClient } from "../src/utils/api-client.js"
+import { createFDAAPIClient, FDAAPIClient, fdaAPIClient } from "../src/utils/api-client.js"
 import { loggers } from "../src/utils/logger.js"
 
 type StubResponse = { status: number; statusText?: string; body?: unknown }
@@ -142,5 +142,11 @@ describe("createFDAAPIClient", () => {
     expect(errorMessage(await createFDAAPIClient().searchDrugNDC({}))).toBe(
       errorMessage(await new FDAAPIClient().searchDrugNDC({})),
     )
+  })
+})
+
+describe("fdaAPIClient", () => {
+  it("is an FDAAPIClient instance, as in 2.0.0", () => {
+    expect(fdaAPIClient).toBeInstanceOf(FDAAPIClient)
   })
 })

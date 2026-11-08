@@ -88,7 +88,7 @@ src/
 ### Key Patterns
 
 - **Handlers**: Each endpoint has a dedicated handler that builds queries, calls the API, and formats results
-- **Clients are factories**: `createFDAAPIClient()` and `createBulkDataClient()` return object literals; the bulk caches live in functype `Ref`s. `fdaAPIClient` and `bulkDataClient` are the shared instances handlers use (tests `vi.spyOn` them). `FDAAPIClient` and `BulkDataClient` are deprecated class wrappers kept for `./lib` callers until 3.0
+- **Clients are factories**: `createFDAAPIClient()` and `createBulkDataClient()` return object literals; the bulk caches live in functype `Ref`s. `FDAAPIClient` and `BulkDataClient` are class forms that delegate to them. The shared `fdaAPIClient` and `bulkDataClient` stay class instances, as in 2.0.0, so `./lib` callers typed against the classes keep compiling (tests `vi.spyOn` them)
 - **Collections**: bulk handlers filter, sort and page through functype `List`, and convert with `.toArray()` at the response boundary. No `List`, `Option` or `Map` may reach `FDAToolResponse.data`. Use `slice` rather than `drop` on `List` (functype types `drop` as a generic collection)
 - **Zod Schemas**: All tool parameters validated with Zod
 - **Rate Limiting**: API client is aware of FDA rate limits (40/min without key, 240/min with key)

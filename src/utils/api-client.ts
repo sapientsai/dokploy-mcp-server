@@ -159,8 +159,8 @@ export function createFDAAPIClient(): FDAClient {
 }
 
 /**
- * Class form of {@link createFDAAPIClient}, kept so `new FDAAPIClient()` keeps working.
- * @deprecated Use createFDAAPIClient(); this wrapper goes away in 3.0.
+ * Class form of {@link createFDAAPIClient}. It delegates to the factory, so
+ * both behave the same; prefer the factory in new code.
  */
 export class FDAAPIClient implements FDAClient {
   private readonly client: FDAClient = createFDAAPIClient()
@@ -211,4 +211,4 @@ export class FDAAPIClient implements FDAClient {
 }
 
 /** The shared client the tool handlers use */
-export const fdaAPIClient: FDAClient = createFDAAPIClient()
+export const fdaAPIClient: FDAAPIClient = new FDAAPIClient()

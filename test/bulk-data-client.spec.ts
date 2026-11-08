@@ -1,7 +1,13 @@
 import { zipSync } from "fflate"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { BulkDataClient, createBulkDataClient, parseCSV, parseTildeDelimited } from "../src/utils/bulk-data-client.js"
+import {
+  BulkDataClient,
+  bulkDataClient,
+  createBulkDataClient,
+  parseCSV,
+  parseTildeDelimited,
+} from "../src/utils/bulk-data-client.js"
 
 describe("BulkDataClient", () => {
   describe("parseTildeDelimited", () => {
@@ -182,5 +188,11 @@ describe("createBulkDataClient", () => {
   it("exposes the same parsers as module functions", () => {
     expect(parseTildeDelimited("A~B\n1~2")).toEqual(new BulkDataClient().parseTildeDelimited("A~B\n1~2"))
     expect(parseCSV('A,B\n"x, y",2')).toEqual([{ A: "x, y", B: "2" }])
+  })
+})
+
+describe("bulkDataClient", () => {
+  it("is a BulkDataClient instance, as in 2.0.0", () => {
+    expect(bulkDataClient).toBeInstanceOf(BulkDataClient)
   })
 })

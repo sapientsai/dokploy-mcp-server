@@ -8,14 +8,12 @@ import { List, Map, Option } from "functype"
 import type { FDAToolResponse, OrangeBookExclusivity, OrangeBookProduct } from "../types/fda.js"
 import { bulkDataClient } from "../utils/bulk-data-client.js"
 import { failure } from "../utils/errors.js"
+import { nonEmpty } from "../utils/fields.js"
 import { loggers } from "../utils/logger.js"
-
-/** The filter value, if one was given (an empty string means no filter) */
-const given = (filter: string | undefined): Option<string> => Option(filter).filter((f) => f !== "")
 
 /** True when no filter is given, or the value contains it, ignoring case */
 function matchesFilter(value: string, filter: string | undefined): boolean {
-  return given(filter).fold(
+  return nonEmpty(filter).fold(
     () => true,
     (f) => value.toLowerCase().includes(f.toLowerCase()),
   )
@@ -23,7 +21,7 @@ function matchesFilter(value: string, filter: string | undefined): boolean {
 
 /** True when no filter is given, or the value equals it */
 function matchesExact(value: string, filter: string | undefined): boolean {
-  return given(filter).fold(
+  return nonEmpty(filter).fold(
     () => true,
     (f) => value === f,
   )
@@ -47,7 +45,7 @@ function matchesFlag(value: boolean, flag: boolean | undefined): boolean {
  * patent passes; with one, the patent's product must exist and match it.
  */
 function productMatches(product: Option<OrangeBookProduct>, drugName: string | undefined): boolean {
-  return given(drugName).fold(
+  return nonEmpty(drugName).fold(
     () => true,
     (name) => product.exists((p) => matchesEither(p.tradeName, p.ingredient, name)),
   )

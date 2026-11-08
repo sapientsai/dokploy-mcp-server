@@ -278,8 +278,8 @@ export function createBulkDataClient(): BulkClient {
 }
 
 /**
- * Class form of {@link createBulkDataClient}, kept so `new BulkDataClient()` keeps working.
- * @deprecated Use createBulkDataClient(); this wrapper goes away in 3.0.
+ * Class form of {@link createBulkDataClient}. It delegates to the factory, so
+ * both behave the same; prefer the factory in new code.
  */
 export class BulkDataClient implements BulkClient {
   private readonly client: BulkClient = createBulkDataClient()
@@ -310,4 +310,4 @@ export class BulkDataClient implements BulkClient {
 }
 
 /** The shared client the tool handlers use */
-export const bulkDataClient: BulkClient = createBulkDataClient()
+export const bulkDataClient: BulkDataClient = new BulkDataClient()
