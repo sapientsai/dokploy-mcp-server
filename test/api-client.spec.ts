@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { FDAAPIClient } from "../src/utils/api-client.js"
+import { createFDAAPIClient, FDAAPIClient } from "../src/utils/api-client.js"
 import { loggers } from "../src/utils/logger.js"
 
 type StubResponse = { status: number; statusText?: string; body?: unknown }
@@ -119,5 +119,28 @@ describe("FDAAPIClient", () => {
     await client.searchDrugNDC({})
     expect(String(fetchMock.mock.calls[0]?.[0])).not.toContain("api_key")
     expect(client.getRateLimitInfo()).toEqual({ authenticated: false, rateLimit: "40/minute, 1,000/hour" })
+  })
+})
+
+describe("createFDAAPIClient", () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.unstubAllEnvs()
+  })
+
+  it("reads the API key when the client is created", () => {
+    vi.stubEnv("OPENFDA_API_KEY", "first")
+    const withKey = createFDAAPIClient()
+    vi.stubEnv("OPENFDA_API_KEY", "")
+    const withoutKey = createFDAAPIClient()
+    expect(withKey.getRateLimitInfo().authenticated).toBe(true)
+    expect(withoutKey.getRateLimitInfo().authenticated).toBe(false)
+  })
+
+  it("behaves like the FDAAPIClient class", async () => {
+    stubFetch({ status: 429, body: {} })
+    expect(errorMessage(await createFDAAPIClient().searchDrugNDC({}))).toBe(
+      errorMessage(await new FDAAPIClient().searchDrugNDC({})),
+    )
   })
 })

@@ -3,7 +3,7 @@
  * Query handlers for FDA drug-related endpoints
  */
 
-import { None, Some } from "functype"
+import { Map, None, Option, Some } from "functype"
 
 import type {
   DrugAdverseEvent,
@@ -16,12 +16,14 @@ import type {
   SearchParams,
 } from "../types/fda.js"
 import { fdaAPIClient } from "../utils/api-client.js"
+import { mapFirst, nonEmpty, takeFirst } from "../utils/fields.js"
 import { loggers } from "../utils/logger.js"
 import {
   buildDateQuery,
   buildSearchQuery,
   escapeSearchTerm,
   joinQueries,
+  type SearchTerm,
   toSearchResponse,
   truncateText,
 } from "./query.js"
@@ -59,28 +61,36 @@ type FormattedDrugAdverseEvent = {
   }
 }
 
+/** FAERS patientsex codes */
+const PATIENT_SEX = Map<string, string>([
+  ["1", "Male"],
+  ["2", "Female"],
+])
+
 function formatDrugAdverseEvent(event: DrugAdverseEvent): FormattedDrugAdverseEvent {
   return {
     reportId: event.safetyreportid,
     receiveDate: event.receivedate,
     serious: event.serious === "1",
-    drugs:
-      event.patient?.drug?.slice(0, 3).map((d) => ({
-        name: d.medicinalproduct ?? d.activesubstance?.activesubstancename,
-        indication: d.drugindication,
-        route: d.drugadministrationroute,
-      })) ?? [],
-    reactions:
-      event.patient?.reaction?.slice(0, 3).map((r) => ({
-        reaction: r.reactionmeddrapt,
-        outcome: r.reactionoutcome,
-      })) ?? [],
+    drugs: mapFirst(event.patient?.drug, 3, (d) => ({
+      name: d.medicinalproduct ?? d.activesubstance?.activesubstancename,
+      indication: d.drugindication,
+      route: d.drugadministrationroute,
+    })),
+    reactions: mapFirst(event.patient?.reaction, 3, (r) => ({
+      reaction: r.reactionmeddrapt,
+      outcome: r.reactionoutcome,
+    })),
     patient: {
-      age: event.patient?.patientonsetage
-        ? `${event.patient.patientonsetage} ${event.patient.patientonsetageunit ?? ""}`
-        : undefined,
-      sex: event.patient?.patientsex === "1" ? "Male" : event.patient?.patientsex === "2" ? "Female" : undefined,
-      weight: event.patient?.patientweight ? `${event.patient.patientweight} kg` : undefined,
+      age: nonEmpty(event.patient?.patientonsetage)
+        .map((age) => `${age} ${Option(event.patient?.patientonsetageunit).orElse("")}`)
+        .orUndefined(),
+      sex: Option(event.patient?.patientsex)
+        .flatMap((code) => PATIENT_SEX.get(code))
+        .orUndefined(),
+      weight: nonEmpty(event.patient?.patientweight)
+        .map((weight) => `${weight} kg`)
+        .orUndefined(),
     },
   }
 }
@@ -104,15 +114,14 @@ export async function handleSearchDrugAdverseEvents(
     )
   }
 
-  const searchTerms: Array<{ field: string; value?: string }> = [
+  const searchTerms: SearchTerm[] = [
     { field: "patient.drug.medicinalproduct", value: params.drugName },
     { field: "patient.reaction.reactionmeddrapt", value: params.reaction },
     { field: "patient.drug.openfda.manufacturer_name", value: params.manufacturer },
+    ...Option(params.serious)
+      .map((serious): SearchTerm => ({ field: "serious", value: serious ? "1" : "2" }))
+      .toArray(),
   ]
-
-  if (params.serious !== undefined) {
-    searchTerms.push({ field: "serious", value: params.serious ? "1" : "2" })
-  }
 
   const searchQuery = buildSearchQuery(searchTerms)
   const dateQuery = buildDateQuery("receivedate", params.dateFrom, params.dateTo)
@@ -167,51 +176,44 @@ type FormattedDrugLabel = {
   route: string[]
 }
 
+/** The DrugLabel fields that hold section text */
+type LabelSection = {
+  [K in keyof DrugLabel]-?: NonNullable<DrugLabel[K]> extends string[] ? K : never
+}[keyof DrugLabel]
+
 function formatDrugLabel(label: DrugLabel, sections?: string[]): FormattedDrugLabel {
-  // Helper to conditionally include section based on sections filter
-  const includeSection = (sectionName: string) => !sections || sections.includes(sectionName)
+  // A section is included when no filter is given, or the filter names it
+  const section = (name: LabelSection, maxLength?: number): Option<string> =>
+    Option(label[name])
+      .filter(() =>
+        Option(sections).fold(
+          () => true,
+          (wanted) => wanted.includes(name),
+        ),
+      )
+      .flatMap((values) => truncateText(values[0], maxLength))
 
   return {
     setId: label.set_id,
     brandName: label.openfda?.brand_name?.[0],
     genericName: label.openfda?.generic_name?.[0],
     manufacturer: label.openfda?.manufacturer_name?.[0],
-    activeIngredients: label.openfda?.substance_name?.slice(0, 5) ?? [],
-    boxedWarning: includeSection("boxed_warning")
-      ? truncateText(label.boxed_warning?.[0], 500).orUndefined()
-      : undefined,
-    indications: includeSection("indications_and_usage")
-      ? truncateText(label.indications_and_usage?.[0]).orUndefined()
-      : undefined,
-    warnings: includeSection("warnings") ? truncateText(label.warnings?.[0]).orUndefined() : undefined,
-    contraindications: includeSection("contraindications")
-      ? truncateText(label.contraindications?.[0]).orUndefined()
-      : undefined,
-    adverseReactions: includeSection("adverse_reactions")
-      ? truncateText(label.adverse_reactions?.[0]).orUndefined()
-      : undefined,
-    drugInteractions: includeSection("drug_interactions")
-      ? truncateText(label.drug_interactions?.[0]).orUndefined()
-      : undefined,
-    dosageAndAdministration: includeSection("dosage_and_administration")
-      ? truncateText(label.dosage_and_administration?.[0]).orUndefined()
-      : undefined,
-    clinicalPharmacology: includeSection("clinical_pharmacology")
-      ? truncateText(label.clinical_pharmacology?.[0]).orUndefined()
-      : undefined,
-    mechanismOfAction: includeSection("mechanism_of_action")
-      ? truncateText(label.mechanism_of_action?.[0]).orUndefined()
-      : undefined,
-    pharmacokinetics: includeSection("pharmacokinetics")
-      ? truncateText(label.pharmacokinetics?.[0]).orUndefined()
-      : undefined,
-    overdosage: includeSection("overdosage") ? truncateText(label.overdosage?.[0]).orUndefined() : undefined,
-    description: includeSection("description") ? truncateText(label.description?.[0]).orUndefined() : undefined,
-    howSupplied: includeSection("how_supplied") ? truncateText(label.how_supplied?.[0]).orUndefined() : undefined,
-    storageAndHandling: includeSection("storage_and_handling")
-      ? truncateText(label.storage_and_handling?.[0]).orUndefined()
-      : undefined,
-    route: label.openfda?.route?.slice(0, 3) ?? [],
+    activeIngredients: takeFirst(label.openfda?.substance_name, 5),
+    boxedWarning: section("boxed_warning", 500).orUndefined(),
+    indications: section("indications_and_usage").orUndefined(),
+    warnings: section("warnings").orUndefined(),
+    contraindications: section("contraindications").orUndefined(),
+    adverseReactions: section("adverse_reactions").orUndefined(),
+    drugInteractions: section("drug_interactions").orUndefined(),
+    dosageAndAdministration: section("dosage_and_administration").orUndefined(),
+    clinicalPharmacology: section("clinical_pharmacology").orUndefined(),
+    mechanismOfAction: section("mechanism_of_action").orUndefined(),
+    pharmacokinetics: section("pharmacokinetics").orUndefined(),
+    overdosage: section("overdosage").orUndefined(),
+    description: section("description").orUndefined(),
+    howSupplied: section("how_supplied").orUndefined(),
+    storageAndHandling: section("storage_and_handling").orUndefined(),
+    route: takeFirst(label.openfda?.route, 3),
   }
 }
 
@@ -230,7 +232,7 @@ export async function handleSearchDrugLabels(params: DrugLabelsParams): Promise<
     )
   }
 
-  const searchTerms: Array<{ field: string; value?: string }> = [
+  const searchTerms: SearchTerm[] = [
     { field: "openfda.brand_name", value: params.drugName },
     { field: "indications_and_usage", value: params.indication },
     { field: "openfda.substance_name", value: params.activeIngredient },
@@ -287,11 +289,10 @@ function formatDrugNDC(ndc: DrugNDC): FormattedDrugNDC {
     labelerName: ndc.labeler_name,
     dosageForm: ndc.dosage_form,
     route: ndc.route ?? [],
-    activeIngredients:
-      ndc.active_ingredients?.slice(0, 3).map((ai) => ({
-        name: ai.name,
-        strength: ai.strength,
-      })) ?? [],
+    activeIngredients: mapFirst(ndc.active_ingredients, 3, (ai) => ({
+      name: ai.name,
+      strength: ai.strength,
+    })),
     marketingStartDate: ndc.marketing_start_date,
     productType: ndc.product_type,
   }
@@ -300,7 +301,7 @@ function formatDrugNDC(ndc: DrugNDC): FormattedDrugNDC {
 export async function handleSearchDrugNDC(params: DrugNDCParams): Promise<FDAToolResponse<FormattedDrugNDC[]>> {
   loggers.tools("searchDrugNDC", params)
 
-  const searchTerms: Array<{ field: string; value?: string }> = [
+  const searchTerms: SearchTerm[] = [
     { field: "product_ndc", value: params.productNdc },
     { field: "brand_name", value: params.brandName },
     { field: "generic_name", value: params.genericName },
@@ -365,7 +366,7 @@ export async function handleSearchDrugEnforcement(
 ): Promise<FDAToolResponse<FormattedDrugEnforcement[]>> {
   loggers.tools("searchDrugEnforcement", params)
 
-  const searchTerms: Array<{ field: string; value?: string }> = [
+  const searchTerms: SearchTerm[] = [
     { field: "recalling_firm", value: params.recallingFirm },
     { field: "classification", value: params.classification },
     { field: "status", value: params.status },
@@ -415,37 +416,33 @@ type FormattedDrugsFDA = {
 }
 
 function formatDrugsFDA(drug: DrugsFDA): FormattedDrugsFDA {
-  const latestSubmission = drug.submissions?.[0]
-
   return {
     applicationNumber: drug.application_number,
     sponsorName: drug.sponsor_name,
-    products:
-      drug.products?.slice(0, 3).map((p) => ({
-        brandName: p.brand_name,
-        dosageForm: p.dosage_form,
-        route: p.route,
-        marketingStatus: p.marketing_status,
-        activeIngredients:
-          p.active_ingredients?.slice(0, 3).map((ai) => ({
-            name: ai.name,
-            strength: ai.strength,
-          })) ?? [],
-      })) ?? [],
-    latestSubmission: latestSubmission
-      ? {
-          type: latestSubmission.submission_type,
-          status: latestSubmission.submission_status,
-          statusDate: latestSubmission.submission_status_date,
-        }
-      : undefined,
+    products: mapFirst(drug.products, 3, (p) => ({
+      brandName: p.brand_name,
+      dosageForm: p.dosage_form,
+      route: p.route,
+      marketingStatus: p.marketing_status,
+      activeIngredients: mapFirst(p.active_ingredients, 3, (ai) => ({
+        name: ai.name,
+        strength: ai.strength,
+      })),
+    })),
+    latestSubmission: Option(drug.submissions?.[0])
+      .map((latest) => ({
+        type: latest.submission_type,
+        status: latest.submission_status,
+        statusDate: latest.submission_status_date,
+      }))
+      .orUndefined(),
   }
 }
 
 export async function handleSearchDrugsFDA(params: DrugsFDAParams): Promise<FDAToolResponse<FormattedDrugsFDA[]>> {
   loggers.tools("searchDrugsFDA", params)
 
-  const searchTerms: Array<{ field: string; value?: string }> = [
+  const searchTerms: SearchTerm[] = [
     { field: "sponsor_name", value: params.sponsorName },
     { field: "application_number", value: params.applicationNumber },
     { field: "products.brand_name", value: params.brandName },
@@ -496,7 +493,7 @@ export async function handleSearchDrugShortages(
 ): Promise<FDAToolResponse<FormattedDrugShortage[]>> {
   loggers.tools("searchDrugShortages", params)
 
-  const searchTerms: Array<{ field: string; value?: string }> = [
+  const searchTerms: SearchTerm[] = [
     { field: "generic_name", value: params.genericName },
     { field: "status", value: params.status },
   ]

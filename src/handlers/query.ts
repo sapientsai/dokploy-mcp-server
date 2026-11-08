@@ -8,6 +8,7 @@ import { None, Option, Some } from "functype"
 import type { FDAResponse, FDAToolResponse, SearchParams } from "../types/fda.js"
 import { fdaAPIClient } from "../utils/api-client.js"
 import { failure } from "../utils/errors.js"
+import { nonEmpty } from "../utils/fields.js"
 
 export type SearchTerm = { field: string; value?: string }
 
@@ -35,7 +36,7 @@ export function buildDateQuery(field: string, dateFrom?: string, dateTo?: string
       .map((d) => d.replace(/-/g, ""))
       .orElse("*")
 
-  const hasBound = [dateFrom, dateTo].some((date) => (date ?? "") !== "")
+  const hasBound = [dateFrom, dateTo].some((date) => nonEmpty(date).isSome())
 
   return hasBound ? Some(`${field}:[${bound(dateFrom)}+TO+${bound(dateTo)}]`) : None()
 }

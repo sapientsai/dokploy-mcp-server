@@ -49,10 +49,10 @@ src/
 ├── tools/
 │   └── index.ts          # Zod schemas for all tools
 └── utils/
-    ├── api-client.ts     # FDA API HTTP client (returns Either)
-    ├── bulk-data-client.ts # Orange Book/Purple Book download, parse, cache (returns Either)
+    ├── api-client.ts     # createFDAAPIClient: openFDA HTTP client (returns Either)
+    ├── bulk-data-client.ts # createBulkDataClient: Orange Book/Purple Book download, parse, Ref cache (returns Either)
     ├── errors.ts         # toError and the failure tool response
-    ├── fields.ts         # textField: Option-based access to loosely typed rows
+    ├── fields.ts         # textField, mapFirst, takeFirst, nonEmpty: Option/List access to FDA records
     └── logger.ts         # Debug logger setup
 ```
 
@@ -88,6 +88,8 @@ src/
 ### Key Patterns
 
 - **Handlers**: Each endpoint has a dedicated handler that builds queries, calls the API, and formats results
+- **Clients are factories**: `createFDAAPIClient()` and `createBulkDataClient()` return object literals; the bulk caches live in functype `Ref`s. `fdaAPIClient` and `bulkDataClient` are the shared instances handlers use (tests `vi.spyOn` them). `FDAAPIClient` and `BulkDataClient` are deprecated class wrappers kept for `./lib` callers until 3.0
+- **Collections**: bulk handlers filter, sort and page through functype `List`, and convert with `.toArray()` at the response boundary. No `List`, `Option` or `Map` may reach `FDAToolResponse.data`. Use `slice` rather than `drop` on `List` (functype types `drop` as a generic collection)
 - **Zod Schemas**: All tool parameters validated with Zod
 - **Rate Limiting**: API client is aware of FDA rate limits (40/min without key, 240/min with key)
 - **Error Handling**: Clients return `Either<Error, T>` (functype) instead of throwing; handlers `fold` it into `FDAToolResponse<T>` with success/error status. Lint runs with `--max-warnings=0`, so the functype rules (`prefer-try`, `prefer-option`, `prefer-either`) are enforced
