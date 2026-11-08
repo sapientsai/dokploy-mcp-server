@@ -286,6 +286,22 @@ describe("Purple Book from FDA's monthly CSV", () => {
     expect(entries.map((e) => e.blaType)).toEqual(["351(a)", "351(k)", "351(k)"])
   })
 
+  it("reads the older status column names", async () => {
+    const older2021 = PURPLE_CSV.replaceAll("Marketing Status", "Status")
+    routeFetch({ [DOWNLOADS]: page([OCT_2026]), [OCT_2026]: csv(older2021) })
+    expect((await createBulkDataClient().getPurpleBookData()).orThrow()[0]?.status).toBe("Rx")
+
+    const older2020 = PURPLE_CSV.replaceAll("Marketing Status", "Mkt. Status").replaceAll(
+      "Licensure",
+      "Product License Status",
+    )
+    routeFetch({ [DOWNLOADS]: page([OCT_2026]), [OCT_2026]: csv(older2020) })
+    expect((await createBulkDataClient().getPurpleBookData()).orThrow()[0]).toMatchObject({
+      status: "Rx",
+      licensingStatus: "Licensed",
+    })
+  })
+
   it("picks the newest month listed, whatever the capitalisation and order", async () => {
     const fetchMock = routeFetch({
       [DOWNLOADS]: page([DEC_2025, JAN_2026, OCT_2026, SEP_2026]),

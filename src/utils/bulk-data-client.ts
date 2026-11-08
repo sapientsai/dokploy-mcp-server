@@ -120,8 +120,8 @@ function toPurpleBookEntry(r: Row): PurpleBookEntry {
     dosageForm: cell(r, "Dosage Form"),
     route: cell(r, "Route of Administration"),
     productPresentation: cell(r, "Product Presentation"),
-    status: cell(r, "Marketing Status"),
-    licensingStatus: cell(r, "Licensure"),
+    status: cell(r, "Marketing Status", "Status", "Mkt. Status"),
+    licensingStatus: cell(r, "Licensure", "Product License Status"),
     referenceProductBla: cell(r, "Ref. Product Proper Name"),
     referenceProductProprietaryName: cell(r, "Ref. Product Proprietary Name"),
     biosimilar: blaType === "351(k)",
@@ -311,7 +311,14 @@ async function loadPurpleBook(): Promise<Either<Error, PurpleBookEntry[]>> {
       .reduce<Promise<Either<Error, PurpleBookEntry[]>>>(
         async (previous, url) =>
           (await previous).fold(
-            async () => (await downloadText(url)).flatMap(purpleBookEntries),
+            async () => {
+              const loaded = (await downloadText(url)).flatMap(purpleBookEntries)
+              loaded.fold(
+                (error) => loggers.bulk(`Purple Book file unusable, ${error.message}`),
+                () => undefined,
+              )
+              return loaded
+            },
             (entries) => Promise.resolve(Right<Error, PurpleBookEntry[]>(entries)),
           ),
         Promise.resolve(Left(new Error(`No Purple Book CSV download found at ${PURPLE_BOOK_DOWNLOADS_URL}`))),
