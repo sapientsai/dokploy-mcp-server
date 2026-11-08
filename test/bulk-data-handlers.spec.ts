@@ -7,9 +7,8 @@ import {
   handleSearchOrangeBookPatents,
   handleSearchPurpleBook,
 } from "../src/handlers/bulk-data-handlers.js"
-import { bulkDataClient } from "../src/utils/bulk-data-client.js"
-
 import type { OrangeBookExclusivity, OrangeBookPatent, OrangeBookProduct, PurpleBookEntry } from "../src/types/fda.js"
+import { bulkDataClient } from "../src/utils/bulk-data-client.js"
 
 // Mock data
 const mockProducts: OrangeBookProduct[] = [

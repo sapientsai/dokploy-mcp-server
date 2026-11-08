@@ -13,3 +13,10 @@ minimumReleaseAgeExclude:
 
 allowBuilds:
   esbuild: true
+
+overrides:
+  # Dependabot alert 227: GHSA-g3hv-75wg-m249, minimatch >=7.0.0 <11.0.1 (DoS via globparts
+  # amplification), reached via ESLint 10 and its helpers (dev only, not in the published package).
+  # ts-builds carries the same override, but pnpm overrides don't reach consumers. Drop once
+  # ESLint's floor is >=11.0.1.
+  "minimatch@>=7.0.0 <11.0.1": "^11.0.1"

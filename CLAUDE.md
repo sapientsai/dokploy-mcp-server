@@ -94,7 +94,7 @@ src/
 - **openFDA queries use real spaces**: build `a:"x" AND b:[1 TO 2]` with spaces, never `+AND+`. `URLSearchParams` sends a space as `+`, which openFDA reads as a space; a literal `+` goes out as `%2B`, and openFDA then answers 404 (read as "no results") or 500
 - **Zod Schemas**: All tool parameters validated with Zod
 - **Rate Limiting**: API client is aware of FDA rate limits (40/min without key, 240/min with key)
-- **Error Handling**: Clients return `Either<Error, T>` (functype) instead of throwing; handlers `fold` it into `FDAToolResponse<T>` with success/error status. Lint runs with `--max-warnings=0`, so the functype rules (`prefer-try`, `prefer-option`, `prefer-either`) are enforced
+- **Error Handling**: Clients return `Either<Error, T>` (functype) instead of throwing; handlers `fold` it into `FDAToolResponse<T>` with success/error status. Lint runs over `src/` and `test/` with `--max-warnings=0` (an override in `ts-builds.config.json`, since ts-builds' own lint fails only on errors), so the functype rules (`prefer-try`, `prefer-option`, `prefer-either`) are enforced; the functype ESLint config relaxes the ones that misread tests. `tsconfig.json` includes `test/`, so `pnpm typecheck` checks tests too
 
 ## Environment Variables
 
