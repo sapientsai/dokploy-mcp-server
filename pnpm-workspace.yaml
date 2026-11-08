@@ -10,3 +10,7 @@ minimumReleaseAgeExclude:
   - "*functype*"
   - ts-builds
   - somamcp
+
+overrides:
+  # eslint (dev only) caps minimatch below GHSA-g3hv-75wg-m249's fix.
+  "minimatch@>=7.0.0 <11.0.1": "^11.0.1"

@@ -9,3 +9,7 @@ updates:
     directory: "/" # Location of package manifests
     schedule:
       interval: "weekly"
+    ignore:
+      # @types/node tracks the runtime major pinned in .nvmrc; bump both together by hand.
+      - dependency-name: "@types/node"
+        update-types: ["version-update:semver-major"]
