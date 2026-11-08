@@ -176,8 +176,8 @@ importers:
         specifier: ^0.8.3
         version: 0.8.3
       functype:
-        specifier: ^1.25.1
-        version: 1.25.1
+        specifier: ^1.26.0
+        version: 1.26.0
       somamcp:
         specifier: ^2.6.0
         version: 2.6.0
@@ -1177,8 +1177,8 @@ packages:
     peerDependencies:
       functype: '>=0.60.0'
 
-  functype@1.25.1:
-    resolution: {integrity: sha512-GQSUFvOhOxM79x9w7st37jfvBGVv0kTHixaTtqdLOaUYlSpL7v9eAhdJlGRa2fB1UB424VfpzXhw9Si6t1arBw==}
+  functype@1.26.0:
+    resolution: {integrity: sha512-iRZL6OevKZQSv7ucswdPusutiFC0KS4er22WPb3UeJPRiHXfIRDBQi0zrqMqmtjtx+gQgiKhyORBKJW9zKwHzw==}
     hasBin: true
 
   get-tsconfig@5.0.0-beta.6:
@@ -2552,16 +2552,16 @@ snapshots:
   fsevents@2.3.3:
     optional: true
 
-  functype-log@1.25.1(functype@1.25.1):
+  functype-log@1.25.1(functype@1.26.0):
     dependencies:
-      functype: 1.25.1
+      functype: 1.26.0
       loglayer: 9.4.0
 
-  functype-os@1.25.1(functype@1.25.1):
+  functype-os@1.25.1(functype@1.26.0):
     dependencies:
-      functype: 1.25.1
+      functype: 1.26.0
 
-  functype@1.25.1: {}
+  functype@1.26.0: {}
 
   get-tsconfig@5.0.0-beta.6:
     dependencies:
@@ -2833,8 +2833,8 @@ snapshots:
       '@hono/node-server': 2.1.6(hono@4.13.16)
       '@modelcontextprotocol/client': 2.4.0
       '@modelcontextprotocol/server': 2.4.0
-      functype: 1.25.1
-      functype-log: 1.25.1(functype@1.25.1)
+      functype: 1.26.0
+      functype-log: 1.25.1(functype@1.26.0)
       hono: 4.13.16
       zod: 4.6.7
 
@@ -2877,8 +2877,8 @@ snapshots:
       eslint-plugin-functype: 2.125.1(eslint@10.14.0)
       eslint-plugin-prettier: 5.5.7(eslint-config-prettier@10.1.8(eslint@10.14.0))(eslint@10.14.0)(prettier@3.9.10)
       eslint-plugin-simple-import-sort: 14.0.0(eslint@10.14.0)
-      functype: 1.25.1
-      functype-os: 1.25.1(functype@1.25.1)
+      functype: 1.26.0
+      functype-os: 1.25.1(functype@1.26.0)
       globals: 17.14.0
       prettier: 3.9.10
       ts-node: 10.9.2(@types/node@24.19.2)(typescript@6.0.3)

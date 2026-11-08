@@ -185,12 +185,7 @@ function formatDrugLabel(label: DrugLabel, sections?: string[]): FormattedDrugLa
   // A section is included when no filter is given, or the filter names it
   const section = (name: LabelSection, maxLength?: number): Option<string> =>
     Option(label[name])
-      .filter(() =>
-        Option(sections).fold(
-          () => true,
-          (wanted) => wanted.includes(name),
-        ),
-      )
+      .filter(() => Option(sections).every((wanted) => wanted.includes(name)))
       .flatMap((values) => truncateText(values[0], maxLength))
 
   return {

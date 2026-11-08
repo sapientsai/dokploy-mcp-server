@@ -39,7 +39,7 @@
     "commander": "^15.1.0",
     "debug": "^4.4.3",
     "fflate": "^0.8.3",
-    "functype": "^1.25.1",
+    "functype": "^1.26.0",
     "somamcp": "^2.6.0",
     "zod": "^4.6.7"
   },
