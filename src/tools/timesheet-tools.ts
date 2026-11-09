@@ -112,7 +112,8 @@ export function registerTimesheetTools(server: SomaServerInstance): void {
         const end = args.end_date ?? args.start_date
         if (start === undefined || end === undefined) {
           const today = yield* client.getProjectTimes()
-          return formatProjectTime([{ date: "today", response: today }], "today")
+          const date = today.project_times[0]?.date ?? "today"
+          return formatProjectTime([{ date, response: today }], date === "today" ? "today" : `today, ${date}`)
         }
         const days = yield* IO.fromEither(dateRange(start, end))
         const results = yield* IO.forEach(
