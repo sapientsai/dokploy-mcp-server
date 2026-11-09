@@ -3,6 +3,8 @@
 export type RescueTimeClientConfig = {
   readonly apiKey: string
   readonly baseUrl?: string
+  /** Wait between polls of an in-flight project-time job. Defaults to 1000 ms. */
+  readonly pollDelayMs?: number
 }
 
 // === Analytic Data API ===
@@ -103,3 +105,105 @@ export type OfflineTimeParams = {
   readonly activity_name: string
   readonly activity_details?: string
 }
+
+/* eslint-disable functype/prefer-option -- wire types: RescueTime's JSON sends null, which Option would misdescribe */
+
+// === Resource API: Focus State ===
+// Shapes observed live on 2026-11-08 (user_global_states, focus/start_session, focus/cancel_or_stop_session).
+
+export type GlobalStateDetails = {
+  readonly is_timer?: boolean
+  readonly in_zone?: boolean
+  readonly start_time?: string
+  readonly label_name?: string
+  readonly block_apps_sites?: boolean
+  readonly block_comms?: boolean
+  readonly v2_project_id?: number
+  readonly task_id?: number
+}
+
+export type GlobalState = {
+  readonly id: number
+  readonly state: GlobalStateDetails
+  readonly state_type: number
+  readonly start_time_epoch: number
+  readonly expiration_epoch: number
+  readonly label_name?: string
+  readonly is_timer?: boolean
+}
+
+export type StartTimerParams = {
+  readonly label_name?: string
+  readonly v2_project_id?: number
+  readonly task_id?: number
+}
+
+export type StoppedFocusSession = {
+  readonly name: string
+  readonly start_time: string
+  readonly duration: number
+}
+
+export type StopSessionResponse = {
+  readonly message: "deleted" | "updated" | "none"
+  readonly focus_session?: StoppedFocusSession
+  readonly project_time?: ProjectTimeEntry
+}
+
+// === Resource API: Projects and Project Time ===
+
+export type Task = {
+  readonly id: number
+  readonly name: string
+  readonly hidden: boolean
+  readonly archived_at: string | null
+}
+
+export type Project = {
+  readonly id: number
+  readonly name: string
+  readonly archived_at: string | null
+  readonly tasks: readonly Task[]
+}
+
+export type ProjectTimeEntry = {
+  readonly name: string
+  readonly date: string
+  readonly start_time: string
+  readonly end_time: string
+  /** Seconds. */
+  readonly duration: number
+  readonly extra?: { readonly draft?: boolean; readonly provenance?: string }
+  readonly project: { readonly id: number; readonly name: string } | null
+  readonly task: { readonly id: number; readonly name: string; readonly hidden: boolean } | null
+  readonly client: { readonly name: string } | null
+}
+
+export type ProjectTimesResponse = {
+  readonly is_complete: boolean
+  readonly job_id: number | null
+  readonly project_times: readonly ProjectTimeEntry[]
+}
+
+export type ProjectTimeDay = {
+  readonly date: string
+  readonly response: ProjectTimesResponse
+}
+
+// === Resource API: Timeline ===
+
+export type TimelineActivity = {
+  readonly display_name: string
+  readonly category: string
+  /** Seconds spent on this activity within its 5-minute bucket. */
+  readonly duration: number
+  readonly continuation: boolean
+}
+
+export type TimelineResponse = {
+  /** Keyed by bucket start, e.g. "2026-11-08 09:10:00 -0500". */
+  readonly activities: Readonly<Record<string, TimelineActivity>> | readonly TimelineActivity[]
+  readonly activity_intervals: readonly string[]
+}
+
+/* eslint-enable functype/prefer-option */
