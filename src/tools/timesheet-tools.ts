@@ -51,6 +51,11 @@ export function registerTimesheetTools(server: SomaServerInstance): void {
     }),
     execute: async (args) =>
       IO.gen(function* () {
+        if (args.task !== undefined && args.project === undefined) {
+          return yield* IO.fail(
+            new UserError("task needs project: name the project the task belongs to.", { category: "validation" }),
+          )
+        }
         const client = yield* IO.fromEither(unwrapClient())
         const states = yield* client.getFocusState()
         if (states.length > 0) {
@@ -60,20 +65,14 @@ export function registerTimesheetTools(server: SomaServerInstance): void {
             }),
           )
         }
-        if (args.task !== undefined && args.project === undefined) {
-          return yield* IO.fail(
-            new UserError("task needs project: name the project the task belongs to.", { category: "validation" }),
-          )
-        }
+        const projectName = args.project
         const link: Option<ResolvedLink> =
-          args.project === undefined
+          projectName === undefined
             ? Option.none()
             : Option(
                 yield* client
                   .getProjects()
-                  .flatMap((projects) =>
-                    IO.fromEither(resolveTimerLink(projects, args.project ?? "", Option(args.task))),
-                  ),
+                  .flatMap((projects) => IO.fromEither(resolveTimerLink(projects, projectName, Option(args.task)))),
               )
         const state = yield* client.startTimer(toTimerParams(link, Option(args.label)))
         return formatTimerStarted(state, {

@@ -103,6 +103,7 @@ src/
 - **`focus/cancel_or_stop_session`** answers `deleted` (stopped early, record discarded), `updated` (kept), or `none`.
 - **`labeled_time_project_times`** returns HTTP 500 for a multi-day `start_time`/`end_time` window; fetch per `date`. `force=true` doesn't help. Poll with `job_id` only when one comes back.
 - **"Today"**: use `localDate()` or omit the date so RescueTime uses the account's day. `new Date().toISOString()` is UTC and runs a day ahead in the evening.
+- **`daily_summary_feed` never includes today.** A day's summary appears after midnight, so `get_productivity_score` defaults to the newest day in the feed.
 - **Rate limits**: 60 req/min, 1000 req/hr
 - **Data sync**: Premium 3min, Lite 30min
 - **Focus sessions**: Duration must be multiple of 5 (5-480) or -1 (end of day)

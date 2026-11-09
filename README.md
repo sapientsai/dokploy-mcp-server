@@ -102,7 +102,7 @@ Returns the last 2 weeks of daily productivity rollups. Each day includes:
 
 ### get_productivity_score
 
-Get the detailed productivity breakdown for a specific date (defaults to today).
+Get the detailed productivity breakdown for one completed day. Defaults to the most recent one, usually yesterday: RescueTime's daily summaries never include today.
 
 ### start_focus_session
 
@@ -114,7 +114,7 @@ Start a RescueTime Focus Session that blocks distracting websites and apps.
 
 ### get_recent_activity
 
-The latest stretch of a day's timeline. Each row is a 5-minute window and the activity that took most of it.
+The latest stretch of a day's timeline. Each row is a 5-minute window and its main activity.
 
 **Parameters:**
 

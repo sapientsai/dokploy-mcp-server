@@ -29,7 +29,7 @@ function formatState(s: GlobalState, nowEpoch: number): string {
     "",
     `- **Started:** ${isoFromEpoch(s.start_time_epoch)} (${formatDuration(Math.max(0, nowEpoch - s.start_time_epoch))} ago)`,
     kind === "Timer"
-      ? `- **Expires:** ${isoFromEpoch(s.expiration_epoch)} unless stopped (RescueTime caps timers at 24h)`
+      ? `- **Expires:** ${isoFromEpoch(s.expiration_epoch)} unless stopped`
       : `- **Ends:** ${isoFromEpoch(s.expiration_epoch)} (${formatDuration(Math.max(0, remaining))} left)`,
     `- **Blocking:** apps and sites ${onOff(s.state.block_apps_sites)}, communication apps ${onOff(s.state.block_comms)}`,
   ]
@@ -179,7 +179,7 @@ export function formatRecentActivity(timeline: TimelineResponse, limit: number, 
   return [
     `## Recent Activity (${dayLabel})`,
     "",
-    "Each row is a 5-minute window and the activity that took most of it. For full totals, use get_activity_data.",
+    "Each row is a 5-minute window and its main activity. For full totals, use get_activity_data.",
     "",
     "| Window | Activity | Category | Time |",
     "| --- | --- | --- | --- |",

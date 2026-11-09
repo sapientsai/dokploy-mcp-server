@@ -50,7 +50,7 @@ const server = createServer({
 ## Important Constraints
 - All dates use YYYY-MM-DD format. All times use ISO 8601 with timezone.
 - get_daily_summary returns the last 2 weeks only — no date params.
-- get_productivity_score filters from get_daily_summary, so only the last 2 weeks are available.
+- get_productivity_score filters from get_daily_summary: the last 2 weeks, never today. With no date it shows the most recent completed day.
 - Focus session duration must be a multiple of 5 minutes, or -1 for end of day.
 - start_timer refuses while anything is running; call stop_timer first.
 - Project time entries marked draft are RescueTime's own suggestions that nobody has reviewed.

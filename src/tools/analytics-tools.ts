@@ -10,6 +10,11 @@ import { localDate } from "../utils/dates"
 import { formatActivityData, formatDailySummary, formatProductivityScore } from "../utils/formatters"
 import { formatRecentActivity } from "../utils/resource-formatters"
 
+/** The newest day in the feed. The feed is ordered by RescueTime, so don't assume which end is newest. */
+function latestDate(summaries: readonly DailySummary[]): string {
+  return summaries.reduce((latest, s) => (s.date > latest ? s.date : latest), "")
+}
+
 function unwrapClient() {
   return getClient().toEither(new Error("RescueTime client not initialized. Is RESCUETIME_API_KEY set?"))
 }
@@ -73,23 +78,32 @@ export function registerAnalyticsTools(server: SomaServerInstance): void {
   server.addTool({
     name: "get_productivity_score",
     description:
-      "Get the productivity score and detailed breakdown for a specific date. Shows the productivity pulse (0-100), time by productivity level, and category breakdown.",
+      "Get the productivity score and detailed breakdown for one completed day. Shows the productivity pulse (0-100), time by productivity level, and category breakdown. RescueTime's daily summaries never include today; for today, use get_activity_data or get_recent_activity.",
     parameters: z.object({
-      date: z.string().optional().describe("Date to get score for (YYYY-MM-DD). Defaults to today."),
+      date: z
+        .string()
+        .optional()
+        .describe("Date to get score for (YYYY-MM-DD). Defaults to the most recent completed day, usually yesterday."),
     }),
     execute: async (args) =>
       IO.gen(function* () {
         const client = yield* IO.fromEither(unwrapClient())
         const summaries = yield* client.getDailySummary()
-        const target = args.date ?? localDate()
+        const target = args.date ?? latestDate(summaries)
         const match = summaries.find((s: DailySummary) => s.date === target)
         return yield* IO.fromEither(
           match
             ? Right<Error, string>(formatProductivityScore(match))
             : Left<Error, string>(
-                new UserError(`No productivity data found for ${target}. Data is available for the last 2 weeks.`, {
-                  category: "not_found",
-                }),
+                new UserError(
+                  target === localDate()
+                    ? `No summary for ${target} yet: RescueTime's daily summaries never include today. Its summary appears after midnight.`
+                    : `No productivity data found for ${target}. Daily summaries cover the last 2 weeks, excluding today.`,
+                  {
+                    category: "not_found",
+                    suggestions: ["For today, use get_activity_data or get_recent_activity."],
+                  },
+                ),
               ),
         )
       })
@@ -100,7 +114,7 @@ export function registerAnalyticsTools(server: SomaServerInstance): void {
   server.addTool({
     name: "get_recent_activity",
     description:
-      "Show the latest stretch of a day's RescueTime timeline: each 5-minute window with the activity that took most of it, newest first. Good for 'what was I just doing?'. Use get_activity_data for totals.",
+      "Show the latest stretch of a day's RescueTime timeline: each 5-minute window with its main activity, newest first. Good for 'what was I just doing?'. Use get_activity_data for totals.",
     parameters: z.object({
       date: z
         .string()
