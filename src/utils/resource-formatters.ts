@@ -170,9 +170,14 @@ function trackedActivities(timeline: TimelineResponse): readonly TimedActivity[]
 /** "2026-11-08 09:10:00 -0500" → "09:10". */
 const bucketTime = (key: string): string => (key.length >= 16 ? key.slice(11, 16) : "—")
 
+/** Whether RescueTime recorded a different activity in a guessed window and hid it in `masked_bucket`. */
+const hidesTrackedActivity = (a: TimelineActivity): boolean => a.was_empty === false || Boolean(a.masked_bucket)
+
 function activityLabel(a: TimelineActivity): string {
-  if (a.guess) return `${a.display_name} (guessed)`
-  return a.continuation ? `${a.display_name} (continued)` : (a.display_name ?? "")
+  const name = a.display_name ?? ""
+  if (a.guess)
+    return hidesTrackedActivity(a) ? `${name} (guessed over other activity)` : `${name} (guessed, nothing tracked)`
+  return a.continuation ? `${name} (continued)` : name
 }
 
 /** A guessed bucket has no measurement of its own, so it never shows a time. */
@@ -188,7 +193,7 @@ export function formatRecentActivity(timeline: TimelineResponse, limit: number, 
   const recent = tracked.toSorted(([a], [b]) => b.localeCompare(a)).slice(0, limit)
   const guessNote = recent.some(([, a]) => a.guess)
     ? [
-        "*(guessed)* rows are windows RescueTime filled by extending the activity before them; it measured nothing there.",
+        "*Guessed* rows are windows where RescueTime carried the activity before them forward and gave no time. *Nothing tracked* means it recorded nothing there. *Over other activity* means it recorded a different activity there, which isn't shown.",
       ]
     : []
 

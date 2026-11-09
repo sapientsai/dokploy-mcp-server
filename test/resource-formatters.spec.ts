@@ -138,27 +138,37 @@ describe("formatRecentActivity", () => {
   it("renders a full day with untracked and guessed windows without any undefined", () => {
     const result = formatRecentActivity(timelineWithGaps, 288, "2026-11-08")
     expect(result).not.toContain("undefined")
-    expect(result).toContain("latest 4 of 4 windows with activity")
+    expect(result).not.toContain("null")
+    expect(result).toContain("latest 5 of 5 windows with activity")
   })
 
   it("leaves out untracked windows", () => {
     const rows = formatRecentActivity(timelineWithGaps, 288, "2026-11-08")
       .split("\n")
       .filter((l) => l.startsWith("| 09:"))
-    expect(rows.map((r) => r.slice(2, 7))).toEqual(["09:25", "09:20", "09:15", "09:00"])
+    expect(rows.map((r) => r.slice(2, 7))).toEqual(["09:35", "09:25", "09:20", "09:15", "09:00"])
   })
 
-  it("marks guessed windows and gives them no time, even when a masked activity has one", () => {
+  it("tells the two kinds of guessed window apart and gives neither a time", () => {
     const result = formatRecentActivity(timelineWithGaps, 288, "2026-11-08")
-    expect(result).toContain("| 09:20 | VS Code (guessed) | Software Development | — |")
-    expect(result).toContain("| 09:15 | VS Code (guessed) | Software Development | — |")
+    expect(result).toContain("| 09:20 | VS Code (guessed over other activity) | Software Development | — |")
+    expect(result).toContain("| 09:15 | VS Code (guessed, nothing tracked) | Software Development | — |")
+    expect(result).toContain("*Over other activity* means it recorded a different activity there")
+    expect(result).not.toContain("measured nothing")
+  })
+
+  it("keeps the hidden activity out of the output", () => {
+    const result = formatRecentActivity(timelineWithGaps, 288, "2026-11-08")
     expect(result).not.toContain("Example Chat")
     expect(result).not.toContain("2m 16s")
-    expect(result).toContain("*(guessed)* rows are windows RescueTime filled")
+  })
+
+  it("shows a dash for a null category", () => {
+    expect(formatRecentActivity(timelineWithGaps, 288, "2026-11-08")).toContain("| 09:35 | Unsorted App | — | 40s |")
   })
 
   it("omits the guess note when no guessed window is shown", () => {
-    expect(formatRecentActivity(timelineWithGaps, 1, "2026-11-08")).not.toContain("*(guessed)*")
+    expect(formatRecentActivity(timelineWithGaps, 1, "2026-11-08")).not.toContain("*Guessed*")
   })
 
   it("treats a day of only untracked windows as no activity", () => {

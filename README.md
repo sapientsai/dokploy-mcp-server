@@ -119,7 +119,7 @@ The latest stretch of a day's timeline. Each row is a 5-minute window and its ma
 **Parameters:**
 
 - `date` — Day (YYYY-MM-DD). Defaults to today in the RescueTime account's timezone.
-- `limit` — Windows to show (default 24, about 2 hours; max 288, a full day)
+- `limit` — Windows with activity to show (default 24; max 288, a full day). Untracked windows are skipped, so 24 can span more than 2 hours.
 
 ### start_timer
 
