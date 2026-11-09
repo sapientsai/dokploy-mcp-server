@@ -127,7 +127,9 @@ export function registerAnalyticsTools(server: SomaServerInstance): void {
         .min(1)
         .max(288)
         .default(24)
-        .describe("How many 5-minute windows to show. 24 covers the last 2 hours; 288 is a full day."),
+        .describe(
+          "How many 5-minute windows with activity to show. Untracked windows are skipped, so 24 covers 2 hours only when nothing was untracked. 288 always covers a full day.",
+        ),
     }),
     execute: async (args) =>
       IO.fromEither(unwrapClient())

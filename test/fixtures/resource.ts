@@ -76,3 +76,38 @@ export const timeline: TimelineResponse = {
   },
   activity_intervals: ["2026-11-08T09:00:00-05:00"],
 }
+
+/**
+ * A day with all three bucket shapes seen live on 2026-11-08: tracked, untracked (`{}`), and guessed.
+ * The live masked_bucket held a real chat title; this one is made up.
+ */
+export const timelineWithGaps: TimelineResponse = {
+  activities: {
+    "2026-11-08 09:00:00 -0500": bucket("VS Code", "Software Development", 120),
+    "2026-11-08 09:05:00 -0500": {},
+    "2026-11-08 09:10:00 -0500": {},
+    "2026-11-08 09:15:00 -0500": {
+      display_name: "VS Code",
+      category: "Software Development",
+      continuation: true,
+      guess: true,
+      was_empty: true,
+      continued_for: 600,
+      masked_bucket: null,
+    },
+    "2026-11-08 09:20:00 -0500": {
+      display_name: "VS Code",
+      category: "Software Development",
+      continuation: true,
+      guess: true,
+      was_empty: false,
+      continued_for: 900,
+      time_span: "2m 16s",
+      masked_bucket: { display_name: "Example Chat", category: "Communication", duration: 136 },
+    },
+    "2026-11-08 09:25:00 -0500": bucket("Slack", "Communication", 250),
+    "2026-11-08 09:35:00 -0500": { display_name: "Unsorted App", category: null, duration: 40, continuation: false },
+    "2026-11-08 09:30:00 -0500": {},
+  },
+  activity_intervals: ["2026-11-08T09:00:00-05:00"],
+}
