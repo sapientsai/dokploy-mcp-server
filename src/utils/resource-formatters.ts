@@ -6,7 +6,7 @@ import type {
   TimelineActivity,
   TimelineResponse,
 } from "../types"
-import { formatDuration } from "./formatters"
+import { formatDuration, tableCell } from "./formatters"
 
 // === Focus State ===
 
@@ -147,7 +147,7 @@ export function formatProjectTime(days: readonly ProjectTimeDay[], rangeLabel: s
     "",
     "| Project / Task | Time |",
     "| --- | --- |",
-    ...totalsByLabel(entries).map(([label, seconds]) => `| ${label} | ${formatDuration(seconds)} |`),
+    ...totalsByLabel(entries).map(([label, seconds]) => `| ${tableCell(label)} | ${formatDuration(seconds)} |`),
     "",
     ...days.flatMap(formatDay),
     ...partialNote,
@@ -205,7 +205,8 @@ export function formatRecentActivity(timeline: TimelineResponse, limit: number, 
     "| Window | Activity | Category | Time |",
     "| --- | --- | --- | --- |",
     ...recent.map(
-      ([key, a]) => `| ${bucketTime(key)} | ${activityLabel(a)} | ${a.category ?? "—"} | ${activityTime(a)} |`,
+      ([key, a]) =>
+        `| ${bucketTime(key)} | ${tableCell(activityLabel(a))} | ${tableCell(a.category ?? "—")} | ${activityTime(a)} |`,
     ),
     "",
     ...guessNote,

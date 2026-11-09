@@ -10,6 +10,14 @@ const PRODUCTIVITY_LABELS: Record<number, string> = {
   "-2": "Very Distracting",
 }
 
+/**
+ * Make free text safe inside a Markdown table cell. Window titles such as Microsoft Teams'
+ * ("Chat | Name | org | email") contain pipes, which would split the row and shift every column after it.
+ */
+export function tableCell(text: string): string {
+  return text.replaceAll("|", "\\|").replaceAll(/\r\n|\r|\n/g, " ")
+}
+
 export function formatDuration(seconds: number): string {
   return Try(() => {
     const hours = Math.floor(seconds / 3600)
@@ -45,7 +53,7 @@ export function formatActivityData(response: AnalyticDataResponse, params: Analy
       if (typeof cell === "number" && headers[i]?.toLowerCase().includes("productivity")) return productivityLabel(cell)
       return String(cell)
     })
-    return `| ${formatted.join(" | ")} |`
+    return `| ${formatted.map(tableCell).join(" | ")} |`
   })
 
   const totalLine =
@@ -64,7 +72,7 @@ export function formatActivityData(response: AnalyticDataResponse, params: Analy
   return [
     `## Activity Data (${kind}, ${perspective})`,
     "",
-    `| ${headers.join(" | ")} |`,
+    `| ${headers.map(tableCell).join(" | ")} |`,
     `| ${headers.map(() => "---").join(" | ")} |`,
     ...dataRows,
     ...totalLine,
