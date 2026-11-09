@@ -192,12 +192,19 @@ export type ProjectTimeDay = {
 
 // === Resource API: Timeline ===
 
+/**
+ * One 5-minute bucket. Observed live (2026-11-08) in three shapes:
+ * - tracked: every field below except `guess`;
+ * - untracked: an empty object `{}`, nothing recorded in the window;
+ * - guessed: `guess: true` and no `duration`. RescueTime stretched the previous activity across the window.
+ */
 export type TimelineActivity = {
-  readonly display_name: string
-  readonly category: string
-  /** Seconds spent on this activity within its 5-minute bucket. */
-  readonly duration: number
-  readonly continuation: boolean
+  readonly display_name?: string
+  readonly category?: string
+  /** Seconds spent on this activity within its 5-minute bucket. Absent on untracked and guessed buckets. */
+  readonly duration?: number
+  readonly continuation?: boolean
+  readonly guess?: boolean
 }
 
 export type TimelineResponse = {

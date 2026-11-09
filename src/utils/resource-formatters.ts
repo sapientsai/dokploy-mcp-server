@@ -158,36 +158,52 @@ export function formatProjectTime(days: readonly ProjectTimeDay[], rangeLabel: s
 
 type TimedActivity = readonly [string, TimelineActivity]
 
-function timedActivities(timeline: TimelineResponse): readonly TimedActivity[] {
+/** Buckets with an activity name. Untracked windows arrive as `{}` and are dropped. */
+function trackedActivities(timeline: TimelineResponse): readonly TimedActivity[] {
   const { activities } = timeline
-  return Array.isArray(activities)
+  const all: readonly TimedActivity[] = Array.isArray(activities)
     ? activities.map((a): TimedActivity => ["", a])
     : Object.entries(activities as Readonly<Record<string, TimelineActivity>>)
+  return all.filter(([, a]) => typeof a.display_name === "string" && a.display_name.length > 0)
 }
 
 /** "2026-11-08 09:10:00 -0500" → "09:10". */
 const bucketTime = (key: string): string => (key.length >= 16 ? key.slice(11, 16) : "—")
 
+function activityLabel(a: TimelineActivity): string {
+  if (a.guess) return `${a.display_name} (guessed)`
+  return a.continuation ? `${a.display_name} (continued)` : (a.display_name ?? "")
+}
+
+/** A guessed bucket has no measurement of its own, so it never shows a time. */
+const activityTime = (a: TimelineActivity): string =>
+  !a.guess && typeof a.duration === "number" ? formatDuration(a.duration) : "—"
+
 export function formatRecentActivity(timeline: TimelineResponse, limit: number, dayLabel: string): string {
-  const all = timedActivities(timeline)
-  if (all.length === 0) {
+  const tracked = trackedActivities(timeline)
+  if (tracked.length === 0) {
     return [`## Recent Activity (${dayLabel})`, "", "No activity tracked."].join("\n")
   }
 
-  const recent = all.toSorted(([a], [b]) => b.localeCompare(a)).slice(0, limit)
+  const recent = tracked.toSorted(([a], [b]) => b.localeCompare(a)).slice(0, limit)
+  const guessNote = recent.some(([, a]) => a.guess)
+    ? [
+        "*(guessed)* rows are windows RescueTime filled by extending the activity before them; it measured nothing there.",
+      ]
+    : []
 
   return [
     `## Recent Activity (${dayLabel})`,
     "",
-    "Each row is a 5-minute window and its main activity. For full totals, use get_activity_data.",
+    "Each row is a 5-minute window and its main activity. Windows with nothing tracked are left out. For full totals, use get_activity_data.",
     "",
     "| Window | Activity | Category | Time |",
     "| --- | --- | --- | --- |",
     ...recent.map(
-      ([key, a]) =>
-        `| ${bucketTime(key)} | ${a.display_name}${a.continuation ? " (continued)" : ""} | ${a.category} | ${formatDuration(a.duration)} |`,
+      ([key, a]) => `| ${bucketTime(key)} | ${activityLabel(a)} | ${a.category ?? "—"} | ${activityTime(a)} |`,
     ),
     "",
-    `*Showing the latest ${recent.length} of ${all.length} windows, newest first.*`,
+    ...guessNote,
+    `*Showing the latest ${recent.length} of ${tracked.length} windows with activity, newest first.*`,
   ].join("\n")
 }

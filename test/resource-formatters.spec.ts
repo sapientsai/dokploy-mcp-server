@@ -7,7 +7,15 @@ import {
   formatStopResult,
   formatTimerStarted,
 } from "../src/utils/resource-formatters"
-import { projectEntry, sessionState, stopDeleted, stopNone, timeline, timerState } from "./fixtures/resource"
+import {
+  projectEntry,
+  sessionState,
+  stopDeleted,
+  stopNone,
+  timeline,
+  timelineWithGaps,
+  timerState,
+} from "./fixtures/resource"
 
 describe("formatFocusState", () => {
   it("says nothing is active for an empty state list", () => {
@@ -125,6 +133,40 @@ describe("formatRecentActivity", () => {
       "| 09:15 | VS Code (continued) | Software Development | 3m |",
     ])
     expect(result).toContain("latest 2 of 3 windows")
+  })
+
+  it("renders a full day with untracked and guessed windows without any undefined", () => {
+    const result = formatRecentActivity(timelineWithGaps, 288, "2026-11-08")
+    expect(result).not.toContain("undefined")
+    expect(result).toContain("latest 4 of 4 windows with activity")
+  })
+
+  it("leaves out untracked windows", () => {
+    const rows = formatRecentActivity(timelineWithGaps, 288, "2026-11-08")
+      .split("\n")
+      .filter((l) => l.startsWith("| 09:"))
+    expect(rows.map((r) => r.slice(2, 7))).toEqual(["09:25", "09:20", "09:15", "09:00"])
+  })
+
+  it("marks guessed windows and gives them no time, even when a masked activity has one", () => {
+    const result = formatRecentActivity(timelineWithGaps, 288, "2026-11-08")
+    expect(result).toContain("| 09:20 | VS Code (guessed) | Software Development | — |")
+    expect(result).toContain("| 09:15 | VS Code (guessed) | Software Development | — |")
+    expect(result).not.toContain("Example Chat")
+    expect(result).not.toContain("2m 16s")
+    expect(result).toContain("*(guessed)* rows are windows RescueTime filled")
+  })
+
+  it("omits the guess note when no guessed window is shown", () => {
+    expect(formatRecentActivity(timelineWithGaps, 1, "2026-11-08")).not.toContain("*(guessed)*")
+  })
+
+  it("treats a day of only untracked windows as no activity", () => {
+    const empty = {
+      activities: { "2026-11-08 09:00:00 -0500": {}, "2026-11-08 09:05:00 -0500": {} },
+      activity_intervals: [],
+    }
+    expect(formatRecentActivity(empty, 24, "today")).toContain("No activity tracked")
   })
 
   it("handles a day with no activity", () => {
