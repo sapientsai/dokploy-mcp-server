@@ -171,6 +171,35 @@ describe("formatProductivityScore", () => {
     expect(result).toContain("### Pulse: 82/100")
     expect(result).toContain("**Software Development:** 50.0%")
   })
+
+  it("lists Uncategorized with the categories, not the productivity levels", () => {
+    const result = formatProductivityScore({
+      productivity_pulse: 70,
+      date: "2026-11-07",
+      total_duration_formatted: "6h",
+      all_productive_percentage: 69.5,
+      all_productive_hours: 4.2,
+      all_distracting_percentage: 2.5,
+      all_distracting_hours: 0.1,
+      neutral_percentage: 28,
+      neutral_hours: 1.7,
+      uncategorized_percentage: 26.7,
+      uncategorized_hours: 1.6,
+      software_development_percentage: 16.2,
+      business_percentage: 0.2,
+      communication_and_scheduling_percentage: 5.8,
+      reference_and_learning_percentage: 10.9,
+      design_and_composition_percentage: 0,
+      utilities_percentage: 37.5,
+      news_percentage: 0.5,
+      social_networking_percentage: 0.7,
+      entertainment_percentage: 0.5,
+      shopping_percentage: 0.8,
+    } as DailySummary)
+    const [productivity, categories] = result.split("### Category Breakdown")
+    expect(productivity).not.toContain("Uncategorized")
+    expect(categories).toContain("**Uncategorized:** 26.7% (1.6h)")
+  })
 })
 
 describe("formatHighlights", () => {

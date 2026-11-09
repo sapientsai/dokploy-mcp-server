@@ -112,7 +112,6 @@ export function formatProductivityScore(summary: DailySummary): string {
     `- **All Productive:** ${summary.all_productive_percentage.toFixed(1)}% (${summary.all_productive_hours.toFixed(1)}h)`,
     `- **All Distracting:** ${summary.all_distracting_percentage.toFixed(1)}% (${summary.all_distracting_hours.toFixed(1)}h)`,
     `- **Neutral:** ${summary.neutral_percentage.toFixed(1)}% (${summary.neutral_hours.toFixed(1)}h)`,
-    `- **Uncategorized:** ${summary.uncategorized_percentage.toFixed(1)}% (${summary.uncategorized_hours.toFixed(1)}h)`,
     "",
     "### Category Breakdown",
     "",
@@ -126,6 +125,7 @@ export function formatProductivityScore(summary: DailySummary): string {
     `- **Social Networking:** ${summary.social_networking_percentage.toFixed(1)}%`,
     `- **Entertainment:** ${summary.entertainment_percentage.toFixed(1)}%`,
     `- **Shopping:** ${summary.shopping_percentage.toFixed(1)}%`,
+    `- **Uncategorized:** ${summary.uncategorized_percentage.toFixed(1)}% (${summary.uncategorized_hours.toFixed(1)}h)`,
   ].join("\n")
 }
 

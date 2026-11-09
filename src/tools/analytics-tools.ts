@@ -6,7 +6,9 @@ import { z } from "zod"
 import { getClient } from "../client/rescuetime-client"
 import { toUserError } from "../errors"
 import type { DailySummary } from "../types"
+import { localDate } from "../utils/dates"
 import { formatActivityData, formatDailySummary, formatProductivityScore } from "../utils/formatters"
+import { formatRecentActivity } from "../utils/resource-formatters"
 
 function unwrapClient() {
   return getClient().toEither(new Error("RescueTime client not initialized. Is RESCUETIME_API_KEY set?"))
@@ -79,7 +81,7 @@ export function registerAnalyticsTools(server: SomaServerInstance): void {
       IO.gen(function* () {
         const client = yield* IO.fromEither(unwrapClient())
         const summaries = yield* client.getDailySummary()
-        const target = args.date ?? new Date().toISOString().slice(0, 10)
+        const target = args.date ?? localDate()
         const match = summaries.find((s: DailySummary) => s.date === target)
         return yield* IO.fromEither(
           match
@@ -91,6 +93,32 @@ export function registerAnalyticsTools(server: SomaServerInstance): void {
               ),
         )
       })
+        .mapError(toUserError)
+        .runOrThrow(),
+  })
+
+  server.addTool({
+    name: "get_recent_activity",
+    description:
+      "Show the latest stretch of a day's RescueTime timeline: each 5-minute window with the activity that took most of it, newest first. Good for 'what was I just doing?'. Use get_activity_data for totals.",
+    parameters: z.object({
+      date: z
+        .string()
+        .regex(/^\d{4}-\d{2}-\d{2}$/)
+        .optional()
+        .describe("Day to show (YYYY-MM-DD). Defaults to today in the RescueTime account's timezone."),
+      limit: z
+        .number()
+        .int()
+        .min(1)
+        .max(288)
+        .default(24)
+        .describe("How many 5-minute windows to show. 24 covers the last 2 hours; 288 is a full day."),
+    }),
+    execute: async (args) =>
+      IO.fromEither(unwrapClient())
+        .flatMap((client) => client.getTimeline(args.date))
+        .map((timeline) => formatRecentActivity(timeline, args.limit, args.date ?? "today"))
         .mapError(toUserError)
         .runOrThrow(),
   })

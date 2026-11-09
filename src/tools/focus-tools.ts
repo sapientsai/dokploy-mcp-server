@@ -5,6 +5,7 @@ import { z } from "zod"
 import { getClient } from "../client/rescuetime-client"
 import { toUserError } from "../errors"
 import { formatFocusSessions } from "../utils/formatters"
+import { formatFocusState } from "../utils/resource-formatters"
 
 function unwrapClient() {
   return getClient().toEither(new Error("RescueTime client not initialized. Is RESCUETIME_API_KEY set?"))
@@ -40,7 +41,7 @@ export function registerFocusTools(server: SomaServerInstance): void {
   server.addTool({
     name: "end_focus_session",
     description:
-      "End the current RescueTime Focus Session early. Unblocks distracting websites and apps. Only useful if a focus session is currently active.",
+      "End a Focus Session started with start_focus_session early, unblocking distracting websites and apps. To stop a Timesheets timer, or anything get_focus_state shows running, use stop_timer.",
     parameters: z.object({}),
     execute: async () =>
       IO.fromEither(unwrapClient())
@@ -62,6 +63,19 @@ export function registerFocusTools(server: SomaServerInstance): void {
             .zip(client.getFocusSessionsEnded())
             .map(([started, ended]) => formatFocusSessions(started, ended)),
         )
+        .mapError(toUserError)
+        .runOrThrow(),
+  })
+
+  server.addTool({
+    name: "get_focus_state",
+    description:
+      "Show what is running right now: a focus session, a focus zone, or a Timesheets timer, with start time, end or expiry, and blocking settings. Use get_focus_sessions for past sessions.",
+    parameters: z.object({}),
+    execute: async () =>
+      IO.fromEither(unwrapClient())
+        .flatMap((client) => client.getFocusState())
+        .map((states) => formatFocusState(states, Math.floor(Date.now() / 1000)))
         .mapError(toUserError)
         .runOrThrow(),
   })
