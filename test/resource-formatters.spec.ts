@@ -8,6 +8,7 @@ import {
   formatTimerStarted,
 } from "../src/utils/resource-formatters"
 import {
+  linkedTimerState,
   projectEntry,
   sessionState,
   stopDeleted,
@@ -28,6 +29,16 @@ describe("formatFocusState", () => {
     expect(result).toContain("(2m ago)")
     expect(result).toContain("unless stopped")
     expect(result).toContain("apps and sites off")
+  })
+
+  it("names the project a timer is linked to", () => {
+    expect(formatFocusState([linkedTimerState], linkedTimerState.start_time_epoch)).toContain(
+      "- **Project:** Client Alpha",
+    )
+  })
+
+  it("has no project line for an unlinked timer", () => {
+    expect(formatFocusState([timerState], timerState.start_time_epoch)).not.toContain("Project")
   })
 
   it("shows a session's time left", () => {
@@ -113,6 +124,19 @@ describe("formatProjectTime", () => {
     expect(result).toContain("05:45–06:05 **Client Alpha** 20m *(draft)*")
     expect(result).toContain("1 of 2 entries are drafts")
     expect(result).not.toContain("### 2026-11-07")
+  })
+
+  it("handles an entry a timer logged, whose provenance is an object", () => {
+    const fromTimer = projectEntry({
+      start_time: "2026-11-12T06:00:00.000-08:00",
+      end_time: "2026-11-12T06:15:00.000-08:00",
+      duration: 900,
+      extra: { draft: false, comment: "Writing", provenance: { focus_session: { duration: 389 } } },
+    })
+    const result = formatProjectTime([{ date: "2026-11-12", response: complete([fromTimer]) }], "2026-11-12")
+    expect(result).toContain("06:00–06:15 **Client Alpha** 15m")
+    expect(result).not.toContain("draft")
+    expect(result).not.toContain("[object Object]")
   })
 
   it("notes days RescueTime had not finished", () => {

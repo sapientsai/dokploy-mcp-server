@@ -33,7 +33,7 @@ function formatState(s: GlobalState, nowEpoch: number): string {
       : `- **Ends:** ${isoFromEpoch(s.expiration_epoch)} (${formatDuration(Math.max(0, remaining))} left)`,
     `- **Blocking:** apps and sites ${onOff(s.state.block_apps_sites)}, communication apps ${onOff(s.state.block_comms)}`,
   ]
-  const project = s.state.v2_project_id === undefined ? [] : [`- **Project ID:** ${s.state.v2_project_id}`]
+  const project = s.state.project ? [`- **Project:** ${s.state.project.name}`] : []
   return [...lines, ...project].join("\n")
 }
 

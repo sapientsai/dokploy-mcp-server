@@ -18,6 +18,12 @@ export const timerState: GlobalState = {
   is_timer: true,
 }
 
+/** A timer started for a project: the link sits in `state.project`, as seen live on 2026-11-12. */
+export const linkedTimerState: GlobalState = {
+  ...timerState,
+  state: { ...timerState.state, strict_focus: false, project: { id: 1, name: "Client Alpha" } },
+}
+
 export const sessionState: GlobalState = {
   id: 102,
   state: { is_timer: false, in_zone: false, block_apps_sites: true, block_comms: false, label_name: "Deep work" },
