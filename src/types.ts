@@ -118,8 +118,9 @@ export type GlobalStateDetails = {
   readonly label_name?: string
   readonly block_apps_sites?: boolean
   readonly block_comms?: boolean
-  readonly v2_project_id?: number
-  readonly task_id?: number
+  readonly strict_focus?: boolean
+  /** Set when the timer was started for a project. Observed live 2026-11-12. */
+  readonly project?: { readonly id: number; readonly name: string } | null
 }
 
 export type GlobalState = {
@@ -173,7 +174,12 @@ export type ProjectTimeEntry = {
   readonly end_time: string
   /** Seconds. */
   readonly duration: number
-  readonly extra?: { readonly draft?: boolean; readonly provenance?: string }
+  readonly extra?: {
+    readonly draft?: boolean
+    readonly comment?: string
+    /** A label such as "open_ai" for suggested drafts, or the focus session a timer logged. */
+    readonly provenance?: string | Readonly<Record<string, unknown>>
+  }
   readonly project: { readonly id: number; readonly name: string } | null
   readonly task: { readonly id: number; readonly name: string; readonly hidden: boolean } | null
   readonly client: { readonly name: string } | null
