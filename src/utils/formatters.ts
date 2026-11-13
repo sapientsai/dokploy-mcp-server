@@ -13,12 +13,12 @@ const PRODUCTIVITY_LABELS: Record<number, string> = {
 /**
  * Make free text safe inside a Markdown table cell. Window titles such as Microsoft Teams'
  * ("Chat | Name | org | email") contain pipes, which would split the row and shift every column after it.
- * A backslash already sitting before a pipe is doubled first, or some renderers read "\\|" as a literal
- * backslash and then split on the pipe.
+ * Any run of backslashes right before a pipe is doubled first. Each pair then reads as one literal
+ * backslash, so the pipe's own escape is never cancelled, however many backslashes came before it.
  */
 export function tableCell(text: string): string {
   return text
-    .replaceAll(/\\(?=\|)/g, "\\\\")
+    .replaceAll(/\\+(?=\|)/g, (run) => run + run)
     .replaceAll("|", "\\|")
     .replaceAll(/\r\n|\r|\n/g, " ")
 }

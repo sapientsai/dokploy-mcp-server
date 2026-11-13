@@ -178,6 +178,28 @@ describe("formatProjectTime", () => {
     expect(formatProjectTime(days, "2026-11-12", Option("Asia/Tokyo"))).toContain("- 23:00–23:15 **Client Alpha** 15m")
   })
 
+  it("prints midnight as 00:00, not 24:00", () => {
+    const entry = projectEntry({
+      start_time: "2026-11-12T21:00:00.000-08:00",
+      end_time: "2026-11-12T21:15:00.000-08:00",
+    })
+    const result = formatProjectTime(
+      [{ date: "2026-11-12", response: complete([entry]) }],
+      "2026-11-12",
+      Option("America/New_York"),
+    )
+    expect(result).toContain("- 00:00–00:15 **Client Alpha**")
+  })
+
+  it("lists every offset when a range crosses a DST change and the zone is unknown", () => {
+    const summer = projectEntry({
+      start_time: "2026-10-30T08:00:00.000-07:00",
+      end_time: "2026-10-30T08:15:00.000-07:00",
+    })
+    const days = [{ date: "2026-10-30", response: complete([summer, projectEntry()]) }]
+    expect(formatProjectTime(days, "range", Option.none())).toContain("(UTC-07:00, UTC-08:00)")
+  })
+
   it("says the times are RescueTime's own when the zone is unknown", () => {
     const result = formatProjectTime(
       [{ date: "2026-11-06", response: complete([projectEntry()]) }],

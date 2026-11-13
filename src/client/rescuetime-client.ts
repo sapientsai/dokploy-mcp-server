@@ -19,6 +19,7 @@ import type {
   TimelineResponse,
   UserRecord,
 } from "../types"
+import { localDate } from "../utils/dates"
 import { resolveZone } from "../utils/time"
 
 const DEFAULT_BASE_URL = "https://www.rescuetime.com"
@@ -50,6 +51,16 @@ const KEY_SUGGESTIONS = ["Check RESCUETIME_API_KEY. Get a key at https://www.res
 const authError = (detail: string): UserError =>
   new UserError(`RescueTime rejected the API key (${detail}).`, { category: "auth", suggestions: KEY_SUGGESTIONS })
 
+/** RescueTime's docs: 403 means the key is valid but lacks permission for the resource, so don't blame the key. */
+const forbiddenError = (): UserError =>
+  new UserError(
+    "RescueTime refused this request (HTTP 403): the key is valid but lacks permission for this resource.",
+    {
+      category: "auth",
+      suggestions: [],
+    },
+  )
+
 const rateLimitError = (): UserError =>
   new UserError("Rate limit exceeded. RescueTime allows 60 requests/minute, 1000/hour.", {
     suggestions: ["Wait a minute, then try again."],
@@ -59,13 +70,18 @@ function readBody(response: Response): IO<never, never, string> {
   return IO.tryPromise({ try: () => response.text(), catch: toError }).recover("")
 }
 
-/** RescueTime's own explanation from an error body such as {"messages":"key not found"}. */
+type ErrorBody = { readonly messages?: unknown; readonly message?: unknown; readonly error?: unknown }
+
+const isText = (v: unknown): v is string => typeof v === "string" && v.length > 0
+
+/**
+ * RescueTime's own explanation from an error body. The Analytic API sends {"messages":"key not found"};
+ * the Resource API sends {"message": …} or {"error":"Not Found"}.
+ */
 function serverMessage(body: string): string {
-  return Try(() => JSON.parse(body) as { readonly messages?: unknown })
+  return Try(() => JSON.parse(body) as ErrorBody)
     .toOption()
-    .flatMap((j) =>
-      typeof j.messages === "string" && j.messages.length > 0 ? Option(j.messages) : Option.none<string>(),
-    )
+    .flatMap((j) => Option([j.messages, j.message, j.error].find(isText)))
     .fold(
       () => "",
       (m) => `: ${m.slice(0, 200)}`,
@@ -78,7 +94,8 @@ function serverMessage(body: string): string {
  */
 function checkResponse(response: Response): IO<never, Error, Response> {
   if (response.ok) return IO.succeed(response)
-  if (response.status === 401 || response.status === 403) return IO.fail(authError(`HTTP ${response.status}`))
+  if (response.status === 401) return IO.fail(authError("HTTP 401"))
+  if (response.status === 403) return IO.fail(forbiddenError())
   if (response.status === 429) return IO.fail(rateLimitError())
   return readBody(response).flatMap((body) =>
     IO.fail(
@@ -191,7 +208,7 @@ export class RescueTimeClient {
 
   postHighlight(params: PostHighlightParams): IO<never, Error, undefined> {
     return this.post("/anapi/highlights_post", {
-      highlight_date: params.highlight_date ?? new Date().toISOString().slice(0, 10),
+      highlight_date: params.highlight_date ?? localDate(),
       description: params.description,
       source: params.source,
     }).map(() => undefined)
@@ -235,8 +252,9 @@ export class RescueTimeClient {
   accountTimeZone(): IO<never, never, Option<string>> {
     const cached = this.timeZoneCache.get()
     if (cached.isSome()) return IO.succeed(cached)
-    return this.resourceRequest<readonly UserRecord[]>("/users")
-      .map((users) => resolveZone(users[0]?.time_zone))
+    // Live it is an array of one user; RescueTime's docs show a bare object too, so read either.
+    return this.resourceRequest<readonly UserRecord[] | UserRecord>("/users")
+      .map((users) => resolveZone((Array.isArray(users) ? users[0] : (users as UserRecord))?.time_zone))
       .tap((zone) => this.timeZoneCache.set(zone))
       .recover(Option.none<string>())
   }

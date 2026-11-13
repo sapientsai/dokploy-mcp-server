@@ -118,10 +118,13 @@ function formatDay(day: ProjectTimeDay, zone: Option<string>): readonly string[]
 }
 
 /** Where the clock times come from, so a reader never has to guess the zone. */
+/** Every distinct offset among the entries, e.g. "UTC-07:00, UTC-08:00" for a range across a DST change. */
+const offsetsOf = (entries: readonly ProjectTimeEntry[]): string =>
+  [...new Set(entries.map((e) => isoOffset(e.start_time)).filter((o) => o.length > 0))].map((o) => `UTC${o}`).join(", ")
+
 function zoneNote(zone: Option<string>, entries: readonly ProjectTimeEntry[]): string {
   return zone.fold(
-    () =>
-      `*Times are as RescueTime sent them (UTC${isoOffset(entries[0]?.start_time ?? "")}); the account's time zone was unavailable.*`,
+    () => `*Times are as RescueTime sent them (${offsetsOf(entries)}); the account's time zone was unavailable.*`,
     (tz) => `*Times are in the account's time zone, ${tz}.*`,
   )
 }

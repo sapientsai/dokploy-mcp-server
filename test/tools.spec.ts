@@ -142,9 +142,25 @@ describe("get_project_time", () => {
 describe("account time zone", () => {
   it("is fetched once and reused across tool calls", async () => {
     routes({ "/user_global_states": { body: [timerState] }, ...TOKYO })
-    await run("get_focus_state")
+    expect(await run("get_focus_state")).toContain("2026-11-09 09:58 GMT+9")
     await run("get_focus_state")
     expect(paths().filter((p) => p === "/api/resource/users")).toHaveLength(1)
+  })
+
+  it("reads a bare user object as well as an array", async () => {
+    routes({
+      "/user_global_states": { body: [timerState] },
+      "/api/resource/users": { body: { time_zone: "Asia/Tokyo" } },
+    })
+    expect(await run("get_focus_state")).toContain("GMT+9")
+  })
+
+  it("converts today's project time when no dates are given", async () => {
+    routes({
+      "/labeled_time_project_times": { body: { is_complete: true, job_id: null, project_times: [projectEntry()] } },
+      ...TOKYO,
+    })
+    expect(await run("get_project_time")).toContain("- 22:45–23:05 **Client Alpha** 20m")
   })
 
   it("ignores a zone name the runtime can't use", async () => {
@@ -198,6 +214,19 @@ describe("bad API key", () => {
   it("reports the Resource API's 401 as an auth error", async () => {
     routes({ "/user_global_states": { status: 401, body: { success: false, message: "" } } })
     await expect(run("get_focus_state")).rejects.toMatchObject({ category: "auth" })
+  })
+
+  it("doesn't blame the key for a 403, which means a valid key without permission", async () => {
+    routes({ "/user_global_states": { status: 403, body: { success: false, message: "" } } })
+    await expect(run("get_focus_state")).rejects.toMatchObject({
+      message: expect.stringContaining("the key is valid but lacks permission"),
+      suggestions: [],
+    })
+  })
+
+  it("shows the Resource API's own reason for other errors", async () => {
+    routes({ "/user_global_states": { status: 404, body: { status: 404, error: "Not Found" } } })
+    await expect(run("get_focus_state")).rejects.toThrow("RescueTime API error: HTTP 404 404: Not Found")
   })
 
   it("tells the caller to wait on a rate limit", async () => {
