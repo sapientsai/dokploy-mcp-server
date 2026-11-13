@@ -13,9 +13,14 @@ const PRODUCTIVITY_LABELS: Record<number, string> = {
 /**
  * Make free text safe inside a Markdown table cell. Window titles such as Microsoft Teams'
  * ("Chat | Name | org | email") contain pipes, which would split the row and shift every column after it.
+ * A backslash already sitting before a pipe is doubled first, or some renderers read "\\|" as a literal
+ * backslash and then split on the pipe.
  */
 export function tableCell(text: string): string {
-  return text.replaceAll("|", "\\|").replaceAll(/\r\n|\r|\n/g, " ")
+  return text
+    .replaceAll(/\\(?=\|)/g, "\\\\")
+    .replaceAll("|", "\\|")
+    .replaceAll(/\r\n|\r|\n/g, " ")
 }
 
 export function formatDuration(seconds: number): string {

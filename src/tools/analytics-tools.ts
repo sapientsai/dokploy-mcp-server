@@ -1,4 +1,4 @@
-import { IO, Left, Right } from "functype"
+import { IO, Left, Option, Right } from "functype"
 import type { SomaServerInstance } from "somamcp"
 import { UserError } from "somamcp"
 import { z } from "zod"
@@ -10,9 +10,18 @@ import { localDate } from "../utils/dates"
 import { formatActivityData, formatDailySummary, formatProductivityScore } from "../utils/formatters"
 import { formatRecentActivity } from "../utils/resource-formatters"
 
-/** The newest day in the feed. The feed is ordered by RescueTime, so don't assume which end is newest. */
-function latestDate(summaries: readonly DailySummary[]): string {
-  return summaries.reduce((latest, s) => (s.date > latest ? s.date : latest), "")
+/** The newest day in the feed, or None when it is empty. Don't assume which end of the feed is newest. */
+export function latestDate(summaries: readonly DailySummary[]): Option<string> {
+  return summaries.reduce<Option<string>>(
+    (latest, s) =>
+      Option(
+        latest.fold(
+          () => s.date,
+          (l) => (s.date > l ? s.date : l),
+        ),
+      ),
+    Option.none(),
+  )
 }
 
 function unwrapClient() {
@@ -89,7 +98,15 @@ export function registerAnalyticsTools(server: SomaServerInstance): void {
       IO.gen(function* () {
         const client = yield* IO.fromEither(unwrapClient())
         const summaries = yield* client.getDailySummary()
-        const target = args.date ?? latestDate(summaries)
+        const target = args.date ?? latestDate(summaries).orUndefined()
+        if (target === undefined) {
+          return yield* IO.fail(
+            new UserError("RescueTime has no daily summaries yet. A day's summary appears after midnight.", {
+              category: "not_found",
+              suggestions: ["For today, use get_activity_data or get_recent_activity."],
+            }),
+          )
+        }
         const match = summaries.find((s: DailySummary) => s.date === target)
         return yield* IO.fromEither(
           match

@@ -74,8 +74,8 @@ export function registerFocusTools(server: SomaServerInstance): void {
     parameters: z.object({}),
     execute: async () =>
       IO.fromEither(unwrapClient())
-        .flatMap((client) => client.getFocusState())
-        .map((states) => formatFocusState(states, Math.floor(Date.now() / 1000)))
+        .flatMap((client) => client.getFocusState().zip(client.accountTimeZone()))
+        .map(([states, zone]) => formatFocusState(states, Math.floor(Date.now() / 1000), zone))
         .mapError(toUserError)
         .runOrThrow(),
   })

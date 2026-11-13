@@ -1,3 +1,4 @@
+import { Option } from "functype"
 import { describe, expect, it } from "vitest"
 
 import type { AnalyticDataResponse, TimelineResponse } from "../src/types"
@@ -20,6 +21,15 @@ describe("tableCell", () => {
 
   it("flattens line breaks into spaces", () => {
     expect(tableCell("one\ntwo\r\nthree\rfour")).toBe("one two three four")
+  })
+
+  it("doubles a backslash that sits right before a pipe, so the pipe stays escaped", () => {
+    expect(tableCell("a\\|b")).toBe("a\\\\\\|b")
+    expect(cellCount(`| ${tableCell("a\\|b")} | x |`)).toBe(2)
+  })
+
+  it("leaves other backslashes alone", () => {
+    expect(tableCell("C:\\Users\\me")).toBe("C:\\Users\\me")
   })
 
   it("leaves plain text alone", () => {
@@ -53,6 +63,7 @@ describe("tables keep their columns when names contain pipes", () => {
       formatProjectTime(
         [{ date: "2026-11-06", response: { is_complete: true, job_id: null, project_times: [entry] } }],
         "2026-11-06",
+        Option.none(),
       ),
     )
     expect(rows.map(cellCount)).toEqual([2, 2, 2])
