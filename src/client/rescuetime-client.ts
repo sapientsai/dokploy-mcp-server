@@ -1,4 +1,5 @@
-import { IO, Left, Option, Ref, Right } from "functype"
+import { IO, Option, Ref, Try } from "functype"
+import { UserError } from "somamcp"
 
 import { toError } from "../errors"
 import type {
@@ -16,7 +17,10 @@ import type {
   StartTimerParams,
   StopSessionResponse,
   TimelineResponse,
+  UserRecord,
 } from "../types"
+import { localDate } from "../utils/dates"
+import { resolveZone } from "../utils/time"
 
 const DEFAULT_BASE_URL = "https://www.rescuetime.com"
 const DEFAULT_POLL_DELAY_MS = 1000
@@ -42,13 +46,63 @@ function buildQuery(params: Record<string, string | number | undefined>): string
     .join("&")
 }
 
+const KEY_SUGGESTIONS = ["Check RESCUETIME_API_KEY. Get a key at https://www.rescuetime.com/anapi/manage."]
+
+const authError = (detail: string): UserError =>
+  new UserError(`RescueTime rejected the API key (${detail}).`, { category: "auth", suggestions: KEY_SUGGESTIONS })
+
+/** RescueTime's docs: 403 means the key is valid but lacks permission for the resource, so don't blame the key. */
+const forbiddenError = (): UserError =>
+  new UserError(
+    "RescueTime refused this request (HTTP 403): the key is valid but lacks permission for this resource.",
+    {
+      category: "auth",
+      suggestions: [],
+    },
+  )
+
+const rateLimitError = (): UserError =>
+  new UserError("Rate limit exceeded. RescueTime allows 60 requests/minute, 1000/hour.", {
+    suggestions: ["Wait a minute, then try again."],
+  })
+
+function readBody(response: Response): IO<never, never, string> {
+  return IO.tryPromise({ try: () => response.text(), catch: toError }).recover("")
+}
+
+type ErrorBody = { readonly messages?: unknown; readonly message?: unknown; readonly error?: unknown }
+
+const isText = (v: unknown): v is string => typeof v === "string" && v.length > 0
+
+/**
+ * RescueTime's own explanation from an error body. The Analytic API sends {"messages":"key not found"};
+ * the Resource API sends {"message": …} or {"error":"Not Found"}.
+ */
+function serverMessage(body: string): string {
+  return Try(() => JSON.parse(body) as ErrorBody)
+    .toOption()
+    .flatMap((j) => Option([j.messages, j.message, j.error].find(isText)))
+    .fold(
+      () => "",
+      (m) => `: ${m.slice(0, 200)}`,
+    )
+}
+
+/**
+ * A bad key reads differently on the two APIs: the Resource API answers 401, while the Analytic Data API
+ * answers 400 with {"messages":"key not found"}. A malformed query is also a 400 there, with "query error".
+ */
 function checkResponse(response: Response): IO<never, Error, Response> {
-  return IO.fromEither(
-    response.status === 429
-      ? Left<Error, Response>(new Error("Rate limit exceeded. RescueTime allows 60 requests/minute, 1000/hour."))
-      : !response.ok
-        ? Left<Error, Response>(new Error(`RescueTime API error: HTTP ${response.status} ${response.statusText}`))
-        : Right<Error, Response>(response),
+  if (response.ok) return IO.succeed(response)
+  if (response.status === 401) return IO.fail(authError("HTTP 401"))
+  if (response.status === 403) return IO.fail(forbiddenError())
+  if (response.status === 429) return IO.fail(rateLimitError())
+  return readBody(response).flatMap((body) =>
+    IO.fail(
+      response.status === 400 && body.includes("key not found")
+        ? authError("HTTP 400: key not found")
+        : new Error(`RescueTime API error: HTTP ${response.status} ${response.statusText}${serverMessage(body)}`),
+    ),
   )
 }
 
@@ -70,6 +124,7 @@ export class RescueTimeClient {
   private readonly apiKey: string
   private readonly baseUrl: string
   private readonly pollDelayMs: number
+  private readonly timeZoneCache = Ref<Option<string>>(Option.none())
 
   constructor(config: RescueTimeClientConfig) {
     this.apiKey = config.apiKey
@@ -77,12 +132,15 @@ export class RescueTimeClient {
     this.pollDelayMs = config.pollDelayMs ?? DEFAULT_POLL_DELAY_MS
   }
 
-  private makeRequest(path: string, options: RequestInit = {}): IO<never, Error, Response> {
+  private analyticUrl(path: string, withKey: boolean): string {
     const separator = path.includes("?") ? "&" : "?"
-    const url = `${this.baseUrl}${path}${separator}key=${this.apiKey}&format=json`
+    const key = withKey ? `key=${encodeURIComponent(this.apiKey)}&` : ""
+    return `${this.baseUrl}${path}${separator}${key}format=json`
+  }
 
+  private send(url: string, init: RequestInit): IO<never, Error, Response> {
     return IO.tryPromise({
-      try: () => fetch(url, options),
+      try: () => fetch(url, init),
       catch: toError,
     }).flatMap(checkResponse)
   }
@@ -109,16 +167,20 @@ export class RescueTimeClient {
     })
   }
 
+  /** Analytic Data API reads send the key as a Bearer header, as RescueTime recommends, never in the URL. */
   private get(path: string): IO<never, Error, Response> {
-    return this.makeRequest(path)
+    return this.send(this.analyticUrl(path, false), { headers: { Authorization: `Bearer ${this.apiKey}` } })
   }
 
+  /**
+   * Analytic Data API writes still carry the key in the URL and the form body. Bearer works for its GETs
+   * (checked live 2026-11-13); proving it for POSTs would take a real write, so they stay as they were.
+   */
   private post(path: string, body: Record<string, string | number | undefined>): IO<never, Error, Response> {
-    const encoded = formEncode({ ...body, key: this.apiKey })
-    return this.makeRequest(path, {
+    return this.send(this.analyticUrl(path, true), {
       method: "POST",
       headers: { "Content-Type": "application/x-www-form-urlencoded" },
-      body: encoded,
+      body: formEncode({ ...body, key: this.apiKey }),
     })
   }
 
@@ -146,7 +208,7 @@ export class RescueTimeClient {
 
   postHighlight(params: PostHighlightParams): IO<never, Error, undefined> {
     return this.post("/anapi/highlights_post", {
-      highlight_date: params.highlight_date ?? new Date().toISOString().slice(0, 10),
+      highlight_date: params.highlight_date ?? localDate(),
       description: params.description,
       source: params.source,
     }).map(() => undefined)
@@ -179,6 +241,22 @@ export class RescueTimeClient {
       activity_name: params.activity_name,
       activity_details: params.activity_details,
     }).map(() => undefined)
+  }
+
+  // === Resource API: Account ===
+
+  /**
+   * The account's IANA time zone, e.g. "America/New_York", fetched once and cached. A failed lookup gives
+   * None, never an error, so no tool fails because of it. Only `time_zone` is read from the user record.
+   */
+  accountTimeZone(): IO<never, never, Option<string>> {
+    const cached = this.timeZoneCache.get()
+    if (cached.isSome()) return IO.succeed(cached)
+    // Live it is an array of one user; RescueTime's docs show a bare object too, so read either.
+    return this.resourceRequest<readonly UserRecord[] | UserRecord>("/users")
+      .map((users) => resolveZone((Array.isArray(users) ? users[0] : (users as UserRecord))?.time_zone))
+      .tap((zone) => this.timeZoneCache.set(zone))
+      .recover(Option.none<string>())
   }
 
   // === Resource API: Focus State and Timers ===

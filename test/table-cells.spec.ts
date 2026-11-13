@@ -1,3 +1,4 @@
+import { Option } from "functype"
 import { describe, expect, it } from "vitest"
 
 import type { AnalyticDataResponse, TimelineResponse } from "../src/types"
@@ -8,8 +9,18 @@ import { projectEntry } from "./fixtures/resource"
 // A Microsoft Teams window title has this shape: segments joined by pipes. All names here are made up.
 const TEAMS_TITLE = "Teams - Chat | Example Person | example.org | someone@example.org | Microsoft Teams"
 
-/** Cells in a Markdown table row, splitting only on pipes that are not escaped. */
-const cellCount = (row: string): number => row.split(/(?<!\\)\|/).length - 2
+/**
+ * Cells in a Markdown table row, the way GFM reads it: a pipe is escaped only when an odd number of
+ * backslashes sits right before it, since each pair is one literal backslash.
+ */
+const cellCount = (row: string): number =>
+  [...row].reduce(
+    (acc, ch) =>
+      ch === "\\"
+        ? { ...acc, run: acc.run + 1 }
+        : { pipes: acc.pipes + (ch === "|" && acc.run % 2 === 0 ? 1 : 0), run: 0 },
+    { pipes: 0, run: 0 },
+  ).pipes - 1
 
 const tableRows = (markdown: string): readonly string[] => markdown.split("\n").filter((l) => l.startsWith("| "))
 
@@ -20,6 +31,22 @@ describe("tableCell", () => {
 
   it("flattens line breaks into spaces", () => {
     expect(tableCell("one\ntwo\r\nthree\rfour")).toBe("one two three four")
+  })
+
+  it("keeps the pipe escaped after two or three backslashes too", () => {
+    for (const run of ["\\\\", "\\\\\\"]) {
+      expect(cellCount(`| ${tableCell(`a${run}|b`)} | x |`)).toBe(2)
+    }
+    expect(tableCell("a\\\\|b")).toBe("a\\\\\\\\\\|b")
+  })
+
+  it("doubles a backslash that sits right before a pipe, so the pipe stays escaped", () => {
+    expect(tableCell("a\\|b")).toBe("a\\\\\\|b")
+    expect(cellCount(`| ${tableCell("a\\|b")} | x |`)).toBe(2)
+  })
+
+  it("leaves other backslashes alone", () => {
+    expect(tableCell("C:\\Users\\me")).toBe("C:\\Users\\me")
   })
 
   it("leaves plain text alone", () => {
@@ -53,6 +80,7 @@ describe("tables keep their columns when names contain pipes", () => {
       formatProjectTime(
         [{ date: "2026-11-06", response: { is_complete: true, job_id: null, project_times: [entry] } }],
         "2026-11-06",
+        Option.none(),
       ),
     )
     expect(rows.map(cellCount)).toEqual([2, 2, 2])

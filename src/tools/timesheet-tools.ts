@@ -75,10 +75,15 @@ export function registerTimesheetTools(server: SomaServerInstance): void {
                   .flatMap((projects) => IO.fromEither(resolveTimerLink(projects, projectName, Option(args.task)))),
               )
         const state = yield* client.startTimer(toTimerParams(link, Option(args.label)))
-        return formatTimerStarted(state, {
-          projectName: link.map((l) => l.project.name).orUndefined(),
-          taskName: link.flatMap((l) => l.task.map((t) => t.name)).orUndefined(),
-        })
+        const zone = yield* client.accountTimeZone()
+        return formatTimerStarted(
+          state,
+          {
+            projectName: link.map((l) => l.project.name).orUndefined(),
+            taskName: link.flatMap((l) => l.task.map((t) => t.name)).orUndefined(),
+          },
+          zone,
+        )
       })
         .mapError(toUserError)
         .runOrThrow(),
@@ -111,16 +116,18 @@ export function registerTimesheetTools(server: SomaServerInstance): void {
         const end = args.end_date ?? args.start_date
         if (start === undefined || end === undefined) {
           const today = yield* client.getProjectTimes()
+          const zone = yield* client.accountTimeZone()
           const date = today.project_times[0]?.date ?? "today"
-          return formatProjectTime([{ date, response: today }], date === "today" ? "today" : `today, ${date}`)
+          return formatProjectTime([{ date, response: today }], date === "today" ? "today" : `today, ${date}`, zone)
         }
         const days = yield* IO.fromEither(dateRange(start, end))
+        const zone = yield* client.accountTimeZone()
         const results = yield* IO.forEach(
           days,
           (date) => client.getProjectTimes(date).map((response): ProjectTimeDay => ({ date, response })),
           { concurrency: DAY_FETCH_CONCURRENCY },
         )
-        return formatProjectTime(results, start === end ? start : `${start} to ${end}`)
+        return formatProjectTime(results, start === end ? start : `${start} to ${end}`, zone)
       })
         .mapError(toUserError)
         .runOrThrow(),

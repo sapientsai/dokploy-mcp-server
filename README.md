@@ -167,6 +167,7 @@ Log time spent away from the computer (meetings, breaks, etc.).
 - **Highlights & Alerts**: Premium features
 - **Offline time**: Max 4 hours per entry, no future dates
 - **Two APIs, one key**: analytics, highlights, offline time and `start_focus_session` use the [Analytic Data API](https://www.rescuetime.com/apidoc). Focus state, timers, project time and the timeline use the [Resource API](https://www.rescuetime.com/api-docs), with the same key sent as a Bearer token.
+- **Times** are printed in the account's time zone from its RescueTime settings. RescueTime itself sends some timestamps with its own server's Pacific offset.
 - **Project time** is fetched one day at a time: RescueTime returns HTTP 500 for multi-day windows.
 
 ## Development

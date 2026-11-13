@@ -102,7 +102,7 @@ describe("RescueTimeClient.getAnalyticData", () => {
     expect(result.isLeft()).toBe(true)
   })
 
-  it("should include API key in URL", async () => {
+  it("sends the key as a Bearer header, not in the URL", async () => {
     mockFetch.mockResolvedValueOnce({
       ok: true,
       status: 200,
@@ -113,10 +113,11 @@ describe("RescueTimeClient.getAnalyticData", () => {
     await client.getAnalyticData({ restrict_kind: "activity" }).run()
 
     expect(mockFetch).toHaveBeenCalledOnce()
-    const calledUrl = mockFetch.mock.calls[0]![0] as string
-    expect(calledUrl).toContain("key=test-key")
+    const [calledUrl, init] = mockFetch.mock.calls[0] as [string, RequestInit & { headers: Record<string, string> }]
+    expect(calledUrl).not.toContain("test-key")
     expect(calledUrl).toContain("format=json")
     expect(calledUrl).toContain("restrict_kind=activity")
+    expect(init.headers.Authorization).toBe("Bearer test-key")
   })
 })
 
@@ -191,8 +192,11 @@ describe("RescueTimeClient.postHighlight", () => {
     const result = await client.postHighlight({ description: "Shipped feature X", source: "mcp-server" }).run()
 
     expect(result.isRight()).toBe(true)
-    const callArgs = mockFetch.mock.calls[0]![1] as RequestInit
+    const [calledUrl, callArgs] = mockFetch.mock.calls[0] as [string, RequestInit]
     expect(callArgs.method).toBe("POST")
+    // Writes keep the key in the URL and body: Bearer on POST is unverified, since proving it needs a real write.
+    expect(calledUrl).toContain("key=test-key")
+    expect(String(callArgs.body)).toContain("key=test-key")
   })
 })
 

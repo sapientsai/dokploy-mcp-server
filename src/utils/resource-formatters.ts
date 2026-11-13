@@ -1,3 +1,5 @@
+import type { Option } from "functype"
+
 import type {
   GlobalState,
   ProjectTimeDay,
@@ -7,6 +9,7 @@ import type {
   TimelineResponse,
 } from "../types"
 import { formatDuration, tableCell } from "./formatters"
+import { clockIn, dateTimeIn, isoOffset } from "./time"
 
 // === Focus State ===
 
@@ -16,32 +19,32 @@ function stateKind(s: GlobalState): string {
   return "Focus session"
 }
 
-const isoFromEpoch = (epoch: number): string => new Date(epoch * 1000).toISOString()
+const timeFromEpoch = (epoch: number, zone: Option<string>): string => dateTimeIn(new Date(epoch * 1000), zone)
 
 const onOff = (flag: boolean | undefined): string => (flag ? "on" : "off")
 
-function formatState(s: GlobalState, nowEpoch: number): string {
+function formatState(s: GlobalState, nowEpoch: number, zone: Option<string>): string {
   const kind = stateKind(s)
   const label = s.state.label_name ?? s.label_name
   const remaining = s.expiration_epoch - nowEpoch
   const lines = [
     `### ${kind}${label ? `: ${label}` : ""}`,
     "",
-    `- **Started:** ${isoFromEpoch(s.start_time_epoch)} (${formatDuration(Math.max(0, nowEpoch - s.start_time_epoch))} ago)`,
+    `- **Started:** ${timeFromEpoch(s.start_time_epoch, zone)} (${formatDuration(Math.max(0, nowEpoch - s.start_time_epoch))} ago)`,
     kind === "Timer"
-      ? `- **Expires:** ${isoFromEpoch(s.expiration_epoch)} unless stopped`
-      : `- **Ends:** ${isoFromEpoch(s.expiration_epoch)} (${formatDuration(Math.max(0, remaining))} left)`,
+      ? `- **Expires:** ${timeFromEpoch(s.expiration_epoch, zone)} unless stopped`
+      : `- **Ends:** ${timeFromEpoch(s.expiration_epoch, zone)} (${formatDuration(Math.max(0, remaining))} left)`,
     `- **Blocking:** apps and sites ${onOff(s.state.block_apps_sites)}, communication apps ${onOff(s.state.block_comms)}`,
   ]
   const project = s.state.project ? [`- **Project:** ${s.state.project.name}`] : []
   return [...lines, ...project].join("\n")
 }
 
-export function formatFocusState(states: readonly GlobalState[], nowEpoch: number): string {
+export function formatFocusState(states: readonly GlobalState[], nowEpoch: number, zone: Option<string>): string {
   if (states.length === 0) {
     return ["## Focus State", "", "Nothing is active: no focus session, focus zone, or timer is running."].join("\n")
   }
-  return ["## Focus State", "", ...states.map((s) => formatState(s, nowEpoch))].join("\n")
+  return ["## Focus State", "", ...states.map((s) => formatState(s, nowEpoch, zone))].join("\n")
 }
 
 export type TimerLink = {
@@ -49,13 +52,13 @@ export type TimerLink = {
   readonly taskName?: string
 }
 
-export function formatTimerStarted(state: GlobalState, link: TimerLink): string {
+export function formatTimerStarted(state: GlobalState, link: TimerLink, zone: Option<string>): string {
   const label = state.state.label_name ?? state.label_name
   const linkText = link.projectName
     ? ` for project **${link.projectName}**${link.taskName ? ` / task **${link.taskName}**` : ""}`
     : ""
   return [
-    `Timer started${linkText}${label ? ` with label "${label}"` : ""} at ${isoFromEpoch(state.start_time_epoch)}.`,
+    `Timer started${linkText}${label ? ` with label "${label}"` : ""} at ${timeFromEpoch(state.start_time_epoch, zone)}.`,
     "",
     "App and site blocking is off. RescueTime ends the timer after 24h if it is not stopped. Call stop_timer to stop it.",
   ].join("\n")
@@ -85,9 +88,6 @@ export function formatStopResult(result: StopSessionResponse): string {
 
 // === Project Time ===
 
-/** "2026-11-06T05:45:00.000-08:00" → "05:45", in the offset RescueTime returned. */
-const clockTime = (iso: string): string => iso.slice(11, 16)
-
 function entryLabel(e: ProjectTimeEntry): string {
   const project = e.project?.name ?? e.name
   const task = e.task && !e.task.hidden ? ` / ${e.task.name}` : ""
@@ -103,7 +103,7 @@ function totalsByLabel(entries: readonly ProjectTimeEntry[]): ReadonlyArray<read
   return Object.entries(totals).toSorted(([, a], [, b]) => b - a)
 }
 
-function formatDay(day: ProjectTimeDay): readonly string[] {
+function formatDay(day: ProjectTimeDay, zone: Option<string>): readonly string[] {
   const entries = day.response.project_times
   if (entries.length === 0) return []
   return [
@@ -111,13 +111,25 @@ function formatDay(day: ProjectTimeDay): readonly string[] {
     "",
     ...entries.map(
       (e) =>
-        `- ${clockTime(e.start_time)}–${clockTime(e.end_time)} **${entryLabel(e)}** ${formatDuration(e.duration)}${e.extra?.draft ? " *(draft)*" : ""}`,
+        `- ${clockIn(e.start_time, zone)}–${clockIn(e.end_time, zone)} **${entryLabel(e)}** ${formatDuration(e.duration)}${e.extra?.draft ? " *(draft)*" : ""}`,
     ),
     "",
   ]
 }
 
-export function formatProjectTime(days: readonly ProjectTimeDay[], rangeLabel: string): string {
+/** Where the clock times come from, so a reader never has to guess the zone. */
+/** Every distinct offset among the entries, e.g. "UTC-07:00, UTC-08:00" for a range across a DST change. */
+const offsetsOf = (entries: readonly ProjectTimeEntry[]): string =>
+  [...new Set(entries.map((e) => isoOffset(e.start_time)).filter((o) => o.length > 0))].map((o) => `UTC${o}`).join(", ")
+
+function zoneNote(zone: Option<string>, entries: readonly ProjectTimeEntry[]): string {
+  return zone.fold(
+    () => `*Times are as RescueTime sent them (${offsetsOf(entries)}); the account's time zone was unavailable.*`,
+    (tz) => `*Times are in the account's time zone, ${tz}.*`,
+  )
+}
+
+export function formatProjectTime(days: readonly ProjectTimeDay[], rangeLabel: string, zone: Option<string>): string {
   const entries = days.flatMap((d) => d.response.project_times)
   const partial = days.filter((d) => !d.response.is_complete).map((d) => d.date)
   const partialNote =
@@ -143,13 +155,14 @@ export function formatProjectTime(days: readonly ProjectTimeDay[], rangeLabel: s
     `## Project Time (${rangeLabel})`,
     "",
     `**Total:** ${formatDuration(total)} across ${entries.length} entries`,
+    zoneNote(zone, entries),
     ...draftNote,
     "",
     "| Project / Task | Time |",
     "| --- | --- |",
     ...totalsByLabel(entries).map(([label, seconds]) => `| ${tableCell(label)} | ${formatDuration(seconds)} |`),
     "",
-    ...days.flatMap(formatDay),
+    ...days.flatMap((d) => formatDay(d, zone)),
     ...partialNote,
   ].join("\n")
 }

@@ -4,6 +4,7 @@ import { z } from "zod"
 
 import { getClient } from "../client/rescuetime-client"
 import { toUserError } from "../errors"
+import { localDate } from "../utils/dates"
 import { formatHighlights } from "../utils/formatters"
 
 function unwrapClient() {
@@ -41,7 +42,7 @@ export function registerHighlightTools(server: SomaServerInstance): void {
           highlight_date: args.highlight_date,
           source: args.source ?? "mcp-server",
         })
-        const date = args.highlight_date ?? new Date().toISOString().slice(0, 10)
+        const date = args.highlight_date ?? localDate()
         return `Highlight logged for ${date}: "${args.description}"`
       })
         .mapError(toUserError)

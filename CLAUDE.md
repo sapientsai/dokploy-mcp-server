@@ -49,6 +49,7 @@ src/
     resource-formatters.ts        # Markdown formatters for Resource API responses
     dates.ts                      # localDate (not UTC), dateRange (capped at 31 days)
     projects.ts                   # resolveTimerLink: project/task names → ids
+    time.ts                       # dateTimeIn/clockIn: print times in the account's time zone
 ```
 
 ### Key Patterns
@@ -97,8 +98,13 @@ src/
 
 ## RescueTime API Notes
 
-- **Two APIs, one key.** Analytic Data API (`/anapi/*`): key as a query param, form-encoded POSTs. Resource API (`/api/resource/*`): the same key as `Authorization: Bearer`, JSON bodies, no key in the URL. `resourceRequest` in the client handles the second.
-- **Resource API shapes** were observed live (2026-11-08), not taken from the docs, which leave them out. Fixtures in `test/fixtures/resource.ts` copy them.
+- **Two APIs, one key, sent as `Authorization: Bearer`.** Resource API (`/api/resource/*`): JSON bodies, no key in the URL. Analytic Data API (`/anapi/*`): GETs use Bearer too (checked live 2026-11-13). Its form-encoded POSTs still put the key in the URL and the body. RescueTime's docs list Bearer for those endpoints too, but no live write has tested it.
+- **A bad key** comes back as HTTP 401 from the Resource API, and as HTTP 400 `{"messages":"key not found"}` from the Analytic Data API. A malformed Analytic query is also a 400, with `"query error"`. `checkResponse` turns both bad-key forms into a `UserError` with category `auth`.
+- **Resource API shapes** were observed live (2026-11-08 to 11-13), not taken from the docs, which leave them out. Fixtures in `test/fixtures/resource.ts` copy them.
+- **A timer's project** comes back in `state.project` (`{id, name}`) on `user_global_states`. `v2_project_id` and `task_id` are request fields for `focus/start_session` only and never appear in a response.
+- **Timestamps carry RescueTime's server offset, not the account's.** Resource API project-time entries and focus-session records (`labeled_time_project_times`, `labeled_time_focus_sessions`) come back as `…-08:00` (Pacific, `-07:00` in summer) even though the account is `America/New_York`. Timeline bucket keys and the Analytic API's `focustime_*_feed` do use the account's zone. Tools print times through `client.accountTimeZone()`, which reads `time_zone` from `GET /api/resource/users` once and caches it. If that lookup fails, times fall back to labeled UTC, or to the clock time as sent with its offset stated. Read only `time_zone` from that record: it also holds email, phone and address.
+- **Unverified:** whether `labeled_time_project_times?date=` cuts on the account's day or on Pacific's. Only an entry starting 21:00–24:00 Pacific (00:00–03:00 Eastern) would tell; none existed in 59 days checked on 2026-11-13. If it cuts on Pacific's day, such an entry prints under the previous day's heading.
+- **A bad key vs. no permission:** 401 means the key is wrong. 403 means it's valid but lacks permission, per RescueTime's docs, so the error doesn't tell the user to replace the key.
 - **`focus/start_session` while something runs** returns 201 with the existing state rather than an error, so `start_timer` checks `user_global_states` first.
 - **`focus/cancel_or_stop_session`** answers `deleted` (stopped early, record discarded), `updated` (kept), or `none`.
 - **`labeled_time_project_times`** returns HTTP 500 for a multi-day `start_time`/`end_time` window; fetch per `date`. `force=true` doesn't help. Poll with `job_id` only when one comes back.

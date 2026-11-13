@@ -225,4 +225,11 @@ export type TimelineResponse = {
   readonly activity_intervals: readonly string[]
 }
 
+// === Resource API: Account ===
+
+/** The one field read from GET /api/resource/users. The record also holds email and address; leave them untyped. */
+export type UserRecord = {
+  readonly time_zone?: string | null
+}
+
 /* eslint-enable functype/prefer-option */
