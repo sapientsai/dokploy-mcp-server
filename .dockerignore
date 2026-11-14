@@ -1,0 +1,21 @@
+# Dependencies and build output (rebuilt in the container)
+node_modules/
+dist/
+coverage/
+
+# Secrets
+.env
+.env.*
+
+# Raw API spec dumps; the generated types in src/generated are what the build uses
+openapi.json
+scratch.json
+
+# Not needed to build
+.git/
+.github/
+.idea/
+.vscode/
+test/
+*.md
+!README.md

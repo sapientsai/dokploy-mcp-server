@@ -133,13 +133,16 @@ Add to `.cursor/mcp.json`:
 
 ### Docker
 
+Images are published to GitHub Container Registry for `linux/amd64` and `linux/arm64`. They serve MCP over HTTP at `/mcp`, with a health check at `/health`.
+
 ```bash
 docker run -e DOKPLOY_URL=https://dokploy.example.com \
            -e DOKPLOY_API_KEY=your-api-key \
-           -e TRANSPORT_TYPE=httpStream \
            -p 3000:3000 \
-           dokploy-mcp-server
+           ghcr.io/sapientsai/dokploy-mcp-server:latest
 ```
+
+Then point your MCP client at `http://localhost:3000/mcp`. Tags: `latest` and version tags (`1.11.2`, `1.11`, `1`) are published with each npm release; `main` tracks the default branch.
 
 ## Environment Variables
 
