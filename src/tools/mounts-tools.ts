@@ -17,23 +17,7 @@ const ACTIONS = ["create", "update", "remove", "get", "listByServiceId", "allNam
 
 const MOUNT_CREATE_OPTIONAL_FIELDS = ["hostPath", "volumeName", "filePath", "content"] as const
 
-const MOUNT_UPDATE_OPTIONAL_FIELDS = [
-  "type",
-  "hostPath",
-  "volumeName",
-  "filePath",
-  "content",
-  "serviceType",
-  "mountPath",
-  "applicationId",
-  "composeId",
-  "libsqlId",
-  "mariadbId",
-  "mongoId",
-  "mysqlId",
-  "postgresId",
-  "redisId",
-] as const
+const MOUNT_UPDATE_OPTIONAL_FIELDS = ["type", "hostPath", "volumeName", "filePath", "content", "mountPath"] as const
 
 type MountArgs = {
   action: (typeof ACTIONS)[number]
@@ -47,13 +31,6 @@ type MountArgs = {
   serviceType?: (typeof MOUNT_SERVICE_TYPES)[number]
   serviceId?: string
   applicationId?: string
-  composeId?: string
-  libsqlId?: string
-  mariadbId?: string
-  mongoId?: string
-  mysqlId?: string
-  postgresId?: string
-  redisId?: string
 }
 
 export function buildMountProgram(
@@ -110,7 +87,7 @@ export function registerMountsTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_mounts",
     description:
-      "Manage mounts (volumes, bind mounts, files) attached to services. Mount changes require a redeploy of the parent service to take effect. create: type+mountPath+serviceId+serviceType (+volumeName for volume, +hostPath for bind, +filePath+content for file). update: mountId (+any field). remove: mountId. get: mountId. listByServiceId: serviceType+serviceId. allNamedByApplicationId: applicationId (named volumes only). serviceType: application|postgres|mysql|mariadb|mongo|redis|compose|libsql.",
+      "Manage mounts (volumes, bind mounts, files) attached to services. Mount changes require a redeploy of the parent service to take effect. create: type+mountPath+serviceId+serviceType (+volumeName for volume, +hostPath for bind, +filePath+content for file). update: mountId (+type, mountPath, volumeName, hostPath, filePath, content — a mount cannot be moved to another service). remove: mountId. get: mountId. listByServiceId: serviceType+serviceId. allNamedByApplicationId: applicationId (named volumes only). serviceType: application|postgres|mysql|mariadb|mongo|redis|compose|libsql.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       mountId: z.string().optional(),
@@ -123,13 +100,6 @@ export function registerMountsTools(server: ToolServer) {
       serviceType: z.enum(MOUNT_SERVICE_TYPES).optional(),
       serviceId: z.string().optional().describe("ID of the service the mount attaches to"),
       applicationId: z.string().optional(),
-      composeId: z.string().optional(),
-      libsqlId: z.string().optional(),
-      mariadbId: z.string().optional(),
-      mongoId: z.string().optional(),
-      mysqlId: z.string().optional(),
-      postgresId: z.string().optional(),
-      redisId: z.string().optional(),
     }),
     execute: async (args) => {
       const either = await buildMountProgram(getDokployClient(), args).run()

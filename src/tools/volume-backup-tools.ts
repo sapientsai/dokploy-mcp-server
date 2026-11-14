@@ -20,7 +20,6 @@ const VOLUME_NAME_PATTERN = /^[a-zA-Z0-9][a-zA-Z0-9_.-]*$/
 
 const VOLUME_BACKUP_OPTIONAL_FIELDS = [
   "serviceType",
-  "appName",
   "serviceName",
   "turnOff",
   "keepLatestCount",
@@ -44,7 +43,6 @@ type VolumeBackupArgs = {
   cronExpression?: string
   destinationId?: string
   serviceType?: VolumeBackupServiceType
-  appName?: string
   serviceName?: string
   turnOff?: boolean
   keepLatestCount?: number
@@ -125,7 +123,7 @@ export function registerVolumeBackupTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_volume_backup",
     description:
-      "Manage scheduled volume-level backups (rclone-based). Distinct from dokploy_backup, which does DB-native dumps. create: name+volumeName+prefix+cronExpression+destinationId (+serviceType and matching *Id, +appName, +turnOff to stop service during backup, +keepLatestCount, +enabled). update: volumeBackupId + all fields. remove/get: volumeBackupId. list: id (parent service id) + volumeBackupType (application|postgres|mysql|mariadb|mongo|redis|compose|libsql). runManually: volumeBackupId (trigger immediately).",
+      "Manage scheduled volume-level backups (rclone-based). Distinct from dokploy_backup, which does DB-native dumps. create: name+volumeName+prefix+cronExpression+destinationId (+serviceType and matching *Id, +turnOff to stop service during backup, +keepLatestCount, +enabled). update: volumeBackupId + all fields. remove/get: volumeBackupId. list: id (parent service id) + volumeBackupType (application|postgres|mysql|mariadb|mongo|redis|compose|libsql). runManually: volumeBackupId (trigger immediately).",
     parameters: z.object({
       action: z.enum(ACTIONS),
       volumeBackupId: z.string().optional(),
@@ -139,7 +137,6 @@ export function registerVolumeBackupTools(server: ToolServer) {
       cronExpression: z.string().optional(),
       destinationId: z.string().optional(),
       serviceType: z.enum(MOUNT_SERVICE_TYPES).optional(),
-      appName: z.string().optional(),
       serviceName: z.string().optional(),
       turnOff: z.boolean().optional().describe("Stop the service during the backup window"),
       keepLatestCount: z.number().int().min(1).optional(),

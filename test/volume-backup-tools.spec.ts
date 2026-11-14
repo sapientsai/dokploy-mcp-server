@@ -23,7 +23,6 @@ type VolBackupArgs = {
   cronExpression?: string
   destinationId?: string
   serviceType?: string
-  appName?: string
   applicationId?: string
   keepLatestCount?: number
   id?: string

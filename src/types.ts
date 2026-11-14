@@ -303,7 +303,17 @@ export type DokploySchedule = {
   createdAt?: string
 }
 
-export const AUDIT_ACTIONS = ["create", "update", "delete", "deploy", "cancel", "redeploy", "login", "logout"] as const
+export const AUDIT_ACTIONS = [
+  "create",
+  "update",
+  "delete",
+  "deploy",
+  "cancel",
+  "redeploy",
+  "login",
+  "logout",
+  "download",
+] as const
 export type AuditAction = (typeof AUDIT_ACTIONS)[number]
 
 export const AUDIT_RESOURCE_TYPES = [

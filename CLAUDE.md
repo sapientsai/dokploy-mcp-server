@@ -6,7 +6,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 A comprehensive MCP (Model Context Protocol) server for [Dokploy](https://dokploy.com/) - the open-source, self-hosted PaaS. Provides **27 tools** (one per category, using action enums) for managing deployments, applications, databases, domains, and servers through AI assistants.
 
-Built with **FastMCP**, **ts-builds**, and **Zod**. Supports stdio (default for npx/CLI) and httpStream (for Docker/remote) transports.
+Built with **somamcp** (Node entry `somamcp/node`), **ts-builds**, and **Zod**. Supports stdio (default for npx/CLI) and httpStream (for Docker/remote) transports.
 
 ## Development Commands
 
@@ -44,7 +44,7 @@ pnpm test -- test/specific.spec.ts          # Run specific file
 
 ```
 src/
-├── index.ts                    # FastMCP server setup, tool registration, transport config
+├── index.ts                    # somamcp server setup, tool registration, transport config
 ├── bin.ts                      # CLI entry point (stdio default, --version, --help)
 ├── client/
 │   ├── dokploy-client.ts       # API client (singleton, x-api-key auth, GET/POST)
@@ -97,7 +97,7 @@ src/
    - `get<T>(path, params?)` → `GET /api/{path}?params` with `x-api-key` header
    - `post<T>(path, body?)` → `POST /api/{path}` with JSON body and `x-api-key` header
 
-3. **Tool modules**: Each `*-tools.ts` exports a `register(server: FastMCP)` function that registers one tool for that category. All registered in `src/index.ts`.
+3. **Tool modules**: Each `*-tools.ts` exports a `register(server: ToolServer)` function that registers one tool for that category. All registered in `src/index.ts`.
 
 4. **Tool naming**: `dokploy_{category}` with `action` param (e.g., `dokploy_application` action=`deploy`, `dokploy_database` action=`start`)
 

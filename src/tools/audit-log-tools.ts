@@ -60,7 +60,7 @@ export function registerAuditLogTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_audit_log",
     description:
-      "Read the Dokploy audit log with filters. Only action is 'list'. Filters (all optional): userId, userEmail, resourceName, auditAction (create|update|delete|deploy|cancel|redeploy|login|logout), resourceType (project|service|environment|deployment|user|customRole|domain|certificate|registry|server|sshKey|gitProvider|notification|settings|session), from/to (ISO timestamps), limit (default 50, max 500), offset. Note: the wire-level query parameter is called `action`; the MCP arg is `auditAction` to avoid clashing with the tool's action discriminator.",
+      "Read the Dokploy audit log with filters. Only action is 'list'. Filters (all optional): userId, userEmail, resourceName, auditAction (create|update|delete|deploy|cancel|redeploy|login|logout|download), resourceType (project|service|environment|deployment|user|customRole|domain|certificate|registry|server|sshKey|gitProvider|notification|settings|session), from/to (ISO timestamps), limit (default 50, max 500), offset. Note: the wire-level query parameter is called `action`; the MCP arg is `auditAction` to avoid clashing with the tool's action discriminator.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       userId: z.string().optional(),

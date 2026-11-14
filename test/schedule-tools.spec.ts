@@ -80,3 +80,21 @@ describe("dokploy_schedule", () => {
     expect(result).toBe("Schedule s1 triggered.")
   })
 })
+
+describe("dokploy_schedule Dokploy v0.31 inputs", () => {
+  it("no longer offers or forwards appName, which schedule.create dropped", async () => {
+    const shape = (tool.parameters as { shape: Record<string, unknown> }).shape
+    expect(shape).not.toHaveProperty("appName")
+    postMock.mockReturnValueOnce(IO.succeed({ scheduleId: "s1", name: "nightly", scheduleType: "application" }))
+    await tool.execute({
+      action: "create",
+      name: "nightly",
+      cronExpression: "0 3 * * *",
+      command: "backup.sh",
+      scheduleType: "application",
+      applicationId: "app-1",
+      appName: "stale",
+    } as ScheduleArgs)
+    expect(postMock.mock.calls[0]?.[1]).not.toHaveProperty("appName")
+  })
+})

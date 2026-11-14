@@ -19,7 +19,6 @@ const SHELL_TYPES = ["bash", "sh"] as const
 
 const SCHEDULE_OPTIONAL_FIELDS = [
   "description",
-  "appName",
   "serviceName",
   "shellType",
   "scheduleType",
@@ -39,7 +38,6 @@ type ScheduleArgs = {
   cronExpression?: string
   command?: string
   script?: string
-  appName?: string
   serviceName?: string
   shellType?: (typeof SHELL_TYPES)[number]
   scheduleType?: (typeof SCHEDULE_TYPES)[number]
@@ -118,7 +116,6 @@ export function registerScheduleTools(server: ToolServer) {
       cronExpression: z.string().optional().describe("Standard cron expression (e.g. '0 3 * * *')"),
       command: z.string().optional().describe("Shell command to execute"),
       script: z.string().optional().describe("Optional multi-line script body"),
-      appName: z.string().optional().describe("Container appName (for application/compose scope)"),
       serviceName: z.string().optional().describe("Compose service name when scheduleType=compose"),
       shellType: z.enum(SHELL_TYPES).optional(),
       scheduleType: z.enum(SCHEDULE_TYPES).optional(),
