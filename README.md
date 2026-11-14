@@ -239,6 +239,29 @@ pnpm validate
 pnpm build
 ```
 
+## Serving the Tools from a Worker
+
+`openfda-mcp-server/tools` registers the 14 tools on a somamcp server without anything Node-only, so it runs on Cloudflare Workers without `nodejs_compat`. A hosted server can send each caller's own openFDA key: `client` gets the call's session and returns a client made for that call.
+
+```typescript
+import { createServer, getRequestHeader } from "somamcp"
+import { createFDAAPIClient } from "openfda-mcp-server/lib"
+import { registerOpenFDATools } from "openfda-mcp-server/tools"
+
+const server = createServer<{ apiKey?: string }>({
+  authenticate: async (request) => ({ apiKey: getRequestHeader(request, "x-openfda-api-key") }),
+  name: "openfda",
+  version: "1.0.0",
+})
+registerOpenFDATools(server, {
+  client: (session) => createFDAAPIClient({ apiKey: session?.apiKey ?? sharedKey }),
+})
+
+export default { fetch: (request: Request) => server.fetch(request) }
+```
+
+Build a client per call, never one shared and changed: one Worker serves many callers at once. Without `client`, the tools use one client that reads `OPENFDA_API_KEY`, as the CLI does.
+
 ## Programmatic Usage
 
 ```typescript

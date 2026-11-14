@@ -13,6 +13,8 @@ minimumReleaseAgeExclude:
 
 allowBuilds:
   esbuild: true
+  # Miniflare's local Workers runtime, for test/workers/: its postinstall links the platform binary.
+  workerd: true
 
 overrides:
   # Dependabot alert 227: GHSA-g3hv-75wg-m249, minimatch >=7.0.0 <11.0.1 (DoS via globparts

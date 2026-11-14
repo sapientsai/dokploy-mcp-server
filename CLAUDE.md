@@ -36,7 +36,8 @@ pnpm serve:test:http # Run server locally (HTTP mode)
 ```
 src/
 ├── index.ts              # CLI entry point (Commander.js)
-├── server.ts             # SomaMCP server creation with all 14 tools
+├── server.ts             # createOpenFDAServer: a somamcp/node server with the tools
+├── register.ts           # registerOpenFDATools: the 14 tools, Workers-safe ("./tools" export)
 ├── lib.ts                # Library exports for programmatic use
 ├── types/
 │   └── fda.ts            # FDA API type definitions
@@ -53,8 +54,12 @@ src/
     ├── bulk-data-client.ts # createBulkDataClient: Orange Book/Purple Book download, parse, Ref cache (returns Either)
     ├── errors.ts         # toError and the failure tool response
     ├── fields.ts         # textField, mapFirst, takeFirst, nonEmpty: Option/List access to FDA records
-    └── logger.ts         # Debug logger setup
+    └── logger.ts         # Namespaced debug logging on functype-log, switched by DEBUG
 ```
+
+### Workers-safe entry
+
+`src/register.ts` (exported as `openfda-mcp-server/tools`) and everything it imports must not need Node: no `node:*` import, no Node-only package, and `process` only through the guarded `globalThis` reads in `api-client.ts` and `logger.ts`. `test/workers/workerd.spec.ts` bundles `test/workers/worker.ts` with esbuild and runs it in workerd through Miniflare, without `nodejs_compat`, so a leak fails a test. `server.ts`, `index.ts` and `version.ts` are Node-only. The `client` option on `registerOpenFDATools` is how a hosted server sends each caller's own key: a client per call, never shared state.
 
 ### MCP Tools
 

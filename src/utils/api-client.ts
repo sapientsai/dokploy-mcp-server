@@ -124,12 +124,29 @@ async function readResponse<T>(response: Response): Promise<Either<Error, FDARes
   })
 }
 
+/** Where an openFDA client gets its API key. */
+export type FDAClientOptions = {
+  /** The key to send. Undefined or empty sends none. */
+  apiKey?: string
+}
+
+type ProcessLike = { process?: { env?: Partial<Record<string, string>> } }
+
+/** OPENFDA_API_KEY on Node; nothing on a runtime with no `process`, such as Workers. */
+const keyFromEnv = (): FDAClientOptions => ({
+  apiKey: Option((globalThis as ProcessLike).process)
+    .flatMap((p) => Option(p.env))
+    .flatMap((env) => Option(env.OPENFDA_API_KEY))
+    .orUndefined(),
+})
+
 /**
- * Create an openFDA client. Reads OPENFDA_API_KEY when called; an empty
- * value counts as no key.
+ * Create an openFDA client. With no options it reads OPENFDA_API_KEY when called. Pass
+ * `{ apiKey }` to choose the key instead, such as a caller's own on a hosted server. An empty
+ * key counts as none.
  */
-export function createFDAAPIClient(): FDAClient {
-  const apiKey = Option(process.env.OPENFDA_API_KEY).filter((key) => key !== "")
+export function createFDAAPIClient(options: FDAClientOptions = keyFromEnv()): FDAClient {
+  const apiKey = Option(options.apiKey).filter((key) => key !== "")
 
   const request = async <T>(endpoint: FDAEndpoint, params: SearchParams): Promise<Either<Error, FDAResponse<T>>> => {
     const url = `${FDA_BASE_URL}${endpoint}?${buildSearchParams(params, apiKey).toString()}`
@@ -152,8 +169,9 @@ export function createFDAAPIClient(): FDAClient {
     searchDeviceEnforcement: (params) => request<DeviceEnforcement>("/device/enforcement.json", params),
     getRateLimitInfo: () =>
       apiKey.fold(
-        (): RateLimitInfo => ({ authenticated: false, rateLimit: "40/minute, 1,000/hour" }),
-        (): RateLimitInfo => ({ authenticated: true, rateLimit: "240/minute, 120,000/hour" }),
+        // openFDA's published limits: https://open.fda.gov/apis/authentication/
+        (): RateLimitInfo => ({ authenticated: false, rateLimit: "240/minute and 1,000/day, per IP address" }),
+        (): RateLimitInfo => ({ authenticated: true, rateLimit: "240/minute and 120,000/day, per key" }),
       ),
   }
 }
