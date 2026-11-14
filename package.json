@@ -1,6 +1,6 @@
 {
   "name": "openfda-mcp-server",
-  "version": "2.1.2",
+  "version": "2.2.0",
   "description": "MCP server for querying U.S. FDA public datasets - drugs, devices, adverse events, recalls, and more",
   "keywords": [
     "mcp",
