@@ -4,6 +4,7 @@
  */
 
 // Server exports
+export { type OpenFDAToolsOptions, registerOpenFDATools } from "./register.js"
 export { createOpenFDAServer, type ServerOptions } from "./server.js"
 
 // Handler exports
@@ -51,6 +52,7 @@ export {
   FDAAPIClient,
   fdaAPIClient,
   type FDAClient,
+  type FDAClientOptions,
   type RateLimitInfo,
 } from "./utils/api-client.js"
 

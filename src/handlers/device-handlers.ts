@@ -11,7 +11,7 @@ import type {
   FDAToolResponse,
   SearchParams,
 } from "../types/fda.js"
-import { fdaAPIClient } from "../utils/api-client.js"
+import { fdaAPIClient, type FDAClient } from "../utils/api-client.js"
 import { mapFirst } from "../utils/fields.js"
 import { loggers } from "../utils/logger.js"
 import {
@@ -70,6 +70,7 @@ function formatDevice510K(device: Device510K): FormattedDevice510K {
 
 export async function handleSearchDevice510K(
   params: Device510KParams,
+  client: FDAClient = fdaAPIClient,
 ): Promise<FDAToolResponse<FormattedDevice510K[]>> {
   loggers.tools("searchDevice510K", params)
 
@@ -90,7 +91,7 @@ export async function handleSearchDevice510K(
     skip: params.skip,
   }
 
-  return toSearchResponse(await fdaAPIClient.searchDevice510K(searchParams), searchParams, formatDevice510K)
+  return toSearchResponse(await client.searchDevice510K(searchParams), searchParams, formatDevice510K, client)
 }
 
 // Device Classification Handler
@@ -134,6 +135,7 @@ function formatDeviceClassification(classification: DeviceClassification): Forma
 
 export async function handleSearchDeviceClassifications(
   params: DeviceClassificationParams,
+  client: FDAClient = fdaAPIClient,
 ): Promise<FDAToolResponse<FormattedDeviceClassification[]>> {
   loggers.tools("searchDeviceClassifications", params)
 
@@ -154,9 +156,10 @@ export async function handleSearchDeviceClassifications(
   }
 
   return toSearchResponse(
-    await fdaAPIClient.searchDeviceClassifications(searchParams),
+    await client.searchDeviceClassifications(searchParams),
     searchParams,
     formatDeviceClassification,
+    client,
   )
 }
 
@@ -219,6 +222,7 @@ function formatDeviceAdverseEvent(event: DeviceAdverseEvent): FormattedDeviceAdv
 
 export async function handleSearchDeviceAdverseEvents(
   params: DeviceAdverseEventsParams,
+  client: FDAClient = fdaAPIClient,
 ): Promise<FDAToolResponse<FormattedDeviceAdverseEvent[]>> {
   loggers.tools("searchDeviceAdverseEvents", params)
 
@@ -230,9 +234,10 @@ export async function handleSearchDeviceAdverseEvents(
     }
 
     return toSearchResponse(
-      await fdaAPIClient.searchDeviceAdverseEvents(searchParams),
+      await client.searchDeviceAdverseEvents(searchParams),
       searchParams,
       formatDeviceAdverseEvent,
+      client,
     )
   }
 
@@ -254,9 +259,10 @@ export async function handleSearchDeviceAdverseEvents(
   }
 
   return toSearchResponse(
-    await fdaAPIClient.searchDeviceAdverseEvents(searchParams),
+    await client.searchDeviceAdverseEvents(searchParams),
     searchParams,
     formatDeviceAdverseEvent,
+    client,
   )
 }
 
@@ -306,6 +312,7 @@ function formatDeviceEnforcement(recall: DeviceEnforcement): FormattedDeviceEnfo
 
 export async function handleSearchDeviceEnforcement(
   params: DeviceEnforcementParams,
+  client: FDAClient = fdaAPIClient,
 ): Promise<FDAToolResponse<FormattedDeviceEnforcement[]>> {
   loggers.tools("searchDeviceEnforcement", params)
 
@@ -327,8 +334,9 @@ export async function handleSearchDeviceEnforcement(
   }
 
   return toSearchResponse(
-    await fdaAPIClient.searchDeviceEnforcement(searchParams),
+    await client.searchDeviceEnforcement(searchParams),
     searchParams,
     formatDeviceEnforcement,
+    client,
   )
 }

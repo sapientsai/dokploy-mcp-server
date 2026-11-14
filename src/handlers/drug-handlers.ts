@@ -15,7 +15,7 @@ import type {
   FDAToolResponse,
   SearchParams,
 } from "../types/fda.js"
-import { fdaAPIClient } from "../utils/api-client.js"
+import { fdaAPIClient, type FDAClient } from "../utils/api-client.js"
 import { mapFirst, nonEmpty, takeFirst } from "../utils/fields.js"
 import { loggers } from "../utils/logger.js"
 import {
@@ -97,6 +97,7 @@ function formatDrugAdverseEvent(event: DrugAdverseEvent): FormattedDrugAdverseEv
 
 export async function handleSearchDrugAdverseEvents(
   params: DrugAdverseEventsParams,
+  client: FDAClient = fdaAPIClient,
 ): Promise<FDAToolResponse<FormattedDrugAdverseEvent[]>> {
   loggers.tools("searchDrugAdverseEvents", params)
 
@@ -108,9 +109,10 @@ export async function handleSearchDrugAdverseEvents(
     }
 
     return toSearchResponse(
-      await fdaAPIClient.searchDrugAdverseEvents(searchParams),
+      await client.searchDrugAdverseEvents(searchParams),
       searchParams,
       formatDrugAdverseEvent,
+      client,
     )
   }
 
@@ -134,9 +136,10 @@ export async function handleSearchDrugAdverseEvents(
   }
 
   return toSearchResponse(
-    await fdaAPIClient.searchDrugAdverseEvents(searchParams),
+    await client.searchDrugAdverseEvents(searchParams),
     searchParams,
     formatDrugAdverseEvent,
+    client,
   )
 }
 
@@ -212,7 +215,10 @@ function formatDrugLabel(label: DrugLabel, sections?: string[]): FormattedDrugLa
   }
 }
 
-export async function handleSearchDrugLabels(params: DrugLabelsParams): Promise<FDAToolResponse<FormattedDrugLabel[]>> {
+export async function handleSearchDrugLabels(
+  params: DrugLabelsParams,
+  client: FDAClient = fdaAPIClient,
+): Promise<FDAToolResponse<FormattedDrugLabel[]>> {
   loggers.tools("searchDrugLabels", params)
 
   // If setId is provided, do a direct lookup
@@ -222,8 +228,11 @@ export async function handleSearchDrugLabels(params: DrugLabelsParams): Promise<
       limit: 1,
     }
 
-    return toSearchResponse(await fdaAPIClient.searchDrugLabels(searchParams), searchParams, (label) =>
-      formatDrugLabel(label, params.sections),
+    return toSearchResponse(
+      await client.searchDrugLabels(searchParams),
+      searchParams,
+      (label) => formatDrugLabel(label, params.sections),
+      client,
     )
   }
 
@@ -247,8 +256,11 @@ export async function handleSearchDrugLabels(params: DrugLabelsParams): Promise<
     skip: params.skip,
   }
 
-  return toSearchResponse(await fdaAPIClient.searchDrugLabels(searchParams), searchParams, (label) =>
-    formatDrugLabel(label, params.sections),
+  return toSearchResponse(
+    await client.searchDrugLabels(searchParams),
+    searchParams,
+    (label) => formatDrugLabel(label, params.sections),
+    client,
   )
 }
 
@@ -293,7 +305,10 @@ function formatDrugNDC(ndc: DrugNDC): FormattedDrugNDC {
   }
 }
 
-export async function handleSearchDrugNDC(params: DrugNDCParams): Promise<FDAToolResponse<FormattedDrugNDC[]>> {
+export async function handleSearchDrugNDC(
+  params: DrugNDCParams,
+  client: FDAClient = fdaAPIClient,
+): Promise<FDAToolResponse<FormattedDrugNDC[]>> {
   loggers.tools("searchDrugNDC", params)
 
   const searchTerms: SearchTerm[] = [
@@ -313,7 +328,7 @@ export async function handleSearchDrugNDC(params: DrugNDCParams): Promise<FDAToo
     skip: params.skip,
   }
 
-  return toSearchResponse(await fdaAPIClient.searchDrugNDC(searchParams), searchParams, formatDrugNDC)
+  return toSearchResponse(await client.searchDrugNDC(searchParams), searchParams, formatDrugNDC, client)
 }
 
 // Drug Enforcement (Recalls) Handler
@@ -358,6 +373,7 @@ function formatDrugEnforcement(recall: DrugEnforcement): FormattedDrugEnforcemen
 
 export async function handleSearchDrugEnforcement(
   params: DrugEnforcementParams,
+  client: FDAClient = fdaAPIClient,
 ): Promise<FDAToolResponse<FormattedDrugEnforcement[]>> {
   loggers.tools("searchDrugEnforcement", params)
 
@@ -378,7 +394,7 @@ export async function handleSearchDrugEnforcement(
     skip: params.skip,
   }
 
-  return toSearchResponse(await fdaAPIClient.searchDrugEnforcement(searchParams), searchParams, formatDrugEnforcement)
+  return toSearchResponse(await client.searchDrugEnforcement(searchParams), searchParams, formatDrugEnforcement, client)
 }
 
 // Drugs@FDA Handler
@@ -434,7 +450,10 @@ function formatDrugsFDA(drug: DrugsFDA): FormattedDrugsFDA {
   }
 }
 
-export async function handleSearchDrugsFDA(params: DrugsFDAParams): Promise<FDAToolResponse<FormattedDrugsFDA[]>> {
+export async function handleSearchDrugsFDA(
+  params: DrugsFDAParams,
+  client: FDAClient = fdaAPIClient,
+): Promise<FDAToolResponse<FormattedDrugsFDA[]>> {
   loggers.tools("searchDrugsFDA", params)
 
   const searchTerms: SearchTerm[] = [
@@ -452,7 +471,7 @@ export async function handleSearchDrugsFDA(params: DrugsFDAParams): Promise<FDAT
     skip: params.skip,
   }
 
-  return toSearchResponse(await fdaAPIClient.searchDrugsFDA(searchParams), searchParams, formatDrugsFDA)
+  return toSearchResponse(await client.searchDrugsFDA(searchParams), searchParams, formatDrugsFDA, client)
 }
 
 // Drug Shortages Handler
@@ -485,6 +504,7 @@ function formatDrugShortage(shortage: DrugShortage): FormattedDrugShortage {
 
 export async function handleSearchDrugShortages(
   params: DrugShortagesParams,
+  client: FDAClient = fdaAPIClient,
 ): Promise<FDAToolResponse<FormattedDrugShortage[]>> {
   loggers.tools("searchDrugShortages", params)
 
@@ -501,5 +521,5 @@ export async function handleSearchDrugShortages(
     skip: params.skip,
   }
 
-  return toSearchResponse(await fdaAPIClient.searchDrugShortages(searchParams), searchParams, formatDrugShortage)
+  return toSearchResponse(await client.searchDrugShortages(searchParams), searchParams, formatDrugShortage, client)
 }

@@ -6,7 +6,7 @@ import type { Either } from "functype"
 import { None, Option, Some } from "functype"
 
 import type { FDAResponse, FDAToolResponse, SearchParams } from "../types/fda.js"
-import { fdaAPIClient } from "../utils/api-client.js"
+import { fdaAPIClient, type FDAClient } from "../utils/api-client.js"
 import { failure } from "../utils/errors.js"
 import { nonEmpty } from "../utils/fields.js"
 
@@ -64,6 +64,7 @@ export function toSearchResponse<R, F>(
   result: Either<Error, FDAResponse<R>>,
   searchParams: SearchParams,
   format: (record: R) => F,
+  client: FDAClient = fdaAPIClient,
 ): FDAToolResponse<F[]> {
   return result.fold(failure<F[]>, (response) => {
     const results = response.results ?? []
@@ -73,7 +74,7 @@ export function toSearchResponse<R, F>(
       totalResults: response.meta?.results?.total,
       displayedResults: results.length,
       searchParams,
-      apiUsage: fdaAPIClient.getRateLimitInfo(),
+      apiUsage: client.getRateLimitInfo(),
     }
   })
 }

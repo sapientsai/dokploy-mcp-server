@@ -100,7 +100,7 @@ describe("FDAAPIClient", () => {
     stubFetch({ status: 200, body: { results: [] } })
     const logged = vi.spyOn(loggers, "api").mockImplementation(() => undefined)
     await new FDAAPIClient().searchDrugNDC({ limit: 1 })
-    expect(logged.mock.calls[0]?.[0]).toBe("Request: https://api.fda.gov/drug/ndc.json?limit=1&api_key=[REDACTED]")
+    expect(logged.mock.calls[0]?.[0]).toBe("Request: https://api.fda.gov/drug/ndc.json?limit=1&api_key=%5BREDACTED%5D")
   })
 
   it("sends the API key when one is set", async () => {
@@ -118,7 +118,10 @@ describe("FDAAPIClient", () => {
     const client = new FDAAPIClient()
     await client.searchDrugNDC({})
     expect(String(fetchMock.mock.calls[0]?.[0])).not.toContain("api_key")
-    expect(client.getRateLimitInfo()).toEqual({ authenticated: false, rateLimit: "40/minute, 1,000/hour" })
+    expect(client.getRateLimitInfo()).toEqual({
+      authenticated: false,
+      rateLimit: "240/minute and 1,000/day, per IP address",
+    })
   })
 })
 
@@ -169,5 +172,43 @@ describe("request URL encoding", () => {
       "https://api.fda.gov/drug/event.json?search=patient.drug.medicinalproduct%3A%22aspirin%22+AND+receivedate%3A%5B20240101+TO+*%5D&limit=1",
     )
     expect(url).not.toContain("%2B")
+  })
+})
+
+describe("createFDAAPIClient with an explicit key", () => {
+  it("sends the key it is given, whatever OPENFDA_API_KEY holds", async () => {
+    vi.stubEnv("OPENFDA_API_KEY", "from-env")
+    const fetchMock = stubFetch({ status: 200, body: { results: [] } })
+    await createFDAAPIClient({ apiKey: "callers-key" }).searchDrugNDC({})
+    expect(String(fetchMock.mock.calls[0]?.[0])).toContain("api_key=callers-key")
+    expect(String(fetchMock.mock.calls[0]?.[0])).not.toContain("from-env")
+  })
+
+  it("sends no key when given none, even with OPENFDA_API_KEY set", async () => {
+    vi.stubEnv("OPENFDA_API_KEY", "from-env")
+    const fetchMock = stubFetch({ status: 200, body: { results: [] } })
+    const client = createFDAAPIClient({ apiKey: undefined })
+    await client.searchDrugNDC({})
+    expect(String(fetchMock.mock.calls[0]?.[0])).not.toContain("api_key")
+    expect(client.getRateLimitInfo().authenticated).toBe(false)
+  })
+
+  it("reports openFDA's published limits for a key", () => {
+    expect(createFDAAPIClient({ apiKey: "k" }).getRateLimitInfo()).toEqual({
+      authenticated: true,
+      rateLimit: "240/minute and 120,000/day, per key",
+    })
+  })
+})
+
+describe("logging a request", () => {
+  it("never logs a key whose characters URL encoding changes", async () => {
+    stubFetch({ status: 200, body: { results: [] } })
+    const logged = vi.spyOn(loggers, "api").mockImplementation(() => undefined)
+    await createFDAAPIClient({ apiKey: "ab+c/d=e" }).searchDrugNDC({ limit: 1 })
+    const line = String(logged.mock.calls[0]?.[0])
+    expect(line).toContain("api_key=%5BREDACTED%5D")
+    expect(line).not.toContain("ab%2Bc")
+    expect(line).not.toContain("ab+c")
   })
 })
