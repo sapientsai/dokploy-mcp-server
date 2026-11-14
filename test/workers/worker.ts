@@ -2,8 +2,8 @@
 // caller's key comes from a header and goes into a client made for that one call.
 import { createServer, getRequestHeader } from "somamcp"
 
-import { registerOpenFDATools } from "../../src/register.js"
-import { createFDAAPIClient } from "../../src/utils/api-client.js"
+// Only what `openfda-mcp-server/tools` exports, so this is the Worker a consumer can build.
+import { createFDAAPIClient, registerOpenFDATools } from "../../src/register.js"
 
 type Session = { apiKey?: string }
 

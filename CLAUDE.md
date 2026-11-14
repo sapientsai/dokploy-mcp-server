@@ -59,7 +59,7 @@ src/
 
 ### Workers-safe entry
 
-`src/register.ts` (exported as `openfda-mcp-server/tools`) and everything it imports must not need Node: no `node:*` import, no Node-only package, and `process` only through the guarded `globalThis` reads in `api-client.ts` and `logger.ts`. `test/workers/workerd.spec.ts` bundles `test/workers/worker.ts` with esbuild and runs it in workerd through Miniflare, without `nodejs_compat`, so a leak fails a test. `server.ts`, `index.ts` and `version.ts` are Node-only. The `client` option on `registerOpenFDATools` is how a hosted server sends each caller's own key: a client per call, never shared state.
+`src/register.ts` (exported as `openfda-mcp-server/tools`, with `createFDAAPIClient` and its types, so a Worker needs nothing from `./lib`) and everything it imports must not need Node: no `node:*` import, no Node-only package, and `process` only through the guarded `globalThis` reads in `api-client.ts` and `logger.ts`. `test/workers/workerd.spec.ts` bundles `test/workers/worker.ts` with esbuild and runs it in workerd through Miniflare, without `nodejs_compat`, so a leak fails a test. `server.ts`, `index.ts` and `version.ts` are Node-only. The `client` option on `registerOpenFDATools` is how a hosted server sends each caller's own key: a client per call, never shared state.
 
 ### MCP Tools
 
@@ -98,7 +98,7 @@ src/
 - **Purple Book source**: FDA's old JSON API is gone. `loadPurpleBook` reads the downloads page (`purplebooksearch.fda.gov/downloads`), takes the newest monthly CSV (falling back one month), and parses the rows under the file's last `BLA Number` header (the file opens with that month's changes). Column names drift between months (`License Type` was `BLA Type`), so map with alternates
 - **openFDA queries use real spaces**: build `a:"x" AND b:[1 TO 2]` with spaces, never `+AND+`. `URLSearchParams` sends a space as `+`, which openFDA reads as a space; a literal `+` goes out as `%2B`, and openFDA then answers 404 (read as "no results") or 500
 - **Zod Schemas**: All tool parameters validated with Zod
-- **Rate Limiting**: API client is aware of FDA rate limits (40/min without key, 240/min with key)
+- **Rate Limiting**: `getRateLimitInfo` reports openFDA's published limits: 240/minute and 1,000/day per IP without a key, 240/minute and 120,000/day per key
 - **Error Handling**: Clients return `Either<Error, T>` (functype) instead of throwing; handlers `fold` it into `FDAToolResponse<T>` with success/error status. Lint runs over `src/` and `test/` with `--max-warnings=0`, since ts-builds' built-in lint covers `srcDir` only and fails only on errors. Keep both places in step: the `lint`/`lint:check` scripts in `package.json` call ESLint directly (ts-builds runs its built-in lint for those commands, whatever `ts-builds.config.json` says), and the `commands` override in `ts-builds.config.json` is what `pnpm validate` runs, so the functype rules (`prefer-try`, `prefer-option`, `prefer-either`) are enforced; the functype ESLint config relaxes the ones that misread tests. `tsconfig.json` includes `test/`, so `pnpm typecheck` checks tests too
 
 ## Environment Variables

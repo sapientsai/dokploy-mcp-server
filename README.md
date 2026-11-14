@@ -245,22 +245,27 @@ pnpm build
 
 ```typescript
 import { createServer, getRequestHeader } from "somamcp"
-import { createFDAAPIClient } from "openfda-mcp-server/lib"
-import { registerOpenFDATools } from "openfda-mcp-server/tools"
+import { createFDAAPIClient, registerOpenFDATools } from "openfda-mcp-server/tools"
 
-const server = createServer<{ apiKey?: string }>({
-  authenticate: async (request) => ({ apiKey: getRequestHeader(request, "x-openfda-api-key") }),
-  name: "openfda",
-  version: "1.0.0",
-})
-registerOpenFDATools(server, {
-  client: (session) => createFDAAPIClient({ apiKey: session?.apiKey ?? sharedKey }),
-})
+type Env = { OPENFDA_API_KEY: string }
 
-export default { fetch: (request: Request) => server.fetch(request) }
+const serverFor = (env: Env) => {
+  const server = createServer<{ apiKey?: string }>({
+    authenticate: async (request) => ({ apiKey: getRequestHeader(request, "x-openfda-api-key")?.trim() || undefined }),
+    name: "openfda",
+    version: "1.0.0",
+  })
+  registerOpenFDATools(server, {
+    // The caller's own key, else the server's.
+    client: (session) => createFDAAPIClient({ apiKey: session?.apiKey ?? env.OPENFDA_API_KEY }),
+  })
+  return server
+}
+
+export default { fetch: (request: Request, env: Env) => serverFor(env).fetch(request) }
 ```
 
-Build a client per call, never one shared and changed: one Worker serves many callers at once. Without `client`, the tools use one client that reads `OPENFDA_API_KEY`, as the CLI does.
+Build a client per call, never one shared and changed: one Worker serves many callers at once. Import everything from `openfda-mcp-server/tools`: `openfda-mcp-server/lib` also loads the Node-only server. Without `client`, the tools use one client that reads `OPENFDA_API_KEY` from `process.env`, as the CLI does. A Worker has no `process`, so that client sends no key: pass `client` there. Build the server once per isolate in real code rather than per request.
 
 ## Programmatic Usage
 
@@ -300,10 +305,12 @@ const warfarinLabel = await handleSearchDrugLabels({
 
 ## API Rate Limits
 
-| Authentication  | Per Minute | Per Hour |
-| --------------- | ---------- | -------- |
-| Without API Key | 40         | 1,000    |
-| With API Key    | 240        | 120,000  |
+From https://open.fda.gov/apis/authentication/:
+
+| Authentication  | Per Minute | Per Day | Counted per |
+| --------------- | ---------- | ------- | ----------- |
+| Without API Key | 240        | 1,000   | IP address  |
+| With API Key    | 240        | 120,000 | key         |
 
 ## License
 

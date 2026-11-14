@@ -38,6 +38,26 @@ describe("registerOpenFDATools", () => {
     expect(tools.size).toBe(14)
   })
 
+  it.each([
+    "search_drug_adverse_events",
+    "search_drug_labels",
+    "search_drug_ndc",
+    "search_drug_recalls",
+    "search_drugs_at_fda",
+    "search_drug_shortages",
+    "search_device_510k",
+    "search_device_classifications",
+    "search_device_adverse_events",
+    "search_device_recalls",
+  ])("uses the call's own client for %s", async (name) => {
+    const calls: string[] = []
+    const { server, tools } = capture()
+    registerOpenFDATools(server, { client: (session) => clientFor(session?.key ?? "none", calls) })
+    const reply = await tools.get(name)?.execute({}, { session: { key: "ana" } })
+    expect(calls).toEqual(["ana"])
+    expect(JSON.parse(reply ?? "{}").apiUsage.rateLimit).toBe("ana")
+  })
+
   it("asks for a client per call, with that call's session, so concurrent callers never share a key", async () => {
     const calls: string[] = []
     const client = vi.fn((session: Session | undefined) => clientFor(session?.key ?? "none", calls))

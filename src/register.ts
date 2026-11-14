@@ -45,6 +45,10 @@ import {
   searchPurpleBookSchema,
 } from "./tools/index.js"
 import { fdaAPIClient, type FDAClient } from "./utils/api-client.js"
+
+// Exported here too, so a Worker builds a per-caller client from this entry alone: the `./lib`
+// entry also loads the Node-only server.
+export { createFDAAPIClient, type FDAClient, type FDAClientOptions, type RateLimitInfo } from "./utils/api-client.js"
 import { loggers } from "./utils/logger.js"
 
 export type OpenFDAToolsOptions<T extends SessionAuth = SessionAuth> = {

@@ -94,10 +94,18 @@ function buildSearchParams(params: SearchParams, apiKey: Option<string>): URLSea
   return urlParams
 }
 
+/**
+ * The request URL with any key replaced, for logs. It replaces the `api_key` parameter rather than
+ * searching for the key's text, which URL encoding changes (`+` becomes `%2B`).
+ */
 const redact = (url: string, apiKey: Option<string>): string =>
   apiKey.fold(
     () => url,
-    (key) => url.replace(key, "[REDACTED]"),
+    () => {
+      const redacted = new URL(url)
+      redacted.searchParams.set("api_key", "[REDACTED]")
+      return redacted.toString()
+    },
   )
 
 async function readResponse<T>(response: Response): Promise<Either<Error, FDAResponse<T>>> {
