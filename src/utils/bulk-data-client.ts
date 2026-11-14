@@ -97,11 +97,13 @@ function toOrangeBookExclusivity(r: Row): OrangeBookExclusivity {
 
 /** A Purple Book cell: the first of the keys with a value, trimmed; "N/A" counts as empty */
 function cell(r: Row, ...keys: readonly string[]): string {
-  return List(keys)
-    .map((key) => textField(r, key).trim())
-    .map((value) => (value.toUpperCase() === "N/A" ? "" : value))
-    .find((value) => value !== "")
-    .orElse("")
+  // Native arrays on purpose: this runs per cell of every row (see textField)
+  return (
+    keys
+      .map((key) => textField(r, key).trim())
+      .map((value) => (value.toUpperCase() === "N/A" ? "" : value))
+      .find((value) => value !== "") ?? ""
+  )
 }
 
 function toPurpleBookEntry(r: Row): PurpleBookEntry {
@@ -143,57 +145,66 @@ function parseRows(text: string, splitLine: (line: string) => string[]): Row[] {
           .drop(1)
           .map((line): Row => {
             const values = splitLine(line)
-            return Object.fromEntries(headers.map((h, j) => [h, Option(values[j]).orElse("").trim()]))
+            return Object.fromEntries(headers.map((h, j) => [h, (values[j] ?? "").trim()]))
           })
           .toArray()
       },
     )
 }
 
-type CsvState = {
-  readonly records: readonly (readonly string[])[]
-  readonly fields: readonly string[]
-  readonly field: string
-  readonly inQuotes: boolean
+/** The CSV scanner's accumulator. csvRecords owns it and changes it in place, one step per character. */
+type CsvScan = {
+  readonly records: string[][]
+  fields: string[]
+  field: string
+  inQuotes: boolean
   /** Inside quotes, the last character was a quote: either the closing quote or half of "" */
-  readonly quoteSeen: boolean
+  quoteSeen: boolean
 }
 
-function csvStep(state: CsvState, char: string): CsvState {
-  if (state.inQuotes && state.quoteSeen) {
-    if (char === '"') return { ...state, field: `${state.field}"`, quoteSeen: false } // "" is a literal quote
-    return csvStep({ ...state, inQuotes: false, quoteSeen: false }, char) // the quote closed the field
+function csvStep(scan: CsvScan, char: string): CsvScan {
+  if (scan.inQuotes && scan.quoteSeen) {
+    scan.quoteSeen = false
+    if (char === '"') {
+      scan.field += '"' // "" is a literal quote
+      return scan
+    }
+    scan.inQuotes = false // the quote closed the field; read this character as unquoted
   }
-  if (state.inQuotes) {
-    if (char === '"') return { ...state, quoteSeen: true }
-    return { ...state, field: state.field + char } // includes line breaks
-  }
-  if (char === '"') return { ...state, inQuotes: true }
-  if (char === ",") return { ...state, fields: [...state.fields, state.field], field: "" }
-  if (char === "\r") return state
-  if (char === "\n")
-    return { ...state, records: [...state.records, [...state.fields, state.field]], fields: [], field: "" }
-  return { ...state, field: state.field + char }
+  if (scan.inQuotes) {
+    if (char === '"') scan.quoteSeen = true
+    else scan.field += char // includes line breaks
+  } else if (char === '"') scan.inQuotes = true
+  else if (char === ",") {
+    scan.fields.push(scan.field)
+    scan.field = ""
+  } else if (char === "\n") {
+    scan.records.push([...scan.fields, scan.field])
+    scan.fields = []
+    scan.field = ""
+  } else if (char !== "\r") scan.field += char
+  return scan
 }
 
 /**
  * Split CSV text into records of raw cells. A quoted field may hold commas,
  * line breaks and doubled quotes; CRLF and a leading byte-order mark are fine.
  * Blank lines are dropped.
+ *
+ * The accumulator changes in place on purpose: a reducer that copied its state per
+ * character and the record list per line was quadratic on FDA's ~500 KB monthly file.
  */
 export function csvRecords(text: string): string[][] {
-  const initial: CsvState = { records: [], fields: [], field: "", inQuotes: false, quoteSeen: false }
+  const initial: CsvScan = { records: [], fields: [], field: "", inQuotes: false, quoteSeen: false }
   const end = Array.from(text.replace(/^\uFEFF/, "")).reduce(csvStep, initial)
   const last = end.fields.length > 0 || end.field !== "" ? [[...end.fields, end.field]] : []
-  return [...end.records, ...last]
-    .filter((record) => record.length > 1 || (record[0] ?? "").trim() !== "")
-    .map((record) => [...record])
+  return [...end.records, ...last].filter((record) => record.length > 1 || (record[0] ?? "").trim() !== "")
 }
 
 /** Rows keyed by a header record, with header names and cells trimmed */
 function rowsUnder(header: readonly string[], records: readonly (readonly string[])[]): Row[] {
   const names = header.map((h) => h.trim())
-  return records.map((values): Row => Object.fromEntries(names.map((h, j) => [h, Option(values[j]).orElse("").trim()])))
+  return records.map((values): Row => Object.fromEntries(names.map((h, j) => [h, (values[j] ?? "").trim()])))
 }
 
 /** Parse tilde-delimited text (the Orange Book file format) */

@@ -2,13 +2,10 @@
  * Field access for loosely-typed rows (parsed bulk files, JSON API records)
  */
 
-import { List, None, Option, Some } from "functype"
+import { List, Option } from "functype"
 
-const asText = (value: unknown): Option<string> => {
-  if (typeof value === "string") return Some(value)
-  if (typeof value === "number" && Number.isFinite(value)) return Some(String(value))
-  return None()
-}
+const isText = (value: unknown): value is string | number =>
+  typeof value === "string" || (typeof value === "number" && Number.isFinite(value))
 
 /** A plain JSON object (not null, not an array) */
 export const isRecord = (value: unknown): value is Readonly<Record<string, unknown>> =>
@@ -19,11 +16,12 @@ export const isRecord = (value: unknown): value is Readonly<Record<string, unkno
  * An empty string counts as present, as it did with `??` chains; null,
  * missing and non-text values are skipped. Numbers are kept as text.
  */
-export const textField = (row: Readonly<Record<string, unknown>>, ...keys: readonly string[]): string =>
-  List(keys)
-    .find((key) => asText(row[key]).isSome())
-    .flatMap((key) => asText(row[key]))
-    .orElse("")
+export const textField = (row: Readonly<Record<string, unknown>>, ...keys: readonly string[]): string => {
+  // Hot path: bulk loads call this about a million times, so it reads the keys natively.
+  // Building a functype List per call made a full Orange Book load cost ~10 s of CPU.
+  const value = keys.map((key) => row[key]).find(isText)
+  return value === undefined ? "" : String(value)
+}
 
 /** The first n items of a list from an FDA record, mapped; [] when the list is missing or not an array */
 export const mapFirst = <T, U>(items: readonly T[] | undefined, n: number, f: (item: T) => U): U[] =>

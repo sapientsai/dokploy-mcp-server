@@ -1,35 +1,16 @@
 // The Workers-safe entry inside workerd, Cloudflare's runtime, with no nodejs_compat: a Node
 // built-in or global anywhere on the path, dependencies included, fails here.
-import { fileURLToPath } from "node:url"
-
-import { build } from "esbuild"
 import { Miniflare } from "miniflare"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
-const ENTRY = fileURLToPath(new URL("./worker.ts", import.meta.url))
-
-const bundle = async (): Promise<string> => {
-  const result = await build({
-    bundle: true,
-    conditions: ["workerd", "worker", "browser"],
-    entryPoints: [ENTRY],
-    format: "esm",
-    logLevel: "silent",
-    mainFields: ["module", "main"],
-    // "neutral" knows no Node built-ins, so importing one fails the build outright.
-    platform: "neutral",
-    target: "es2022",
-    write: false,
-  })
-  return result.outputFiles[0]?.text ?? ""
-}
+import { bundleWorker } from "./bundle.js"
 
 const upstream: string[] = []
 let script = ""
 let mf: Miniflare
 
 beforeAll(async () => {
-  script = await bundle()
+  script = await bundleWorker()
   mf = new Miniflare({
     compatibilityDate: "2026-07-01",
     compatibilityFlags: [],
