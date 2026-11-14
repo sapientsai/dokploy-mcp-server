@@ -40,14 +40,14 @@
     "fflate": "^0.8.3",
     "functype": "^1.26.0",
     "functype-log": "^1.26.0",
-    "somamcp": "^2.9.0",
+    "somamcp": "^2.10.0",
     "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^24.19.2",
     "esbuild": "^0.28.2",
     "miniflare": "^4.20260730.0",
-    "ts-builds": "^4.3.0",
+    "ts-builds": "^4.5.0",
     "tsdown": "^0.23.7",
     "tsx": "^4.23.15"
   },
