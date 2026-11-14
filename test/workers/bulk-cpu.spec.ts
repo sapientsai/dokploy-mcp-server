@@ -82,7 +82,7 @@ const timedCall = async (name: string, args: Record<string, unknown>) => {
   const reply = JSON.parse(data === undefined ? text : data.slice("data: ".length)) as {
     result?: { content?: Array<{ text: string }> }
   }
-  return { ms, payload: JSON.parse(reply.result?.content?.[0]?.text ?? "{}") as { success?: boolean; data?: unknown } }
+  return { ms, payload: JSON.parse(reply.result?.content?.[0]?.text ?? "{}") as { success?: boolean; data?: unknown; totalResults?: number } }
 }
 
 describe("bulk file loads in workerd", () => {
@@ -90,6 +90,7 @@ describe("bulk file loads in workerd", () => {
   it("load and search a full-size Orange Book within 2 s", async () => {
     const { ms, payload } = await timedCall("search_fda_orange_book", { drugName: "lipitor", limit: 1 })
     expect(payload.success).toBe(true)
+    expect(payload.totalResults).toBe(1)
     expect(JSON.stringify(payload.data)).toContain("LIPITOR")
     expect(ms).toBeLessThan(2_000)
   }, 60_000)
@@ -97,7 +98,9 @@ describe("bulk file loads in workerd", () => {
   it("load and search a full-size Purple Book within 1 s", async () => {
     const { ms, payload } = await timedCall("search_fda_purple_book", { productName: "humira" })
     expect(payload.success).toBe(true)
-    expect(JSON.stringify(payload.data)).toContain("Humira")
+    // Every fixture row names Humira as its reference product; only one is named Humira
+    expect(payload.totalResults).toBe(1)
+    expect(JSON.stringify(payload.data)).toContain('"proprietaryName":"Humira"')
     expect(ms).toBeLessThan(1_000)
   }, 60_000)
 })
