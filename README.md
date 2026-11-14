@@ -6,24 +6,35 @@ A comprehensive [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)
 
 ## Why This Server?
 
-> **Tracks Dokploy v0.31.2.** Tools are built against the v0.31.2 OpenAPI spec (644 paths). The comparison below was measured on 2026-10-03, when this server tracked v0.30.8.
+> **Tracks Dokploy v0.31.2** (644 API paths). The official `@dokploy/mcp` is still at 0.30.7, built for Dokploy v0.30.x. The comparison below was measured on 2026-11-14.
 
-The [official Dokploy MCP](https://github.com/Dokploy/mcp) generates one tool per API endpoint. Its latest release, `@dokploy/mcp@0.30.7`, exposes 604 tools, one for each of the 604 paths in Dokploy's v0.30.8 OpenAPI spec. Coverage is complete, and every one of those schemas loads into the model's context before you ask your first question.
+The [official Dokploy MCP](https://github.com/Dokploy/mcp) generates one tool per API endpoint. Its latest release, `@dokploy/mcp@0.30.7` (published 2026-09-18), exposes 604 tools, one per path in Dokploy's v0.30.x OpenAPI spec. Every one of those schemas loads into the model's context before you ask your first question.
 
 This server hand-curates the same API into **27 tools** (one per category, each taking an `action` enum), covering the deploy-and-operate surface most self-hosters use daily.
 
 ### Context cost
 
-|                                    | Official `@dokploy/mcp` | This server      |
-| ---------------------------------- | ----------------------- | ---------------- |
-| Tools exposed                      | 604                     | 28 (27 + `info`) |
-| `tools/list` schema payload        | 319,143 bytes           | 51,974 bytes     |
-| Approximate tokens loaded up front | **~80k**                | **~13k**         |
-| Median tool schema                 | 387 bytes               | 1,257 bytes      |
+|                                    | Official `@dokploy/mcp@0.30.7` | This server `1.11.x` |
+| ---------------------------------- | ------------------------------ | -------------------- |
+| Tools exposed                      | 604                            | 28 (27 + `info`)     |
+| `tools/list` schema payload        | 319,143 bytes                  | 51,091 bytes         |
+| Approximate tokens loaded up front | **~80k**                       | **~13k**             |
+| Median tool schema                 | 387 bytes                      | 1,233 bytes          |
 
-Measured 2026-10-03 against `@dokploy/mcp@0.30.7` (the latest published) and this server's build tracking Dokploy v0.30.8. Each server was started over stdio, sent `tools/list`, and its serialized tool array counted in bytes (divided by 4 for a rough token estimate).
+Measured 2026-11-14 against `@dokploy/mcp@0.30.7` (the latest published) and `dokploy-mcp-server@1.11.0`. Each server was started over stdio, sent `tools/list`, and its serialized tool array counted in bytes (divided by 4 for a rough token estimate).
 
-On a 200k-token context window, the official server spends about 40% of it before you ask anything; this server spends about 6.5%. The larger median schema here is deliberate: descriptions carry the workflow knowledge that prevents failed calls, such as which service id pairs with which `databaseType`.
+On a 200k-token context window, the official server spends about 40% of it before you ask anything; this server spends about 6%. The larger median schema here is deliberate: descriptions carry the workflow knowledge that prevents failed calls, such as which service id pairs with which `databaseType`.
+
+### Tracking Dokploy releases
+
+This server updates its tool inputs with each Dokploy release. Against Dokploy v0.31.2, `@dokploy/mcp@0.30.7`:
+
+- **has no tools for the 41 endpoints v0.31 added** — server security (fail2ban, SSH settings, exposed ports, pending updates, sessions), telemetry providers, project export/import, and a handful of backup, server, settings, user and audit-log endpoints
+- **still offers `ai-get`**, whose `ai.get` endpoint v0.31.2 removed
+- **still offers inputs v0.31.2 dropped**, such as `appName` on `schedule-create` and `serviceType` on `mounts-update`. Dokploy discards unknown fields without an error, so those values are lost silently
+- **cannot filter the audit log on the new `download` action**
+
+Neither server has tools for those 41 new endpoints yet. Within its 27 categories, this server's inputs match v0.31.2.
 
 ### Feature Comparison
 
