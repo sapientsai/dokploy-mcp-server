@@ -769,6 +769,40 @@ export type paths = {
     patch?: never
     trace?: never
   }
+  "/backup.listBackupFilesByBackupId": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description null */
+    get: operations["backup-listBackupFilesByBackupId"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/backup.getDownloadUrl": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["backup-getDownloadUrl"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/bitbucket.create": {
     parameters: {
       query?: never
@@ -3540,6 +3574,193 @@ export type paths = {
     patch?: never
     trace?: never
   }
+  "/telemetryProvider.create": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["telemetryProvider-create"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/telemetryProvider.update": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["telemetryProvider-update"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/telemetryProvider.remove": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["telemetryProvider-remove"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/telemetryProvider.all": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description null */
+    get: operations["telemetryProvider-all"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/telemetryProvider.one": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description null */
+    get: operations["telemetryProvider-one"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/telemetryProvider.testConnection": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["telemetryProvider-testConnection"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/telemetryProvider.testConnectionById": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["telemetryProvider-testConnectionById"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/telemetryProvider.serverStatus": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description null */
+    get: operations["telemetryProvider-serverStatus"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/telemetryProvider.deployOnServer": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["telemetryProvider-deployOnServer"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/telemetryProvider.removeOnServer": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["telemetryProvider-removeOnServer"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/telemetryProvider.availableTypes": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description null */
+    get: operations["telemetryProvider-availableTypes"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/mariadb.create": {
     parameters: {
       query?: never
@@ -4127,6 +4348,23 @@ export type paths = {
     }
     /** @description null */
     get: operations["mounts-one"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/mounts.readFileContent": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description null */
+    get: operations["mounts-readFileContent"]
     put?: never
     post?: never
     delete?: never
@@ -6294,6 +6532,40 @@ export type paths = {
     patch?: never
     trace?: never
   }
+  "/server.generateConnectCommand": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["server-generateConnectCommand"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/server.connectStatus": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description null */
+    get: operations["server-connectStatus"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/server.one": {
     parameters: {
       query?: never
@@ -6592,6 +6864,210 @@ export type paths = {
     }
     /** @description null */
     get: operations["server-getServerMetrics"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/serverSecurity.fail2banStatus": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description null */
+    get: operations["serverSecurity-fail2banStatus"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/serverSecurity.configureFail2ban": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["serverSecurity-configureFail2ban"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/serverSecurity.setFail2banEnabled": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["serverSecurity-setFail2banEnabled"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/serverSecurity.banIp": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["serverSecurity-banIp"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/serverSecurity.unbanIp": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["serverSecurity-unbanIp"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/serverSecurity.exposedPorts": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description null */
+    get: operations["serverSecurity-exposedPorts"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/serverSecurity.sshSecurity": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description null */
+    get: operations["serverSecurity-sshSecurity"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/serverSecurity.updateSshSettings": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["serverSecurity-updateSshSettings"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/serverSecurity.removeAuthorizedKey": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["serverSecurity-removeAuthorizedKey"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/serverSecurity.pendingUpdates": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description null */
+    get: operations["serverSecurity-pendingUpdates"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/serverSecurity.disconnectSession": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["serverSecurity-disconnectSession"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/serverSecurity.activity": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description null */
+    get: operations["serverSecurity-activity"]
     put?: never
     post?: never
     delete?: never
@@ -7246,6 +7722,40 @@ export type paths = {
     patch?: never
     trace?: never
   }
+  "/settings.getPanelPortStatus": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description null */
+    get: operations["settings-getPanelPortStatus"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/settings.togglePanelPort": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["settings-togglePanelPort"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/settings.haveTraefikDashboardPortEnabled": {
     parameters: {
       query?: never
@@ -7306,6 +7816,23 @@ export type paths = {
     }
     /** @description null */
     get: operations["settings-isCloud"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/settings.getPostHogConfig": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description null */
+    get: operations["settings-getPostHogConfig"]
     put?: never
     post?: never
     delete?: never
@@ -7427,6 +7954,40 @@ export type paths = {
     get: operations["settings-getTraefikPorts"]
     put?: never
     post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/settings.getTraefikOverview": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description null */
+    get: operations["settings-getTraefikOverview"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/settings.updateTraefik": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["settings-updateTraefik"]
     delete?: never
     options?: never
     head?: never
@@ -8096,6 +8657,74 @@ export type paths = {
     patch?: never
     trace?: never
   }
+  "/user.hasPassword": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description null */
+    get: operations["user-hasPassword"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/user.requestAccountDeletionCode": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["user-requestAccountDeletionCode"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/user.deleteAccount": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["user-deleteAccount"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/user.deleteAccountByEmail": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["user-deleteAccountByEmail"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/user.assignPermissions": {
     parameters: {
       query?: never
@@ -8479,23 +9108,6 @@ export type paths = {
     }
     /** @description null */
     get: operations["ai-getAll"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/ai.get": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    /** @description null */
-    get: operations["ai-get"]
     put?: never
     post?: never
     delete?: never
@@ -9524,6 +10136,23 @@ export type paths = {
     patch?: never
     trace?: never
   }
+  "/auditLog.export": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** @description null */
+    get: operations["auditLog-export"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/schedule.create": {
     parameters: {
       query?: never
@@ -10266,6 +10895,57 @@ export type paths = {
     get: operations["overview-domains"]
     put?: never
     post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/projectExportImport.export": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["projectExportImport-export"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/projectExportImport.importPreview": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["projectExportImport-importPreview"]
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/projectExportImport.import": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    /** @description null */
+    post: operations["projectExportImport-import"]
     delete?: never
     options?: never
     head?: never
@@ -11100,9 +11780,9 @@ export interface operations {
           buildType: "dockerfile" | "heroku_buildpacks" | "paketo_buildpacks" | "nixpacks" | "static" | "railpack"
           dockerfile: string | null
           dockerContextPath: string | null
-          dockerBuildStage: string | null
-          herokuVersion: string | null
-          railpackVersion: string | null
+          dockerBuildStage: (string | null) | null
+          herokuVersion: (string | null) | null
+          railpackVersion: (string | null) | null
           publishDirectory?: string | null
           isStaticSpa?: boolean | null
         }
@@ -11777,7 +12457,7 @@ export interface operations {
           enableSubmodules?: boolean
           dockerfile?: string | null
           dockerContextPath?: string | null
-          dockerBuildStage?: string | null
+          dockerBuildStage?: (string | null) | null
           dropBuildPath?: string | null
           healthCheckSwarm?:
             | ({
@@ -11861,7 +12541,7 @@ export interface operations {
                 | null
               )
             | null
-          stopGracePeriodSwarm?: (number | null) | null
+          stopGracePeriodSwarm?: number | null
           endpointSpecSwarm?:
             | ({
                 Mode?: string
@@ -11888,15 +12568,14 @@ export interface operations {
           applicationStatus?: "idle" | "running" | "done" | "error"
           /** @enum {string} */
           buildType?: "dockerfile" | "heroku_buildpacks" | "paketo_buildpacks" | "nixpacks" | "static" | "railpack"
-          railpackVersion?: string | null
-          herokuVersion?: string | null
+          railpackVersion?: (string | null) | null
+          herokuVersion?: (string | null) | null
           publishDirectory?: string | null
           isStaticSpa?: boolean | null
           createEnvFile?: boolean
           createdAt?: string
           registryId?: string | null
           rollbackRegistryId?: string | null
-          environmentId?: string
           githubId?: string | null
           gitlabId?: string | null
           giteaId?: string | null
@@ -12467,6 +13146,7 @@ export interface operations {
     parameters: {
       query: {
         appName: string
+        serviceId?: string
       }
       header?: never
       path?: never
@@ -12815,6 +13495,7 @@ export interface operations {
           schedule: string
           enabled?: boolean | null
           prefix: string
+          customName?: string | null
           destinationId: string
           keepLatestCount?: number | null
           database: string
@@ -12972,6 +13653,7 @@ export interface operations {
           /** @enum {string} */
           databaseType: "postgres" | "mariadb" | "mysql" | "mongo" | "web-server" | "libsql"
           includeEncryptionKey?: boolean
+          customName?: string
         }
       }
     }
@@ -13575,6 +14257,136 @@ export interface operations {
         }
         content: {
           "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "backup-listBackupFilesByBackupId": {
+    parameters: {
+      query: {
+        backupId: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "backup-getDownloadUrl": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          backupId: string
+          fileName: string
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
         }
       }
       /** @description Internal server error */
@@ -14226,7 +15038,7 @@ export interface operations {
               ipRange?: string
             }[]
           } | null
-          serverId?: (string | null) | null
+          serverId?: string | null
         }
       }
     }
@@ -14675,7 +15487,6 @@ export interface operations {
           name: string
           certificateData: string
           privateKey: string
-          certificatePath?: string
           autoRenew?: boolean | null
           organizationId: string
           serverId?: string | null
@@ -15414,22 +16225,22 @@ export interface operations {
           composeType?: "docker-compose" | "stack"
           repository?: string | null
           owner?: string | null
-          branch?: string | null
+          branch?: (string | null) | null
           autoDeploy?: boolean | null
           gitlabProjectId?: number | null
           gitlabRepository?: string | null
           gitlabOwner?: string | null
-          gitlabBranch?: string | null
+          gitlabBranch?: (string | null) | null
           gitlabPathNamespace?: string | null
           bitbucketRepository?: string | null
           bitbucketRepositorySlug?: string | null
           bitbucketOwner?: string | null
-          bitbucketBranch?: string | null
+          bitbucketBranch?: (string | null) | null
           giteaRepository?: string | null
           giteaOwner?: string | null
-          giteaBranch?: string | null
+          giteaBranch?: (string | null) | null
           customGitUrl?: string | null
-          customGitBranch?: string | null
+          customGitBranch?: (string | null) | null
           customGitSSHKeyId?: string | null
           command?: string
           createEnvFile?: boolean
@@ -15439,11 +16250,11 @@ export interface operations {
           randomize?: boolean
           isolatedDeployment?: boolean
           isolatedDeploymentsVolume?: boolean
+          pullImages?: boolean
           triggerType?: ("push" | "tag") | null
           /** @enum {string} */
           composeStatus?: "idle" | "running" | "done" | "error"
           icon?: (string | null) | null
-          environmentId?: string
           createdAt?: string
           watchPaths?: string[] | null
           githubId?: string | null
@@ -15583,7 +16394,8 @@ export interface operations {
       content: {
         "application/json": {
           composeId: string
-          deleteVolumes: boolean
+          /** @default false */
+          deleteVolumes?: boolean
         }
       }
     }
@@ -18358,6 +19170,7 @@ export interface operations {
                 applicationKey: string
                 applicationSecret: string
                 consumerKey: string
+                zone?: string
               }
         }
       }
@@ -18457,6 +19270,7 @@ export interface operations {
                 applicationKey: string
                 applicationSecret: string
                 consumerKey: string
+                zone?: string
               }
         }
       }
@@ -18749,6 +19563,7 @@ export interface operations {
                 applicationKey: string
                 applicationSecret: string
                 consumerKey: string
+                zone?: string
               }
         }
       }
@@ -23626,7 +24441,7 @@ export interface operations {
           databasePassword: string
           /** @enum {string} */
           sqldNode: "primary" | "replica"
-          sqldPrimaryUrl: (string | null) | null
+          sqldPrimaryUrl: string | null
           /** @default false */
           enableNamespaces: boolean
           serverId: string | null
@@ -24269,7 +25084,7 @@ export interface operations {
           databasePassword?: string
           /** @enum {string} */
           sqldNode?: "primary" | "replica"
-          sqldPrimaryUrl?: (string | null) | null
+          sqldPrimaryUrl?: string | null
           /** @default false */
           enableNamespaces?: boolean
           /** @default ghcr.io/tursodatabase/libsql-server:v0.24.32 */
@@ -24367,7 +25182,7 @@ export interface operations {
                 | null
               )
             | null
-          stopGracePeriodSwarm?: (number | null) | null
+          stopGracePeriodSwarm?: number | null
           endpointSpecSwarm?:
             | ({
                 Mode?: string
@@ -24383,7 +25198,6 @@ export interface operations {
           networkIds?: string[] | null
           detachDokployNetwork?: boolean
           createdAt?: string
-          environmentId?: string
         }
       }
     }
@@ -24568,6 +25382,768 @@ export interface operations {
         since?: string
         search?: string
       }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "telemetryProvider-create": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          name: string
+          /** @enum {string} */
+          providerType:
+            | "loki"
+            | "datadog"
+            | "betterstack"
+            | "elasticsearch"
+            | "splunk_hec"
+            | "aws_cloudwatch"
+            | "prometheus_remote_write"
+            | "new_relic"
+            | "influxdb"
+          signals: ("logs" | "metrics")[]
+          endpoint?: (string | null) | null
+          apiKey?: (string | null) | null
+          apiSecret?: (string | null) | null
+          extraConfig?:
+            | ({
+                [key: string]: unknown
+              } | null)
+            | null
+          enabled?: boolean
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "telemetryProvider-update": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          name?: string
+          /** @enum {string} */
+          providerType?:
+            | "loki"
+            | "datadog"
+            | "betterstack"
+            | "elasticsearch"
+            | "splunk_hec"
+            | "aws_cloudwatch"
+            | "prometheus_remote_write"
+            | "new_relic"
+            | "influxdb"
+          signals?: ("logs" | "metrics")[]
+          endpoint?: (string | null) | null
+          apiKey?: (string | null) | null
+          apiSecret?: (string | null) | null
+          extraConfig?:
+            | ({
+                [key: string]: unknown
+              } | null)
+            | null
+          enabled?: boolean
+          telemetryProviderId: string
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "telemetryProvider-remove": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          telemetryProviderId: string
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "telemetryProvider-all": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "telemetryProvider-one": {
+    parameters: {
+      query: {
+        telemetryProviderId: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "telemetryProvider-testConnection": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          name?: string
+          /** @enum {string} */
+          providerType:
+            | "loki"
+            | "datadog"
+            | "betterstack"
+            | "elasticsearch"
+            | "splunk_hec"
+            | "aws_cloudwatch"
+            | "prometheus_remote_write"
+            | "new_relic"
+            | "influxdb"
+          signals: ("logs" | "metrics")[]
+          endpoint?: (string | null) | null
+          apiKey?: (string | null) | null
+          apiSecret?: (string | null) | null
+          extraConfig?:
+            | ({
+                [key: string]: unknown
+              } | null)
+            | null
+          enabled?: boolean
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "telemetryProvider-testConnectionById": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          telemetryProviderId: string
+          signals?: ("logs" | "metrics")[]
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "telemetryProvider-serverStatus": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "telemetryProvider-deployOnServer": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          serverId?: string | null
+          providerIds: string[]
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "telemetryProvider-removeOnServer": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          serverId?: string | null
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "telemetryProvider-availableTypes": {
+    parameters: {
+      query?: never
       header?: never
       path?: never
       cookie?: never
@@ -25381,7 +26957,7 @@ export interface operations {
                 | null
               )
             | null
-          stopGracePeriodSwarm?: (number | null) | null
+          stopGracePeriodSwarm?: number | null
           endpointSpecSwarm?:
             | ({
                 Mode?: string
@@ -25405,7 +26981,6 @@ export interface operations {
             | null
           replicas?: number
           createdAt?: string
-          environmentId?: string
           networkIds?: string[] | null
           detachDokployNetwork?: boolean
         }
@@ -26544,7 +28119,7 @@ export interface operations {
                 | null
               )
             | null
-          stopGracePeriodSwarm?: (number | null) | null
+          stopGracePeriodSwarm?: number | null
           endpointSpecSwarm?:
             | ({
                 Mode?: string
@@ -26568,7 +28143,6 @@ export interface operations {
             | null
           replicas?: number
           createdAt?: string
-          environmentId?: string
           replicaSets?: boolean
           networkIds?: string[] | null
           detachDokployNetwork?: boolean
@@ -27155,6 +28729,73 @@ export interface operations {
       }
     }
   }
+  "mounts-readFileContent": {
+    parameters: {
+      query: {
+        mountId: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
   "mounts-update": {
     parameters: {
       query?: never
@@ -27165,24 +28806,15 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          mountId: string
           /** @enum {string} */
           type?: "bind" | "volume" | "file"
           hostPath?: string | null
           volumeName?: string | null
-          filePath?: string | null
           content?: string | null
-          /** @enum {string} */
-          serviceType?: "application" | "postgres" | "mysql" | "mariadb" | "mongo" | "redis" | "compose" | "libsql"
           mountPath?: string
-          applicationId?: string | null
-          composeId?: string | null
-          libsqlId?: string | null
-          mariadbId?: string | null
-          mongoId?: string | null
-          mysqlId?: string | null
-          postgresId?: string | null
-          redisId?: string | null
+          filePath?: string | null
+          mountId: string
+          expectedContent?: string | null
         }
       }
     }
@@ -28120,7 +29752,7 @@ export interface operations {
                 | null
               )
             | null
-          stopGracePeriodSwarm?: (number | null) | null
+          stopGracePeriodSwarm?: number | null
           endpointSpecSwarm?:
             | ({
                 Mode?: string
@@ -28144,7 +29776,6 @@ export interface operations {
             | null
           replicas?: number
           createdAt?: string
-          environmentId?: string
           networkIds?: string[] | null
           detachDokployNetwork?: boolean
         }
@@ -32459,7 +34090,7 @@ export interface operations {
                 | null
               )
             | null
-          stopGracePeriodSwarm?: (number | null) | null
+          stopGracePeriodSwarm?: number | null
           endpointSpecSwarm?:
             | ({
                 Mode?: string
@@ -32483,7 +34114,6 @@ export interface operations {
             | null
           replicas?: number
           createdAt?: string
-          environmentId?: string
           networkIds?: string[] | null
           detachDokployNetwork?: boolean
         }
@@ -33722,8 +35352,6 @@ export interface operations {
           projectId: string
           name?: string
           description?: string | null
-          createdAt?: string
-          organizationId?: string
           env?: string
         }
       }
@@ -34854,7 +36482,7 @@ export interface operations {
                 | null
               )
             | null
-          stopGracePeriodSwarm?: (number | null) | null
+          stopGracePeriodSwarm?: number | null
           endpointSpecSwarm?:
             | ({
                 Mode?: string
@@ -34877,7 +36505,6 @@ export interface operations {
               )
             | null
           replicas?: number
-          environmentId?: string
           networkIds?: string[] | null
           detachDokployNetwork?: boolean
         }
@@ -35406,7 +37033,7 @@ export interface operations {
         "application/json": {
           registryId: string
           registryName?: string
-          imagePrefix?: (string | null) | null
+          imagePrefix?: string | null
           username?: string
           password?: string
           registryUrl?: string
@@ -36045,6 +37672,143 @@ export interface operations {
         }
         content: {
           "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "server-generateConnectCommand": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          name: string
+          description?: string
+          /**
+           * @default deploy
+           * @enum {string}
+           */
+          serverType?: "deploy" | "build"
+          /** @default true */
+          enableDockerCleanup?: boolean
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "server-connectStatus": {
+    parameters: {
+      query: {
+        sshKeyId: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.NOT_FOUND"]
         }
       }
       /** @description Internal server error */
@@ -37198,6 +38962,790 @@ export interface operations {
         url: string
         token: string
         dataPoints: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "serverSecurity-fail2banStatus": {
+    parameters: {
+      query: {
+        serverId: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "serverSecurity-configureFail2ban": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          serverId: string
+          bantime: -1 | number
+          findtime: number
+          maxretry: number
+          ignoreip: string[]
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "serverSecurity-setFail2banEnabled": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          serverId: string
+          enabled: boolean
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "serverSecurity-banIp": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          serverId: string
+          ip: string
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "serverSecurity-unbanIp": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          serverId: string
+          jail: string
+          ip: string
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "serverSecurity-exposedPorts": {
+    parameters: {
+      query: {
+        serverId: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "serverSecurity-sshSecurity": {
+    parameters: {
+      query: {
+        serverId: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "serverSecurity-updateSshSettings": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          serverId: string
+          passwordAuthentication: boolean
+          /** @enum {string} */
+          permitRootLogin: "yes" | "prohibit-password" | "no"
+          maxAuthTries: number
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "serverSecurity-removeAuthorizedKey": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          serverId: string
+          fingerprint: string
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "serverSecurity-pendingUpdates": {
+    parameters: {
+      query: {
+        serverId: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "serverSecurity-disconnectSession": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          serverId: string
+          terminal: string
+          banIp?: string
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "serverSecurity-activity": {
+    parameters: {
+      query: {
+        serverId: string
       }
       header?: never
       path?: never
@@ -39633,6 +42181,133 @@ export interface operations {
       }
     }
   }
+  "settings-getPanelPortStatus": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "settings-togglePanelPort": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          enable: boolean
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
   "settings-haveTraefikDashboardPortEnabled": {
     parameters: {
       query?: {
@@ -39828,6 +42503,71 @@ export interface operations {
     }
   }
   "settings-isCloud": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "settings-getPostHogConfig": {
     parameters: {
       query?: never
       header?: never
@@ -40338,6 +43078,135 @@ export interface operations {
         }
         content: {
           "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "settings-getTraefikOverview": {
+    parameters: {
+      query?: {
+        serverId?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "settings-updateTraefik": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: {
+      content: {
+        "application/json": {
+          serverId?: string
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
         }
       }
       /** @description Internal server error */
@@ -42499,32 +45368,14 @@ export interface operations {
     requestBody: {
       content: {
         "application/json": {
-          id?: string
-          firstName?: string
-          lastName?: string
-          isRegistered?: boolean
-          expirationDate?: string
-          createdAt2?: string
-          createdAt?: string | null
-          twoFactorEnabled?: boolean | null
+          image?: string | null
+          allowImpersonation?: boolean
           /** Format: email */
           email?: string
-          emailVerified?: boolean
-          image?: string | null
-          banned?: boolean | null
-          banReason?: string | null
-          banExpires?: string | null
-          updatedAt?: string
-          enablePaidFeatures?: boolean
-          allowImpersonation?: boolean
-          enableEnterpriseFeatures?: boolean
-          licenseKey?: string | null
-          stripeCustomerId?: string | null
-          stripeSubscriptionId?: string | null
-          serversQuantity?: number
-          sendInvoiceNotifications?: boolean
           password?: string
           currentPassword?: string
+          firstName?: string
+          lastName?: string
         }
       }
     }
@@ -42846,6 +45697,258 @@ export interface operations {
       content: {
         "application/json": {
           userId: string
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "user-hasPassword": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "user-requestAccountDeletionCode": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          password?: string
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "user-deleteAccount": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          code: string
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "user-deleteAccountByEmail": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          /** Format: email */
+          email: string
         }
       }
     }
@@ -44419,6 +47522,7 @@ export interface operations {
       query: {
         apiUrl: string
         apiKey: string
+        aiId?: string
       }
       header?: never
       path?: never
@@ -44621,73 +47725,6 @@ export interface operations {
   "ai-getAll": {
     parameters: {
       query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      /** @description Successful response */
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": Record<string, never>
-        }
-      }
-      /** @description Invalid input data */
-      400: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["error.BAD_REQUEST"]
-        }
-      }
-      /** @description Authorization not provided */
-      401: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["error.UNAUTHORIZED"]
-        }
-      }
-      /** @description Insufficient access */
-      403: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["error.FORBIDDEN"]
-        }
-      }
-      /** @description Not found */
-      404: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["error.NOT_FOUND"]
-        }
-      }
-      /** @description Internal server error */
-      500: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
-        }
-      }
-    }
-  }
-  "ai-get": {
-    parameters: {
-      query: {
-        aiId: string
-      }
       header?: never
       path?: never
       cookie?: never
@@ -45086,6 +48123,7 @@ export interface operations {
           apiUrl: string
           apiKey: string
           model: string
+          aiId?: string
         }
       }
     }
@@ -48132,6 +51170,12 @@ export interface operations {
             errorPageDescription: string | null
             footerText: string | null
             ogImageUrl: string | null
+            passwordResetGuide: string | null
+            supportEmail: string | null
+            logoLightUrl: string | null
+            loginLogoLightUrl: string | null
+            faviconLightUrl: string | null
+            dualModeBranding: boolean
           }
         }
       }
@@ -48701,7 +51745,7 @@ export interface operations {
         userId?: string
         userEmail?: string
         resourceName?: string
-        action?: "create" | "update" | "delete" | "deploy" | "cancel" | "redeploy" | "login" | "logout"
+        action?: "create" | "update" | "delete" | "deploy" | "cancel" | "redeploy" | "login" | "logout" | "download"
         resourceType?:
           | "project"
           | "service"
@@ -48785,6 +51829,94 @@ export interface operations {
       }
     }
   }
+  "auditLog-export": {
+    parameters: {
+      query?: {
+        userId?: string
+        userEmail?: string
+        resourceName?: string
+        action?: "create" | "update" | "delete" | "deploy" | "cancel" | "redeploy" | "login" | "logout" | "download"
+        resourceType?:
+          | "project"
+          | "service"
+          | "environment"
+          | "deployment"
+          | "user"
+          | "customRole"
+          | "domain"
+          | "certificate"
+          | "registry"
+          | "server"
+          | "sshKey"
+          | "gitProvider"
+          | "notification"
+          | "settings"
+          | "session"
+        from?: string
+        to?: string
+      }
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
   "schedule-create": {
     parameters: {
       query?: never
@@ -48799,7 +51931,6 @@ export interface operations {
           name: string
           description?: string | null
           cronExpression: string
-          appName?: string
           serviceName?: string | null
           /** @enum {string} */
           shellType?: "bash" | "sh"
@@ -48810,7 +51941,6 @@ export interface operations {
           applicationId?: string | null
           composeId?: string | null
           serverId?: string | null
-          organizationId?: string | null
           enabled?: boolean
           timezone?: string | null
           createdAt?: string
@@ -48879,7 +52009,6 @@ export interface operations {
           name: string
           description?: string | null
           cronExpression: string
-          appName?: string
           serviceName?: string | null
           /** @enum {string} */
           shellType?: "bash" | "sh"
@@ -48890,7 +52019,6 @@ export interface operations {
           applicationId?: string | null
           composeId?: string | null
           serverId?: string | null
-          organizationId?: string | null
           enabled?: boolean
           timezone?: string | null
           createdAt?: string
@@ -49411,8 +52539,7 @@ export interface operations {
           prefix: string
           /** @enum {string} */
           serviceType?: "application" | "postgres" | "mysql" | "mariadb" | "mongo" | "redis" | "compose" | "libsql"
-          appName?: string
-          serviceName?: string | null
+          serviceName?: (string | null) | null
           turnOff?: boolean
           cronExpression: string
           keepLatestCount?: number | null
@@ -49622,8 +52749,7 @@ export interface operations {
           prefix: string
           /** @enum {string} */
           serviceType?: "application" | "postgres" | "mysql" | "mariadb" | "mongo" | "redis" | "compose" | "libsql"
-          appName?: string
-          serviceName?: string | null
+          serviceName?: (string | null) | null
           turnOff?: boolean
           cronExpression: string
           keepLatestCount?: number | null
@@ -50025,7 +53151,6 @@ export interface operations {
           environmentId: string
           name?: string
           description?: string
-          projectId?: string
           env?: string
         }
       }
@@ -51705,6 +54830,197 @@ export interface operations {
         }
         content: {
           "application/json": components["schemas"]["error.NOT_FOUND"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "projectExportImport-export": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          projectId: string
+          serviceIds?: string[]
+          passphrase: string
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "projectExportImport-importPreview": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          bundle: string
+          passphrase: string
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
+        }
+      }
+      /** @description Internal server error */
+      500: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.INTERNAL_SERVER_ERROR"]
+        }
+      }
+    }
+  }
+  "projectExportImport-import": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": {
+          bundle: string
+          passphrase: string
+          serverId?: string
+        }
+      }
+    }
+    responses: {
+      /** @description Successful response */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": Record<string, never>
+        }
+      }
+      /** @description Invalid input data */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.BAD_REQUEST"]
+        }
+      }
+      /** @description Authorization not provided */
+      401: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.UNAUTHORIZED"]
+        }
+      }
+      /** @description Insufficient access */
+      403: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": components["schemas"]["error.FORBIDDEN"]
         }
       }
       /** @description Internal server error */

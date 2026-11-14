@@ -6,7 +6,7 @@ A comprehensive [Model Context Protocol (MCP)](https://modelcontextprotocol.io/)
 
 ## Why This Server?
 
-> **Tracks Dokploy v0.30.8.** Tools are built against the v0.30.8 OpenAPI spec (604 paths). The comparison below was measured on 2026-10-03.
+> **Tracks Dokploy v0.31.2.** Tools are built against the v0.31.2 OpenAPI spec (644 paths). The comparison below was measured on 2026-10-03, when this server tracked v0.30.8.
 
 The [official Dokploy MCP](https://github.com/Dokploy/mcp) generates one tool per API endpoint. Its latest release, `@dokploy/mcp@0.30.7`, exposes 604 tools, one for each of the 604 paths in Dokploy's v0.30.8 OpenAPI spec. Coverage is complete, and every one of those schemas loads into the model's context before you ask your first question.
 
@@ -262,7 +262,7 @@ Actions: `create | update | remove | get | list | runManually`
 
 Scheduled volume-level backups, taken with rclone. Distinct from `dokploy_backup`, which takes DB-native dumps.
 
-`create` requires `name` + `volumeName` + `prefix` + `cronExpression` + `destinationId`, and accepts `serviceType` with the matching `*Id`, plus `appName`, `keepLatestCount`, `enabled`, and `turnOff` (stops the service for the backup window). `volumeName` must match `^[a-zA-Z0-9][a-zA-Z0-9_.-]*$` — it is validated before the request is sent. `update` takes `volumeBackupId` plus the same fields. `remove`/`get` take `volumeBackupId`. `list` requires `id` (the parent service id) + `volumeBackupType`. `runManually` triggers a backup immediately from `volumeBackupId`.
+`create` requires `name` + `volumeName` + `prefix` + `cronExpression` + `destinationId`, and accepts `serviceType` with the matching `*Id`, plus `keepLatestCount`, `enabled`, and `turnOff` (stops the service for the backup window). `volumeName` must match `^[a-zA-Z0-9][a-zA-Z0-9_.-]*$` — it is validated before the request is sent. `update` takes `volumeBackupId` plus the same fields. `remove`/`get` take `volumeBackupId`. `list` requires `id` (the parent service id) + `volumeBackupType`. `runManually` triggers a backup immediately from `volumeBackupId`.
 
 ### `dokploy_deployment` (5 actions)
 
@@ -334,7 +334,7 @@ Ports, basic auth, and SSL certificates.
 
 Actions: `create | update | remove | get | listByServiceId | allNamedByApplicationId`
 
-Volumes, bind mounts, and file mounts attached to a service. `create` requires `type` + `mountPath` + `serviceId` + `serviceType`, then one field per type: `volumeName` for a volume, `hostPath` for a bind, `filePath` + `content` for a file. `update` takes `mountId` plus any field. `remove`/`get` take `mountId`. `listByServiceId` requires `serviceType` + `serviceId`. `allNamedByApplicationId` lists named volumes for an `applicationId`.
+Volumes, bind mounts, and file mounts attached to a service. `create` requires `type` + `mountPath` + `serviceId` + `serviceType`, then one field per type: `volumeName` for a volume, `hostPath` for a bind, `filePath` + `content` for a file. `update` takes `mountId` plus any of `type`, `mountPath`, `volumeName`, `hostPath`, `filePath`, `content`; a mount cannot be moved to another service. `remove`/`get` take `mountId`. `listByServiceId` requires `serviceType` + `serviceId`. `allNamedByApplicationId` lists named volumes for an `applicationId`.
 
 `serviceType`: `application | postgres | mysql | mariadb | mongo | redis | compose | libsql`.
 
@@ -364,7 +364,7 @@ Actions: `list`
 
 Query the Dokploy audit trail. Every filter is optional: `userId`, `userEmail`, `resourceName`, `auditAction`, `resourceType`, `from`/`to` (ISO timestamps), `limit` (default 50, max 500), and `offset`.
 
-`auditAction`: `create | update | delete | deploy | cancel | redeploy | login | logout`.
+`auditAction`: `create | update | delete | deploy | cancel | redeploy | login | logout | download`.
 
 `resourceType`: `project | service | environment | deployment | user | customRole | domain | certificate | registry | server | sshKey | gitProvider | notification | settings | session`.
 
@@ -374,7 +374,7 @@ The wire-level query parameter is named `action`; this tool exposes it as `audit
 
 Actions: `list | get | create | update | remove | testConnection | listZones | listRecords | createRecord | updateRecord | deleteRecord`
 
-DNS provider credentials plus zone and record management. `config` is discriminated on `providerType`: `cloudflare` (`apiToken`), `route53` (`accessKeyId`, `secretAccessKey`), `porkbun` (`apiKey`, `secretApiKey`), `infomaniak` (`apiToken`), or `ovh` (`applicationKey`, `applicationSecret`, `consumerKey`, optional `endpoint`, default `ovh-eu`). `update` requires `dnsProviderId` + `name` + `config` — the API **replaces** the provider rather than patching it, so a rename means re-sending the credentials. `testConnection` takes either a saved `dnsProviderId` or a raw `config` to check credentials before saving.
+DNS provider credentials plus zone and record management. `config` is discriminated on `providerType`: `cloudflare` (`apiToken`), `route53` (`accessKeyId`, `secretAccessKey`), `porkbun` (`apiKey`, `secretApiKey`), `infomaniak` (`apiToken`), or `ovh` (`applicationKey`, `applicationSecret`, `consumerKey`, optional `endpoint`, default `ovh-eu`, and optional `zone`). `update` requires `dnsProviderId` + `name` + `config` — the API **replaces** the provider rather than patching it, so a rename means re-sending the credentials. `testConnection` takes either a saved `dnsProviderId` or a raw `config` to check credentials before saving.
 
 Records: `listZones` (`dnsProviderId`), `listRecords` (`+ zoneId`), `createRecord`/`updateRecord` (`+ type`, `recordName`, `content`, optional `ttl` and `proxied`, plus `recordId` for update), `deleteRecord` (`+ recordId`). `type` accepts `A`, `AAAA`, `CNAME`, `MX`, `TXT`, `NS`, `SRV`, `CAA`, or `PTR`. `proxied` only takes effect on Cloudflare. Note `recordName` is the DNS record name — it maps to the API's `name` field, kept distinct here from the provider's `name`.
 

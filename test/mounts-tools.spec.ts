@@ -191,3 +191,18 @@ describe("dokploy_mounts list endpoints", () => {
     expect(getMock).toHaveBeenCalledWith("mounts.allNamedByApplicationId", { applicationId: "app-1" })
   })
 })
+
+describe("dokploy_mounts Dokploy v0.31 inputs", () => {
+  it("update does not forward serviceType, which mounts.update dropped", async () => {
+    await tool.execute({ action: "update", mountId: "m1", mountPath: "/new", serviceType: "application" })
+    expect(postMock).toHaveBeenCalledWith("mounts.update", { mountId: "m1", mountPath: "/new" })
+  })
+
+  it("no longer offers the per-service ids that only update used", () => {
+    const shape = (tool.parameters as { shape: Record<string, unknown> }).shape
+    for (const key of ["composeId", "libsqlId", "mariadbId", "mongoId", "mysqlId", "postgresId", "redisId"]) {
+      expect(shape).not.toHaveProperty(key)
+    }
+    expect(shape).toHaveProperty("applicationId")
+  })
+})

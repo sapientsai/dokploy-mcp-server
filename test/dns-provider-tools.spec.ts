@@ -263,6 +263,18 @@ describe("dokploy_dns_provider config schema", () => {
     ).toBe(true)
   })
 
+  it("accepts an optional OVH zone (Dokploy v0.31)", () => {
+    expect(
+      config.safeParse({
+        providerType: "ovh",
+        applicationKey: "a",
+        applicationSecret: "b",
+        consumerKey: "c",
+        zone: "example.com",
+      }).success,
+    ).toBe(true)
+  })
+
   it("rejects a provider config missing a required credential", () => {
     expect(config.safeParse({ providerType: "porkbun", apiKey: "k" }).success).toBe(false)
     expect(config.safeParse({ providerType: "ovh", applicationKey: "a", applicationSecret: "b" }).success).toBe(false)

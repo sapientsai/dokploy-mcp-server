@@ -4,7 +4,7 @@ import { Try } from "functype"
 import { logLayerAdapter, toDirectLogger } from "functype-log"
 import { LogLayer } from "loglayer"
 import pino from "pino"
-import { createLogLayerTelemetry, createServer } from "somamcp"
+import { createLogLayerTelemetry, createServer } from "somamcp/node"
 
 import { initializeDokployClient } from "./client/dokploy-client"
 import {

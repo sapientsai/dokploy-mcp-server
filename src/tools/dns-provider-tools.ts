@@ -66,6 +66,7 @@ const CONFIG_SCHEMA = z.discriminatedUnion("providerType", [
     applicationKey: z.string().min(1),
     applicationSecret: z.string().min(1),
     consumerKey: z.string().min(1),
+    zone: z.string().min(1).optional(),
   }),
 ])
 
@@ -227,7 +228,7 @@ export function registerDnsProviderTools(server: ToolServer) {
   server.addTool({
     name: "dokploy_dns_provider",
     description:
-      "DNS provider configuration and DNS record management. Providers: list, get (dnsProviderId), create (name+config), update (dnsProviderId+name+config — the API REPLACES the provider, so both must be sent even when changing one), remove (dnsProviderId), testConnection (dnsProviderId for a saved provider, or config to check credentials before saving). config is discriminated on providerType: cloudflare{apiToken}, route53{accessKeyId,secretAccessKey}, porkbun{apiKey,secretApiKey}, infomaniak{apiToken} or ovh{applicationKey,applicationSecret,consumerKey,endpoint?}. Records: listZones (dnsProviderId), listRecords (dnsProviderId+zoneId), createRecord/updateRecord (dnsProviderId+zoneId+type+recordName+content, ttl?, proxied?, plus recordId for update), deleteRecord (dnsProviderId+zoneId+recordId). Record type: A, AAAA, CNAME, MX, TXT, NS, SRV, CAA or PTR. proxied only takes effect on Cloudflare. Provider credentials are never echoed back in tool output; provider reads return id, name and providerType only.",
+      "DNS provider configuration and DNS record management. Providers: list, get (dnsProviderId), create (name+config), update (dnsProviderId+name+config — the API REPLACES the provider, so both must be sent even when changing one), remove (dnsProviderId), testConnection (dnsProviderId for a saved provider, or config to check credentials before saving). config is discriminated on providerType: cloudflare{apiToken}, route53{accessKeyId,secretAccessKey}, porkbun{apiKey,secretApiKey}, infomaniak{apiToken} or ovh{applicationKey,applicationSecret,consumerKey,endpoint?,zone?}. Records: listZones (dnsProviderId), listRecords (dnsProviderId+zoneId), createRecord/updateRecord (dnsProviderId+zoneId+type+recordName+content, ttl?, proxied?, plus recordId for update), deleteRecord (dnsProviderId+zoneId+recordId). Record type: A, AAAA, CNAME, MX, TXT, NS, SRV, CAA or PTR. proxied only takes effect on Cloudflare. Provider credentials are never echoed back in tool output; provider reads return id, name and providerType only.",
     parameters: z.object({
       action: z.enum(ACTIONS),
       dnsProviderId: z.string().optional(),

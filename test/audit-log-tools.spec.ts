@@ -79,3 +79,11 @@ describe("dokploy_audit_log", () => {
     expect(result).toContain("jane@example.com")
   })
 })
+
+describe("dokploy_audit_log Dokploy v0.31 inputs", () => {
+  it("accepts the download action", () => {
+    const shape = (tool.parameters as { shape: { auditAction: { safeParse: (v: unknown) => { success: boolean } } } })
+      .shape
+    expect(shape.auditAction.safeParse("download").success).toBe(true)
+  })
+})
