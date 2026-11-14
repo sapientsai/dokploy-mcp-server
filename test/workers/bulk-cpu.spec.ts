@@ -82,7 +82,14 @@ const timedCall = async (name: string, args: Record<string, unknown>) => {
   const reply = JSON.parse(data === undefined ? text : data.slice("data: ".length)) as {
     result?: { content?: Array<{ text: string }> }
   }
-  return { ms, payload: JSON.parse(reply.result?.content?.[0]?.text ?? "{}") as { success?: boolean; data?: unknown; totalResults?: number } }
+  return {
+    ms,
+    payload: JSON.parse(reply.result?.content?.[0]?.text ?? "{}") as {
+      success?: boolean
+      data?: unknown
+      totalResults?: number
+    },
+  }
 }
 
 describe("bulk file loads in workerd", () => {
