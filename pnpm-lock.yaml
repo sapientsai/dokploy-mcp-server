@@ -6,6 +6,9 @@ importers:
   .:
     configDependencies: {}
     packageManagerDependencies:
+      '@pnpm/exe':
+        specifier: 12.18.0
+        version: 12.18.0
       pnpm:
         specifier: 12.18.0
         version: 12.18.0
@@ -89,6 +92,11 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@pnpm/exe@12.18.0':
+    resolution: {integrity: sha512-3t/p83vw9SXsJML6suMBThCtwCl4lUGp/ILcxECU1In+G+NmFwMV9D+2TcvU7kX8tbrHRoYhs3eOPepEVdD7tQ==}
+    engines: {node: '>=18'}
+    hasBin: true
+
   pnpm@12.18.0:
     resolution: {integrity: sha512-nXiC1dyCFH7PxOBiqjSDTgrQKWcQoYN6ERWuASEn02txCeMhrBWYod0KZVl2gbHpmRfhLtDXSerpEYeUM2O+sw==}
     engines: {node: '>=18'}
@@ -138,6 +146,23 @@ snapshots:
   '@pnpm/exe.win32-x64@12.18.0':
     optional: true
 
+  '@pnpm/exe@12.18.0':
+    optionalDependencies:
+      '@pnpm/exe.android-arm64': 12.18.0
+      '@pnpm/exe.android-x64': 12.18.0
+      '@pnpm/exe.darwin-arm64': 12.18.0
+      '@pnpm/exe.darwin-x64': 12.18.0
+      '@pnpm/exe.freebsd-x64': 12.18.0
+      '@pnpm/exe.linux-arm64': 12.18.0
+      '@pnpm/exe.linux-arm64-musl': 12.18.0
+      '@pnpm/exe.linux-ppc64': 12.18.0
+      '@pnpm/exe.linux-riscv64': 12.18.0
+      '@pnpm/exe.linux-s390x': 12.18.0
+      '@pnpm/exe.linux-x64': 12.18.0
+      '@pnpm/exe.linux-x64-musl': 12.18.0
+      '@pnpm/exe.win32-arm64': 12.18.0
+      '@pnpm/exe.win32-x64': 12.18.0
+
   pnpm@12.18.0:
     optionalDependencies:
       '@pnpm/exe.android-arm64': 12.18.0
@@ -173,8 +198,8 @@ importers:
         specifier: ^18.0.9
         version: 18.0.9
       functype:
-        specifier: ^1.25.1
-        version: 1.25.1
+        specifier: ^1.27.0
+        version: 1.27.0
       somamcp:
         specifier: ^2.6.0
         version: 2.6.0
@@ -1005,8 +1030,8 @@ packages:
     peerDependencies:
       functype: '>=0.60.0'
 
-  functype@1.25.1:
-    resolution: {integrity: sha512-GQSUFvOhOxM79x9w7st37jfvBGVv0kTHixaTtqdLOaUYlSpL7v9eAhdJlGRa2fB1UB424VfpzXhw9Si6t1arBw==}
+  functype@1.27.0:
+    resolution: {integrity: sha512-6m5xQDb5IHUVOU1omj8azfV46x4pbudasFYN9JvCUqADyhypbtgiVEQ2ftfdvQT+MFXh/APVlLpICjzM3BO0Lg==}
     hasBin: true
 
   get-tsconfig@5.0.0-beta.6:
@@ -2264,16 +2289,16 @@ snapshots:
   fsevents@2.3.3:
     optional: true
 
-  functype-log@1.25.1(functype@1.25.1):
+  functype-log@1.25.1(functype@1.27.0):
     dependencies:
-      functype: 1.25.1
+      functype: 1.27.0
       loglayer: 9.4.0
 
-  functype-os@1.25.1(functype@1.25.1):
+  functype-os@1.25.1(functype@1.27.0):
     dependencies:
-      functype: 1.25.1
+      functype: 1.27.0
 
-  functype@1.25.1: {}
+  functype@1.27.0: {}
 
   get-tsconfig@5.0.0-beta.6:
     dependencies:
@@ -2546,8 +2571,8 @@ snapshots:
       '@hono/node-server': 2.1.6(hono@4.13.16)
       '@modelcontextprotocol/client': 2.4.0
       '@modelcontextprotocol/server': 2.4.0
-      functype: 1.25.1
-      functype-log: 1.25.1(functype@1.25.1)
+      functype: 1.27.0
+      functype-log: 1.25.1(functype@1.27.0)
       hono: 4.13.16
       zod: 4.6.7
 
@@ -2590,8 +2615,8 @@ snapshots:
       eslint-plugin-functype: 2.125.1(eslint@10.14.0)
       eslint-plugin-prettier: 5.5.7(eslint-config-prettier@10.1.8(eslint@10.14.0))(eslint@10.14.0)(prettier@3.9.10)
       eslint-plugin-simple-import-sort: 14.0.0(eslint@10.14.0)
-      functype: 1.25.1
-      functype-os: 1.25.1(functype@1.25.1)
+      functype: 1.27.0
+      functype-os: 1.25.1(functype@1.27.0)
       globals: 17.14.0
       prettier: 3.9.10
       ts-node: 10.9.2(@types/node@24.19.2)(typescript@6.0.3)
