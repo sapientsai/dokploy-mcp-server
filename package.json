@@ -12,7 +12,7 @@
     "somamcp",
     "typescript"
   ],
-  "author": "jordan.burke@gmail.com",
+  "author": "Jordan Burke <jordan.burke@gmail.com>",
   "license": "MIT",
   "homepage": "https://github.com/sapientsai/openfda-mcp-server",
   "repository": {
