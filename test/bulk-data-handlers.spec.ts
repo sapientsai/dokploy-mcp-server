@@ -192,6 +192,39 @@ describe("handleSearchOrangeBookPatents", () => {
     expect(result.data![0].exclusivities).toHaveLength(1)
     expect(result.data![0].exclusivities[0].code).toBe("NCE")
   })
+
+  it("matches the drug name in any case, and treats an empty one as no filter", async () => {
+    expect((await handleSearchOrangeBookPatents({ drugName: "LiPiToR" })).totalResults).toBe(2)
+    expect((await handleSearchOrangeBookPatents({ drugName: "atorvastatin" })).totalResults).toBe(2)
+    expect((await handleSearchOrangeBookPatents({ drugName: "" })).totalResults).toBe(mockPatents.length)
+    expect((await handleSearchOrangeBookPatents({ drugName: "no such drug" })).totalResults).toBe(0)
+  })
+
+  it("leaves out a patent whose product is missing when a drug name is given", async () => {
+    const orphan: OrangeBookPatent = { ...mockPatents[0]!, applNo: "999999", patentNo: "1111111" }
+    const data = { products: mockProducts, patents: [...mockPatents, orphan], exclusivities: mockExclusivities }
+    // Queue each response right before its call, so a failed assertion can't leave one for the next test
+    orangeBookSpy.mockResolvedValueOnce(Right(data))
+    const named = await handleSearchOrangeBookPatents({ drugName: "lipitor", limit: 100 })
+    orangeBookSpy.mockResolvedValueOnce(Right(data))
+    const unnamed = await handleSearchOrangeBookPatents({ limit: 100 })
+    expect(named.data?.map((p) => p.patentNo)).not.toContain("1111111")
+    expect(unnamed.data?.find((p) => p.patentNo === "1111111")?.tradeName).toBe("")
+  })
+
+  it("builds fresh lookup tables when the Orange Book is reloaded", async () => {
+    // The tables are cached per loaded data object, so new data must not see the old tables
+    const renamed = mockProducts.map((p) => ({ ...p, tradeName: `${p.tradeName} RENAMED` }))
+    orangeBookSpy.mockResolvedValueOnce(Right({ products: renamed, patents: mockPatents, exclusivities: [] }))
+    const result = await handleSearchOrangeBookPatents({ drugName: "renamed" })
+    expect(result.totalResults).toBe(2)
+    expect(result.data![0].tradeName).toBe("LIPITOR RENAMED")
+    expect(result.data![0].exclusivities).toHaveLength(0)
+    // And the original data still answers from its own tables
+    const original = await handleSearchOrangeBookPatents({ drugName: "lipitor" })
+    expect(original.data![0].tradeName).toBe("LIPITOR")
+    expect(original.data![0].exclusivities).toHaveLength(1)
+  })
 })
 
 describe("handleSearchPurpleBook", () => {

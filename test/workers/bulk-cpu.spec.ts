@@ -97,8 +97,11 @@ const timedCall = async (name: string, args: Record<string, unknown>) => {
 }
 
 describe("bulk file loads in workerd", () => {
-  // Budgets sit well above what each call takes on a dev machine, and well under the old timings:
-  // the load ~8x (2.2.0 took ~10 s), the expiry sort ~3.5x (2.2.1 took ~560 ms here).
+  // Budgets sit well above what each call takes on a dev machine and below the old timings: the
+  // load ~5x under 2.2.0 (~10 s), the expiry sort ~1.9x under 2.2.1 (~560 ms here). The filtered
+  // patent search has the thinnest margin: 45 ms is ~4x its ~11 ms now but only ~1.4x under the
+  // ~65 ms it took when each row's filter built Options, so it catches a full regression, not a
+  // partial one.
   it("load and search a full-size Orange Book within 2 s", async () => {
     const { ms, payload } = await timedCall("search_fda_orange_book", { drugName: "lipitor", limit: 1 })
     expect(payload.success).toBe(true)
@@ -125,6 +128,22 @@ describe("bulk file loads in workerd", () => {
       "7000840",
     ])
     expect(Math.min(...calls.map((c) => c.ms))).toBeLessThan(300)
+  }, 60_000)
+
+  it("filter a loaded Orange Book's patents by drug name within 45 ms", async () => {
+    await timedCall("search_fda_orange_book_patents", { drugName: "lipitor" })
+    // Fastest of three, as above. Each call checks every patent's product against the name.
+    const calls = [
+      await timedCall("search_fda_orange_book_patents", { drugName: "lipitor" }),
+      await timedCall("search_fda_orange_book_patents", { drugName: "lipitor" }),
+      await timedCall("search_fda_orange_book_patents", { drugName: "lipitor" }),
+    ]
+    const { payload } = calls[0]!
+    expect(payload.success).toBe(true)
+    // Only product 7 is LIPITOR, and only its patent (7000007) shares its application number
+    expect(payload.totalResults).toBe(1)
+    expect((payload.data as Array<{ patentNo: string }>).map((e) => e.patentNo)).toEqual(["7000007"])
+    expect(Math.min(...calls.map((c) => c.ms))).toBeLessThan(45)
   }, 60_000)
 
   it("load and search a full-size Purple Book within 1 s", async () => {
