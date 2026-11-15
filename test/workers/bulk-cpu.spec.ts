@@ -10,6 +10,8 @@ import { bundleWorker } from "./bundle.js"
 
 const rows = (n: number, row: (i: number) => string): string => Array.from({ length: n }, (_, i) => row(i)).join("\n")
 
+const MONTH_NAMES = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"]
+
 const PRODUCTS = `Ingredient~DF;Route~Trade_Name~Applicant~Strength~Appl_Type~Appl_No~Product_No~TE_Code~Approval_Date~RLD~RS~Type~Applicant_Full_Name\n${rows(
   50_000,
   (i) =>
@@ -17,7 +19,9 @@ const PRODUCTS = `Ingredient~DF;Route~Trade_Name~Applicant~Strength~Appl_Type~Ap
 )}`
 const PATENTS = `Appl_Type~Appl_No~Product_No~Patent_No~Patent_Expire_Date_Text~Drug_Substance_Flag~Drug_Product_Flag~Patent_Use_Code~Delist_Flag~Submission_Date\n${rows(
   23_000,
-  (i) => `N~${String(i).padStart(6, "0")}~001~${7_000_000 + i}~Aug 24, 2030~Y~~U-141~~Jan 1, 2020`,
+  // Dates in scrambled order, so sorting by expiry does real work (equal or sorted dates sort in one pass)
+  (i) =>
+    `N~${String(i).padStart(6, "0")}~001~${7_000_000 + i}~${MONTH_NAMES[(i * 7) % 12]} ${1 + ((i * 13) % 28)}, ${2026 + ((i * 31) % 20)}~Y~~U-141~~Jan 1, 2020`,
 )}`
 const EXCLUSIVITY = `Appl_Type~Appl_No~Product_No~Exclusivity_Code~Exclusivity_Date\n${rows(
   2_500,
@@ -93,13 +97,23 @@ const timedCall = async (name: string, args: Record<string, unknown>) => {
 }
 
 describe("bulk file loads in workerd", () => {
-  // Budgets are ~8x what the loads take on a dev machine, and well under the 2.2.0 timings.
+  // Budgets sit well above what each call takes on a dev machine, and well under the old timings:
+  // the load ~8x (2.2.0 took ~10 s), the expiry sort ~3.5x (2.2.1 took ~560 ms here).
   it("load and search a full-size Orange Book within 2 s", async () => {
     const { ms, payload } = await timedCall("search_fda_orange_book", { drugName: "lipitor", limit: 1 })
     expect(payload.success).toBe(true)
     expect(payload.totalResults).toBe(1)
     expect(JSON.stringify(payload.data)).toContain("LIPITOR")
     expect(ms).toBeLessThan(2_000)
+  }, 60_000)
+
+  it("sort every Orange Book patent by expiry within 300 ms, once loaded", async () => {
+    await timedCall("search_fda_drug_patent_expiry", { includeExclusivity: false, limit: 1 })
+    const { ms, payload } = await timedCall("search_fda_drug_patent_expiry", { limit: 3 })
+    expect(payload.success).toBe(true)
+    expect(payload.totalResults).toBe(23_000)
+    expect(JSON.stringify(payload.data)).toContain('"patentExpireDate":"Jan 1, 2026"')
+    expect(ms).toBeLessThan(300)
   }, 60_000)
 
   it("load and search a full-size Purple Book within 1 s", async () => {
