@@ -14,7 +14,7 @@
     "readiness",
     "hrv"
   ],
-  "author": "jordan.burke@gmail.com",
+  "author": "Jordan Burke <jordan.burke@gmail.com>",
   "license": "MIT",
   "homepage": "https://github.com/jordanburke/oura-ring-mcp-server",
   "repository": {
