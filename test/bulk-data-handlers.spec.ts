@@ -203,10 +203,12 @@ describe("handleSearchOrangeBookPatents", () => {
   it("leaves out a patent whose product is missing when a drug name is given", async () => {
     const orphan: OrangeBookPatent = { ...mockPatents[0]!, applNo: "999999", patentNo: "1111111" }
     const data = { products: mockProducts, patents: [...mockPatents, orphan], exclusivities: mockExclusivities }
-    orangeBookSpy.mockResolvedValueOnce(Right(data)).mockResolvedValueOnce(Right(data))
+    // Queue each response right before its call, so a failed assertion can't leave one for the next test
+    orangeBookSpy.mockResolvedValueOnce(Right(data))
     const named = await handleSearchOrangeBookPatents({ drugName: "lipitor", limit: 100 })
-    expect(named.data?.map((p) => p.patentNo)).not.toContain("1111111")
+    orangeBookSpy.mockResolvedValueOnce(Right(data))
     const unnamed = await handleSearchOrangeBookPatents({ limit: 100 })
+    expect(named.data?.map((p) => p.patentNo)).not.toContain("1111111")
     expect(unnamed.data?.find((p) => p.patentNo === "1111111")?.tradeName).toBe("")
   })
 

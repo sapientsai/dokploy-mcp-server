@@ -97,6 +97,11 @@ function buildLookupMap<T>(items: readonly T[], keyFn: (item: T) => string): Rea
   return new globalThis.Map(items.map((item): [string, T] => [keyFn(item), item]))
 }
 
+// The size of each group
+function groupSizes<T>(groups: ReadonlyMap<string, readonly T[]>): ReadonlyMap<string, number> {
+  return new globalThis.Map([...groups].map(([key, group]): [string, number] => [key, group.length]))
+}
+
 // Items grouped by key
 function buildGroupMap<T>(items: readonly T[], keyFn: (item: T) => string): ReadonlyMap<string, T[]> {
   return new globalThis.Map(groupEntries(items, keyFn))
@@ -106,6 +111,8 @@ function buildGroupMap<T>(items: readonly T[], keyFn: (item: T) => string): Read
  * A value built once per loaded Orange Book and reused until the client loads a new one.
  * The client hands out the same data object while its cache is fresh, so that object is the key;
  * a reload brings a new object, and the old tables go with the old data.
+ * So the loaded arrays must not change in place: a `./lib` caller that edits them after a search
+ * gets the old tables until the next reload. Nothing in this package edits them.
  */
 function perLoad<T>(build: (data: OrangeBookData) => T): (data: OrangeBookData) => T {
   const built = new WeakMap<OrangeBookData, T>()
@@ -121,7 +128,7 @@ function perLoad<T>(build: (data: OrangeBookData) => T): (data: OrangeBookData) 
 const productsByKey = perLoad((data) => buildLookupMap(data.products, obJoinKey))
 const exclusivitiesByKey = perLoad((data) => buildGroupMap(data.exclusivities, obJoinKey))
 const patentCountsByKey = perLoad((data) => buildCountMap(data.patents, obJoinKey))
-const exclusivityCountsByKey = perLoad((data) => buildCountMap(data.exclusivities, obJoinKey))
+const exclusivityCountsByKey = perLoad((data) => groupSizes(exclusivitiesByKey(data)))
 
 // Default pagination values
 const DEFAULT_LIMIT = 10
