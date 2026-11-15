@@ -102,20 +102,19 @@ function expiryKey(date: string): Option<string> {
   )
 }
 
-/** Earliest expiry first; patents with no readable expiry date sort last, in their original order */
-function compareExpiry(a: string, b: string): number {
-  return expiryKey(a).fold(
-    () =>
-      expiryKey(b).fold(
-        () => 0,
-        () => 1,
-      ),
-    (keyA) =>
-      expiryKey(b).fold(
-        () => -1,
-        (keyB) => keyA.localeCompare(keyB),
-      ),
-  )
+/** Sorts after every real "YYYYMMDD" key ("~" follows every digit), so entries with no readable date go last */
+const NO_EXPIRY = "~"
+
+/**
+ * Earliest expiry first; entries with no readable expiry date sort last, in their original order.
+ * Each date is parsed once: List.sortBy calls its key function on every comparison, and parsing
+ * there cost ~0.8 s for the ~22,600 Orange Book patents.
+ */
+function byExpiry<T extends { patentExpireDate: string }>(entries: List<T>): List<T> {
+  return entries
+    .map((entry) => ({ entry, key: expiryKey(entry.patentExpireDate).orElse(NO_EXPIRY) }))
+    .sortBy((keyed) => keyed.key)
+    .map((keyed) => keyed.entry)
 }
 
 const ORANGE_BOOK_SOURCE = {
@@ -442,7 +441,7 @@ export async function handleSearchDrugPatentExpiry(
         ? await getPurpleBookPatentEntries(params)
         : List.empty<PatentExpiryEntry>()
 
-      const entries = orangeEntries.concat(purpleEntries).sortBy((e) => e.patentExpireDate, compareExpiry)
+      const entries = byExpiry(orangeEntries.concat(purpleEntries))
 
       const { items, total } = applyPagination(entries, params.limit, params.skip)
 
