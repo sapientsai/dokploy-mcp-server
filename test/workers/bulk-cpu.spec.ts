@@ -118,7 +118,7 @@ describe("bulk file loads in workerd", () => {
     const { payload } = calls[0]!
     expect(payload.success).toBe(true)
     expect(payload.totalResults).toBe(23_000)
-    // Rows 0, 420 and 840 are the only ones dated Jan 1, 2026, the earliest; a stable sort keeps them in that order
+    // Every 420th row is dated Jan 1, 2026, the earliest; a stable sort keeps the first three in file order
     expect((payload.data as Array<{ patentNo: string }>).map((e) => e.patentNo)).toEqual([
       "7000000",
       "7000420",
