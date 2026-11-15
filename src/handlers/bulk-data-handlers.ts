@@ -108,7 +108,7 @@ const NO_EXPIRY = "~"
 /**
  * Earliest expiry first; entries with no readable expiry date sort last, in their original order.
  * Each date is parsed once: List.sortBy calls its key function on every comparison, and parsing
- * there cost ~0.8 s for the ~22,600 Orange Book patents.
+ * there cost ~0.8 s on Node (~0.5 s in workerd) for the ~22,600 Orange Book patents.
  */
 function byExpiry<T extends { patentExpireDate: string }>(entries: List<T>): List<T> {
   return entries
