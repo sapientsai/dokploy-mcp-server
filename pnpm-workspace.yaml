@@ -15,3 +15,6 @@ allowBuilds:
   workerd: true
   # Transitive; its postinstall only refreshes a public-suffix list we never use.
   tldjs: false
+
+minimumReleaseAgeExclude:
+  - functype@1.27.0
