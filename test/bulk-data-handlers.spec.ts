@@ -258,6 +258,30 @@ describe("handleSearchDrugPatentExpiry", () => {
     expect(result.data?.map((e) => e.patentNo)).toEqual(["D", "F", "E", "A", "C", "B"])
   })
 
+  it("puts every unreadable date after the latest real one, keeping their order", async () => {
+    const patent = (patentNo: string, patentExpireDate: string): OrangeBookPatent => ({
+      ...mockPatents[0]!,
+      patentNo,
+      patentExpireDate,
+    })
+    orangeBookSpy.mockResolvedValueOnce(
+      Right({
+        products: mockProducts,
+        patents: [
+          patent("blank", ""),
+          patent("far", "Dec 31, 9999"),
+          patent("iso", "2030-01-01"),
+          patent("soon", " Mar 3, 2026 "),
+          patent("bad-month", "Foo 1, 2030"),
+          patent("na", "N/A"),
+        ],
+        exclusivities: [],
+      }),
+    )
+    const result = await handleSearchDrugPatentExpiry({ limit: 100 })
+    expect(result.data?.map((e) => e.patentNo)).toEqual(["soon", "far", "blank", "iso", "bad-month", "na"])
+  })
+
   it("should include exclusivity by default", async () => {
     const result = await handleSearchDrugPatentExpiry({ drugName: "lipitor" })
     expect(result.data![0].exclusivities).toBeDefined()
