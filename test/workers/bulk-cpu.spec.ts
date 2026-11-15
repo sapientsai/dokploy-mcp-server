@@ -98,7 +98,7 @@ const timedCall = async (name: string, args: Record<string, unknown>) => {
 
 describe("bulk file loads in workerd", () => {
   // Budgets sit well above what each call takes on a dev machine and below the old timings: the
-  // load ~8x under 2.2.0 (~10 s), the expiry sort ~1.9x under 2.2.1 (~560 ms here). The filtered
+  // load ~5x under 2.2.0 (~10 s), the expiry sort ~1.9x under 2.2.1 (~560 ms here). The filtered
   // patent search has the thinnest margin: 45 ms is ~4x its ~11 ms now but only ~1.4x under the
   // ~65 ms it took when each row's filter built Options, so it catches a full regression, not a
   // partial one.
