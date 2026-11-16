@@ -3,6 +3,7 @@
 import { Miniflare } from "miniflare"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
+import pkg from "../../package.json" with { type: "json" }
 import { bundleWorker } from "./bundle.js"
 
 const upstream: string[] = []
@@ -52,6 +53,25 @@ describe("the openFDA tools in workerd (no nodejs_compat)", () => {
   it("bundle with no Node built-ins", () => {
     expect(script.length).toBeGreaterThan(0)
     expect(script).not.toMatch(/from\s*["']node:/)
+  })
+
+  it("report the package version from ./tools", async () => {
+    const response = await mf.dispatchFetch("http://worker/mcp", {
+      body: JSON.stringify({
+        id: 1,
+        jsonrpc: "2.0",
+        method: "initialize",
+        params: { capabilities: {}, clientInfo: { name: "test", version: "0" }, protocolVersion: "2025-06-18" },
+      }),
+      headers: { accept: "application/json, text/event-stream", "content-type": "application/json" },
+      method: "POST",
+    })
+    const text = await response.text()
+    const data = text.split("\n").find((line) => line.startsWith("data: "))
+    const reply = JSON.parse(data === undefined ? text : data.slice("data: ".length)) as {
+      result?: { serverInfo?: { version?: string } }
+    }
+    expect(reply.result?.serverInfo?.version).toBe(pkg.version)
   })
 
   it("list all 14 tools", async () => {
