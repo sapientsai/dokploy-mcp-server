@@ -49,6 +49,7 @@ import { fdaAPIClient, type FDAClient } from "./utils/api-client.js"
 // Exported here too, so a Worker builds a per-caller client from this entry alone: the `./lib`
 // entry also loads the Node-only server.
 export { createFDAAPIClient, type FDAClient, type FDAClientOptions, type RateLimitInfo } from "./utils/api-client.js"
+export { type Semver, VERSION } from "./version.js"
 import { loggers } from "./utils/logger.js"
 
 export type OpenFDAToolsOptions<T extends SessionAuth = SessionAuth> = {

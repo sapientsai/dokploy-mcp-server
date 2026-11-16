@@ -2,7 +2,8 @@
   "extends": "ts-builds/tsconfig",
   "compilerOptions": {
     "rootDir": ".",
-    "outDir": "lib"
+    "outDir": "lib",
+    "resolveJsonModule": true
   },
   "include": ["src/**/*", "test/**/*", "vitest.config.ts", "tsdown.config.ts"]
 }

@@ -1,11 +1,17 @@
 import { type Either, Right } from "functype"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
-import { handleSearchDeviceAdverseEvents } from "../src/handlers/device-handlers.js"
+import {
+  handleSearchDeviceAdverseEvents,
+  handleSearchDeviceClassifications,
+  handleSearchDeviceEnforcement,
+} from "../src/handlers/device-handlers.js"
 import {
   handleSearchDrugAdverseEvents,
+  handleSearchDrugEnforcement,
   handleSearchDrugLabels,
   handleSearchDrugsFDA,
+  handleSearchDrugShortages,
 } from "../src/handlers/drug-handlers.js"
 import type { DeviceAdverseEvent, DrugAdverseEvent, DrugLabel, DrugsFDA, FDAResponse } from "../src/types/fda.js"
 import { fdaAPIClient } from "../src/utils/api-client.js"
@@ -34,22 +40,127 @@ describe("drug adverse event formatting", () => {
     expect(empty?.patient).toEqual({ age: undefined, sex: undefined, weight: undefined })
 
     const noUnit = await adverseEvent({ patient: { patientonsetage: "45", patientweight: "70" } })
-    expect(noUnit?.patient.age).toBe("45 ")
+    expect(noUnit?.patient.age).toBe("45")
     expect(noUnit?.patient.weight).toBe("70 kg")
+  })
+
+  it("decodes the FAERS age unit, and keeps an unknown unit code visible", async () => {
+    const age = async (patientonsetage: string, patientonsetageunit: string) =>
+      (await adverseEvent({ patient: { patientonsetage, patientonsetageunit } }))?.patient.age
+    expect(await age("63", "801")).toBe("63 years")
+    expect(await age("1", "801")).toBe("1 year")
+    expect(await age("6", "800")).toBe("6 decades")
+    expect(await age("18", "802")).toBe("18 months")
+    expect(await age("3", "803")).toBe("3 weeks")
+    expect(await age("10", "804")).toBe("10 days")
+    expect(await age("12", "805")).toBe("12 hours")
+    expect(await age("63", "999")).toBe("63 (age unit code 999)")
+    expect(await age("63", "")).toBe("63")
+  })
+
+  it("decodes reaction outcome codes, and passes an unknown code through", async () => {
+    const outcomes = async (...codes: Array<string | undefined>) =>
+      (
+        await adverseEvent({ patient: { reaction: codes.map((reactionoutcome) => ({ reactionoutcome })) } })
+      )?.reactions.map((r) => r.outcome)
+    expect(await outcomes("1", "2", "3")).toEqual([
+      "Recovered/resolved",
+      "Recovering/resolving",
+      "Not recovered/not resolved",
+    ])
+    expect(await outcomes("4", "5", "6")).toEqual([
+      "Recovered/resolved with sequelae (consequent health issues)",
+      "Fatal",
+      "Unknown",
+    ])
+    expect(await outcomes("9", undefined, "")).toEqual(["9", undefined, undefined])
   })
 
   it("returns empty lists when the patient is missing", async () => {
     const event = await adverseEvent({ safetyreportid: "1" })
-    expect(event).toMatchObject({ drugs: [], reactions: [] })
+    expect(event).toMatchObject({ drugs: [], reactions: [], drugCount: 0, reactionCount: 0 })
     expect(event?.patient).toEqual({ age: undefined, sex: undefined, weight: undefined })
   })
 
-  it("keeps the first three drugs and reactions", async () => {
+  it("keeps the first three drugs and reactions, and counts them all", async () => {
     const drugs = Array.from({ length: 5 }, (_, i) => ({ medicinalproduct: `D${i}` }))
     const reactions = Array.from({ length: 5 }, (_, i) => ({ reactionmeddrapt: `R${i}` }))
     const event = await adverseEvent({ patient: { drug: drugs, reaction: reactions } })
     expect(event?.drugs.map((d) => d.name)).toEqual(["D0", "D1", "D2"])
     expect(event?.reactions.map((r) => r.reaction)).toEqual(["R0", "R1", "R2"])
+    expect(event).toMatchObject({ drugCount: 5, reactionCount: 5 })
+  })
+
+  it("keeps every drug and reaction that matches the search, in report order", async () => {
+    const event: DrugAdverseEvent = {
+      patient: {
+        drug: [
+          { medicinalproduct: "DIOVAN" },
+          { medicinalproduct: "DILTIAZEM" },
+          { medicinalproduct: "ECOTRIN" },
+          { medicinalproduct: "METFORMIN" },
+          { medicinalproduct: "Atorvastatin Calcium" },
+          { activesubstance: { activesubstancename: "ATORVASTATIN" } },
+        ],
+        reaction: [
+          { reactionmeddrapt: "Nausea" },
+          { reactionmeddrapt: "Dizziness" },
+          { reactionmeddrapt: "Fatigue" },
+          { reactionmeddrapt: "Myalgia" },
+        ],
+      },
+    }
+    vi.spyOn(fdaAPIClient, "searchDrugAdverseEvents").mockResolvedValue(respond([event]))
+    const formatted = (await handleSearchDrugAdverseEvents({ drugName: "atorvastatin", reaction: "MYALGIA" })).data?.[0]
+    expect(formatted?.drugs.map((d) => d.name)).toEqual([
+      "DIOVAN",
+      "DILTIAZEM",
+      "ECOTRIN",
+      "Atorvastatin Calcium",
+      "ATORVASTATIN",
+    ])
+    expect(formatted?.reactions.map((r) => r.reaction)).toEqual(["Nausea", "Dizziness", "Fatigue", "Myalgia"])
+    expect(formatted).toMatchObject({ drugCount: 6, reactionCount: 4 })
+  })
+
+  it("matches the search word by word, as openFDA does", async () => {
+    const shown = async (drugName: string, names: string[], reaction?: string, reactions: string[] = []) => {
+      const event: DrugAdverseEvent = {
+        patient: {
+          drug: ["D0", "D1", "D2", ...names].map((medicinalproduct) => ({ medicinalproduct })),
+          reaction: ["R0", "R1", "R2", ...reactions].map((reactionmeddrapt) => ({ reactionmeddrapt })),
+        },
+      }
+      vi.spyOn(fdaAPIClient, "searchDrugAdverseEvents").mockResolvedValue(respond([event]))
+      const formatted = (await handleSearchDrugAdverseEvents({ drugName, reaction })).data?.[0]
+      return {
+        drugs: formatted?.drugs.slice(3).map((d) => d.name),
+        reactions: formatted?.reactions.slice(3).map((r) => r.reaction),
+      }
+    }
+    expect((await shown("co-codamol", ["CO CODAMOL"])).drugs).toEqual(["CO CODAMOL"])
+    expect((await shown("lipitor 10", ["ATORVASTATIN CALCIUM (LIPITOR) 10 MG"])).drugs).toEqual([
+      "ATORVASTATIN CALCIUM (LIPITOR) 10 MG",
+    ])
+    expect((await shown("tylenol 500", ["ACETAMINOPHEN (TYLENOL) 500 MG"])).drugs).toEqual([
+      "ACETAMINOPHEN (TYLENOL) 500 MG",
+    ])
+    expect((await shown("  atorvastatin ", ["Atorvastatin"])).drugs).toEqual(["Atorvastatin"])
+    // Whole words only, like openFDA: a part of a word is not a match
+    expect((await shown("atorva", ["ATORVASTATIN"])).drugs).toEqual([])
+    expect((await shown("x", [], "stevens johnson syndrome", ["Stevens-Johnson syndrome"])).reactions).toEqual([
+      "Stevens-Johnson syndrome",
+    ])
+    // A search of only punctuation matches nothing extra
+    expect((await shown("--", ["-- DRUG"])).drugs).toEqual([])
+  })
+
+  it("adds at most ten later matches", async () => {
+    const drug = Array.from({ length: 33 }, (_, i) => ({ medicinalproduct: i < 3 ? `OTHER ${i}` : "ATORVASTATIN" }))
+    vi.spyOn(fdaAPIClient, "searchDrugAdverseEvents").mockResolvedValue(respond([{ patient: { drug } }]))
+    const formatted = (await handleSearchDrugAdverseEvents({ drugName: "atorvastatin" })).data?.[0]
+    expect(formatted?.drugs).toHaveLength(13)
+    expect(formatted?.drugCount).toBe(33)
   })
 
   it("combines every filter into one openFDA query", async () => {
@@ -73,9 +184,9 @@ describe("drug adverse event formatting", () => {
   })
 })
 
-async function labelWith(label: DrugLabel, sections?: string[]) {
+async function labelWith(label: DrugLabel, sections?: string[], fullText?: boolean) {
   vi.spyOn(fdaAPIClient, "searchDrugLabels").mockResolvedValue(respond([label]))
-  return (await handleSearchDrugLabels({ sections })).data?.[0]
+  return (await handleSearchDrugLabels({ sections, fullText })).data?.[0]
 }
 
 describe("drug label formatting", () => {
@@ -109,6 +220,34 @@ describe("drug label formatting", () => {
   it("returns empty lists when openfda is missing", async () => {
     const formatted = await labelWith({ set_id: "s" })
     expect(formatted).toMatchObject({ setId: "s", activeIngredients: [], route: [] })
+    expect(formatted?.truncated).toBeUndefined()
+  })
+
+  it("names the sections it cut, and returns them whole with fullText", async () => {
+    const long: DrugLabel = { ...label, warnings: ["w".repeat(250)], indications_and_usage: ["i"] }
+    const cut = await labelWith(long)
+    expect(cut?.truncated).toEqual(["boxedWarning", "warnings"])
+    expect(cut?.warnings).toBe(`${"w".repeat(200)}...`)
+    const full = await labelWith(long, undefined, true)
+    expect(full?.truncated).toBeUndefined()
+    expect(full?.boxedWarning).toBe("b".repeat(600))
+    expect(full?.warnings).toBe("w".repeat(250))
+    expect(full?.indications).toBe("i")
+    const section = await labelWith(long, ["warnings"], true)
+    expect(section?.warnings).toBe("w".repeat(250))
+    expect(section?.boxedWarning).toBeUndefined()
+  })
+
+  it("matches a drug name on the brand or the generic name", async () => {
+    const spy = vi.spyOn(fdaAPIClient, "searchDrugLabels").mockResolvedValue(respond([]))
+    await handleSearchDrugLabels({ drugName: "semaglutide", hasBoxedWarning: true })
+    await handleSearchDrugLabels({ drugName: "metformin", route: "oral" })
+    await handleSearchDrugLabels({ route: "oral" })
+    expect(spy.mock.calls.map(([params]) => params.search)).toEqual([
+      '(openfda.brand_name:"semaglutide" OR openfda.generic_name:"semaglutide") AND _exists_:boxed_warning',
+      'openfda.route:"oral" AND (openfda.brand_name:"metformin" OR openfda.generic_name:"metformin")',
+      'openfda.route:"oral"',
+    ])
   })
 })
 
@@ -144,7 +283,35 @@ describe("Drugs@FDA and device formatting", () => {
     const [full, empty] = (await handleSearchDeviceAdverseEvents({})).data ?? []
     expect(full?.devices.map((d) => d.brandName)).toEqual(["B0", "B1", "B2"])
     expect(full?.mdrText.map((t) => t.text)).toEqual(["T0", "T1"])
+    expect(full?.mdrText.map((t) => t.truncated)).toEqual([false, false])
     expect(empty).toMatchObject({ devices: [], mdrText: [] })
+  })
+})
+
+describe("truncation flags", () => {
+  it("flags a cut MDR text", async () => {
+    const event: DeviceAdverseEvent = { mdr_text: [{ text: "t".repeat(301) }, { text: "short" }] }
+    vi.spyOn(fdaAPIClient, "searchDeviceAdverseEvents").mockResolvedValue(respond([event]))
+    const formatted = (await handleSearchDeviceAdverseEvents({})).data?.[0]
+    expect(formatted?.mdrText.map((t) => t.truncated)).toEqual([true, false])
+    expect(formatted?.mdrText[0]?.text).toBe(`${"t".repeat(300)}...`)
+  })
+
+  it("names the cut fields on drug and device recalls, shortages and classifications", async () => {
+    const long = "x".repeat(201)
+    vi.spyOn(fdaAPIClient, "searchDrugEnforcement").mockResolvedValue(
+      respond([{ product_description: long, reason_for_recall: "short", distribution_pattern: long }, {}]),
+    )
+    vi.spyOn(fdaAPIClient, "searchDeviceEnforcement").mockResolvedValue(respond([{ reason_for_recall: long }]))
+    vi.spyOn(fdaAPIClient, "searchDrugShortages").mockResolvedValue(respond([{ description: long }]))
+    vi.spyOn(fdaAPIClient, "searchDeviceClassifications").mockResolvedValue(respond([{ definition: "short" }]))
+    const [drugRecall, emptyRecall] = (await handleSearchDrugEnforcement({})).data ?? []
+    expect(drugRecall?.truncated).toEqual(["productDescription", "distributionPattern"])
+    expect(drugRecall?.reasonForRecall).toBe("short")
+    expect(emptyRecall?.truncated).toBeUndefined()
+    expect((await handleSearchDeviceEnforcement({})).data?.[0]?.truncated).toEqual(["reasonForRecall"])
+    expect((await handleSearchDrugShortages({})).data?.[0]?.truncated).toEqual(["description"])
+    expect((await handleSearchDeviceClassifications({})).data?.[0]?.truncated).toBeUndefined()
   })
 })
 
