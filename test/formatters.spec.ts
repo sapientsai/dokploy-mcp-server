@@ -68,8 +68,12 @@ describe("drug adverse event formatting", () => {
       "Recovering/resolving",
       "Not recovered/not resolved",
     ])
-    expect(await outcomes("4", "5", "6")).toEqual(["Recovered/resolved with sequelae", "Fatal", "Unknown"])
-    expect(await outcomes("9", undefined)).toEqual(["9", undefined])
+    expect(await outcomes("4", "5", "6")).toEqual([
+      "Recovered/resolved with sequelae (consequent health issues)",
+      "Fatal",
+      "Unknown",
+    ])
+    expect(await outcomes("9", undefined, "")).toEqual(["9", undefined, undefined])
   })
 
   it("returns empty lists when the patient is missing", async () => {
@@ -117,6 +121,46 @@ describe("drug adverse event formatting", () => {
     ])
     expect(formatted?.reactions.map((r) => r.reaction)).toEqual(["Nausea", "Dizziness", "Fatigue", "Myalgia"])
     expect(formatted).toMatchObject({ drugCount: 6, reactionCount: 4 })
+  })
+
+  it("matches the search word by word, as openFDA does", async () => {
+    const shown = async (drugName: string, names: string[], reaction?: string, reactions: string[] = []) => {
+      const event: DrugAdverseEvent = {
+        patient: {
+          drug: ["D0", "D1", "D2", ...names].map((medicinalproduct) => ({ medicinalproduct })),
+          reaction: ["R0", "R1", "R2", ...reactions].map((reactionmeddrapt) => ({ reactionmeddrapt })),
+        },
+      }
+      vi.spyOn(fdaAPIClient, "searchDrugAdverseEvents").mockResolvedValue(respond([event]))
+      const formatted = (await handleSearchDrugAdverseEvents({ drugName, reaction })).data?.[0]
+      return {
+        drugs: formatted?.drugs.slice(3).map((d) => d.name),
+        reactions: formatted?.reactions.slice(3).map((r) => r.reaction),
+      }
+    }
+    expect((await shown("co-codamol", ["CO CODAMOL"])).drugs).toEqual(["CO CODAMOL"])
+    expect((await shown("lipitor 10", ["ATORVASTATIN CALCIUM (LIPITOR) 10 MG"])).drugs).toEqual([
+      "ATORVASTATIN CALCIUM (LIPITOR) 10 MG",
+    ])
+    expect((await shown("tylenol 500", ["ACETAMINOPHEN (TYLENOL) 500 MG"])).drugs).toEqual([
+      "ACETAMINOPHEN (TYLENOL) 500 MG",
+    ])
+    expect((await shown("  atorvastatin ", ["Atorvastatin"])).drugs).toEqual(["Atorvastatin"])
+    // Whole words only, like openFDA: a part of a word is not a match
+    expect((await shown("atorva", ["ATORVASTATIN"])).drugs).toEqual([])
+    expect((await shown("x", [], "stevens johnson syndrome", ["Stevens-Johnson syndrome"])).reactions).toEqual([
+      "Stevens-Johnson syndrome",
+    ])
+    // A search of only punctuation matches nothing extra
+    expect((await shown("--", ["-- DRUG"])).drugs).toEqual([])
+  })
+
+  it("adds at most ten later matches", async () => {
+    const drug = Array.from({ length: 33 }, (_, i) => ({ medicinalproduct: i < 3 ? `OTHER ${i}` : "ATORVASTATIN" }))
+    vi.spyOn(fdaAPIClient, "searchDrugAdverseEvents").mockResolvedValue(respond([{ patient: { drug } }]))
+    const formatted = (await handleSearchDrugAdverseEvents({ drugName: "atorvastatin" })).data?.[0]
+    expect(formatted?.drugs).toHaveLength(13)
+    expect(formatted?.drugCount).toBe(33)
   })
 
   it("combines every filter into one openFDA query", async () => {

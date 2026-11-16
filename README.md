@@ -97,7 +97,7 @@ Get a free API key at: https://open.fda.gov/apis/authentication/
 
 **Available sections**: `indications_and_usage`, `dosage_and_administration`, `contraindications`, `warnings`, `warnings_and_cautions`, `adverse_reactions`, `drug_interactions`, `clinical_pharmacology`, `mechanism_of_action`, `pharmacokinetics`, `overdosage`, `description`, `how_supplied`, `storage_and_handling`, `boxed_warning`
 
-Sections are cut at 200 characters (the boxed warning at 500), and each label's `truncated` lists the ones that were cut. Set `fullText: true` to get them whole; full sections can be long, so pair it with `sections`. Drug and device recalls, shortages, device classifications and MDR texts mark cut text the same way.
+Sections are cut at 200 characters (the boxed warning at 500), and each label's `truncated` lists the ones that were cut. Set `fullText: true` to get them whole; full sections can be long, so pair it with `sections`. Drug and device recalls, shortages and device classifications mark cut text the same way. Each device MDR text has its own `truncated` flag, true when it was cut at 300 characters.
 
 ### search_drug_adverse_events
 
