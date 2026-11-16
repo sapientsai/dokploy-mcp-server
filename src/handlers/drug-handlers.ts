@@ -88,7 +88,7 @@ const REACTION_OUTCOMES = Map<string, string>([
   ["1", "Recovered/resolved"],
   ["2", "Recovering/resolving"],
   ["3", "Not recovered/not resolved"],
-  ["4", "Recovered/resolved with sequelae"],
+  ["4", "Recovered/resolved with sequelae (consequent health issues)"],
   ["5", "Fatal"],
   ["6", "Unknown"],
 ])
@@ -110,23 +110,44 @@ function formatAge(age: string | undefined, unitCode: string | undefined): Optio
 /** How many drugs and reactions a formatted report shows, besides the ones that match the search */
 const LIST_PREVIEW = 3
 
+/** At most this many later matches are added, for reports that list one drug many times */
+const MAX_MATCHES = 10
+
 /**
- * The first few items, plus every later item that matches the search, in the report's own order.
- * Reports often list more drugs than the preview, so a search for one drug must not drop it.
+ * The first few items, plus later items that match the search (up to MAX_MATCHES), in the
+ * report's own order. Reports often list more drugs than the preview, so a search for one drug
+ * must not drop it.
  */
 function previewWithMatches<T>(items: readonly T[] | undefined, matches: (item: T) => boolean): T[] {
-  return Array.isArray(items) ? items.filter((item, i) => i < LIST_PREVIEW || matches(item)) : []
+  if (!Array.isArray(items)) return []
+  const laterMatches = items
+    .map((item, i) => (i >= LIST_PREVIEW && matches(item) ? i : -1))
+    .filter((i) => i >= 0)
+    .slice(0, MAX_MATCHES)
+  return items.filter((_, i) => i < LIST_PREVIEW || laterMatches.includes(i))
 }
 
-/** Whether any of the values contains the search text, ignoring case; false for all when there is no search */
+/**
+ * Text as openFDA compares it: lowercase words, with any run of punctuation or spaces between
+ * them read as one space. So "co-codamol" matches "CO CODAMOL", and "lipitor 10" matches
+ * "ATORVASTATIN CALCIUM (LIPITOR) 10 MG".
+ */
+function searchWords(text: string): string {
+  return text
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]+/gu, " ")
+    .trim()
+}
+
+/** Whether any of the values contains the search's words, as openFDA matched them; false for all without a search */
 function containsSearch(search: string | undefined): (values: readonly string[]) => boolean {
-  return nonEmpty(search).fold(
-    () => () => false,
-    (term) => {
-      const needle = term.toLowerCase()
-      return (values) => values.some((v) => v.toLowerCase().includes(needle))
-    },
-  )
+  return nonEmpty(search)
+    .map(searchWords)
+    .filter((words) => words !== "")
+    .fold(
+      () => () => false,
+      (needle) => (values) => values.some((v) => ` ${searchWords(v)} `.includes(` ${needle} `)),
+    )
 }
 
 function formatDrugAdverseEvent(
@@ -152,7 +173,7 @@ function formatDrugAdverseEvent(
       reactionMatches([r.reactionmeddrapt].filter((v) => v !== undefined)),
     ).map((r) => ({
       reaction: r.reactionmeddrapt,
-      outcome: Option(r.reactionoutcome)
+      outcome: nonEmpty(r.reactionoutcome)
         .map((code) => REACTION_OUTCOMES.get(code).orElse(code))
         .orUndefined(),
     })),

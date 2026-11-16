@@ -47,7 +47,6 @@ export function buildDateQuery(field: string, dateFrom?: string, dateTo?: string
   return hasBound ? Some(`${field}:[${bound(dateFrom)} TO ${bound(dateTo)}]`) : None()
 }
 
-/** Join a search query with optional extra clauses, skipping empty parts */
 /** One value matched against any of several fields: `(a:"x" OR b:"x")`; None without a value */
 export function anyFieldQuery(fields: readonly string[], value: string | undefined): Option<string> {
   return Option(value)
@@ -55,11 +54,11 @@ export function anyFieldQuery(fields: readonly string[], value: string | undefin
     .map((v) => `(${fields.map((field) => `${field}:"${escapeSearchTerm(v)}"`).join(" OR ")})`)
 }
 
+/** Join a search query with optional extra clauses, skipping empty parts */
 export function joinQueries(searchQuery: string, ...clauses: readonly Option<string>[]): string {
   return [searchQuery, ...clauses.flatMap((clause) => clause.toArray())].filter((part) => part !== "").join(" AND ")
 }
 
-/** Shorten long text for display; None for missing or empty text */
 /** Text for a response, cut to maxLength (ending in "...") when longer, and whether it was cut */
 export type ClippedText = { text: string; truncated: boolean }
 
