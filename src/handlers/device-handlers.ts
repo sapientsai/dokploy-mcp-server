@@ -17,11 +17,12 @@ import { loggers } from "../utils/logger.js"
 import {
   buildDateQuery,
   buildSearchQuery,
+  clipFields,
+  clipText,
   escapeSearchTerm,
   joinQueries,
   type SearchTerm,
   toSearchResponse,
-  truncateText,
 } from "./query.js"
 
 // Device 510(k) Handler
@@ -116,13 +117,16 @@ type FormattedDeviceClassification = {
   gmpExempt: boolean
   implant: boolean
   lifeSustaining: boolean
+  /** The fields cut at 200 characters; absent when none were */
+  truncated: Array<"definition"> | undefined
 }
 
 function formatDeviceClassification(classification: DeviceClassification): FormattedDeviceClassification {
+  const clipped = clipFields({ definition: clipText(classification.definition) })
   return {
     deviceName: classification.device_name,
     deviceClass: classification.device_class,
-    definition: truncateText(classification.definition).orUndefined(),
+    definition: clipped.text.definition,
     medicalSpecialty: classification.medical_specialty,
     medicalSpecialtyDescription: classification.medical_specialty_description,
     productCode: classification.product_code,
@@ -130,6 +134,7 @@ function formatDeviceClassification(classification: DeviceClassification): Forma
     gmpExempt: classification.gmp_exempt_flag === "Y",
     implant: classification.implant_flag === "Y",
     lifeSustaining: classification.life_sustain_support_flag === "Y",
+    truncated: clipped.truncated,
   }
 }
 
@@ -194,6 +199,8 @@ type FormattedDeviceAdverseEvent = {
   mdrText: Array<{
     textType: string | undefined
     text: string | undefined
+    /** True when the text was cut at 300 characters */
+    truncated: boolean
   }>
 }
 
@@ -213,10 +220,14 @@ function formatDeviceAdverseEvent(event: DeviceAdverseEvent): FormattedDeviceAdv
       productCode: d.device_report_product_code,
       deviceClass: d.openfda?.device_class,
     })),
-    mdrText: mapFirst(event.mdr_text, 2, (t) => ({
-      textType: t.text_type_code,
-      text: truncateText(t.text, 300).orUndefined(),
-    })),
+    mdrText: mapFirst(event.mdr_text, 2, (t) => {
+      const clipped = clipText(t.text, 300)
+      return {
+        textType: t.text_type_code,
+        text: clipped.map((c) => c.text).orUndefined(),
+        truncated: clipped.exists((c) => c.truncated),
+      }
+    }),
   }
 }
 
@@ -291,22 +302,30 @@ type FormattedDeviceEnforcement = {
   state: string | undefined
   deviceName: string | undefined
   deviceClass: string | undefined
+  /** The fields cut at 200 characters; absent when none were */
+  truncated: Array<"productDescription" | "reasonForRecall" | "distributionPattern"> | undefined
 }
 
 function formatDeviceEnforcement(recall: DeviceEnforcement): FormattedDeviceEnforcement {
+  const clipped = clipFields({
+    productDescription: clipText(recall.product_description),
+    reasonForRecall: clipText(recall.reason_for_recall),
+    distributionPattern: clipText(recall.distribution_pattern),
+  })
   return {
     recallNumber: recall.recall_number,
     recallingFirm: recall.recalling_firm,
     classification: recall.classification,
     status: recall.status,
-    productDescription: truncateText(recall.product_description).orUndefined(),
-    reasonForRecall: truncateText(recall.reason_for_recall).orUndefined(),
+    productDescription: clipped.text.productDescription,
+    reasonForRecall: clipped.text.reasonForRecall,
     recallInitiationDate: recall.recall_initiation_date,
-    distributionPattern: truncateText(recall.distribution_pattern).orUndefined(),
+    distributionPattern: clipped.text.distributionPattern,
     city: recall.city,
     state: recall.state,
     deviceName: recall.openfda?.device_name,
     deviceClass: recall.openfda?.device_class,
+    truncated: clipped.truncated,
   }
 }
 

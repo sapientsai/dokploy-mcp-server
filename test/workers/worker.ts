@@ -3,7 +3,7 @@
 import { createServer, getRequestHeader } from "somamcp"
 
 // Only what `openfda-mcp-server/tools` exports, so this is the Worker a consumer can build.
-import { createFDAAPIClient, registerOpenFDATools } from "../../src/register.js"
+import { createFDAAPIClient, registerOpenFDATools, VERSION } from "../../src/register.js"
 
 type Session = { apiKey?: string }
 
@@ -11,7 +11,7 @@ const server = createServer<Session>({
   authenticate: (request) => Promise.resolve({ apiKey: getRequestHeader(request, "x-openfda-api-key") }),
   enableDashboard: false,
   name: "openfda-worker",
-  version: "1.0.0",
+  version: VERSION,
 })
 
 registerOpenFDATools(server, { client: (session) => createFDAAPIClient({ apiKey: session?.apiKey }) })

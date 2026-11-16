@@ -65,6 +65,12 @@ export const searchDrugLabelsSchema = z.object({
     .array(z.enum(labelSections))
     .optional()
     .describe("Specific label sections to return (e.g., ['indications_and_usage', 'warnings', 'adverse_reactions'])"),
+  fullText: z
+    .boolean()
+    .optional()
+    .describe(
+      "Return section text in full. By default sections are cut at 200 characters (boxed warning at 500), and each label lists the cut ones in `truncated`. Full sections can be long, so pair this with `sections`.",
+    ),
   ...paginationSchema,
 })
 

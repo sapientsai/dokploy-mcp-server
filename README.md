@@ -85,16 +85,19 @@ Get a free API key at: https://open.fda.gov/apis/authentication/
 | Parameter          | Type     | Description                                                  |
 | ------------------ | -------- | ------------------------------------------------------------ |
 | `setId`            | string   | Retrieve a specific label by its unique set_id               |
-| `drugName`         | string   | Drug brand or generic name                                   |
+| `drugName`         | string   | Drug brand or generic name (matches either)                  |
 | `indication`       | string   | Medical indication or use case                               |
 | `activeIngredient` | string   | Active ingredient/substance name                             |
 | `route`            | string   | Route of administration (e.g., 'oral', 'intravenous')        |
 | `hasBoxedWarning`  | boolean  | Filter for drugs with boxed warnings (most serious warnings) |
 | `sections`         | string[] | Specific label sections to return (see below)                |
+| `fullText`         | boolean  | Return section text in full (see below)                      |
 | `limit`            | number   | Maximum results (1-100)                                      |
 | `skip`             | number   | Number of results to skip for pagination                     |
 
 **Available sections**: `indications_and_usage`, `dosage_and_administration`, `contraindications`, `warnings`, `warnings_and_cautions`, `adverse_reactions`, `drug_interactions`, `clinical_pharmacology`, `mechanism_of_action`, `pharmacokinetics`, `overdosage`, `description`, `how_supplied`, `storage_and_handling`, `boxed_warning`
+
+Sections are cut at 200 characters (the boxed warning at 500), and each label's `truncated` lists the ones that were cut. Set `fullText: true` to get them whole; full sections can be long, so pair it with `sections`. Drug and device recalls, shortages, device classifications and MDR texts mark cut text the same way.
 
 ### search_drug_adverse_events
 
@@ -245,7 +248,7 @@ pnpm build
 
 ```typescript
 import { createServer, getRequestHeader } from "somamcp"
-import { createFDAAPIClient, registerOpenFDATools } from "openfda-mcp-server/tools"
+import { createFDAAPIClient, registerOpenFDATools, VERSION } from "openfda-mcp-server/tools"
 
 type Env = { OPENFDA_API_KEY: string }
 
@@ -253,7 +256,7 @@ const serverFor = (env: Env) => {
   const server = createServer<{ apiKey?: string }>({
     authenticate: async (request) => ({ apiKey: getRequestHeader(request, "x-openfda-api-key")?.trim() || undefined }),
     name: "openfda",
-    version: "1.0.0",
+    version: VERSION, // the installed openfda-mcp-server version
   })
   registerOpenFDATools(server, {
     // The caller's own key, else the server's.

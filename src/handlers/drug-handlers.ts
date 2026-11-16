@@ -19,13 +19,16 @@ import { fdaAPIClient, type FDAClient } from "../utils/api-client.js"
 import { mapFirst, nonEmpty, takeFirst } from "../utils/fields.js"
 import { loggers } from "../utils/logger.js"
 import {
+  anyFieldQuery,
   buildDateQuery,
   buildSearchQuery,
+  clipFields,
+  type ClippedText,
+  clipText,
   escapeSearchTerm,
   joinQueries,
   type SearchTerm,
   toSearchResponse,
-  truncateText,
 } from "./query.js"
 
 // Drug Adverse Events Handler
@@ -45,6 +48,9 @@ type FormattedDrugAdverseEvent = {
   reportId: string | undefined
   receiveDate: string | undefined
   serious: boolean
+  /** How many drugs and reactions the report lists; `drugs` and `reactions` may show fewer */
+  drugCount: number
+  reactionCount: number
   drugs: Array<{
     name: string | undefined
     indication: string | undefined
@@ -67,24 +73,91 @@ const PATIENT_SEX = Map<string, string>([
   ["2", "Female"],
 ])
 
-function formatDrugAdverseEvent(event: DrugAdverseEvent): FormattedDrugAdverseEvent {
-  return {
+/** FAERS patientonsetageunit codes */
+const AGE_UNITS = Map<string, string>([
+  ["800", "decade"],
+  ["801", "year"],
+  ["802", "month"],
+  ["803", "week"],
+  ["804", "day"],
+  ["805", "hour"],
+])
+
+/** FAERS reactionoutcome codes */
+const REACTION_OUTCOMES = Map<string, string>([
+  ["1", "Recovered/resolved"],
+  ["2", "Recovering/resolving"],
+  ["3", "Not recovered/not resolved"],
+  ["4", "Recovered/resolved with sequelae"],
+  ["5", "Fatal"],
+  ["6", "Unknown"],
+])
+
+/** "63 years" from FAERS's "63" and unit code "801"; an unknown unit code is kept, so it isn't lost */
+function formatAge(age: string | undefined, unitCode: string | undefined): Option<string> {
+  return nonEmpty(age).map((value) =>
+    nonEmpty(unitCode).fold(
+      () => value,
+      (code) =>
+        AGE_UNITS.get(code).fold(
+          () => `${value} (age unit code ${code})`,
+          (unit) => `${value} ${unit}${value === "1" ? "" : "s"}`,
+        ),
+    ),
+  )
+}
+
+/** How many drugs and reactions a formatted report shows, besides the ones that match the search */
+const LIST_PREVIEW = 3
+
+/**
+ * The first few items, plus every later item that matches the search, in the report's own order.
+ * Reports often list more drugs than the preview, so a search for one drug must not drop it.
+ */
+function previewWithMatches<T>(items: readonly T[] | undefined, matches: (item: T) => boolean): T[] {
+  return Array.isArray(items) ? items.filter((item, i) => i < LIST_PREVIEW || matches(item)) : []
+}
+
+/** Whether any of the values contains the search text, ignoring case; false for all when there is no search */
+function containsSearch(search: string | undefined): (values: readonly string[]) => boolean {
+  return nonEmpty(search).fold(
+    () => () => false,
+    (term) => {
+      const needle = term.toLowerCase()
+      return (values) => values.some((v) => v.toLowerCase().includes(needle))
+    },
+  )
+}
+
+function formatDrugAdverseEvent(
+  params: DrugAdverseEventsParams,
+): (event: DrugAdverseEvent) => FormattedDrugAdverseEvent {
+  const drugMatches = containsSearch(params.drugName)
+  const reactionMatches = containsSearch(params.reaction)
+
+  return (event) => ({
     reportId: event.safetyreportid,
     receiveDate: event.receivedate,
     serious: event.serious === "1",
-    drugs: mapFirst(event.patient?.drug, 3, (d) => ({
+    drugCount: Array.isArray(event.patient?.drug) ? event.patient.drug.length : 0,
+    reactionCount: Array.isArray(event.patient?.reaction) ? event.patient.reaction.length : 0,
+    drugs: previewWithMatches(event.patient?.drug, (d) =>
+      drugMatches([d.medicinalproduct, d.activesubstance?.activesubstancename].filter((v) => v !== undefined)),
+    ).map((d) => ({
       name: d.medicinalproduct ?? d.activesubstance?.activesubstancename,
       indication: d.drugindication,
       route: d.drugadministrationroute,
     })),
-    reactions: mapFirst(event.patient?.reaction, 3, (r) => ({
+    reactions: previewWithMatches(event.patient?.reaction, (r) =>
+      reactionMatches([r.reactionmeddrapt].filter((v) => v !== undefined)),
+    ).map((r) => ({
       reaction: r.reactionmeddrapt,
-      outcome: r.reactionoutcome,
+      outcome: Option(r.reactionoutcome)
+        .map((code) => REACTION_OUTCOMES.get(code).orElse(code))
+        .orUndefined(),
     })),
     patient: {
-      age: nonEmpty(event.patient?.patientonsetage)
-        .map((age) => `${age} ${Option(event.patient?.patientonsetageunit).orElse("")}`)
-        .orUndefined(),
+      age: formatAge(event.patient?.patientonsetage, event.patient?.patientonsetageunit).orUndefined(),
       sex: Option(event.patient?.patientsex)
         .flatMap((code) => PATIENT_SEX.get(code))
         .orUndefined(),
@@ -92,7 +165,7 @@ function formatDrugAdverseEvent(event: DrugAdverseEvent): FormattedDrugAdverseEv
         .map((weight) => `${weight} kg`)
         .orUndefined(),
     },
-  }
+  })
 }
 
 export async function handleSearchDrugAdverseEvents(
@@ -111,7 +184,7 @@ export async function handleSearchDrugAdverseEvents(
     return toSearchResponse(
       await client.searchDrugAdverseEvents(searchParams),
       searchParams,
-      formatDrugAdverseEvent,
+      formatDrugAdverseEvent(params),
       client,
     )
   }
@@ -138,7 +211,7 @@ export async function handleSearchDrugAdverseEvents(
   return toSearchResponse(
     await client.searchDrugAdverseEvents(searchParams),
     searchParams,
-    formatDrugAdverseEvent,
+    formatDrugAdverseEvent(params),
     client,
   )
 }
@@ -152,6 +225,7 @@ export type DrugLabelsParams = {
   route?: string
   hasBoxedWarning?: boolean
   sections?: string[]
+  fullText?: boolean
   limit?: number
   skip?: number
 }
@@ -177,41 +251,70 @@ type FormattedDrugLabel = {
   howSupplied: string | undefined
   storageAndHandling: string | undefined
   route: string[]
+  /** The sections cut short (boxed warning at 500 characters, others at 200); absent when none were */
+  truncated: LabelField[] | undefined
 }
+
+/** The label fields that hold section text */
+type LabelField =
+  | "boxedWarning"
+  | "indications"
+  | "warnings"
+  | "contraindications"
+  | "adverseReactions"
+  | "drugInteractions"
+  | "dosageAndAdministration"
+  | "clinicalPharmacology"
+  | "mechanismOfAction"
+  | "pharmacokinetics"
+  | "overdosage"
+  | "description"
+  | "howSupplied"
+  | "storageAndHandling"
 
 /** The DrugLabel fields that hold section text */
 type LabelSection = {
   [K in keyof DrugLabel]-?: NonNullable<DrugLabel[K]> extends string[] ? K : never
 }[keyof DrugLabel]
 
-function formatDrugLabel(label: DrugLabel, sections?: string[]): FormattedDrugLabel {
-  // A section is included when no filter is given, or the filter names it
-  const section = (name: LabelSection, maxLength?: number): Option<string> =>
-    Option(label[name])
-      .filter(() => Option(sections).every((wanted) => wanted.includes(name)))
-      .flatMap((values) => truncateText(values[0], maxLength))
+function formatDrugLabel(params: DrugLabelsParams): (label: DrugLabel) => FormattedDrugLabel {
+  // With fullText, sections come back whole; otherwise they are cut, and `truncated` says which
+  const limit = (maxLength: number): number => (params.fullText === true ? Number.POSITIVE_INFINITY : maxLength)
 
-  return {
-    setId: label.set_id,
-    brandName: label.openfda?.brand_name?.[0],
-    genericName: label.openfda?.generic_name?.[0],
-    manufacturer: label.openfda?.manufacturer_name?.[0],
-    activeIngredients: takeFirst(label.openfda?.substance_name, 5),
-    boxedWarning: section("boxed_warning", 500).orUndefined(),
-    indications: section("indications_and_usage").orUndefined(),
-    warnings: section("warnings").orUndefined(),
-    contraindications: section("contraindications").orUndefined(),
-    adverseReactions: section("adverse_reactions").orUndefined(),
-    drugInteractions: section("drug_interactions").orUndefined(),
-    dosageAndAdministration: section("dosage_and_administration").orUndefined(),
-    clinicalPharmacology: section("clinical_pharmacology").orUndefined(),
-    mechanismOfAction: section("mechanism_of_action").orUndefined(),
-    pharmacokinetics: section("pharmacokinetics").orUndefined(),
-    overdosage: section("overdosage").orUndefined(),
-    description: section("description").orUndefined(),
-    howSupplied: section("how_supplied").orUndefined(),
-    storageAndHandling: section("storage_and_handling").orUndefined(),
-    route: takeFirst(label.openfda?.route, 3),
+  return (label) => {
+    // A section is included when no filter is given, or the filter names it
+    const section = (name: LabelSection, maxLength = 200): Option<ClippedText> =>
+      Option(label[name])
+        .filter(() => Option(params.sections).every((wanted) => wanted.includes(name)))
+        .flatMap((values) => clipText(values[0], limit(maxLength)))
+
+    const clipped = clipFields<LabelField>({
+      boxedWarning: section("boxed_warning", 500),
+      indications: section("indications_and_usage"),
+      warnings: section("warnings"),
+      contraindications: section("contraindications"),
+      adverseReactions: section("adverse_reactions"),
+      drugInteractions: section("drug_interactions"),
+      dosageAndAdministration: section("dosage_and_administration"),
+      clinicalPharmacology: section("clinical_pharmacology"),
+      mechanismOfAction: section("mechanism_of_action"),
+      pharmacokinetics: section("pharmacokinetics"),
+      overdosage: section("overdosage"),
+      description: section("description"),
+      howSupplied: section("how_supplied"),
+      storageAndHandling: section("storage_and_handling"),
+    })
+
+    return {
+      setId: label.set_id,
+      brandName: label.openfda?.brand_name?.[0],
+      genericName: label.openfda?.generic_name?.[0],
+      manufacturer: label.openfda?.manufacturer_name?.[0],
+      activeIngredients: takeFirst(label.openfda?.substance_name, 5),
+      ...clipped.text,
+      route: takeFirst(label.openfda?.route, 3),
+      truncated: clipped.truncated,
+    }
   }
 }
 
@@ -228,16 +331,10 @@ export async function handleSearchDrugLabels(
       limit: 1,
     }
 
-    return toSearchResponse(
-      await client.searchDrugLabels(searchParams),
-      searchParams,
-      (label) => formatDrugLabel(label, params.sections),
-      client,
-    )
+    return toSearchResponse(await client.searchDrugLabels(searchParams), searchParams, formatDrugLabel(params), client)
   }
 
   const searchTerms: SearchTerm[] = [
-    { field: "openfda.brand_name", value: params.drugName },
     { field: "indications_and_usage", value: params.indication },
     { field: "openfda.substance_name", value: params.activeIngredient },
     { field: "openfda.route", value: params.route },
@@ -248,7 +345,11 @@ export async function handleSearchDrugLabels(
   // Build boxed warning existence query
   const boxedWarningQuery = params.hasBoxedWarning ? Some("_exists_:boxed_warning") : None<string>()
 
-  const fullQuery = joinQueries(searchQuery, boxedWarningQuery)
+  // A drug name matches the brand or the generic name: a generic name alone misses a drug that
+  // is sold mainly under its brand
+  const drugNameQuery = anyFieldQuery(["openfda.brand_name", "openfda.generic_name"], params.drugName)
+
+  const fullQuery = joinQueries(searchQuery, drugNameQuery, boxedWarningQuery)
 
   const searchParams: SearchParams = {
     search: fullQuery || undefined,
@@ -256,12 +357,7 @@ export async function handleSearchDrugLabels(
     skip: params.skip,
   }
 
-  return toSearchResponse(
-    await client.searchDrugLabels(searchParams),
-    searchParams,
-    (label) => formatDrugLabel(label, params.sections),
-    client,
-  )
+  return toSearchResponse(await client.searchDrugLabels(searchParams), searchParams, formatDrugLabel(params), client)
 }
 
 // Drug NDC Handler
@@ -354,20 +450,28 @@ type FormattedDrugEnforcement = {
   distributionPattern: string | undefined
   city: string | undefined
   state: string | undefined
+  /** The fields cut at 200 characters; absent when none were */
+  truncated: Array<"productDescription" | "reasonForRecall" | "distributionPattern"> | undefined
 }
 
 function formatDrugEnforcement(recall: DrugEnforcement): FormattedDrugEnforcement {
+  const clipped = clipFields({
+    productDescription: clipText(recall.product_description),
+    reasonForRecall: clipText(recall.reason_for_recall),
+    distributionPattern: clipText(recall.distribution_pattern),
+  })
   return {
     recallNumber: recall.recall_number,
     recallingFirm: recall.recalling_firm,
     classification: recall.classification,
     status: recall.status,
-    productDescription: truncateText(recall.product_description).orUndefined(),
-    reasonForRecall: truncateText(recall.reason_for_recall).orUndefined(),
+    productDescription: clipped.text.productDescription,
+    reasonForRecall: clipped.text.reasonForRecall,
     recallInitiationDate: recall.recall_initiation_date,
-    distributionPattern: truncateText(recall.distribution_pattern).orUndefined(),
+    distributionPattern: clipped.text.distributionPattern,
     city: recall.city,
     state: recall.state,
+    truncated: clipped.truncated,
   }
 }
 
@@ -489,16 +593,20 @@ type FormattedDrugShortage = {
   description: string | undefined
   initialPostingDate: string | undefined
   resolvedShortageDate: string | undefined
+  /** The fields cut at 200 characters; absent when none were */
+  truncated: Array<"description"> | undefined
 }
 
 function formatDrugShortage(shortage: DrugShortage): FormattedDrugShortage {
+  const clipped = clipFields({ description: clipText(shortage.description) })
   return {
     genericName: shortage.generic_name,
     proprietaryName: shortage.proprietary_name,
     status: shortage.status,
-    description: truncateText(shortage.description).orUndefined(),
+    description: clipped.text.description,
     initialPostingDate: shortage.initial_posting_date,
     resolvedShortageDate: shortage.resolved_shortage_date,
+    truncated: clipped.truncated,
   }
 }
 

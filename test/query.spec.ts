@@ -1,7 +1,14 @@
 import { None, Option } from "functype"
 import { describe, expect, it } from "vitest"
 
-import { buildDateQuery, buildSearchQuery, joinQueries, truncateText } from "../src/handlers/query.js"
+import {
+  anyFieldQuery,
+  buildDateQuery,
+  buildSearchQuery,
+  clipFields,
+  clipText,
+  joinQueries,
+} from "../src/handlers/query.js"
 import { textField } from "../src/utils/fields.js"
 
 describe("textField", () => {
@@ -65,14 +72,46 @@ describe("buildSearchQuery", () => {
   })
 })
 
-describe("truncateText", () => {
+describe("clipText", () => {
   it("is None for missing or empty text", () => {
-    expect(truncateText(undefined).isNone()).toBe(true)
-    expect(truncateText("").isNone()).toBe(true)
+    expect(clipText(undefined).isNone()).toBe(true)
+    expect(clipText("").isNone()).toBe(true)
   })
 
-  it("truncates past the limit and keeps short text", () => {
-    expect(truncateText("abcdef", 3).orElse("")).toBe("abc...")
-    expect(truncateText("abc", 3).orElse("")).toBe("abc")
+  it("cuts text past the limit and says so, and keeps short text whole", () => {
+    expect(clipText("abcdef", 3).orThrow()).toEqual({ text: "abc...", truncated: true })
+    expect(clipText("abc", 3).orThrow()).toEqual({ text: "abc", truncated: false })
+    expect(clipText("x".repeat(201)).orThrow().truncated).toBe(true)
+    expect(clipText("x".repeat(200)).orThrow().truncated).toBe(false)
+  })
+
+  it("never cuts with an unbounded limit", () => {
+    expect(clipText("x".repeat(10_000), Number.POSITIVE_INFINITY).orThrow()).toEqual({
+      text: "x".repeat(10_000),
+      truncated: false,
+    })
+  })
+})
+
+describe("clipFields", () => {
+  it("returns each field's text and names the cut ones", () => {
+    const clipped = clipFields({ a: clipText("abcdef", 3), b: clipText("ab", 3), c: clipText(undefined) })
+    expect(clipped.text).toEqual({ a: "abc...", b: "ab", c: undefined })
+    expect(clipped.truncated).toEqual(["a"])
+  })
+
+  it("leaves truncated undefined when nothing was cut", () => {
+    expect(clipFields({ a: clipText("ab"), b: clipText(undefined) }).truncated).toBeUndefined()
+  })
+})
+
+describe("anyFieldQuery", () => {
+  it("matches the value on any of the fields, escaped", () => {
+    expect(anyFieldQuery(["a", "b"], 'x "y"').orThrow()).toBe('(a:"x \\"y\\"" OR b:"x \\"y\\"")')
+  })
+
+  it("is None for a missing or blank value", () => {
+    expect(anyFieldQuery(["a", "b"], undefined).isNone()).toBe(true)
+    expect(anyFieldQuery(["a", "b"], "  ").isNone()).toBe(true)
   })
 })
