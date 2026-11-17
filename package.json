@@ -47,6 +47,7 @@
   ],
   "scripts": {
     "validate": "pnpm check:versions && pnpm check:readme && ts-builds validate && pnpm smoke",
+    "ci": "pnpm check:versions && pnpm check:readme && ts-builds ci && pnpm smoke",
     "format": "ts-builds format",
     "format:check": "ts-builds format:check",
     "lint": "ts-builds lint",
@@ -62,7 +63,7 @@
     "smoke": "tsx scripts/smoke-stdio.ts",
     "sync:versions": "tsx scripts/sync-versions.ts",
     "version": "pnpm sync:versions",
-    "prepublishOnly": "pnpm check:versions && pnpm validate",
+    "prepublishOnly": "pnpm check:versions && pnpm run ci",
     "inspect": "pnpm build && npx @modelcontextprotocol/inspector dist/index.js",
     "start": "pnpm build && node dist/bin.js",
     "serve": "pnpm build && node dist/index.js",
@@ -84,10 +85,10 @@
   "devDependencies": {
     "@types/node": "^26.6.6",
     "openapi-typescript": "^7.13.0",
-    "ts-builds": "^4.5.0",
+    "ts-builds": "^4.7.0",
     "tsdown": "^0.23.7",
     "tsx": "^4.23.15",
     "vitest": "^5.1.0"
   },
-  "packageManager": "pnpm@11.27.0+sha512.ad12821463bb143295f1fa3ecde77a6b9b97a7990386da800ff57bffc3964dc64b7b1c7559d5dbe5c337aea659ed9c8937d4370bd198ca2009bc6fa0249808e7"
+  "packageManager": "pnpm@12.21.0+sha512.66fd8278ee28935ce951792d34367ff3af5c432a2756445823029533835b8da529bbe0be5130afd56ed0713fb8789e47bad82d93bd5ae2fe54b15562d6276ef0"
 }
