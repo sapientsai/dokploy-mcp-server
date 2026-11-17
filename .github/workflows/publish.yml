@@ -11,6 +11,7 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
+    timeout-minutes: 40 # covers the wait for npm to serve the tarball
     permissions:
       contents: write # Required for GitHub release
       id-token: write # Required for npm provenance and MCP registry OIDC
@@ -19,7 +20,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v6
 
-      - uses: pnpm/action-setup@v6
+      - uses: pnpm/action-setup@v6.1.0
         name: Install pnpm
         with:
           run_install: false
@@ -38,7 +39,7 @@ jobs:
         run: pnpm check:versions
 
       - name: Run validation pipeline
-        run: pnpm run validate
+        run: pnpm run ci
 
       - name: Update npm
         run: npm install -g npm@latest
