@@ -21,6 +21,7 @@
   },
   "scripts": {
     "validate": "ts-builds validate",
+    "ci": "ts-builds ci",
     "format": "ts-builds format",
     "format:check": "ts-builds format:check",
     "lint": "ts-builds lint",
@@ -33,7 +34,7 @@
     "dev": "ts-builds dev",
     "serve:test": "tsx src/index.ts",
     "serve:test:http": "tsx src/index.ts --transport http",
-    "prepublishOnly": "pnpm validate"
+    "prepublishOnly": "pnpm run ci"
   },
   "dependencies": {
     "commander": "^15.1.0",

@@ -12,6 +12,7 @@ All commands delegate to `ts-builds` for consistency:
 
 ```bash
 pnpm validate        # Main command: format + lint + test + build (use before commits)
+pnpm run ci          # What CI and publish run: validate's steps, checking format and lint without fixing
 
 pnpm format          # Format code with Prettier
 pnpm lint            # Fix ESLint issues
@@ -101,7 +102,7 @@ src/
 - **Formatted responses**: FAERS codes are decoded from tables in `drug-handlers.ts` (sex, age unit, reaction outcome); an unknown code stays visible. An adverse event shows its first 3 drugs and reactions, plus up to 10 later ones that match the search, with `drugCount` and `reactionCount` for the totals. Matching compares whole words with punctuation read as a space, as openFDA does (`searchWords`), so `co-codamol` finds `CO CODAMOL`. Text cut short goes through `clipText`/`clipFields` in `query.ts`, so the record's `truncated` names the cut fields; the label tool's `fullText` turns cutting off. A label `drugName` matches `openfda.brand_name` or `openfda.generic_name` (`anyFieldQuery`)
 - **Zod Schemas**: All tool parameters validated with Zod
 - **Rate Limiting**: `getRateLimitInfo` reports openFDA's published limits: 240/minute and 1,000/day per IP without a key, 240/minute and 120,000/day per key
-- **Error Handling**: Clients return `Either<Error, T>` (functype) instead of throwing; handlers `fold` it into `FDAToolResponse<T>` with success/error status. Lint runs over `src/` and `test/` with `--max-warnings=0`, since ts-builds' built-in lint covers `srcDir` only and fails only on errors. The ESLint command lives once, in the `commands` override in `ts-builds.config.json`; `pnpm lint`, `pnpm lint:check` and `pnpm validate` all run it through ts-builds (4.3.0+ honours the override when a step is called directly), so the functype rules (`prefer-try`, `prefer-option`, `prefer-either`) are enforced; the functype ESLint config relaxes the ones that misread tests. `tsconfig.json` includes `test/`, so `pnpm typecheck` checks tests too
+- **Error Handling**: Clients return `Either<Error, T>` (functype) instead of throwing; handlers `fold` it into `FDAToolResponse<T>` with success/error status. Lint runs over `src/` and `test/` with `--max-warnings=0`, since ts-builds' built-in lint covers `srcDir` only and fails only on errors. The ESLint command lives once, in the `commands` override in `ts-builds.config.json`; `pnpm lint`, `pnpm lint:check`, `pnpm validate` and `pnpm run ci` all run it through ts-builds (4.3.0+ honours the override when a step is called directly), so the functype rules (`prefer-try`, `prefer-option`, `prefer-either`) are enforced; the functype ESLint config relaxes the ones that misread tests. `tsconfig.json` includes `test/`, so `pnpm typecheck` checks tests too
 
 ## Environment Variables
 
@@ -120,7 +121,7 @@ pnpm test:coverage     # Coverage report
 
 ## Publishing
 
-CI publishes to npm on a `v*` tag (`.github/workflows/publish.yml`, OIDC trusted publishing). Never run `npm publish` locally.
+CI (`.github/workflows/node.js.yml`) runs `pnpm run ci` on Node 22 and 24 for every push and PR to `main`; a newer push to a PR cancels its older build. CI publishes to npm on a `v*` tag (`.github/workflows/publish.yml`, OIDC trusted publishing), after `pnpm run ci`, so a publish never rewrites files. `prepublishOnly` runs `pnpm run ci` too. Always type `pnpm run ci`: a bare `pnpm ci` is pnpm's own clean install. Never run `npm publish` locally.
 
 ```bash
 npm version patch|minor|major
