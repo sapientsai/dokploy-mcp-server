@@ -11,7 +11,7 @@ on:
 jobs:
   publish:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 40 # covers the wait for npm to serve the tarball
     permissions:
       contents: write # Required for GitHub release
       id-token: write # Required for npm provenance and MCP registry OIDC
