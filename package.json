@@ -26,6 +26,7 @@
   },
   "scripts": {
     "validate": "ts-builds validate",
+    "ci": "ts-builds ci",
     "format": "ts-builds format",
     "format:check": "ts-builds format:check",
     "lint": "ts-builds lint",
@@ -40,7 +41,7 @@
     "dev": "ts-builds dev",
     "start": "node dist/index.js",
     "inspect": "npx @modelcontextprotocol/inspector node dist/index.js",
-    "prepublishOnly": "pnpm validate"
+    "prepublishOnly": "pnpm run ci"
   },
   "dependencies": {
     "@loglayer/transport-pino": "^3.2.0",
@@ -54,7 +55,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.13.3",
-    "ts-builds": "^3.2.1",
+    "ts-builds": "^4.7.0",
     "tsdown": "^0.22.5"
   },
   "type": "module",
@@ -73,5 +74,5 @@
     "dist"
   ],
   "prettier": "ts-builds/prettier",
-  "packageManager": "pnpm@11.9.0+sha512.bd682d5d03fe525ef7c9fd6780c6884d1e756ac4c9c9fe00c538782824310dcf90e3ddc4f53835f06dfaebd5085e41855e0bcbb3b60de2ac5bbab89e5036f03b"
+  "packageManager": "pnpm@12.21.0+sha512.66fd8278ee28935ce951792d34367ff3af5c432a2756445823029533835b8da529bbe0be5130afd56ed0713fb8789e47bad82d93bd5ae2fe54b15562d6276ef0"
 }
