@@ -122,6 +122,7 @@ pnpm test           # Run tests
 pnpm lint           # Lint code
 pnpm format         # Format code
 pnpm validate       # Format + lint + test + build (pre-commit check)
+pnpm run ci         # validate's checks without fixing, as CI runs them (type `run`: `pnpm ci` is a clean install)
 pnpm inspect        # Build and launch MCP Inspector
 ```
 
