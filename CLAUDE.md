@@ -10,6 +10,7 @@ MCP (Model Context Protocol) server for the DAKboard API — manage digital dash
 
 ```bash
 pnpm validate        # Main command: format + lint + typecheck + test + build (use before commits)
+pnpm run ci          # validate's checks without fixing, as CI runs them (type `run`: `pnpm ci` is a clean install)
 pnpm format          # Format code with Prettier
 pnpm lint            # Fix ESLint issues
 pnpm test            # Run tests once
@@ -99,4 +100,4 @@ npm version patch|minor|major
 npm publish --access public
 ```
 
-The `prepublishOnly` hook automatically runs `pnpm validate` before publishing.
+The `prepublishOnly` hook automatically runs `pnpm run ci` before publishing.
