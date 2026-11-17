@@ -17,4 +17,6 @@ allowBuilds:
   tldjs: false
 
 minimumReleaseAgeExclude:
-  - functype@1.27.0
+  - "*functype*"
+  - ts-builds
+  - somamcp

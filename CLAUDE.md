@@ -11,7 +11,8 @@ Built on [somamcp](https://github.com/sapientsai/SomaMCP) `^2.6.0`, which provid
 ## Development Commands
 
 ```bash
-pnpm validate        # format + lint + typecheck + test + build + check:version + check:worker (run before commits; CI runs it)
+pnpm validate        # format + lint + typecheck + test + build + check:version + check:worker (run before commits)
+pnpm run ci          # validate's checks without fixing, as CI runs them (type `run`: `pnpm ci` is a clean install)
 pnpm test            # Vitest
 pnpm check:worker    # verify the worker bundle contains no Node built-ins
 
