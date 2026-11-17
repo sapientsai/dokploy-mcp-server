@@ -12,6 +12,7 @@ Built with **somamcp** (Node entry `somamcp/node`), **ts-builds**, and **Zod**. 
 
 ```bash
 pnpm validate        # Main command: format + lint + test + build (use before commits)
+pnpm run ci          # validate's checks without fixing, as CI runs them (type `run`: `pnpm ci` is a clean install)
 
 pnpm format          # Format code with Prettier
 pnpm format:check    # Check formatting only
@@ -140,4 +141,4 @@ npm version patch|minor|major
 npm publish --access public
 ```
 
-The `prepublishOnly` hook automatically runs `pnpm validate` before publishing.
+The `prepublishOnly` hook automatically runs `pnpm run ci` before publishing.
