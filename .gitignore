@@ -45,3 +45,5 @@ build/
 
 # Claude Code
 .claude/settings.local.json
+# ts-builds lint report sidecar
+.ts-builds

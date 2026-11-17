@@ -18,6 +18,7 @@ Commands delegate to the `ts-builds` toolchain (ESM output via tsdown).
 
 ```bash
 pnpm validate     # format + lint + typecheck + test + build (run before commits)
+pnpm run ci       # validate's checks without fixing, as CI runs them (type `run`: `pnpm ci` is a clean install)
 pnpm dev          # watch build (outputs to lib/)
 pnpm build        # production build (outputs to dist/)
 pnpm test         # vitest run
