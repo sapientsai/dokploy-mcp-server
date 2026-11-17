@@ -12,6 +12,7 @@ RescueTime MCP Server — a Model Context Protocol server providing AI assistant
 
 ```bash
 pnpm validate        # Main command: format + lint + typecheck + test + build
+pnpm run ci          # validate's checks without fixing, as CI runs them (type `run`: `pnpm ci` is a clean install)
 pnpm test            # Run tests once
 pnpm test:watch      # Run tests in watch mode
 pnpm build           # Production build (outputs to dist/)
