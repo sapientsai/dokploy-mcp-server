@@ -7,9 +7,9 @@ publicHoistPattern:
   - "*cross-env*"
 
 minimumReleaseAgeExclude:
-  - "*functype*"
   - ts-builds
   - somamcp
+  - "*functype*"
 
 overrides:
   # eslint (dev only) caps minimatch below GHSA-g3hv-75wg-m249's fix.
