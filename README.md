@@ -238,6 +238,9 @@ pnpm serve:test
 # Run full validation (format, lint, test, build)
 pnpm validate
 
+# What CI runs: the same steps, checking format and lint without fixing them
+pnpm run ci
+
 # Build for production
 pnpm build
 ```
