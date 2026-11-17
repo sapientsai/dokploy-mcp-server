@@ -444,6 +444,7 @@ System settings. `clean` uses `cleanType` — server-scoped: `all | images | vol
 pnpm install
 pnpm dev          # Development mode with watch
 pnpm validate     # Format + lint + test + build
+pnpm run ci       # validate's checks without fixing, as CI runs them (type `run`: `pnpm ci` is a clean install)
 pnpm inspect      # Open MCP Inspector
 ```
 
