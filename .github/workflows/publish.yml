@@ -94,10 +94,11 @@ jobs:
       - name: Publish to npm
         # Skipped when the tarball is already served, so a rerun after a later
         # step fails (e.g. the MCP Registry) doesn't die on "version exists".
-        # npm tries trusted publishing (OIDC) first and falls back to the token, so
-        # one step serves both: temporal uses trusted publishing, dokploy NPM_TOKEN.
-        # npm is the one bundled with the pinned Node (.nvmrc), never npm@latest:
-        # trusted publishing depends on the npm version.
+        # Every server publishes by npm trusted publishing (OIDC). npm tries it before
+        # NODE_AUTH_TOKEN, so NPM_TOKEN is only a fallback. Each package's trusted
+        # publisher must name this repo and this file. Check _npmUser.trustedPublisher
+        # after a release: a stale setting silently falls back to the token.
+        # npm is the one bundled with the pinned Node (.nvmrc), never npm@latest.
         working-directory: ${{ steps.pkg.outputs.dir }}
         env:
           NAME: ${{ steps.pkg.outputs.name }}

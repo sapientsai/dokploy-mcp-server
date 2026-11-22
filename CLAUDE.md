@@ -30,4 +30,4 @@ Import it with its history (`git subtree add --prefix servers/<name>`, fetched w
 1. Give it a `ci` script, if it has none.
 2. Set `repository.directory` and `server.json` `subfolder`.
 3. Add it to the root README's table.
-4. Move its npm trusted publisher to this repo and `publish.yml`, or note that it publishes with `NPM_TOKEN`.
+4. Move its npm trusted publisher to this repo and `publish.yml` before its first release from here. `NPM_TOKEN` is only a fallback.
