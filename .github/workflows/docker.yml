@@ -63,7 +63,10 @@ jobs:
           echo "date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
           # The version a release tag names (dokploy-mcp-server@1.2.3 -> 1.2.3), empty otherwise.
           if [[ "$GITHUB_REF" == refs/tags/dokploy-mcp-server@* ]]; then
-            echo "version=${GITHUB_REF#refs/tags/dokploy-mcp-server@}" >> "$GITHUB_OUTPUT"
+            VERSION="${GITHUB_REF#refs/tags/dokploy-mcp-server@}"
+            echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+            # latest moves only for a plain x.y.z release, never a prerelease.
+            if [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then echo "stable=true" >> "$GITHUB_OUTPUT"; fi
           fi
 
       # Build the host-arch image locally first and prove it serves MCP before
@@ -120,7 +123,7 @@ jobs:
             type=semver,pattern={{version}},value=${{ steps.args.outputs.version }},enable=${{ steps.args.outputs.version != '' }}
             type=semver,pattern={{major}}.{{minor}},value=${{ steps.args.outputs.version }},enable=${{ steps.args.outputs.version != '' }}
             type=semver,pattern={{major}},value=${{ steps.args.outputs.version }},enable=${{ steps.args.outputs.version != '' }}
-            type=raw,value=latest,enable=${{ steps.args.outputs.version != '' }}
+            type=raw,value=latest,enable=${{ steps.args.outputs.stable == 'true' }}
             type=sha
 
       - name: Build and push

@@ -38,6 +38,14 @@ execFileSync("npm", ["version", level, "--no-git-tag-version"], { cwd: dir, stdi
 const { name, version } = JSON.parse(readFileSync(manifest, "utf8"))
 const tag = `${name}@${version}`
 
+const tagged =
+  execFileSync("git", ["tag", "--list", tag], { encoding: "utf8" }).trim() !== "" ||
+  execFileSync("git", ["ls-remote", "--tags", "origin", `refs/tags/${tag}`], { encoding: "utf8" }).trim() !== ""
+if (tagged) {
+  git("checkout", "HEAD", "--", dir)
+  fail(`${tag} already exists, here or on origin; the version bump was undone`)
+}
+
 git("add", "--", dir)
 git("commit", "--quiet", "-m", `chore(release): ${tag}`)
 git("tag", "-a", tag, "-m", tag)
