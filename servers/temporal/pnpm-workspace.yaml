@@ -1,0 +1,22 @@
+# Hoist CLI tool binaries from peer dependencies.
+# pnpm 11 only reads auth/registry from .npmrc; all other settings live here.
+publicHoistPattern:
+  - "*eslint*"
+  - "*prettier*"
+  - "*vitest*"
+  - "typescript"
+  - "*rimraf*"
+  - "*cross-env*"
+
+allowBuilds:
+  # wrangler's bundler and the local Workers runtime — both need their
+  # postinstall to fetch/link the right platform binary.
+  esbuild: true
+  workerd: true
+  # Transitive; its postinstall only refreshes a public-suffix list we never use.
+  tldjs: false
+
+minimumReleaseAgeExclude:
+  - "*functype*"
+  - ts-builds
+  - somamcp
