@@ -1,3 +1,6 @@
+packages:
+  - "servers/*"
+
 allowBuilds:
   esbuild: true
   tldjs: false

@@ -1,9 +1,9 @@
 # Dokploy MCP Server — Issue Report
 
 **Package**: `dokploy-mcp-server` (npm)
-**Reporter**: Jordan Burke (SapientsAI / Civala)
+**Reporter**: Jordan Burke (SapientsAI)
 **Date**: 2026-03-12
-**Sources**: Civala cluster recovery (Feb 2026), Concord memory-mcp-server deployment (Mar 2026), ongoing operational use across two Dokploy clusters
+**Sources**: a production cluster recovery (Feb 2026), Concord memory-mcp-server deployment (Mar 2026), ongoing operational use across two Dokploy clusters
 
 ---
 
@@ -105,8 +105,8 @@ curl -s -X POST \
 
 **Observed on**:
 
-- All 7 MS MCP server Docker image deployments (Civala cluster, Feb 2026)
-- Panel MCP server Docker image deployment (Civala cluster, Feb 2026)
+- All 7 MS MCP server Docker image deployments (a production cluster, Feb 2026)
+- Panel MCP server Docker image deployment (a production cluster, Feb 2026)
 - memory-mcp-server compose deployment (Concord cluster, Mar 2026)
 
 **Workaround**: Always deploy twice. The first deploy can be treated as an initialization step.
@@ -241,7 +241,7 @@ curl -s -X POST \
 - `customGitUrl` (for `sourceType: "git"`)
 - `customGitBranch` (branch for custom git)
 
-**Impact**: The most fundamental application configuration — _where does the code come from?_ — cannot be set via the MCP tool. This is the single biggest gap. During the Civala cluster recovery, every git-built service required raw API calls for source configuration.
+**Impact**: The most fundamental application configuration — _where does the code come from?_ — cannot be set via the MCP tool. This is the single biggest gap. During a production cluster recovery, every git-built service required raw API calls for source configuration.
 
 **Workaround**: Direct `curl` calls to `application.update`:
 
@@ -262,7 +262,7 @@ curl -s -X POST \
 
 **Impact**: Cannot create or update raw/inline compose services via MCP tool. Must use direct API calls.
 
-**Context**: The Civala DDNS service used raw source type with an inline Docker Compose file. During recovery, this had to be set via `curl`.
+**Context**: A DDNS service used raw source type with an inline Docker Compose file. During recovery, this had to be set via `curl`.
 
 ---
 
@@ -302,7 +302,7 @@ docker service update --force --image ghcr.io/org/image:main <swarm-service-name
 **Severity**: High (for operations)
 **Description**: When an application is deleted from Dokploy, the Traefik dynamic configuration YAML files remain in `/etc/dokploy/traefik/dynamic/` inside the `dokploy-traefik` container. If a new application is created with the same domain, the stale config causes Traefik to route traffic to the dead service instead of the new one, resulting in Bad Gateway errors.
 
-**Impact**: After any delete + recreate cycle, stale Traefik configs must be manually cleaned up via SSH. During the Civala post-recovery cleanup (Mar 8, 2026), 13 orphan services and their stale Traefik configs caused 403 errors and `[object Object]` responses on multiple production services.
+**Impact**: After any delete + recreate cycle, stale Traefik configs must be manually cleaned up via SSH. During a post-recovery cleanup (Mar 8, 2026), 13 orphan services and their stale Traefik configs caused 403 errors and `[object Object]` responses on multiple production services.
 
 **Workaround**: SSH into the Traefik container and remove stale YAML files:
 
