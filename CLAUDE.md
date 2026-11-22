@@ -63,9 +63,9 @@ Both entry points pick it up automatically — never register a tool in `node.ts
 
 Live at **`https://time.somamcp.com/mcp`** (custom domain on the `temporal-mcp-server` Worker); the `*.workers.dev` URL still resolves. Health: `https://time.somamcp.com/health`.
 
-Deploys go through **Cloudflare Workers Builds**, not GitHub Actions. Cloudflare connects to the repo via its own GitHub App, so there is no `CLOUDFLARE_API_TOKEN` in GitHub secrets — do not add one, and do not add a deploy workflow alongside it. Two paths deploying the same Worker is worse than either alone.
+**This repo no longer deploys it.** Since 2026-11-22, Cloudflare Workers Builds deploys the `temporal-mcp-server` Worker from `sapientsai/somamcp-hosted` (`workers/temporal`), which installs this package from npm. A change here reaches the live server after an npm release and a version bump there. Don't add a deploy workflow or a `CLOUDFLARE_API_TOKEN` here: two paths deploying the same Worker is worse than either alone.
 
-The dashboard's deploy command is `pnpm cf:deploy`, which is `pnpm build && wrangler deploy`. `pnpm build` runs `check:worker`, so the edge-safety gate lives in the repo rather than in a dashboard field. Keep it that way: if the deploy needs a new gate, add it to the `build` or `cf:deploy` script, not to the Cloudflare UI.
+`pnpm cf:deploy` deploys a Worker with the live one's name, so running it on that account replaces the public instance. Use it only for a copy under another `name`.
 
 `cf:deploy` is `pnpm build && node scripts/deploy.mjs`. The script forwards `GIT_COMMIT`, `GIT_BRANCH`, and `BUILD_DATE` as Worker vars — Workers Builds' own `WORKERS_CI_*` variables exist only during the build and are invisible at runtime, so without forwarding them `info` reports an empty build. Local deploys fall back to `git rev-parse` and mark a dirty tree as `<sha>-dirty`.
 
