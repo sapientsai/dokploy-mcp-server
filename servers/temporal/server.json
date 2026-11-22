@@ -3,8 +3,9 @@
   "name": "io.github.jordanburke/temporal-mcp-server",
   "description": "Time, timezone and duration tools — IANA zones, conversion, DST-correct date arithmetic.",
   "repository": {
-    "url": "https://github.com/jordanburke/temporal-mcp-server",
-    "source": "github"
+    "url": "https://github.com/sapientsai/mcp-servers",
+    "source": "github",
+    "subfolder": "servers/temporal"
   },
   "version": "0.3.1",
   "packages": [

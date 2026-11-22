@@ -3,6 +3,8 @@ packages:
 
 allowBuilds:
   esbuild: true
+  # temporal: wrangler's local Workers runtime links its platform binary on install.
+  workerd: true
   tldjs: false
 
 # @redocly/openapi-core (via openapi-typescript) pins js-yaml to exactly 4.3.0,

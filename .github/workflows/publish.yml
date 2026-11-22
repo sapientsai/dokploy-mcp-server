@@ -85,9 +85,6 @@ jobs:
         working-directory: ${{ steps.pkg.outputs.dir }}
         run: pnpm run ci
 
-      - name: Update npm
-        run: npm install -g npm@latest
-
       - name: Verify package contents
         working-directory: ${{ steps.pkg.outputs.dir }}
         run: |
@@ -97,8 +94,10 @@ jobs:
       - name: Publish to npm
         # Skipped when the tarball is already served, so a rerun after a later
         # step fails (e.g. the MCP Registry) doesn't die on "version exists".
-        # dokploy publishes with NPM_TOKEN. A server that publishes by npm trusted
-        # publishing (OIDC) must not get the token: scope this when one is added.
+        # npm tries trusted publishing (OIDC) first and falls back to the token, so
+        # one step serves both: temporal uses trusted publishing, dokploy NPM_TOKEN.
+        # npm is the one bundled with the pinned Node (.nvmrc), never npm@latest:
+        # trusted publishing depends on the npm version.
         working-directory: ${{ steps.pkg.outputs.dir }}
         env:
           NAME: ${{ steps.pkg.outputs.name }}
