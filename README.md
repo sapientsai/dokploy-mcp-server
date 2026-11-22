@@ -156,21 +156,11 @@ pnpm cf:deploy      # build + edge-safety check + deploy
 
 `cf:deploy` runs `pnpm build` first, which includes `check:worker` — so a bundle carrying a Node built-in fails before anything reaches Cloudflare.
 
-### Continuous deployment
+### The public instance
 
-Deploys run through **Cloudflare Workers Builds** rather than GitHub Actions, so no Cloudflare API token is stored in GitHub at all — Cloudflare connects to the repo through its own GitHub App.
+The public instance at `time.somamcp.com` is no longer deployed from this repo. It is hosted from [sapientsai/somamcp-hosted](https://github.com/sapientsai/somamcp-hosted) (`workers/temporal`), which installs this package from npm and deploys it through Cloudflare Workers Builds. A change here reaches it after an npm release and a version bump there.
 
-Set it up once in the dashboard (Workers & Pages → `temporal-mcp-server` → Settings → Build):
-
-| Field          | Value                                |
-| -------------- | ------------------------------------ |
-| Deploy command | `pnpm cf:deploy`                     |
-| Build command  | _(leave empty — `cf:deploy` builds)_ |
-| Root directory | _(repo root)_                        |
-
-Pointing the deploy command at a package script keeps the gating logic in version control; the dashboard holds one stable line. The Worker name in the dashboard must match `name` in `wrangler.jsonc` (`temporal-mcp-server`), or the build fails.
-
-The build image ships pnpm and honours `.nvmrc` (ours pins Node 24). Non-production branches default to `npx wrangler versions upload`, so branch pushes produce preview versions without touching the live deployment.
+`pnpm cf:deploy` still works for running your own copy. It deploys a Worker named `temporal-mcp-server`, the name in `wrangler.jsonc`, so on the account that hosts the public instance it would replace that instance. Change `name` first, or use `pnpm cf:dev`.
 
 The MCP endpoint is at `/mcp`. To require a bearer token:
 
