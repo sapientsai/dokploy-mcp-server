@@ -9,7 +9,9 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  # Pinned, not ${{ github.repository }}: the repo is becoming a monorepo under another
+  # name, and the image users pull must keep this path.
+  IMAGE_NAME: sapientsai/dokploy-mcp-server
 
 # A newer push to a pull request cancels the build it supersedes. A push to main gets a group of its own,
 # because GitHub cancels a waiting run when a newer one joins its group, even with cancel-in-progress off.
