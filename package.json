@@ -1,94 +1,27 @@
 {
-  "name": "dokploy-mcp-server",
-  "version": "1.11.2",
-  "mcpName": "io.github.sapientsai/dokploy-mcp-server",
-  "description": "A comprehensive Model Context Protocol (MCP) server for Dokploy - deploy apps, manage containers, databases, domains, and servers.",
-  "keywords": [
-    "mcp",
-    "dokploy",
-    "devops",
-    "deployment",
-    "docker",
-    "model-context-protocol",
-    "claude",
-    "ai-assistant",
-    "fastmcp",
-    "self-hosted",
-    "paas"
-  ],
-  "author": "Jordan Burke <jordan.burke@gmail.com>",
+  "name": "mcp-servers",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Small MCP servers built on somamcp, one package per server under servers/.",
   "license": "MIT",
-  "homepage": "https://github.com/sapientsai/mcp-servers#readme",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/sapientsai/mcp-servers.git"
   },
-  "bugs": {
-    "url": "https://github.com/sapientsai/mcp-servers/issues"
-  },
-  "type": "module",
-  "main": "./dist/index.js",
-  "module": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
-    }
-  },
-  "bin": {
-    "dokploy-mcp-server": "dist/bin.js"
-  },
-  "files": [
-    "dist/",
-    "README.md",
-    "LICENSE"
-  ],
   "scripts": {
-    "validate": "pnpm check:versions && pnpm check:readme && ts-builds validate && pnpm smoke",
-    "ci": "pnpm check:versions && pnpm check:readme && ts-builds ci && pnpm smoke",
-    "format": "ts-builds format",
-    "format:check": "ts-builds format:check",
-    "lint": "ts-builds lint",
-    "lint:check": "ts-builds lint:check",
-    "typecheck": "ts-builds typecheck",
-    "test": "ts-builds test",
-    "test:watch": "ts-builds test:watch",
-    "test:coverage": "ts-builds test:coverage",
-    "build": "NODE_ENV=production ts-builds build",
-    "dev": "ts-builds dev",
-    "check:versions": "tsx scripts/check-versions.ts",
-    "check:readme": "tsx scripts/check-readme.ts",
-    "smoke": "tsx scripts/smoke-stdio.ts",
-    "sync:versions": "tsx scripts/sync-versions.ts",
-    "version": "pnpm sync:versions",
-    "prepublishOnly": "pnpm check:versions && pnpm run ci",
-    "inspect": "pnpm build && npx @modelcontextprotocol/inspector dist/index.js",
-    "start": "pnpm build && node dist/bin.js",
-    "serve": "pnpm build && node dist/index.js",
-    "openapi:fetch": "tsx scripts/fetch-openapi.ts",
-    "openapi:generate": "openapi-typescript openapi.json -o src/generated/dokploy-api.ts --export-type -t",
-    "openapi:update": "pnpm openapi:fetch && pnpm openapi:generate && pnpm format"
-  },
-  "prettier": "ts-builds/prettier",
-  "dependencies": {
-    "@loglayer/transport-pino": "^3.3.0",
-    "dotenv": "^18.0.10",
-    "functype": "^1.27.0",
-    "functype-log": "^1.27.0",
-    "loglayer": "^9.4.0",
-    "pino": "^10.4.0",
-    "somamcp": "^2.8.0",
-    "zod": "^4.6.7"
+    "validate": "pnpm run format:root && pnpm -r validate",
+    "ci": "pnpm run format:root:check && pnpm -r run ci",
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "typecheck": "pnpm -r typecheck",
+    "format:root": "prettier --write README.md CLAUDE.md package.json pnpm-workspace.yaml .github scripts",
+    "format:root:check": "prettier --check README.md CLAUDE.md package.json pnpm-workspace.yaml .github scripts",
+    "release": "node scripts/release.mjs"
   },
   "devDependencies": {
-    "@types/node": "^26.6.6",
-    "openapi-typescript": "^7.13.0",
-    "ts-builds": "^4.7.0",
-    "tsdown": "^0.23.7",
-    "tsx": "^4.23.15",
-    "vitest": "^5.1.0"
+    "ts-builds": "^4.7.0"
   },
+  "prettier": "ts-builds/prettier",
   "packageManager": "pnpm@12.21.0+sha512.66fd8278ee28935ce951792d34367ff3af5c432a2756445823029533835b8da529bbe0be5130afd56ed0713fb8789e47bad82d93bd5ae2fe54b15562d6276ef0"
 }

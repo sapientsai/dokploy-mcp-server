@@ -1,21 +1,27 @@
+# The build context is the repo root; each server's Dockerfile copies only what it needs.
+
 # Dependencies and build output (rebuilt in the container)
-node_modules/
-dist/
-coverage/
+**/node_modules/
+**/dist/
+**/coverage/
+.ts-builds/
 
 # Secrets
-.env
-.env.*
+**/.env
+**/.env.*
 
 # Raw API spec dumps; the generated types in src/generated are what the build uses
-openapi.json
-scratch.json
+**/openapi.json
+**/scratch.json
 
 # Not needed to build
 .git/
 .github/
 .idea/
 .vscode/
-test/
-*.md
-!README.md
+.claude/
+.claude-plugin/
+mcp-publisher
+**/test/
+**/*.md
+!servers/*/README.md

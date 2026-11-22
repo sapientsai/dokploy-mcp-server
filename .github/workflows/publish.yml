@@ -1,12 +1,22 @@
 name: Publish to NPM and MCP Registry
 
+# One workflow for every server. Its file name is part of npm trusted publishing's
+# config for each package, so it must keep this name.
+#
+# A release is the tag <package name>@<version>, which `pnpm release` makes: for
+# example dokploy-mcp-server@1.11.3. The tag names the package; its folder is the one
+# under servers/ whose package.json has that name.
 on:
   push:
     tags:
-      - "v*" # Triggers on version tags like v1.0.0
-  # Manual run from main re-publishes the current package.json version: npm is
-  # skipped if already published, and the release step needs a tag so it skips.
+      - "*@*"
+  # A manual run re-publishes one server's current version: npm is skipped if it's
+  # already served, and the GitHub release step needs a tag, so it skips.
   workflow_dispatch:
+    inputs:
+      package:
+        description: "Package name, e.g. dokploy-mcp-server"
+        required: true
 
 jobs:
   publish:
@@ -19,6 +29,42 @@ jobs:
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
+
+      - name: Find the package
+        id: pkg
+        env:
+          INPUT_PACKAGE: ${{ inputs.package }}
+        run: |
+          if [[ "$GITHUB_REF" == refs/tags/* ]]; then
+            TAG="${GITHUB_REF#refs/tags/}"
+            NAME="${TAG%@*}"
+            TAG_VERSION="${TAG##*@}"
+            if [ -z "$NAME" ] || [ -z "$TAG_VERSION" ]; then
+              echo "::error::tag $TAG isn't <package>@<version>"
+              exit 1
+            fi
+          else
+            NAME="$INPUT_PACKAGE"
+            TAG_VERSION=""
+          fi
+          DIR=$(node -e '
+            const fs = require("fs")
+            const name = process.argv[1]
+            const hit = fs.readdirSync("servers").find((d) => {
+              try { return JSON.parse(fs.readFileSync(`servers/${d}/package.json`, "utf8")).name === name } catch { return false }
+            })
+            if (!hit) { console.error(`no package named ${name} under servers/`); process.exit(1) }
+            console.log(`servers/${hit}`)
+          ' "$NAME") || exit 1
+          VERSION=$(node -p "require('./$DIR/package.json').version")
+          if [ -n "$TAG_VERSION" ] && [ "$TAG_VERSION" != "$VERSION" ]; then
+            echo "::error::tag says $TAG_VERSION but $DIR/package.json says $VERSION"
+            exit 1
+          fi
+          echo "name=$NAME" >> "$GITHUB_OUTPUT"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "dir=$DIR" >> "$GITHUB_OUTPUT"
+          echo "Publishing $NAME@$VERSION from $DIR"
 
       - uses: pnpm/action-setup@v6.1.0
         name: Install pnpm
@@ -33,18 +79,17 @@ jobs:
           cache: "pnpm"
 
       - name: Install dependencies
-        run: pnpm install
+        run: pnpm install --frozen-lockfile
 
-      - name: Check version consistency across package.json / server.json
-        run: pnpm check:versions
-
-      - name: Run validation pipeline
+      - name: Run the package's CI
+        working-directory: ${{ steps.pkg.outputs.dir }}
         run: pnpm run ci
 
       - name: Update npm
         run: npm install -g npm@latest
 
       - name: Verify package contents
+        working-directory: ${{ steps.pkg.outputs.dir }}
         run: |
           echo "Files to be published:"
           npm pack --dry-run
@@ -52,26 +97,37 @@ jobs:
       - name: Publish to npm
         # Skipped when the tarball is already served, so a rerun after a later
         # step fails (e.g. the MCP Registry) doesn't die on "version exists".
+        # dokploy publishes with NPM_TOKEN. A server that publishes by npm trusted
+        # publishing (OIDC) must not get the token: scope this when one is added.
+        working-directory: ${{ steps.pkg.outputs.dir }}
+        env:
+          NAME: ${{ steps.pkg.outputs.name }}
+          VERSION: ${{ steps.pkg.outputs.version }}
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
         run: |
-          NAME=$(node -p "require('./package.json').name")
-          VERSION=$(node -p "require('./package.json').version")
           if curl -sfI "https://registry.npmjs.org/$NAME/-/$NAME-$VERSION.tgz" > /dev/null; then
             echo "$NAME@$VERSION tarball already on npm; skipping publish"
           else
             npm publish --provenance --access public
           fi
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v3
         with:
+          name: ${{ steps.pkg.outputs.name }} ${{ steps.pkg.outputs.version }}
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Check for server.json
+        id: registry
+        working-directory: ${{ steps.pkg.outputs.dir }}
+        run: |
+          if [ -f server.json ]; then echo "listed=true" >> "$GITHUB_OUTPUT"; else echo "listed=false" >> "$GITHUB_OUTPUT"; fi
+
       - name: Install MCP Publisher
+        if: steps.registry.outputs.listed == 'true'
         # v1.7.6+ required: registry binds the GitHub OIDC token exchange to a
         # per-deployment audience (https://registry.modelcontextprotocol.io)
         # rather than the legacy "mcp-registry" string. Older publisher
@@ -83,12 +139,14 @@ jobs:
           chmod +x ./mcp-publisher
 
       - name: Wait for npm to serve the tarball
+        if: steps.registry.outputs.listed == 'true'
         # npm writes version metadata before the tarball, and the MCP Registry
         # rejects a version npm doesn't serve yet. 1.10.0 lost this race by
         # seconds; the tarball took ~6 minutes to appear.
+        env:
+          NAME: ${{ steps.pkg.outputs.name }}
+          VERSION: ${{ steps.pkg.outputs.version }}
         run: |
-          NAME=$(node -p "require('./package.json').name")
-          VERSION=$(node -p "require('./package.json').version")
           URL="https://registry.npmjs.org/$NAME/-/$NAME-$VERSION.tgz"
           for i in $(seq 1 60); do
             if curl -sfI "$URL" > /dev/null; then
@@ -102,7 +160,10 @@ jobs:
           exit 1
 
       - name: Login to MCP Registry
+        if: steps.registry.outputs.listed == 'true'
         run: ./mcp-publisher login github-oidc
 
       - name: Publish to MCP Registry
-        run: ./mcp-publisher publish
+        if: steps.registry.outputs.listed == 'true'
+        working-directory: ${{ steps.pkg.outputs.dir }}
+        run: "$GITHUB_WORKSPACE/mcp-publisher publish"

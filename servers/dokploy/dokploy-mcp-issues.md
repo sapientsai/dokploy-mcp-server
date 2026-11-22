@@ -241,7 +241,7 @@ curl -s -X POST \
 - `customGitUrl` (for `sourceType: "git"`)
 - `customGitBranch` (branch for custom git)
 
-**Impact**: The most fundamental application configuration — _where does the code come from?_ — cannot be set via the MCP tool. This is the single biggest gap. During the a production cluster recovery, every git-built service required raw API calls for source configuration.
+**Impact**: The most fundamental application configuration — _where does the code come from?_ — cannot be set via the MCP tool. This is the single biggest gap. During a production cluster recovery, every git-built service required raw API calls for source configuration.
 
 **Workaround**: Direct `curl` calls to `application.update`:
 
