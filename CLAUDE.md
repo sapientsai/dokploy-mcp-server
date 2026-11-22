@@ -1,144 +1,33 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+A pnpm workspace of small MCP servers built on somamcp. Each server is one npm package under `servers/<name>`, with its own CLAUDE.md, README, version and releases. Read the server's CLAUDE.md before working in it.
 
-## Project Overview
+## Layout
 
-A comprehensive MCP (Model Context Protocol) server for [Dokploy](https://dokploy.com/) - the open-source, self-hosted PaaS. Provides **27 tools** (one per category, using action enums) for managing deployments, applications, databases, domains, and servers through AI assistants.
+- `servers/<name>/`: one server. It keeps its own `package.json`, config, tests, `server.json` (if listed in the MCP Registry) and `LICENSE` (npm packs it from the package folder).
+- Root: the workspace (`pnpm-workspace.yaml`), the one lockfile, shared CI, and `scripts/release.mjs`.
 
-Built with **somamcp** (Node entry `somamcp/node`), **ts-builds**, and **Zod**. Supports stdio (default for npx/CLI) and httpStream (for Docker/remote) transports.
+## Rules
 
-## Development Commands
+- **Stay in the server you were asked to change.** A change to one server must not touch another's files. Shared changes (root config, the lockfile, workflows) get their own PR.
+- **One lockfile.** Install from the root. A dependency bump for every server is one PR at the root, not one per server.
+- **Releases are per server, by tag.** `pnpm release <server> <patch|minor|major>` bumps, commits and tags `<package>@<version>`; `git push --follow-tags` publishes that package alone through `.github/workflows/publish.yml`. Never `npm publish` by hand, and never rename `publish.yml`: npm trusted publishing is configured against that file name.
+- **Docker images are per server.** A server with a container image has its own workflow, filtered by its path and triggered by its own tag. Its Dockerfile builds from the repo root (`docker build -f servers/<name>/Dockerfile .`).
+- **Keep each package's identity.** A server keeps its npm name, `mcpName` and image name when it moves in. Its `package.json` `repository` has `"directory": "servers/<name>"`, and its `server.json` `repository` has `"subfolder": "servers/<name>"`.
 
-```bash
-pnpm validate        # Main command: format + lint + test + build (use before commits)
-pnpm run ci          # validate's checks without fixing, as CI runs them (type `run`: `pnpm ci` is a clean install)
-
-pnpm format          # Format code with Prettier
-pnpm format:check    # Check formatting only
-
-pnpm lint            # Fix ESLint issues
-pnpm lint:check      # Check ESLint issues only
-
-pnpm test            # Run tests once
-pnpm test:watch      # Run tests in watch mode
-pnpm test:coverage   # Run tests with coverage
-
-pnpm build           # Production build (outputs to dist/)
-pnpm dev             # Development build with watch mode
-
-pnpm typecheck       # Check TypeScript types
-
-pnpm inspect         # Build + open MCP Inspector to verify tools
-```
-
-### Running a Single Test
+## Commands
 
 ```bash
-pnpm test -- --testNamePattern="pattern"    # Filter by test name
-pnpm test -- test/specific.spec.ts          # Run specific file
+pnpm install       # at the root
+pnpm run ci        # every server's ci, plus the root format check
+pnpm validate      # the same, fixing what it can
 ```
 
-## Architecture
+## Adding a server
 
-### Project Structure
+Import it with its history (`git subtree add --prefix servers/<name>`, fetched with `--no-tags`, so its old `v*` tags don't land here). Then:
 
-```
-src/
-├── index.ts                    # somamcp server setup, tool registration, transport config
-├── bin.ts                      # CLI entry point (stdio default, --version, --help)
-├── client/
-│   ├── dokploy-client.ts       # API client (singleton, x-api-key auth, GET/POST)
-│   └── errors.ts               # ApiError types, ValidationError, formatApiError
-├── generated/                  # Generated from openapi.json — do not hand-edit
-│   ├── dokploy-api.ts          # openapi-typescript output (pnpm openapi:generate)
-│   ├── helpers.ts              # RequestBody<T> / QueryParams<T> extractors
-│   └── index.ts                # Re-exports the generated types
-├── tools/
-│   ├── index.ts                     # Re-exports all tool registration functions
-│   ├── types.ts                     # ToolServer — narrowed SomaServerInstance
-│   ├── tool-utils.ts                # pickDefined, env merge/mask helpers, jsonSection
-│   ├── project-tools.ts             # 1 tool (6 actions) - CRUD + duplicate
-│   ├── application-tools.ts         # 1 tool (24 actions) - full app lifecycle + search + nginx quickstart
-│   ├── compose-tools.ts             # 1 tool (21 actions) - Docker Compose management + search
-│   ├── deployment-tools.ts          # 1 tool (5 actions) - list, queueList, killProcess, readLogs, remove
-│   ├── docker-tools.ts              # 1 tool (17 actions) - containers, container files, events, health, disk usage
-│   ├── docker-volume-tools.ts       # 1 tool (8 actions) - volumes + files inside them
-│   ├── docker-image-tools.ts        # 1 tool (3 actions) - image inventory
-│   ├── network-tools.ts             # 1 tool (9 actions) - Docker networks + host import/resync
-│   ├── overview-tools.ts            # 1 tool (3 actions) - fleet-wide rollups (read-only)
-│   ├── dns-provider-tools.ts        # 1 tool (11 actions) - DNS providers + zone/record CRUD
-│   ├── vault-provider-tools.ts      # 1 tool (7 actions) - external secret managers; names never values
-│   ├── domain-tools.ts              # 1 tool (9 actions) - domain/DNS management
-│   ├── redirects-tools.ts           # 1 tool (4 actions) - URL redirect rules on applications
-│   ├── server-tools.ts              # 1 tool (9 actions) - remote server management + services on a server
-│   ├── settings-tools.ts            # 1 tool (5 actions) - health, version, cleanup, reload
-│   ├── database-tools.ts            # 1 tool (17 actions) - unified DB management + search
-│   ├── backup-tools.ts              # 1 tool (6 actions) - DB backup scheduling/triggers
-│   ├── volume-backup-tools.ts       # 1 tool (6 actions) - volume-level backup schedules
-│   ├── preview-deployment-tools.ts  # 1 tool (4 actions) - PR/branch preview deploys
-│   ├── schedule-tools.ts            # 1 tool (6 actions) - cron on app/compose/server/dokploy
-│   ├── audit-log-tools.ts           # 1 tool (1 action)  - audit log query with filters
-│   ├── environment-tools.ts         # 1 tool (6 actions) - project environments
-│   ├── infrastructure-tools.ts      # 1 tool (8 actions) - ports, certs, basic auth
-│   ├── mounts-tools.ts              # 1 tool (6 actions) - volume / bind / file mounts
-│   ├── ssh-key-tools.ts             # 1 tool (6 actions) - SSH key management
-│   ├── registry-tools.ts            # 1 tool (7 actions) - container registries
-│   └── destination-tools.ts         # 1 tool (6 actions) - S3-compatible backup destinations
-├── types.ts                    # TypeScript types + DB type constants
-└── utils/
-    └── formatters.ts           # Markdown output formatters
-```
-
-### Key Design Patterns
-
-1. **One tool per category**: Each category is a single tool with an `action` enum parameter. All other params are optional, used based on the action. This minimizes token usage while preserving full API coverage.
-
-2. **tRPC-style API client**: Two methods matching Dokploy's API pattern:
-   - `get<T>(path, params?)` → `GET /api/{path}?params` with `x-api-key` header
-   - `post<T>(path, body?)` → `POST /api/{path}` with JSON body and `x-api-key` header
-
-3. **Tool modules**: Each `*-tools.ts` exports a `register(server: ToolServer)` function that registers one tool for that category. All registered in `src/index.ts`.
-
-4. **Tool naming**: `dokploy_{category}` with `action` param (e.g., `dokploy_application` action=`deploy`, `dokploy_database` action=`start`)
-
-### Build System: ts-builds + tsdown
-
-- **ts-builds**: Centralized toolchain providing all build scripts
-- **tsdown**: Bundler with custom config for dual entry points (index + bin)
-- **Version injection**: `__VERSION__` defined at build time from package.json
-- **ESM-only output**: `dist/index.js` and `dist/bin.js`
-- **TypeScript**: `tsconfig.json` extends `ts-builds/tsconfig`
-- **Prettier**: Uses `ts-builds/prettier` shared config
-
-### Environment Variables
-
-- `DOKPLOY_URL` (required) - Dokploy instance URL
-- `DOKPLOY_API_KEY` (required) - API key for authentication
-- `TRANSPORT_TYPE` (optional) - `stdio` (default) or `httpStream`
-- `PORT` (optional) - HTTP port for httpStream mode (default: 3000)
-- `HOST` (optional) - HTTP host for httpStream mode (default: 0.0.0.0)
-
-## Key Files
-
-- `src/index.ts` - Server entry point, registers all 27 tool modules
-- `src/bin.ts` - CLI entry point (`npx dokploy-mcp-server`)
-- `src/client/dokploy-client.ts` - Dokploy API client with GET/POST
-- `src/types.ts` - All TypeScript types + `DB_TYPES` / `DB_ID_FIELDS` constants
-- `src/tools/*.ts` - Tool modules (one per API category)
-- `src/utils/formatters.ts` - Markdown formatters for API responses
-- `test/*.spec.ts` - One spec per tool module, plus client, types, and formatters
-- `test/support/tool-harness.ts` - `captureTool` — drives a register fn with a fake server
-- `scripts/check-readme.ts` - Fails `validate` when README action lists drift from ACTIONS
-- `openapi.json` / `scratch.json` - Fetched API spec dumps; Prettier-ignored to keep diffs readable
-- `tsdown.config.ts` - Custom build config (dual entry, version injection)
-- `.env.example` - Environment variable reference
-
-## Publishing
-
-```bash
-npm version patch|minor|major
-npm publish --access public
-```
-
-The `prepublishOnly` hook automatically runs `pnpm run ci` before publishing.
+1. Give it a `ci` script, if it has none.
+2. Set `repository.directory` and `server.json` `subfolder`.
+3. Add it to the root README's table.
+4. Move its npm trusted publisher to this repo and `publish.yml`, or note that it publishes with `NPM_TOKEN`.

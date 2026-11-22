@@ -4,6 +4,7 @@
   "description": "Dokploy MCP server: manage apps, Docker Compose, databases, domains, backups, and servers.",
   "repository": {
     "url": "https://github.com/sapientsai/mcp-servers",
+    "subfolder": "servers/dokploy",
     "source": "github"
   },
   "version": "1.11.2",

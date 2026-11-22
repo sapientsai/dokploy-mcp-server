@@ -6,11 +6,14 @@ RUN corepack enable
 
 WORKDIR /app
 
+# Built from the repo root (docker build -f servers/dokploy/Dockerfile .): the
+# lockfile and workspace settings live there, and only this server is installed.
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
-RUN pnpm install --frozen-lockfile
+COPY servers/dokploy/package.json servers/dokploy/
+RUN pnpm install --frozen-lockfile --filter dokploy-mcp-server
 
-COPY . .
-RUN pnpm build
+COPY servers/dokploy servers/dokploy
+RUN pnpm --filter dokploy-mcp-server build
 
 # Production stage
 FROM node:24.21.0-alpine AS production
@@ -20,9 +23,12 @@ RUN corepack enable
 WORKDIR /app
 
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
-RUN pnpm install --frozen-lockfile --prod --ignore-scripts && pnpm store prune
+COPY servers/dokploy/package.json servers/dokploy/
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts --filter dokploy-mcp-server && pnpm store prune
 
-COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/servers/dokploy/dist ./servers/dokploy/dist
+
+WORKDIR /app/servers/dokploy
 
 # The build has no .git, so the `info` tool reads build identity from these instead.
 ARG BUILD_COMMIT
