@@ -33,7 +33,7 @@ Cannot read properties of undefined (reading 'toLowerCase')
 ### 1.2 `dokploy_ssh_key` actions broken — organizationId not resolved
 
 **Severity**: Critical
-**GitHub Issue**: [#4](https://github.com/sapientsai/dokploy-mcp-server/issues/4) (already filed)
+**GitHub Issue**: [#4](https://github.com/sapientsai/mcp-servers/issues/4) (already filed)
 
 **Description**: All SSH key operations fail when authenticating via API key. The MCP tool cannot resolve `organizationId` from API key auth, which is required by the underlying Dokploy tRPC endpoints.
 
