@@ -3,9 +3,11 @@
   "name": "temporal-mcp-server",
   "main": "src/worker.ts",
   "compatibility_date": "2026-08-17",
-  // The worker uses only web-standard APIs. nodejs_compat is deliberately NOT
-  // enabled — if a Node built-in ever reaches the bundle, the build should fail
-  // loudly rather than be papered over by a compatibility shim.
+  // The worker uses only web-standard APIs. From 2026-08-04, Cloudflare turns Node
+  // compatibility on by default, so it is turned off here: if a Node built-in ever
+  // reaches the bundle, the deploy should fail loudly rather than be papered over
+  // by a compatibility shim.
+  "compatibility_flags": ["no_nodejs_compat", "no_nodejs_compat_v2"],
   "observability": { "enabled": true },
   "vars": {
     "ENVIRONMENT": "production",
