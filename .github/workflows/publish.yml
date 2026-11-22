@@ -51,7 +51,7 @@ jobs:
             })
             if (!hit) { console.error(`no package named ${name} under servers/`); process.exit(1) }
             console.log(`servers/${hit}`)
-          ' "$NAME")
+          ' "$NAME") || exit 1
           VERSION=$(node -p "require('./$DIR/package.json').version")
           if [ -n "$TAG_VERSION" ] && [ "$TAG_VERSION" != "$VERSION" ]; then
             echo "::error::tag says $TAG_VERSION but $DIR/package.json says $VERSION"
