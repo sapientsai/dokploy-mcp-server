@@ -79,10 +79,11 @@ On macOS that file lives at `~/Library/Application Support/Claude/claude_desktop
 
 ### Running from a clone
 
-If you'd rather not go through npm:
+If you'd rather not go through npm, clone [sapientsai/mcp-servers](https://github.com/sapientsai/mcp-servers), where this server is `servers/temporal`:
 
 ```bash
-pnpm install
+pnpm install        # at the repo root
+cd servers/temporal
 pnpm build
 pnpm start          # stdio
 ```
@@ -225,6 +226,8 @@ src/
 Failures are values. Every fallible function in `clock.ts` returns `Either<TemporalError, T>`; the tool layer folds a `Left` into an MCP error result. Nothing depends on stack unwinding, which is what lets the same logic run unchanged on both runtimes.
 
 ## Development
+
+Run these in `servers/temporal`, after `pnpm install` at the repo root.
 
 ```bash
 pnpm validate       # format + lint + typecheck + test + build + version and worker checks

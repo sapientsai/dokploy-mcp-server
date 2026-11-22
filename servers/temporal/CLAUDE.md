@@ -69,7 +69,7 @@ Live at **`https://time.somamcp.com/mcp`** (custom domain on the `temporal-mcp-s
 
 `cf:deploy` is `pnpm build && node scripts/deploy.mjs`. The script forwards `GIT_COMMIT`, `GIT_BRANCH`, and `BUILD_DATE` as Worker vars — Workers Builds' own `WORKERS_CI_*` variables exist only during the build and are invisible at runtime, so without forwarding them `info` reports an empty build. Local deploys fall back to `git rev-parse` and mark a dirty tree as `<sha>-dirty`.
 
-`npm publish` is separate and still runs from `.github/workflows/publish.yml` on `v*` tags.
+This server lives in `servers/temporal` of the `sapientsai/mcp-servers` monorepo; the root CLAUDE.md has the repo-wide rules. npm releases are per server, from the repo root: `pnpm release temporal <patch|minor|major>` tags `temporal-mcp-server@<version>`, and `git push --follow-tags` runs the root `publish.yml` for this package alone.
 
 ## Versioning
 
@@ -77,7 +77,7 @@ Live at **`https://time.somamcp.com/mcp`** (custom domain on the `temporal-mcp-s
 
 The server reports its version over the wire (`info`, `initialize`), and that string used to be maintained by hand in `src/index.ts`. A release could therefore ship a package labelled 0.2.1 that introduced itself to clients as 0.2.0.
 
-- `npm version <patch|minor|major>` regenerates and stages it automatically via the npm `version` lifecycle script.
+- `pnpm release temporal <level>` (at the repo root) regenerates and stages it automatically, through this package's npm `version` lifecycle script.
 - `pnpm sync:version` regenerates it by hand.
 - `pnpm check:version` fails if it is stale, and runs inside `build` and `prepublishOnly`, so drift cannot reach npm.
 

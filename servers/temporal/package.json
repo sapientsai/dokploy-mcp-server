@@ -15,10 +15,14 @@
   ],
   "author": "Jordan Burke <jordan.burke@gmail.com>",
   "license": "MIT",
-  "homepage": "https://github.com/jordanburke/temporal-mcp-server",
+  "homepage": "https://github.com/sapientsai/mcp-servers/tree/main/servers/temporal#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jordanburke/temporal-mcp-server"
+    "url": "git+https://github.com/sapientsai/mcp-servers.git",
+    "directory": "servers/temporal"
+  },
+  "bugs": {
+    "url": "https://github.com/sapientsai/mcp-servers/issues"
   },
   "bin": {
     "temporal-mcp-server": "./dist/node.js"
