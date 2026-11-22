@@ -39,6 +39,10 @@ jobs:
             TAG="${GITHUB_REF#refs/tags/}"
             NAME="${TAG%@*}"
             TAG_VERSION="${TAG##*@}"
+            if [ -z "$NAME" ] || [ -z "$TAG_VERSION" ]; then
+              echo "::error::tag $TAG isn't <package>@<version>"
+              exit 1
+            fi
           else
             NAME="$INPUT_PACKAGE"
             TAG_VERSION=""
