@@ -1,0 +1,117 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Project Overview
+
+MCP server exposing time, timezone, and duration tools. It ships **two entry points from one codebase**: a Node binary (stdio + httpStream) and a Cloudflare Worker.
+
+Built on [somamcp](https://github.com/sapientsai/SomaMCP) `^2.6.0`, which provides the MCP backend abstraction, telemetry, and health/introspection surfaces for both runtimes.
+
+## Development Commands
+
+```bash
+pnpm validate        # format + lint + typecheck + test + build + check:version + check:worker (run before commits)
+pnpm run ci          # validate's checks without fixing, as CI runs them (type `run`: `pnpm ci` is a clean install)
+pnpm test            # Vitest
+pnpm check:worker    # verify the worker bundle contains no Node built-ins
+
+pnpm start           # stdio server (dist/node.js)
+pnpm start:http      # HTTP on :3333/mcp
+pnpm cf:dev          # local workerd via wrangler
+pnpm cf:deploy       # deploy to Cloudflare
+```
+
+Run a single test: `pnpm test -- test/clock.spec.ts`
+
+## Architecture
+
+```
+src/
+  clock.ts    pure time logic — Either<TemporalError, T>
+  tools.ts    MCP tool registration (runtime-agnostic)
+  index.ts    library surface
+  node.ts     entry: somamcp/node -> stdio + httpStream
+  worker.ts   entry: somamcp      -> export default { fetch }
+```
+
+### The rule that keeps both runtimes working
+
+**`src/index.ts`, `src/clock.ts`, and `src/tools.ts` must never import a Node built-in**, directly or transitively. They are shared by both entry points; anything Node-only in them breaks the Worker.
+
+- `src/node.ts` may use `process` and Node APIs.
+- `src/worker.ts` must import from **`somamcp`**, never `somamcp/node`. The main entry is web-standard only; `somamcp/node` adds the port listener, stdio and file helpers. (`somamcp/edge` is a 2.x alias of `somamcp`, removed in 3.0; don't use it.)
+- `src/node.ts` imports `somamcp/node`, which re-exports everything in `somamcp` plus `start()` for stdio and httpStream.
+
+`pnpm check:worker` enforces this by walking the import graph from `dist/worker.js` and failing on any `node:` specifier, bare Node built-in (`fs`, `crypto`, `path`…), or `somamcp/node` import. It follows the graph rather than matching filenames because the bundler hoists shared code into a chunk with a generated name — a glob would miss it.
+
+### Error handling
+
+Fallible functions in `clock.ts` return `Either<TemporalError, T>` (functype); they never throw. `tools.ts` folds a `Left` into an MCP error result carrying both the message and an actionable hint.
+
+somamcp returns an `isError` result to the client as is, on both runtimes: a `tools/call` result with `isError: true`, not a JSON-RPC error. That is what the MCP spec asks for, and it lets the client's model read the message and hint and try again. `test/worker.spec.ts` checks it on the wire.
+
+### Adding a tool
+
+1. Add pure logic to `src/clock.ts`, returning `Either`.
+2. Register it in `registerTemporalTools` in `src/tools.ts`, folding errors with `err`.
+3. Cover the logic in `test/clock.spec.ts` and the wire behaviour in `test/worker.spec.ts`.
+
+Both entry points pick it up automatically — never register a tool in `node.ts` or `worker.ts`.
+
+## Deployment
+
+Live at **`https://time.somamcp.com/mcp`** (custom domain on the `temporal-mcp-server` Worker); the `*.workers.dev` URL still resolves. Health: `https://time.somamcp.com/health`.
+
+**This repo no longer deploys it.** Since 2026-11-22, Cloudflare Workers Builds deploys the `temporal-mcp-server` Worker from `sapientsai/somamcp-hosted` (`workers/temporal`), which installs this package from npm. A change here reaches the live server after an npm release and a version bump there. Don't add a deploy workflow or a `CLOUDFLARE_API_TOKEN` here: two paths deploying the same Worker is worse than either alone.
+
+`pnpm cf:deploy` deploys a Worker with the live one's name, so running it on that account replaces the public instance. Use it only for a copy under another `name`.
+
+`cf:deploy` is `pnpm build && node scripts/deploy.mjs`. The script forwards `GIT_COMMIT`, `GIT_BRANCH`, and `BUILD_DATE` as Worker vars — Workers Builds' own `WORKERS_CI_*` variables exist only during the build and are invisible at runtime, so without forwarding them `info` reports an empty build. Local deploys fall back to `git rev-parse` and mark a dirty tree as `<sha>-dirty`.
+
+`npm publish` is separate and still runs from `.github/workflows/publish.yml` on `v*` tags.
+
+## Versioning
+
+`src/version.ts` is **generated** from `package.json` by `scripts/sync-version.mjs` — do not hand-edit it.
+
+The server reports its version over the wire (`info`, `initialize`), and that string used to be maintained by hand in `src/index.ts`. A release could therefore ship a package labelled 0.2.1 that introduced itself to clients as 0.2.0.
+
+- `npm version <patch|minor|major>` regenerates and stages it automatically via the npm `version` lifecycle script.
+- `pnpm sync:version` regenerates it by hand.
+- `pnpm check:version` fails if it is stale, and runs inside `build` and `prepublishOnly`, so drift cannot reach npm.
+
+`package.json` is not imported directly because `tsconfig` sets `rootDir` to `src`, and a build-time define would have to be repeated for tsdown, vitest, and wrangler (which bundles `src/worker.ts` with its own esbuild).
+
+## .mcp.json
+
+A checked-in `.mcp.json` registers `dist/node.js` as the `temporal` server, so a session in this repo exercises local changes rather than the hosted instance. It needs `pnpm build` first. Leave it pointing at the local build — switching it to the hosted URL would silently test production instead of the working tree.
+
+## Cloudflare Notes
+
+- `nodejs_compat` is intentionally **off**. A Node built-in reaching the bundle should fail the build, not get shimmed.
+- The Worker builds its server lazily on first request and reuses it. Workers forbids network I/O at module scope, and Hono seals its router after the first request — so all tool/route registration happens during that one construction.
+- Set `MCP_AUTH_TOKEN` (via `wrangler secret put`) to require a bearer token on `/mcp`. Unset means public.
+
+## Testing
+
+- `test/clock.spec.ts` — pure logic: DST boundaries, leap years, month clamping, duration parsing.
+- `test/worker.spec.ts` — real `Request` objects through the Worker's `fetch` handler over MCP JSON-RPC, including error paths.
+- `test/worker-auth.spec.ts` — the same Worker with `MCP_AUTH_TOKEN` bound: 401 without the right bearer token, `/health` public. Its own file because `src/worker.ts` builds its server once per module instance.
+
+When touching time logic, keep these cases — each one encodes a bug that shipped:
+
+- `America/New_York` reports `-04:00` in August, `-05:00` in January
+- `2026-01-31 + P1M` is `2026-02-28`; `2028-01-31 + P1M` is `2028-02-29`
+- `2026-11-01T00:00-04:00 + P1D` in NY is `2026-11-02T00:00` (25 real hours), while `+ PT24H` is `2026-11-01T23:00`
+- `2026-03-08T00:00-05:00 + P1D` in NY is `2026-03-09T00:00` (23 real hours)
+- a naive timestamp resolves in the supplied zone, never the host's
+- `time_between` components all share one sign and sum to `milliseconds`
+
+## Time semantics
+
+Date units (Y/M/D/W) are **calendar** units, applied to the wall clock in the given zone via `civilToInstant`. Time units (H/M/S) are **exact** milliseconds. Mixing these up is the DST bug that shipped in 0.1.0: `P1D` was `86_400_000` ms, so adding a day across a US DST boundary was off by an hour.
+
+`civilToInstant` inverts a zone conversion by guessing against UTC, reading the real offset at that guess, correcting, and re-checking — there is no closed form, because the offset you need depends on the instant you are solving for. Ambiguous wall clocks (fall back) resolve to the earlier occurrence; skipped ones (spring forward) roll past the gap.
+
+Timestamp parsing is strict ISO-8601 by design. `new Date()` accepts loose formats and resolves naive strings against the host zone, which made results differ between a laptop and the Worker. Do not loosen it without also making it host-independent.

@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "temporal": {
+      "command": "node",
+      "args": ["dist/node.js"]
+    }
+  }
+}

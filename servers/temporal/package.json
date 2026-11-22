@@ -1,0 +1,83 @@
+{
+  "name": "temporal-mcp-server",
+  "version": "0.3.1",
+  "description": "MCP server for time, timezone, and duration tools. Runs locally over stdio and on Cloudflare Workers.",
+  "mcpName": "io.github.jordanburke/temporal-mcp-server",
+  "keywords": [
+    "mcp",
+    "model-context-protocol",
+    "time",
+    "timezone",
+    "duration",
+    "cloudflare-workers",
+    "somamcp",
+    "typescript"
+  ],
+  "author": "Jordan Burke <jordan.burke@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/jordanburke/temporal-mcp-server",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jordanburke/temporal-mcp-server"
+  },
+  "bin": {
+    "temporal-mcp-server": "./dist/node.js"
+  },
+  "scripts": {
+    "validate": "ts-builds validate",
+    "ci": "ts-builds ci",
+    "format": "ts-builds format",
+    "format:check": "ts-builds format:check",
+    "lint": "ts-builds lint",
+    "lint:check": "ts-builds lint:check",
+    "typecheck": "ts-builds typecheck",
+    "test": "ts-builds test",
+    "test:watch": "ts-builds test:watch",
+    "test:coverage": "ts-builds test:coverage",
+    "build": "pnpm check:version && ts-builds build && pnpm check:worker",
+    "check:worker": "node scripts/check-worker-bundle.mjs",
+    "dev": "ts-builds dev",
+    "start": "node dist/node.js",
+    "start:http": "node dist/node.js --http",
+    "cf:dev": "wrangler dev",
+    "cf:deploy": "pnpm build && node scripts/deploy.mjs",
+    "prepublishOnly": "pnpm run ci && pnpm check:version && pnpm check:worker && pnpm check:server-json",
+    "sync:version": "node scripts/sync-version.mjs",
+    "check:version": "node scripts/sync-version.mjs --check",
+    "sync:server-json": "node scripts/sync-server-json.mjs",
+    "check:server-json": "node scripts/sync-server-json.mjs --check",
+    "version": "node scripts/sync-version.mjs && node scripts/sync-server-json.mjs && git add src/version.ts server.json"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "ts-builds": "^4.7.0",
+    "tsdown": "^0.23.7",
+    "wrangler": "^4.158.0"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    },
+    "./worker": {
+      "types": "./dist/worker.d.ts",
+      "import": "./dist/worker.js",
+      "default": "./dist/worker.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "prettier": "ts-builds/prettier",
+  "packageManager": "pnpm@12.21.0+sha512.66fd8278ee28935ce951792d34367ff3af5c432a2756445823029533835b8da529bbe0be5130afd56ed0713fb8789e47bad82d93bd5ae2fe54b15562d6276ef0",
+  "dependencies": {
+    "functype": "^1.27.0",
+    "somamcp": "^2.6.0",
+    "zod": "^4.6.7"
+  }
+}
