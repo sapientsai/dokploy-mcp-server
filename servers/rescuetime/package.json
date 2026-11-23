@@ -1,0 +1,83 @@
+{
+  "name": "rescuetime-mcp-server",
+  "version": "1.2.1",
+  "description": "A Model Context Protocol (MCP) server for RescueTime - access productivity data, focus sessions, Timesheets timers and project time, highlights, and activity tracking.",
+  "keywords": [
+    "mcp",
+    "rescuetime",
+    "productivity",
+    "api",
+    "model-context-protocol",
+    "claude",
+    "ai-assistant",
+    "somamcp",
+    "focus",
+    "timesheets",
+    "time-tracking"
+  ],
+  "author": "Jordan Burke <jordan.burke@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/sapientsai/mcp-servers/tree/main/servers/rescuetime#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sapientsai/mcp-servers.git",
+    "directory": "servers/rescuetime"
+  },
+  "bugs": {
+    "url": "https://github.com/sapientsai/mcp-servers/issues"
+  },
+  "scripts": {
+    "validate": "ts-builds validate",
+    "ci": "ts-builds ci",
+    "format": "ts-builds format",
+    "format:check": "ts-builds format:check",
+    "lint": "ts-builds lint",
+    "lint:check": "ts-builds lint:check",
+    "typecheck": "ts-builds typecheck",
+    "test": "ts-builds test",
+    "test:watch": "ts-builds test:watch",
+    "test:coverage": "ts-builds test:coverage",
+    "build": "NODE_ENV=production ts-builds build",
+    "dev": "ts-builds dev",
+    "prepublishOnly": "pnpm run ci",
+    "inspect": "pnpm build && npx @modelcontextprotocol/inspector dist/index.js",
+    "start": "pnpm build && npx rescuetime-mcp-server",
+    "serve": "pnpm build && node dist/index.js"
+  },
+  "bin": {
+    "rescuetime-mcp-server": "dist/bin.js"
+  },
+  "mcpName": "io.github.sapientsai/rescuetime-mcp-server",
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "prettier": "ts-builds/prettier",
+  "packageManager": "pnpm@12.18.0+sha512.9d7882d5dc82147ecfc4e062aa34834e0ad0296710a1837a1115ae012127d36b7109e321ac1598a1dd0a65597681b1e99917e12ed0d749eae91187943363beb3",
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "dotenv": "^18.0.9",
+    "functype": "^1.27.0",
+    "somamcp": "^2.6.0",
+    "zod": "^4.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "^24.19.2",
+    "ts-builds": "^4.7.0",
+    "tsdown": "^0.23.7"
+  }
+}
