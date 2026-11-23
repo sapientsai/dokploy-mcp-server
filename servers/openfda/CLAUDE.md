@@ -121,9 +121,11 @@ pnpm test:coverage     # Coverage report
 
 ## Publishing
 
-CI (`.github/workflows/node.js.yml`) runs `pnpm run ci` on Node 22 and 24 for every push and PR to `main`; a newer push to a PR cancels its older build. CI publishes to npm on a `v*` tag (`.github/workflows/publish.yml`, OIDC trusted publishing), after `pnpm run ci`, so a publish never rewrites files. `prepublishOnly` runs `pnpm run ci` too. Always type `pnpm run ci`: a bare `pnpm ci` is pnpm's own clean install. Never run `npm publish` locally.
+This server lives in `servers/openfda` of the `sapientsai/mcp-servers` monorepo; the root CLAUDE.md has the repo-wide rules. The root CI runs every server's `pnpm run ci` on Node 22 and 24. Releases are per server, from the repo root: the tag `openfda-mcp-server@<version>` runs the root `publish.yml` (npm trusted publishing) for this package alone, after its `pnpm run ci`. Always type `pnpm run ci`: a bare `pnpm ci` is pnpm's own clean install. Never run `npm publish` locally.
 
 ```bash
-npm version patch|minor|major
+pnpm release openfda patch|minor|major   # at the repo root
 git push --follow-tags
 ```
+
+somamcp-hosted pins this package exactly and bundles its `./tools` export into the openfda.somamcp.com Worker, so a release reaches that server only after the pin there is bumped.

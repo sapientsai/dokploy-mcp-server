@@ -14,10 +14,14 @@
   ],
   "author": "Jordan Burke <jordan.burke@gmail.com>",
   "license": "MIT",
-  "homepage": "https://github.com/sapientsai/openfda-mcp-server",
+  "homepage": "https://github.com/sapientsai/mcp-servers/tree/main/servers/openfda#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sapientsai/openfda-mcp-server"
+    "url": "git+https://github.com/sapientsai/mcp-servers.git",
+    "directory": "servers/openfda"
+  },
+  "bugs": {
+    "url": "https://github.com/sapientsai/mcp-servers/issues"
   },
   "scripts": {
     "validate": "ts-builds validate",
@@ -78,7 +82,6 @@
     "dist"
   ],
   "prettier": "ts-builds/prettier",
-  "packageManager": "pnpm@12.18.0+sha512.9d7882d5dc82147ecfc4e062aa34834e0ad0296710a1837a1115ae012127d36b7109e321ac1598a1dd0a65597681b1e99917e12ed0d749eae91187943363beb3",
   "engines": {
     "node": ">=22.12"
   }

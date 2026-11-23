@@ -1,44 +1,39 @@
-# Build stage
-FROM node:24-alpine AS builder
+# Built from the monorepo root, where the lockfile and workspace settings live:
+#   docker build -f servers/openfda/Dockerfile -t openfda-mcp-server .
+# Only this server is installed.
 
-# Install pnpm (corepack uses the version pinned in package.json's packageManager)
+# Build stage
+FROM node:24.21.0-alpine AS builder
+
+# corepack activates the pnpm version pinned in the root package.json's packageManager
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY servers/openfda/package.json servers/openfda/
+RUN pnpm install --frozen-lockfile --filter openfda-mcp-server
 
-# Install all dependencies (including dev dependencies for build)
-RUN pnpm install --frozen-lockfile
-
-# Copy source and config files
-COPY tsconfig.json tsdown.config.ts ts-builds.config.json ./
-COPY src/ ./src/
-
-# Build the application using tsdown directly with dist output
-RUN pnpm exec tsdown --outDir dist
+COPY servers/openfda servers/openfda
+RUN pnpm --filter openfda-mcp-server exec tsdown --outDir dist
 
 # Production stage
-FROM node:24-alpine AS production
+FROM node:24.21.0-alpine AS production
 
-# Install pnpm for production install
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable
 
 WORKDIR /app
 
-# Copy package files
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY servers/openfda/package.json servers/openfda/
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts --filter openfda-mcp-server && pnpm store prune
 
-# Install production dependencies only
-RUN pnpm install --frozen-lockfile --prod
+COPY --from=builder /app/servers/openfda/dist ./servers/openfda/dist
 
-# Copy built files from builder
-COPY --from=builder /app/dist ./dist
+WORKDIR /app/servers/openfda
 
-# Set environment variables
 ENV NODE_ENV=production
 
 # Expose port for HTTP mode

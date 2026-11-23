@@ -191,12 +191,14 @@ openfda-mcp-server --transport http --port 3000
 
 ### Quick Start
 
+Build from the root of the [sapientsai/mcp-servers](https://github.com/sapientsai/mcp-servers) monorepo, where this server is `servers/openfda`:
+
 ```bash
 # Build and run with docker-compose
-docker-compose up -d
+docker compose -f servers/openfda/docker-compose.yml up -d
 
 # Or build manually
-docker build -t openfda-mcp-server .
+docker build -f servers/openfda/Dockerfile -t openfda-mcp-server .
 docker run -p 3000:3000 -e OPENFDA_API_KEY=your-key openfda-mcp-server
 ```
 
@@ -225,8 +227,10 @@ docker run -p 3000:3000 \
 
 ## Development
 
+This server is `servers/openfda` in the [sapientsai/mcp-servers](https://github.com/sapientsai/mcp-servers) monorepo. Install from the repo root, then work in this folder:
+
 ```bash
-# Install dependencies
+# Install dependencies (at the repo root)
 pnpm install
 
 # Run in development mode

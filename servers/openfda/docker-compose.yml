@@ -1,8 +1,9 @@
 services:
   openfda-mcp:
+    # The build context is the monorepo root, where the lockfile lives.
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: servers/openfda/Dockerfile
     image: openfda-mcp-server:latest
     container_name: openfda-mcp
     ports:
