@@ -1,0 +1,512 @@
+/**
+ * FDA API Types
+ * Type definitions for FDA OpenAPI responses
+ */
+
+// Generic FDA API Response wrapper
+export type FDAResponse<T> = {
+  meta?: {
+    disclaimer?: string
+    terms?: string
+    license?: string
+    last_updated?: string
+    results?: {
+      skip: number
+      limit: number
+      total: number
+    }
+  }
+  results?: ReadonlyArray<T>
+  error?: {
+    code: string
+    message: string
+  }
+}
+
+// Common OpenFDA fields that appear across many endpoints
+export type OpenFDAFields = {
+  application_number?: ReadonlyArray<string>
+  brand_name?: ReadonlyArray<string>
+  generic_name?: ReadonlyArray<string>
+  manufacturer_name?: ReadonlyArray<string>
+  product_ndc?: ReadonlyArray<string>
+  product_type?: ReadonlyArray<string>
+  route?: ReadonlyArray<string>
+  substance_name?: ReadonlyArray<string>
+  rxcui?: ReadonlyArray<string>
+  spl_id?: ReadonlyArray<string>
+  spl_set_id?: ReadonlyArray<string>
+  pharm_class_epc?: ReadonlyArray<string>
+  pharm_class_cs?: ReadonlyArray<string>
+  pharm_class_pe?: ReadonlyArray<string>
+  pharm_class_moa?: ReadonlyArray<string>
+  nui?: ReadonlyArray<string>
+  unii?: ReadonlyArray<string>
+}
+
+// Drug Adverse Event (FAERS)
+export type DrugAdverseEvent = {
+  safetyreportid?: string
+  safetyreportversion?: string
+  receivedate?: string
+  receivedateformat?: string
+  receiptdate?: string
+  receiptdateformat?: string
+  serious?: string
+  seriousnesscongenitalanomali?: string
+  seriousnessdeath?: string
+  seriousnessdisabling?: string
+  seriousnesshospitalization?: string
+  seriousnesslifethreatening?: string
+  seriousnessother?: string
+  transmissiondate?: string
+  transmissiondateformat?: string
+  duplicate?: string
+  companynumb?: string
+  occurcountry?: string
+  primarysourcecountry?: string
+  primarysource?: {
+    qualification?: string
+    reportercountry?: string
+  }
+  reporttype?: string
+  sender?: {
+    sendertype?: string
+    senderorganization?: string
+  }
+  receiver?: {
+    receivertype?: string
+    receiverorganization?: string
+  }
+  patient?: {
+    patientonsetage?: string
+    patientonsetageunit?: string
+    patientsex?: string
+    patientweight?: string
+    patientdeath?: {
+      patientdeathdate?: string
+      patientdeathdateformat?: string
+    }
+    drug?: ReadonlyArray<{
+      actiondrug?: string
+      activesubstance?: {
+        activesubstancename?: string
+      }
+      drugadditional?: string
+      drugadministrationroute?: string
+      drugauthorizationnumb?: string
+      drugbatchnumb?: string
+      drugcharacterization?: string
+      drugcumulativedosagenumb?: string
+      drugcumulativedosageunit?: string
+      drugdosageform?: string
+      drugdosagetext?: string
+      drugenddate?: string
+      drugenddateformat?: string
+      drugindication?: string
+      drugintervaldosagedefinition?: string
+      drugintervaldosageunitnumb?: string
+      drugrecurreadministration?: string
+      drugseparatedosagenumb?: string
+      drugstartdate?: string
+      drugstartdateformat?: string
+      drugstructuredosagenumb?: string
+      drugstructuredosageunit?: string
+      drugtreatmentduration?: string
+      drugtreatmentdurationunit?: string
+      medicinalproduct?: string
+      openfda?: OpenFDAFields
+    }>
+    reaction?: ReadonlyArray<{
+      reactionmeddrapt?: string
+      reactionmeddraversionpt?: string
+      reactionoutcome?: string
+    }>
+  }
+}
+
+// Drug Label (SPL)
+export type DrugLabel = {
+  effective_time?: string
+  id?: string
+  set_id?: string
+  version?: string
+  spl_product_data_elements?: ReadonlyArray<string>
+  active_ingredient?: ReadonlyArray<string>
+  inactive_ingredient?: ReadonlyArray<string>
+  purpose?: ReadonlyArray<string>
+  indications_and_usage?: ReadonlyArray<string>
+  warnings?: ReadonlyArray<string>
+  boxed_warning?: ReadonlyArray<string>
+  do_not_use?: ReadonlyArray<string>
+  ask_doctor?: ReadonlyArray<string>
+  ask_doctor_or_pharmacist?: ReadonlyArray<string>
+  stop_use?: ReadonlyArray<string>
+  pregnancy_or_breast_feeding?: ReadonlyArray<string>
+  keep_out_of_reach_of_children?: ReadonlyArray<string>
+  dosage_and_administration?: ReadonlyArray<string>
+  storage_and_handling?: ReadonlyArray<string>
+  questions?: ReadonlyArray<string>
+  package_label_principal_display_panel?: ReadonlyArray<string>
+  description?: ReadonlyArray<string>
+  clinical_pharmacology?: ReadonlyArray<string>
+  mechanism_of_action?: ReadonlyArray<string>
+  pharmacodynamics?: ReadonlyArray<string>
+  pharmacokinetics?: ReadonlyArray<string>
+  contraindications?: ReadonlyArray<string>
+  warnings_and_cautions?: ReadonlyArray<string>
+  adverse_reactions?: ReadonlyArray<string>
+  drug_interactions?: ReadonlyArray<string>
+  use_in_specific_populations?: ReadonlyArray<string>
+  overdosage?: ReadonlyArray<string>
+  how_supplied?: ReadonlyArray<string>
+  information_for_patients?: ReadonlyArray<string>
+  clinical_studies?: ReadonlyArray<string>
+  openfda?: OpenFDAFields
+}
+
+// NDC Directory
+export type DrugNDC = {
+  product_id?: string
+  product_ndc?: string
+  spl_id?: string
+  product_type?: string
+  finished?: string
+  brand_name?: string
+  brand_name_base?: string
+  brand_name_suffix?: string
+  generic_name?: string
+  dosage_form?: string
+  route?: ReadonlyArray<string>
+  marketing_start_date?: string
+  marketing_end_date?: string
+  marketing_category?: string
+  application_number?: string
+  labeler_name?: string
+  active_ingredients?: ReadonlyArray<{
+    name?: string
+    strength?: string
+  }>
+  packaging?: ReadonlyArray<{
+    package_ndc?: string
+    description?: string
+    marketing_start_date?: string
+    marketing_end_date?: string
+    sample?: string
+  }>
+  pharm_class?: ReadonlyArray<string>
+  openfda?: OpenFDAFields
+}
+
+// Drug Enforcement (Recalls)
+export type DrugEnforcement = {
+  classification?: string
+  center_classification_date?: string
+  report_date?: string
+  postal_code?: string
+  termination_date?: string
+  recall_initiation_date?: string
+  recall_number?: string
+  city?: string
+  more_code_info?: string
+  event_id?: string
+  distribution_pattern?: string
+  recalling_firm?: string
+  voluntary_mandated?: string
+  state?: string
+  reason_for_recall?: string
+  initial_firm_notification?: string
+  status?: string
+  product_type?: string
+  country?: string
+  product_description?: string
+  code_info?: string
+  address_1?: string
+  address_2?: string
+  product_quantity?: string
+  openfda?: OpenFDAFields
+}
+
+// Drug Shortage
+export type DrugShortage = {
+  generic_name?: string
+  proprietary_name?: string
+  status?: string
+  description?: string
+  presentation?: string
+  resolved_shortage_date?: string
+  initial_posting_date?: string
+}
+
+// Drugs@FDA
+export type DrugsFDA = {
+  application_number?: string
+  sponsor_name?: string
+  products?: ReadonlyArray<{
+    product_number?: string
+    reference_drug?: string
+    brand_name?: string
+    active_ingredients?: ReadonlyArray<{
+      name?: string
+      strength?: string
+    }>
+    reference_standard?: string
+    dosage_form?: string
+    route?: string
+    marketing_status?: string
+  }>
+  submissions?: ReadonlyArray<{
+    submission_type?: string
+    submission_number?: string
+    submission_status?: string
+    submission_status_date?: string
+    review_priority?: string
+    submission_class_code?: string
+    submission_class_code_description?: string
+    application_docs?: ReadonlyArray<{
+      id?: string
+      url?: string
+      date?: string
+      type?: string
+    }>
+  }>
+  openfda?: OpenFDAFields
+}
+
+// Device 510(k)
+export type Device510K = {
+  k_number?: string
+  applicant?: string
+  contact?: string
+  address_1?: string
+  address_2?: string
+  city?: string
+  state?: string
+  zip_code?: string
+  country_code?: string
+  postal_code?: string
+  date_received?: string
+  decision_date?: string
+  decision_code?: string
+  decision_description?: string
+  product_code?: string
+  statement_or_summary?: string
+  clearance_type?: string
+  third_party_flag?: string
+  expedited_review_flag?: string
+  device_name?: string
+  openfda?: {
+    device_name?: string
+    device_class?: string
+    medical_specialty_description?: string
+    regulation_number?: string
+    fei_number?: ReadonlyArray<string>
+  }
+}
+
+// Device Classification
+export type DeviceClassification = {
+  device_name?: string
+  device_class?: string
+  definition?: string
+  gmp_exempt_flag?: string
+  implant_flag?: string
+  life_sustain_support_flag?: string
+  medical_specialty?: string
+  medical_specialty_description?: string
+  product_code?: string
+  regulation_number?: string
+  review_code?: string
+  review_panel?: string
+  submission_type_id?: string
+  third_party_flag?: string
+  unclassified_reason?: string
+  openfda?: {
+    fei_number?: ReadonlyArray<string>
+    k_number?: ReadonlyArray<string>
+    pma_number?: ReadonlyArray<string>
+    registration_number?: ReadonlyArray<string>
+  }
+}
+
+// Device Adverse Event (MDR)
+export type DeviceAdverseEvent = {
+  adverse_event_flag?: string
+  product_problem_flag?: string
+  date_of_event?: string
+  date_report?: string
+  date_received?: string
+  date_facility_aware?: string
+  report_number?: string
+  report_source_code?: string
+  health_professional?: string
+  reporter_occupation_code?: string
+  initial_report_to_fda?: string
+  reprocessed_and_reused_flag?: string
+  manufacturer_name?: string
+  manufacturer_address_1?: string
+  manufacturer_city?: string
+  manufacturer_state?: string
+  manufacturer_zip_code?: string
+  manufacturer_country?: string
+  event_type?: string
+  type_of_report?: ReadonlyArray<string>
+  device?: ReadonlyArray<{
+    brand_name?: string
+    generic_name?: string
+    manufacturer_d_name?: string
+    manufacturer_d_address_1?: string
+    manufacturer_d_city?: string
+    manufacturer_d_state?: string
+    manufacturer_d_zip_code?: string
+    manufacturer_d_country?: string
+    device_operator?: string
+    model_number?: string
+    catalog_number?: string
+    lot_number?: string
+    other_id_number?: string
+    device_availability?: string
+    device_evaluated_by_manufacturer?: string
+    device_report_product_code?: string
+    openfda?: {
+      device_name?: string
+      device_class?: string
+      medical_specialty_description?: string
+      regulation_number?: string
+    }
+  }>
+  patient?: ReadonlyArray<{
+    patient_sequence_number?: string
+    date_received?: string
+    sequence_number_treatment?: string
+    sequence_number_outcome?: ReadonlyArray<string>
+  }>
+  mdr_text?: ReadonlyArray<{
+    mdr_text_key?: string
+    text_type_code?: string
+    patient_sequence_number?: string
+    text?: string
+  }>
+}
+
+// Device Enforcement (Recalls)
+export type DeviceEnforcement = {
+  classification?: string
+  center_classification_date?: string
+  report_date?: string
+  postal_code?: string
+  termination_date?: string
+  recall_initiation_date?: string
+  recall_number?: string
+  city?: string
+  event_id?: string
+  distribution_pattern?: string
+  recalling_firm?: string
+  voluntary_mandated?: string
+  state?: string
+  reason_for_recall?: string
+  initial_firm_notification?: string
+  status?: string
+  product_type?: string
+  country?: string
+  product_description?: string
+  code_info?: string
+  product_quantity?: string
+  openfda?: {
+    device_name?: string
+    device_class?: string
+    medical_specialty_description?: string
+    regulation_number?: string
+    k_number?: ReadonlyArray<string>
+    pma_number?: ReadonlyArray<string>
+    fei_number?: ReadonlyArray<string>
+    registration_number?: ReadonlyArray<string>
+  }
+}
+
+// Search parameters for API calls
+export type SearchParams = {
+  search?: string
+  count?: string
+  limit?: number
+  skip?: number
+}
+
+// Tool response wrapper
+export type FDAToolResponse<T> = {
+  success: boolean
+  data?: T
+  error?: string
+  searchParams?: SearchParams
+  totalResults?: number
+  displayedResults?: number
+  apiUsage?: {
+    authenticated: boolean
+    rateLimit: string
+  }
+  dataSource?: {
+    name: string
+    lastUpdated: string
+    url: string
+  }
+}
+
+// Orange Book Types
+
+export type OrangeBookProduct = {
+  ingredient: string
+  dfRoute: string
+  tradeName: string
+  applicant: string
+  applType: string
+  applNo: string
+  productNo: string
+  teCode: string
+  approvalDate: string
+  rld: string
+  rs: string
+  type: string
+  applicantFullName: string
+}
+
+export type OrangeBookPatent = {
+  applType: string
+  applNo: string
+  productNo: string
+  patentNo: string
+  patentExpireDate: string
+  drugSubstanceFlag: string
+  drugProductFlag: string
+  patentUseCode: string
+  delistFlag: string
+  submissionDate: string
+}
+
+export type OrangeBookExclusivity = {
+  applType: string
+  applNo: string
+  productNo: string
+  exclusivityCode: string
+  exclusivityDate: string
+}
+
+// Purple Book Types
+
+export type PurpleBookEntry = {
+  blaNumber: string
+  proprietaryName: string
+  properName: string
+  applicant: string
+  blaType: string
+  strength: string
+  dosageForm: string
+  route: string
+  productPresentation: string
+  status: string
+  licensingStatus: string
+  referenceProductBla: string
+  referenceProductProprietaryName: string
+  biosimilar: boolean
+  interchangeable: boolean
+  approvalDate: string
+}

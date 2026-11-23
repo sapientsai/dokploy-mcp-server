@@ -1,0 +1,131 @@
+# CLAUDE.md
+
+This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+
+## Overview
+
+This is an MCP (Model Context Protocol) server that provides access to U.S. FDA public datasets including drugs, medical devices, adverse events, recalls, and more. Built with TypeScript and [SomaMCP](https://github.com/sapientsai/SomaMCP) (`createServer` from `somamcp/node`).
+
+## Development Commands
+
+All commands delegate to `ts-builds` for consistency:
+
+```bash
+pnpm validate        # Main command: format + lint + test + build (use before commits)
+pnpm run ci          # What CI and publish run: validate's steps, checking format and lint without fixing
+
+pnpm format          # Format code with Prettier
+pnpm lint            # Fix ESLint issues
+pnpm test            # Run tests once
+pnpm build           # Production build (outputs to dist/)
+pnpm dev             # Development build with watch mode
+
+pnpm serve:test      # Run server locally (stdio mode)
+pnpm serve:test:http # Run server locally (HTTP mode)
+```
+
+## Architecture
+
+### Build System
+
+- **ts-builds**: Centralized toolchain for all build scripts
+- **tsdown**: Bundler (successor to tsup)
+- **Vitest**: Test framework
+
+### Project Structure
+
+```
+src/
+├── index.ts              # CLI entry point (Commander.js)
+├── server.ts             # createOpenFDAServer: a somamcp/node server with the tools
+├── register.ts           # registerOpenFDATools: the 14 tools, Workers-safe ("./tools" export)
+├── lib.ts                # Library exports for programmatic use
+├── types/
+│   └── fda.ts            # FDA API type definitions
+├── handlers/
+│   ├── drug-handlers.ts  # Drug query handlers (6 tools)
+│   ├── device-handlers.ts # Device query handlers (4 tools)
+│   ├── bulk-data-handlers.ts # Orange Book & Purple Book handlers (4 tools)
+│   └── query.ts          # Shared query building and toSearchResponse
+├── version.ts            # Package version, inlined from package.json at build time (Workers-safe)
+├── tools/
+│   └── index.ts          # Zod schemas for all tools
+└── utils/
+    ├── api-client.ts     # createFDAAPIClient: openFDA HTTP client (returns Either)
+    ├── bulk-data-client.ts # createBulkDataClient: Orange Book/Purple Book download, parse, Ref cache (returns Either)
+    ├── errors.ts         # toError and the failure tool response
+    ├── fields.ts         # textField, mapFirst, takeFirst, nonEmpty: Option/List access to FDA records
+    └── logger.ts         # Namespaced debug logging on functype-log, switched by DEBUG
+```
+
+### Workers-safe entry
+
+`src/register.ts` (exported as `openfda-mcp-server/tools`, with `createFDAAPIClient`, its types and `VERSION`, so a Worker needs nothing from `./lib`) and everything it imports must not need Node: no `node:*` import, no Node-only package, and `process` only through the guarded `globalThis` reads in `api-client.ts` and `logger.ts`. `test/workers/workerd.spec.ts` bundles `test/workers/worker.ts` with esbuild and runs it in workerd through Miniflare, without `nodejs_compat`, so a leak fails a test. `server.ts` and `index.ts` are Node-only. `version.ts` reads `package.json` with a JSON import, which tsdown inlines as one string, so it is Workers-safe; never go back to `readFileSync` there. The `client` option on `registerOpenFDATools` is how a hosted server sends each caller's own key: a client per call, never shared state.
+
+### MCP Tools
+
+**Drug Tools (6):**
+
+- `search_drug_adverse_events` - FAERS database
+- `search_drug_labels` - SPL labeling information
+- `search_drug_ndc` - National Drug Code directory
+- `search_drug_recalls` - Enforcement/recall reports
+- `search_drugs_at_fda` - Approved drug applications
+- `search_drug_shortages` - Current shortages
+
+**Device Tools (4):**
+
+- `search_device_510k` - 510(k) clearances
+- `search_device_classifications` - Device classifications
+- `search_device_adverse_events` - MDR reports
+- `search_device_recalls` - Device enforcement reports
+
+**Bulk Data Tools (4):**
+
+- `search_fda_orange_book` - Approved drug products with therapeutic equivalence (Orange Book)
+- `search_fda_orange_book_patents` - Patent info for drug products (Orange Book)
+- `search_fda_purple_book` - Licensed biological products (Purple Book)
+- `search_fda_drug_patent_expiry` - Unified patent expiry + exclusivity view
+
+**Built-in (SomaMCP):**
+
+- `info` - Server identity, version, build and capability counts (auto-registered by SomaMCP)
+
+### Key Patterns
+
+- **Handlers**: Each endpoint has a dedicated handler that builds queries, calls the API, and formats results
+- **Clients are factories**: `createFDAAPIClient()` and `createBulkDataClient()` return object literals; the bulk caches live in functype `Ref`s. `FDAAPIClient` and `BulkDataClient` are class forms that delegate to them. The shared `fdaAPIClient` and `bulkDataClient` stay class instances, as in 2.0.0, so `./lib` callers typed against the classes keep compiling (tests `vi.spyOn` them)
+- **Collections**: bulk handlers filter, sort and page through functype `List`, and convert with `.toArray()` at the response boundary. No `List`, `Option` or `Map` may reach `FDAToolResponse.data`.
+- **Bulk hot paths stay native**: `textField`, `cell()`, the row parsers and the CSV scanner run per field of every row (about a million calls for one Orange Book load), so they use plain arrays, not functype `List`/`Option`. Building a `List` cost ~10 µs before functype 1.27.0, which made a full load take 30 s+ of CPU on Cloudflare; 1.27.0 made it about 6x cheaper, and per-field collections are still too costly. Sorts work the same way: `List.sortBy` calls its key function on every comparison, so compute a sort key once per item first (`byExpiry` in `bulk-data-handlers.ts`). Search filters are built once per request as plain predicates (`containsFilter`, `exactFilter`, `productFilter`), so the per-row check builds no `Option`; the lookup tables are native `Map`s, built once per loaded Orange Book (`perLoad`, a `WeakMap` keyed on the data object the client caches). `test/workers/bulk-cpu.spec.ts` holds these budgets in workerd
+- **Purple Book source**: FDA's old JSON API is gone. `loadPurpleBook` reads the downloads page (`purplebooksearch.fda.gov/downloads`), takes the newest monthly CSV (falling back one month), and parses the rows under the file's last `BLA Number` header (the file opens with that month's changes). Column names drift between months (`License Type` was `BLA Type`), so map with alternates
+- **openFDA queries use real spaces**: build `a:"x" AND b:[1 TO 2]` with spaces, never `+AND+`. `URLSearchParams` sends a space as `+`, which openFDA reads as a space; a literal `+` goes out as `%2B`, and openFDA then answers 404 (read as "no results") or 500
+- **Formatted responses**: FAERS codes are decoded from tables in `drug-handlers.ts` (sex, age unit, reaction outcome); an unknown code stays visible. An adverse event shows its first 3 drugs and reactions, plus up to 10 later ones that match the search, with `drugCount` and `reactionCount` for the totals. Matching compares whole words with punctuation read as a space, as openFDA does (`searchWords`), so `co-codamol` finds `CO CODAMOL`. Text cut short goes through `clipText`/`clipFields` in `query.ts`, so the record's `truncated` names the cut fields; the label tool's `fullText` turns cutting off. A label `drugName` matches `openfda.brand_name` or `openfda.generic_name` (`anyFieldQuery`)
+- **Zod Schemas**: All tool parameters validated with Zod
+- **Rate Limiting**: `getRateLimitInfo` reports openFDA's published limits: 240/minute and 1,000/day per IP without a key, 240/minute and 120,000/day per key
+- **Error Handling**: Clients return `Either<Error, T>` (functype) instead of throwing; handlers `fold` it into `FDAToolResponse<T>` with success/error status. Lint runs over `src/` and `test/` with `--max-warnings=0`, since ts-builds' built-in lint covers `srcDir` only and fails only on errors. The ESLint command lives once, in the `commands` override in `ts-builds.config.json`; `pnpm lint`, `pnpm lint:check`, `pnpm validate` and `pnpm run ci` all run it through ts-builds (4.3.0+ honours the override when a step is called directly), so the functype rules (`prefer-try`, `prefer-option`, `prefer-either`) are enforced; the functype ESLint config relaxes the ones that misread tests. `tsconfig.json` includes `test/`, so `pnpm typecheck` checks tests too
+
+## Environment Variables
+
+| Variable          | Description                                        |
+| ----------------- | -------------------------------------------------- |
+| `OPENFDA_API_KEY` | Optional FDA API key for higher rate limits        |
+| `DEBUG`           | Enable debug logging (e.g., `DEBUG=openfda-mcp:*`) |
+
+## Testing
+
+```bash
+pnpm test              # Run all tests
+pnpm test:watch        # Watch mode
+pnpm test:coverage     # Coverage report
+```
+
+## Publishing
+
+This server lives in `servers/openfda` of the `sapientsai/mcp-servers` monorepo; the root CLAUDE.md has the repo-wide rules. The root CI runs every server's `pnpm run ci` on Node 22 and 24. Releases are per server, from the repo root: the tag `openfda-mcp-server@<version>` runs the root `publish.yml` (npm trusted publishing) for this package alone, after its `pnpm run ci`. Always type `pnpm run ci`: a bare `pnpm ci` is pnpm's own clean install. Never run `npm publish` locally.
+
+```bash
+pnpm release openfda patch|minor|major   # at the repo root
+git push --follow-tags
+```
+
+somamcp-hosted pins this package exactly and bundles its `./tools` export into the openfda.somamcp.com Worker, so a release reaches that server only after the pin there is bumped.

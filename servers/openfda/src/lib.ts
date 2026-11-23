@@ -1,0 +1,94 @@
+/**
+ * OpenFDA MCP Server Library Exports
+ * For programmatic use and extension
+ */
+
+// Server exports
+export { type OpenFDAToolsOptions, registerOpenFDATools } from "./register.js"
+export { createOpenFDAServer, type ServerOptions } from "./server.js"
+
+// Handler exports
+export {
+  type DrugPatentExpiryParams,
+  handleSearchDrugPatentExpiry,
+  handleSearchOrangeBook,
+  handleSearchOrangeBookPatents,
+  handleSearchPurpleBook,
+  type OrangeBookPatentsParams,
+  type OrangeBookSearchParams,
+  type PurpleBookSearchParams,
+} from "./handlers/bulk-data-handlers.js"
+export {
+  type Device510KParams,
+  type DeviceAdverseEventsParams,
+  type DeviceClassificationParams,
+  type DeviceEnforcementParams,
+  handleSearchDevice510K,
+  handleSearchDeviceAdverseEvents,
+  handleSearchDeviceClassifications,
+  handleSearchDeviceEnforcement,
+} from "./handlers/device-handlers.js"
+export {
+  type DrugAdverseEventsParams,
+  type DrugEnforcementParams,
+  type DrugLabelsParams,
+  type DrugNDCParams,
+  type DrugsFDAParams,
+  type DrugShortagesParams,
+  handleSearchDrugAdverseEvents,
+  handleSearchDrugEnforcement,
+  handleSearchDrugLabels,
+  handleSearchDrugNDC,
+  handleSearchDrugsFDA,
+  handleSearchDrugShortages,
+} from "./handlers/drug-handlers.js"
+
+// Tool schema exports
+export { toolSchemas } from "./tools/index.js"
+
+// API client export
+export {
+  createFDAAPIClient,
+  FDAAPIClient,
+  fdaAPIClient,
+  type FDAClient,
+  type FDAClientOptions,
+  type RateLimitInfo,
+} from "./utils/api-client.js"
+
+// Bulk data client export
+export {
+  type BulkClient,
+  BulkDataClient,
+  bulkDataClient,
+  createBulkDataClient,
+  type OrangeBookData,
+  parseCSV,
+  parseTildeDelimited,
+  type Row,
+} from "./utils/bulk-data-client.js"
+
+// Type exports
+export type {
+  Device510K,
+  DeviceAdverseEvent,
+  DeviceClassification,
+  DeviceEnforcement,
+  DrugAdverseEvent,
+  DrugEnforcement,
+  DrugLabel,
+  DrugNDC,
+  DrugsFDA,
+  DrugShortage,
+  FDAResponse,
+  FDAToolResponse,
+  OpenFDAFields,
+  OrangeBookExclusivity,
+  OrangeBookPatent,
+  OrangeBookProduct,
+  PurpleBookEntry,
+  SearchParams,
+} from "./types/fda.js"
+
+// Logger export
+export { loggers } from "./utils/logger.js"
