@@ -79,7 +79,7 @@ export function buildInfrastructureProgram(
         .map(() => `Security credentials ${args.securityId} deleted.`),
     )
     .case("listCerts", () =>
-      client.get<DokployCertificate[]>("certificates.all").map((certs) => {
+      client.get<ReadonlyArray<DokployCertificate>>("certificates.all").map((certs) => {
         if (certs.length === 0) return "No certificates found."
         const lines = certs.map((c) => `- **${c.name}** (ID: ${c.certificateId}) | Auto-renew: ${c.autoRenew ?? "N/A"}`)
         return `# Certificates (${certs.length})\n\n${lines.join("\n")}`

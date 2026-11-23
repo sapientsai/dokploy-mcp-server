@@ -40,29 +40,29 @@ export function buildDeploymentProgram(
     .case("list", () => {
       if (args.applicationId) {
         return client
-          .get<DokployDeployment[]>("deployment.all", { applicationId: args.applicationId })
+          .get<ReadonlyArray<DokployDeployment>>("deployment.all", { applicationId: args.applicationId })
           .map(formatDeploymentList)
       }
       if (args.composeId) {
         return client
-          .get<DokployDeployment[]>("deployment.allByCompose", { composeId: args.composeId })
+          .get<ReadonlyArray<DokployDeployment>>("deployment.allByCompose", { composeId: args.composeId })
           .map(formatDeploymentList)
       }
       if (args.serverId) {
         return client
-          .get<DokployDeployment[]>("deployment.allByServer", { serverId: args.serverId })
+          .get<ReadonlyArray<DokployDeployment>>("deployment.allByServer", { serverId: args.serverId })
           .map(formatDeploymentList)
       }
       if (args.type && args.id) {
         return client
-          .get<DokployDeployment[]>("deployment.allByType", { type: args.type, id: args.id })
+          .get<ReadonlyArray<DokployDeployment>>("deployment.allByType", { type: args.type, id: args.id })
           .map(formatDeploymentList)
       }
       return IO.fail<ApiError>(ValidationError("Provide applicationId, composeId, serverId, or type+id"))
     })
     .case("queueList", () =>
       client
-        .get<DokployDeployment[]>("deployment.queueList")
+        .get<ReadonlyArray<DokployDeployment>>("deployment.queueList")
         .map((queued) =>
           queued.length === 0
             ? "Deployment queue is empty."

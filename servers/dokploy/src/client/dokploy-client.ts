@@ -89,7 +89,7 @@ export function resolveOrganizationId(c: DokployClient): IO<never, ApiError, str
     .map((r) => r.organizationId)
     .catchAll(() =>
       c
-        .get<Array<{ organizationId: string }>>("project.all")
+        .get<ReadonlyArray<{ organizationId: string }>>("project.all")
         .flatMap((projects) =>
           projects.length === 0
             ? IO.fail<ApiError>(
