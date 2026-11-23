@@ -1,6 +1,6 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.jordanburke/temporal-mcp-server",
+  "name": "io.github.sapientsai/temporal-mcp-server",
   "description": "Time, timezone and duration tools — IANA zones, conversion, DST-correct date arithmetic.",
   "repository": {
     "url": "https://github.com/sapientsai/mcp-servers",
