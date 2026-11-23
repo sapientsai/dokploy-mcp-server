@@ -2,7 +2,7 @@
   "name": "temporal-mcp-server",
   "version": "0.3.1",
   "description": "MCP server for time, timezone, and duration tools. Runs locally over stdio and on Cloudflare Workers.",
-  "mcpName": "io.github.jordanburke/temporal-mcp-server",
+  "mcpName": "io.github.sapientsai/temporal-mcp-server",
   "keywords": [
     "mcp",
     "model-context-protocol",
