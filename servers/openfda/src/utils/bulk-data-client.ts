@@ -29,9 +29,9 @@ type CacheEntry<T> = {
 }
 
 export type OrangeBookData = {
-  products: OrangeBookProduct[]
-  patents: OrangeBookPatent[]
-  exclusivities: OrangeBookExclusivity[]
+  products: ReadonlyArray<OrangeBookProduct>
+  patents: ReadonlyArray<OrangeBookPatent>
+  exclusivities: ReadonlyArray<OrangeBookExclusivity>
 }
 
 /** A parsed row: column name to cell text */
@@ -111,7 +111,7 @@ function toPurpleBookEntry(r: Row): PurpleBookEntry {
   const licenseType = cell(r, "License Type", "BLA Type")
   const blaType = Option(/^351\([ak]\)/.exec(licenseType))
     .map(([base]) => base)
-    .orElse(licenseType)
+    .getOrElse(() => licenseType)
   return {
     blaNumber: cell(r, "BLA Number"),
     proprietaryName: cell(r, "Proprietary Name"),
@@ -133,12 +133,13 @@ function toPurpleBookEntry(r: Row): PurpleBookEntry {
 }
 
 /** Split delimited text into rows keyed by the header line; [] without a header and one row */
-function parseRows(text: string, splitLine: (line: string) => string[]): Row[] {
+function parseRows(text: string, splitLine: (line: string) => ReadonlyArray<string>): ReadonlyArray<Row> {
   const lines = List(text.split("\n")).filter((line) => line.trim() !== "")
-  return lines.headOption
+  return lines
+    .headOption()
     .filter(() => lines.size >= 2)
     .fold(
-      (): Row[] => [],
+      (): ReadonlyArray<Row> => [],
       (headerLine) => {
         const headers = splitLine(headerLine).map((h) => h.trim())
         return lines
@@ -152,9 +153,10 @@ function parseRows(text: string, splitLine: (line: string) => string[]): Row[] {
     )
 }
 
+/* eslint-disable functype/prefer-list, functype/no-array-mutation -- csvRecords's accumulator changes in place on purpose: copying it per character was quadratic (see csvRecords). */
 /** The CSV scanner's accumulator. csvRecords owns it and changes it in place, one step per character. */
 type CsvScan = {
-  readonly records: string[][]
+  readonly records: ReadonlyArray<string>[]
   fields: string[]
   field: string
   inQuotes: boolean
@@ -185,6 +187,7 @@ function csvStep(scan: CsvScan, char: string): CsvScan {
   } else if (char !== "\r") scan.field += char
   return scan
 }
+/* eslint-enable functype/prefer-list, functype/no-array-mutation */
 
 /**
  * Split CSV text into records of raw cells. A quoted field may hold commas,
@@ -194,27 +197,28 @@ function csvStep(scan: CsvScan, char: string): CsvScan {
  * The accumulator changes in place on purpose: a reducer that copied its state per
  * character and the record list per line was quadratic on FDA's ~500 KB monthly file.
  */
-export function csvRecords(text: string): string[][] {
+export function csvRecords(text: string): ReadonlyArray<ReadonlyArray<string>> {
   const initial: CsvScan = { records: [], fields: [], field: "", inQuotes: false, quoteSeen: false }
   const end = Array.from(text.replace(/^\uFEFF/, "")).reduce(csvStep, initial)
   const last = end.fields.length > 0 || end.field !== "" ? [[...end.fields, end.field]] : []
-  return [...end.records, ...last].filter((record) => record.length > 1 || (record[0] ?? "").trim() !== "")
+  const records: ReadonlyArray<ReadonlyArray<string>> = [...end.records, ...last]
+  return records.filter((record) => record.length > 1 || (record[0] ?? "").trim() !== "")
 }
 
 /** Rows keyed by a header record, with header names and cells trimmed */
-function rowsUnder(header: readonly string[], records: readonly (readonly string[])[]): Row[] {
+function rowsUnder(header: readonly string[], records: readonly (readonly string[])[]): ReadonlyArray<Row> {
   const names = header.map((h) => h.trim())
   return records.map((values): Row => Object.fromEntries(names.map((h, j) => [h, (values[j] ?? "").trim()])))
 }
 
 /** Parse tilde-delimited text (the Orange Book file format) */
-export const parseTildeDelimited = (text: string): Row[] => parseRows(text, (line) => line.split("~"))
+export const parseTildeDelimited = (text: string): ReadonlyArray<Row> => parseRows(text, (line) => line.split("~"))
 
 /** Parse CSV text, honouring quoted fields and doubled quotes */
-export const parseCSV = (text: string): Row[] => {
+export const parseCSV = (text: string): ReadonlyArray<Row> => {
   const [header, ...rest] = csvRecords(text)
   return Option(header).fold(
-    (): Row[] => [],
+    (): ReadonlyArray<Row> => [],
     (h) => rowsUnder(h, rest),
   )
 }
@@ -227,11 +231,11 @@ function parseOrangeBookFiles(files: Record<string, Uint8Array>): OrangeBookData
     text: decoder.decode(content),
   }))
 
-  const rowsOf = (namePart: string): Row[] =>
+  const rowsOf = (namePart: string): ReadonlyArray<Row> =>
     fileEntries
       .find((f) => f.name.includes(namePart))
       .map((f) => parseTildeDelimited(f.text))
-      .orElse([])
+      .getOrElse(() => [])
 
   const products = rowsOf("products").map(toOrangeBookProduct)
   loggers.bulk(`Parsed ${products.length} Orange Book products`)
@@ -278,7 +282,7 @@ const MONTH_NUMBERS = Map<string, number>(
 )
 
 /** The monthly CSV links on the downloads page, newest first */
-export function purpleBookCsvLinks(html: string): string[] {
+export function purpleBookCsvLinks(html: string): ReadonlyArray<string> {
   const links = List(Array.from(html.matchAll(PURPLE_BOOK_CSV_LINK))).flatMap(([url, year, month]) =>
     MONTH_NUMBERS.get(month.toLowerCase())
       .map((m) => ({ url, order: Number(year) * 100 + m }))
@@ -290,10 +294,10 @@ export function purpleBookCsvLinks(html: string): string[] {
 }
 
 /** The full product list: the rows under the last "BLA Number" header (the file opens with this month's changes) */
-function purpleBookEntries(text: string): Either<Error, PurpleBookEntry[]> {
+function purpleBookEntries(text: string): Either<Error, ReadonlyArray<PurpleBookEntry>> {
   const records = csvRecords(text)
   const headerAt = records.findLastIndex((record) => record.some((c) => c.trim() === "BLA Number"))
-  const entriesUnder = (header: readonly string[]): PurpleBookEntry[] =>
+  const entriesUnder = (header: readonly string[]): ReadonlyArray<PurpleBookEntry> =>
     rowsUnder(header, records.slice(headerAt + 1))
       .map(toPurpleBookEntry)
       .filter((entry) => entry.blaNumber !== "")
@@ -308,7 +312,7 @@ async function downloadText(url: string): Promise<Either<Error, string>> {
   return response.flatMapAsync(async (r) => (await Try.fromPromise(r.text())).toEither(toError))
 }
 
-async function loadPurpleBook(): Promise<Either<Error, PurpleBookEntry[]>> {
+async function loadPurpleBook(): Promise<Either<Error, ReadonlyArray<PurpleBookEntry>>> {
   loggers.bulk("Finding the latest Purple Book CSV...")
   const page = await fetchOk(
     PURPLE_BOOK_DOWNLOADS_URL,
@@ -319,7 +323,7 @@ async function loadPurpleBook(): Promise<Either<Error, PurpleBookEntry[]>> {
   return html.flatMapAsync((pageHtml) =>
     purpleBookCsvLinks(pageHtml)
       .slice(0, PURPLE_BOOK_CANDIDATES)
-      .reduce<Promise<Either<Error, PurpleBookEntry[]>>>(
+      .reduce<Promise<Either<Error, ReadonlyArray<PurpleBookEntry>>>>(
         async (previous, url) =>
           (await previous).fold(
             async () => {
@@ -330,7 +334,7 @@ async function loadPurpleBook(): Promise<Either<Error, PurpleBookEntry[]>> {
               )
               return loaded
             },
-            (entries) => Promise.resolve(Right<Error, PurpleBookEntry[]>(entries)),
+            (entries) => Promise.resolve(Right<Error, ReadonlyArray<PurpleBookEntry>>(entries)),
           ),
         Promise.resolve(Left(new Error(`No Purple Book CSV download found at ${PURPLE_BOOK_DOWNLOADS_URL}`))),
       )
@@ -366,17 +370,17 @@ async function cached<T>(
 /** A client for the FDA bulk files. Orange Book and Purple Book data are cached per client. */
 export type BulkClient = {
   downloadBinary: (url: string) => Promise<Either<Error, Uint8Array>>
-  parseTildeDelimited: (text: string) => Row[]
-  parseCSV: (text: string) => Row[]
+  parseTildeDelimited: (text: string) => ReadonlyArray<Row>
+  parseCSV: (text: string) => ReadonlyArray<Row>
   getOrangeBookData: () => Promise<Either<Error, OrangeBookData>>
-  getPurpleBookData: () => Promise<Either<Error, PurpleBookEntry[]>>
+  getPurpleBookData: () => Promise<Either<Error, ReadonlyArray<PurpleBookEntry>>>
   clearCache: () => void
 }
 
 /** Create a bulk data client with its own empty cache */
 export function createBulkDataClient(): BulkClient {
   const orangeBookCache = Ref<Option<CacheEntry<OrangeBookData>>>(None())
-  const purpleBookCache = Ref<Option<CacheEntry<PurpleBookEntry[]>>>(None())
+  const purpleBookCache = Ref<Option<CacheEntry<ReadonlyArray<PurpleBookEntry>>>>(None())
 
   return {
     downloadBinary,
@@ -402,11 +406,11 @@ export class BulkDataClient implements BulkClient {
     return this.client.downloadBinary(url)
   }
 
-  parseTildeDelimited(text: string): Row[] {
+  parseTildeDelimited(text: string): ReadonlyArray<Row> {
     return this.client.parseTildeDelimited(text)
   }
 
-  parseCSV(text: string): Row[] {
+  parseCSV(text: string): ReadonlyArray<Row> {
     return this.client.parseCSV(text)
   }
 
@@ -414,7 +418,7 @@ export class BulkDataClient implements BulkClient {
     return this.client.getOrangeBookData()
   }
 
-  getPurpleBookData(): Promise<Either<Error, PurpleBookEntry[]>> {
+  getPurpleBookData(): Promise<Either<Error, ReadonlyArray<PurpleBookEntry>>> {
     return this.client.getPurpleBookData()
   }
 

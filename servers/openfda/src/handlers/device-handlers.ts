@@ -72,10 +72,10 @@ function formatDevice510K(device: Device510K): FormattedDevice510K {
 export async function handleSearchDevice510K(
   params: Device510KParams,
   client: FDAClient = fdaAPIClient,
-): Promise<FDAToolResponse<FormattedDevice510K[]>> {
+): Promise<FDAToolResponse<ReadonlyArray<FormattedDevice510K>>> {
   loggers.tools("searchDevice510K", params)
 
-  const searchTerms: SearchTerm[] = [
+  const searchTerms: ReadonlyArray<SearchTerm> = [
     { field: "device_name", value: params.deviceName },
     { field: "applicant", value: params.applicant },
     { field: "product_code", value: params.productCode },
@@ -118,7 +118,7 @@ type FormattedDeviceClassification = {
   implant: boolean
   lifeSustaining: boolean
   /** The fields cut at 200 characters; absent when none were */
-  truncated: Array<"definition"> | undefined
+  truncated: ReadonlyArray<"definition"> | undefined
 }
 
 function formatDeviceClassification(classification: DeviceClassification): FormattedDeviceClassification {
@@ -141,10 +141,10 @@ function formatDeviceClassification(classification: DeviceClassification): Forma
 export async function handleSearchDeviceClassifications(
   params: DeviceClassificationParams,
   client: FDAClient = fdaAPIClient,
-): Promise<FDAToolResponse<FormattedDeviceClassification[]>> {
+): Promise<FDAToolResponse<ReadonlyArray<FormattedDeviceClassification>>> {
   loggers.tools("searchDeviceClassifications", params)
 
-  const searchTerms: SearchTerm[] = [
+  const searchTerms: ReadonlyArray<SearchTerm> = [
     { field: "device_name", value: params.deviceName },
     { field: "device_class", value: params.deviceClass },
     { field: "medical_specialty", value: params.medicalSpecialty },
@@ -188,7 +188,7 @@ type FormattedDeviceAdverseEvent = {
   eventType: string | undefined
   adverseEventFlag: boolean
   productProblemFlag: boolean
-  devices: Array<{
+  devices: ReadonlyArray<{
     brandName: string | undefined
     genericName: string | undefined
     manufacturerName: string | undefined
@@ -196,7 +196,7 @@ type FormattedDeviceAdverseEvent = {
     productCode: string | undefined
     deviceClass: string | undefined
   }>
-  mdrText: Array<{
+  mdrText: ReadonlyArray<{
     textType: string | undefined
     text: string | undefined
     /** True when the text was cut at 300 characters */
@@ -234,7 +234,7 @@ function formatDeviceAdverseEvent(event: DeviceAdverseEvent): FormattedDeviceAdv
 export async function handleSearchDeviceAdverseEvents(
   params: DeviceAdverseEventsParams,
   client: FDAClient = fdaAPIClient,
-): Promise<FDAToolResponse<FormattedDeviceAdverseEvent[]>> {
+): Promise<FDAToolResponse<ReadonlyArray<FormattedDeviceAdverseEvent>>> {
   loggers.tools("searchDeviceAdverseEvents", params)
 
   // If reportNumber is provided, do a direct lookup
@@ -252,7 +252,7 @@ export async function handleSearchDeviceAdverseEvents(
     )
   }
 
-  const searchTerms: SearchTerm[] = [
+  const searchTerms: ReadonlyArray<SearchTerm> = [
     { field: "device.generic_name", value: params.deviceName },
     { field: "device.brand_name", value: params.brandName },
     { field: "device.manufacturer_d_name", value: params.manufacturerName },
@@ -303,7 +303,7 @@ type FormattedDeviceEnforcement = {
   deviceName: string | undefined
   deviceClass: string | undefined
   /** The fields cut at 200 characters; absent when none were */
-  truncated: Array<"productDescription" | "reasonForRecall" | "distributionPattern"> | undefined
+  truncated: ReadonlyArray<"productDescription" | "reasonForRecall" | "distributionPattern"> | undefined
 }
 
 function formatDeviceEnforcement(recall: DeviceEnforcement): FormattedDeviceEnforcement {
@@ -332,10 +332,10 @@ function formatDeviceEnforcement(recall: DeviceEnforcement): FormattedDeviceEnfo
 export async function handleSearchDeviceEnforcement(
   params: DeviceEnforcementParams,
   client: FDAClient = fdaAPIClient,
-): Promise<FDAToolResponse<FormattedDeviceEnforcement[]>> {
+): Promise<FDAToolResponse<ReadonlyArray<FormattedDeviceEnforcement>>> {
   loggers.tools("searchDeviceEnforcement", params)
 
-  const searchTerms: SearchTerm[] = [
+  const searchTerms: ReadonlyArray<SearchTerm> = [
     { field: "recalling_firm", value: params.recallingFirm },
     { field: "product_description", value: params.productDescription },
     { field: "classification", value: params.classification },

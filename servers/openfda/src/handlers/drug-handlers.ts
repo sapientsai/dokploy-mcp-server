@@ -51,12 +51,12 @@ type FormattedDrugAdverseEvent = {
   /** How many drugs and reactions the report lists; `drugs` and `reactions` may show fewer */
   drugCount: number
   reactionCount: number
-  drugs: Array<{
+  drugs: ReadonlyArray<{
     name: string | undefined
     indication: string | undefined
     route: string | undefined
   }>
-  reactions: Array<{
+  reactions: ReadonlyArray<{
     reaction: string | undefined
     outcome: string | undefined
   }>
@@ -118,7 +118,7 @@ const MAX_MATCHES = 10
  * report's own order. Reports often list more drugs than the preview, so a search for one drug
  * must not drop it.
  */
-function previewWithMatches<T>(items: readonly T[] | undefined, matches: (item: T) => boolean): T[] {
+function previewWithMatches<T>(items: readonly T[] | undefined, matches: (item: T) => boolean): ReadonlyArray<T> {
   if (!Array.isArray(items)) return []
   const laterMatches = items
     .map((item, i) => (i >= LIST_PREVIEW && matches(item) ? i : -1))
@@ -174,7 +174,7 @@ function formatDrugAdverseEvent(
     ).map((r) => ({
       reaction: r.reactionmeddrapt,
       outcome: nonEmpty(r.reactionoutcome)
-        .map((code) => REACTION_OUTCOMES.get(code).orElse(code))
+        .map((code) => REACTION_OUTCOMES.get(code).getOrElse(() => code))
         .orUndefined(),
     })),
     patient: {
@@ -192,7 +192,7 @@ function formatDrugAdverseEvent(
 export async function handleSearchDrugAdverseEvents(
   params: DrugAdverseEventsParams,
   client: FDAClient = fdaAPIClient,
-): Promise<FDAToolResponse<FormattedDrugAdverseEvent[]>> {
+): Promise<FDAToolResponse<ReadonlyArray<FormattedDrugAdverseEvent>>> {
   loggers.tools("searchDrugAdverseEvents", params)
 
   // If safetyReportId is provided, do a direct lookup
@@ -210,7 +210,7 @@ export async function handleSearchDrugAdverseEvents(
     )
   }
 
-  const searchTerms: SearchTerm[] = [
+  const searchTerms: ReadonlyArray<SearchTerm> = [
     { field: "patient.drug.medicinalproduct", value: params.drugName },
     { field: "patient.reaction.reactionmeddrapt", value: params.reaction },
     { field: "patient.drug.openfda.manufacturer_name", value: params.manufacturer },
@@ -245,7 +245,7 @@ export type DrugLabelsParams = {
   activeIngredient?: string
   route?: string
   hasBoxedWarning?: boolean
-  sections?: string[]
+  sections?: ReadonlyArray<string>
   fullText?: boolean
   limit?: number
   skip?: number
@@ -256,7 +256,7 @@ type FormattedDrugLabel = {
   brandName: string | undefined
   genericName: string | undefined
   manufacturer: string | undefined
-  activeIngredients: string[]
+  activeIngredients: ReadonlyArray<string>
   boxedWarning: string | undefined
   indications: string | undefined
   warnings: string | undefined
@@ -271,9 +271,9 @@ type FormattedDrugLabel = {
   description: string | undefined
   howSupplied: string | undefined
   storageAndHandling: string | undefined
-  route: string[]
+  route: ReadonlyArray<string>
   /** The sections cut short (boxed warning at 500 characters, others at 200); absent when none were */
-  truncated: LabelField[] | undefined
+  truncated: ReadonlyArray<LabelField> | undefined
 }
 
 /** The label fields that hold section text */
@@ -295,7 +295,7 @@ type LabelField =
 
 /** The DrugLabel fields that hold section text */
 type LabelSection = {
-  [K in keyof DrugLabel]-?: NonNullable<DrugLabel[K]> extends string[] ? K : never
+  [K in keyof DrugLabel]-?: NonNullable<DrugLabel[K]> extends ReadonlyArray<string> ? K : never
 }[keyof DrugLabel]
 
 function formatDrugLabel(params: DrugLabelsParams): (label: DrugLabel) => FormattedDrugLabel {
@@ -342,7 +342,7 @@ function formatDrugLabel(params: DrugLabelsParams): (label: DrugLabel) => Format
 export async function handleSearchDrugLabels(
   params: DrugLabelsParams,
   client: FDAClient = fdaAPIClient,
-): Promise<FDAToolResponse<FormattedDrugLabel[]>> {
+): Promise<FDAToolResponse<ReadonlyArray<FormattedDrugLabel>>> {
   loggers.tools("searchDrugLabels", params)
 
   // If setId is provided, do a direct lookup
@@ -355,7 +355,7 @@ export async function handleSearchDrugLabels(
     return toSearchResponse(await client.searchDrugLabels(searchParams), searchParams, formatDrugLabel(params), client)
   }
 
-  const searchTerms: SearchTerm[] = [
+  const searchTerms: ReadonlyArray<SearchTerm> = [
     { field: "indications_and_usage", value: params.indication },
     { field: "openfda.substance_name", value: params.activeIngredient },
     { field: "openfda.route", value: params.route },
@@ -399,8 +399,8 @@ type FormattedDrugNDC = {
   genericName: string | undefined
   labelerName: string | undefined
   dosageForm: string | undefined
-  route: string[]
-  activeIngredients: Array<{ name: string | undefined; strength: string | undefined }>
+  route: ReadonlyArray<string>
+  activeIngredients: ReadonlyArray<{ name: string | undefined; strength: string | undefined }>
   marketingStartDate: string | undefined
   productType: string | undefined
 }
@@ -425,10 +425,10 @@ function formatDrugNDC(ndc: DrugNDC): FormattedDrugNDC {
 export async function handleSearchDrugNDC(
   params: DrugNDCParams,
   client: FDAClient = fdaAPIClient,
-): Promise<FDAToolResponse<FormattedDrugNDC[]>> {
+): Promise<FDAToolResponse<ReadonlyArray<FormattedDrugNDC>>> {
   loggers.tools("searchDrugNDC", params)
 
-  const searchTerms: SearchTerm[] = [
+  const searchTerms: ReadonlyArray<SearchTerm> = [
     { field: "product_ndc", value: params.productNdc },
     { field: "brand_name", value: params.brandName },
     { field: "generic_name", value: params.genericName },
@@ -472,7 +472,7 @@ type FormattedDrugEnforcement = {
   city: string | undefined
   state: string | undefined
   /** The fields cut at 200 characters; absent when none were */
-  truncated: Array<"productDescription" | "reasonForRecall" | "distributionPattern"> | undefined
+  truncated: ReadonlyArray<"productDescription" | "reasonForRecall" | "distributionPattern"> | undefined
 }
 
 function formatDrugEnforcement(recall: DrugEnforcement): FormattedDrugEnforcement {
@@ -499,10 +499,10 @@ function formatDrugEnforcement(recall: DrugEnforcement): FormattedDrugEnforcemen
 export async function handleSearchDrugEnforcement(
   params: DrugEnforcementParams,
   client: FDAClient = fdaAPIClient,
-): Promise<FDAToolResponse<FormattedDrugEnforcement[]>> {
+): Promise<FDAToolResponse<ReadonlyArray<FormattedDrugEnforcement>>> {
   loggers.tools("searchDrugEnforcement", params)
 
-  const searchTerms: SearchTerm[] = [
+  const searchTerms: ReadonlyArray<SearchTerm> = [
     { field: "recalling_firm", value: params.recallingFirm },
     { field: "classification", value: params.classification },
     { field: "status", value: params.status },
@@ -535,12 +535,12 @@ export type DrugsFDAParams = {
 type FormattedDrugsFDA = {
   applicationNumber: string | undefined
   sponsorName: string | undefined
-  products: Array<{
+  products: ReadonlyArray<{
     brandName: string | undefined
     dosageForm: string | undefined
     route: string | undefined
     marketingStatus: string | undefined
-    activeIngredients: Array<{ name: string | undefined; strength: string | undefined }>
+    activeIngredients: ReadonlyArray<{ name: string | undefined; strength: string | undefined }>
   }>
   latestSubmission:
     | {
@@ -578,10 +578,10 @@ function formatDrugsFDA(drug: DrugsFDA): FormattedDrugsFDA {
 export async function handleSearchDrugsFDA(
   params: DrugsFDAParams,
   client: FDAClient = fdaAPIClient,
-): Promise<FDAToolResponse<FormattedDrugsFDA[]>> {
+): Promise<FDAToolResponse<ReadonlyArray<FormattedDrugsFDA>>> {
   loggers.tools("searchDrugsFDA", params)
 
-  const searchTerms: SearchTerm[] = [
+  const searchTerms: ReadonlyArray<SearchTerm> = [
     { field: "sponsor_name", value: params.sponsorName },
     { field: "application_number", value: params.applicationNumber },
     { field: "products.brand_name", value: params.brandName },
@@ -615,7 +615,7 @@ type FormattedDrugShortage = {
   initialPostingDate: string | undefined
   resolvedShortageDate: string | undefined
   /** The fields cut at 200 characters; absent when none were */
-  truncated: Array<"description"> | undefined
+  truncated: ReadonlyArray<"description"> | undefined
 }
 
 function formatDrugShortage(shortage: DrugShortage): FormattedDrugShortage {
@@ -634,10 +634,10 @@ function formatDrugShortage(shortage: DrugShortage): FormattedDrugShortage {
 export async function handleSearchDrugShortages(
   params: DrugShortagesParams,
   client: FDAClient = fdaAPIClient,
-): Promise<FDAToolResponse<FormattedDrugShortage[]>> {
+): Promise<FDAToolResponse<ReadonlyArray<FormattedDrugShortage>>> {
   loggers.tools("searchDrugShortages", params)
 
-  const searchTerms: SearchTerm[] = [
+  const searchTerms: ReadonlyArray<SearchTerm> = [
     { field: "generic_name", value: params.genericName },
     { field: "status", value: params.status },
   ]

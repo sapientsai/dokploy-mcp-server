@@ -16,7 +16,7 @@ export type FDAResponse<T> = {
       total: number
     }
   }
-  results?: T[]
+  results?: ReadonlyArray<T>
   error?: {
     code: string
     message: string
@@ -25,23 +25,23 @@ export type FDAResponse<T> = {
 
 // Common OpenFDA fields that appear across many endpoints
 export type OpenFDAFields = {
-  application_number?: string[]
-  brand_name?: string[]
-  generic_name?: string[]
-  manufacturer_name?: string[]
-  product_ndc?: string[]
-  product_type?: string[]
-  route?: string[]
-  substance_name?: string[]
-  rxcui?: string[]
-  spl_id?: string[]
-  spl_set_id?: string[]
-  pharm_class_epc?: string[]
-  pharm_class_cs?: string[]
-  pharm_class_pe?: string[]
-  pharm_class_moa?: string[]
-  nui?: string[]
-  unii?: string[]
+  application_number?: ReadonlyArray<string>
+  brand_name?: ReadonlyArray<string>
+  generic_name?: ReadonlyArray<string>
+  manufacturer_name?: ReadonlyArray<string>
+  product_ndc?: ReadonlyArray<string>
+  product_type?: ReadonlyArray<string>
+  route?: ReadonlyArray<string>
+  substance_name?: ReadonlyArray<string>
+  rxcui?: ReadonlyArray<string>
+  spl_id?: ReadonlyArray<string>
+  spl_set_id?: ReadonlyArray<string>
+  pharm_class_epc?: ReadonlyArray<string>
+  pharm_class_cs?: ReadonlyArray<string>
+  pharm_class_pe?: ReadonlyArray<string>
+  pharm_class_moa?: ReadonlyArray<string>
+  nui?: ReadonlyArray<string>
+  unii?: ReadonlyArray<string>
 }
 
 // Drug Adverse Event (FAERS)
@@ -87,7 +87,7 @@ export type DrugAdverseEvent = {
       patientdeathdate?: string
       patientdeathdateformat?: string
     }
-    drug?: Array<{
+    drug?: ReadonlyArray<{
       actiondrug?: string
       activesubstance?: {
         activesubstancename?: string
@@ -117,7 +117,7 @@ export type DrugAdverseEvent = {
       medicinalproduct?: string
       openfda?: OpenFDAFields
     }>
-    reaction?: Array<{
+    reaction?: ReadonlyArray<{
       reactionmeddrapt?: string
       reactionmeddraversionpt?: string
       reactionoutcome?: string
@@ -131,37 +131,37 @@ export type DrugLabel = {
   id?: string
   set_id?: string
   version?: string
-  spl_product_data_elements?: string[]
-  active_ingredient?: string[]
-  inactive_ingredient?: string[]
-  purpose?: string[]
-  indications_and_usage?: string[]
-  warnings?: string[]
-  boxed_warning?: string[]
-  do_not_use?: string[]
-  ask_doctor?: string[]
-  ask_doctor_or_pharmacist?: string[]
-  stop_use?: string[]
-  pregnancy_or_breast_feeding?: string[]
-  keep_out_of_reach_of_children?: string[]
-  dosage_and_administration?: string[]
-  storage_and_handling?: string[]
-  questions?: string[]
-  package_label_principal_display_panel?: string[]
-  description?: string[]
-  clinical_pharmacology?: string[]
-  mechanism_of_action?: string[]
-  pharmacodynamics?: string[]
-  pharmacokinetics?: string[]
-  contraindications?: string[]
-  warnings_and_cautions?: string[]
-  adverse_reactions?: string[]
-  drug_interactions?: string[]
-  use_in_specific_populations?: string[]
-  overdosage?: string[]
-  how_supplied?: string[]
-  information_for_patients?: string[]
-  clinical_studies?: string[]
+  spl_product_data_elements?: ReadonlyArray<string>
+  active_ingredient?: ReadonlyArray<string>
+  inactive_ingredient?: ReadonlyArray<string>
+  purpose?: ReadonlyArray<string>
+  indications_and_usage?: ReadonlyArray<string>
+  warnings?: ReadonlyArray<string>
+  boxed_warning?: ReadonlyArray<string>
+  do_not_use?: ReadonlyArray<string>
+  ask_doctor?: ReadonlyArray<string>
+  ask_doctor_or_pharmacist?: ReadonlyArray<string>
+  stop_use?: ReadonlyArray<string>
+  pregnancy_or_breast_feeding?: ReadonlyArray<string>
+  keep_out_of_reach_of_children?: ReadonlyArray<string>
+  dosage_and_administration?: ReadonlyArray<string>
+  storage_and_handling?: ReadonlyArray<string>
+  questions?: ReadonlyArray<string>
+  package_label_principal_display_panel?: ReadonlyArray<string>
+  description?: ReadonlyArray<string>
+  clinical_pharmacology?: ReadonlyArray<string>
+  mechanism_of_action?: ReadonlyArray<string>
+  pharmacodynamics?: ReadonlyArray<string>
+  pharmacokinetics?: ReadonlyArray<string>
+  contraindications?: ReadonlyArray<string>
+  warnings_and_cautions?: ReadonlyArray<string>
+  adverse_reactions?: ReadonlyArray<string>
+  drug_interactions?: ReadonlyArray<string>
+  use_in_specific_populations?: ReadonlyArray<string>
+  overdosage?: ReadonlyArray<string>
+  how_supplied?: ReadonlyArray<string>
+  information_for_patients?: ReadonlyArray<string>
+  clinical_studies?: ReadonlyArray<string>
   openfda?: OpenFDAFields
 }
 
@@ -177,24 +177,24 @@ export type DrugNDC = {
   brand_name_suffix?: string
   generic_name?: string
   dosage_form?: string
-  route?: string[]
+  route?: ReadonlyArray<string>
   marketing_start_date?: string
   marketing_end_date?: string
   marketing_category?: string
   application_number?: string
   labeler_name?: string
-  active_ingredients?: Array<{
+  active_ingredients?: ReadonlyArray<{
     name?: string
     strength?: string
   }>
-  packaging?: Array<{
+  packaging?: ReadonlyArray<{
     package_ndc?: string
     description?: string
     marketing_start_date?: string
     marketing_end_date?: string
     sample?: string
   }>
-  pharm_class?: string[]
+  pharm_class?: ReadonlyArray<string>
   openfda?: OpenFDAFields
 }
 
@@ -242,11 +242,11 @@ export type DrugShortage = {
 export type DrugsFDA = {
   application_number?: string
   sponsor_name?: string
-  products?: Array<{
+  products?: ReadonlyArray<{
     product_number?: string
     reference_drug?: string
     brand_name?: string
-    active_ingredients?: Array<{
+    active_ingredients?: ReadonlyArray<{
       name?: string
       strength?: string
     }>
@@ -255,7 +255,7 @@ export type DrugsFDA = {
     route?: string
     marketing_status?: string
   }>
-  submissions?: Array<{
+  submissions?: ReadonlyArray<{
     submission_type?: string
     submission_number?: string
     submission_status?: string
@@ -263,7 +263,7 @@ export type DrugsFDA = {
     review_priority?: string
     submission_class_code?: string
     submission_class_code_description?: string
-    application_docs?: Array<{
+    application_docs?: ReadonlyArray<{
       id?: string
       url?: string
       date?: string
@@ -300,7 +300,7 @@ export type Device510K = {
     device_class?: string
     medical_specialty_description?: string
     regulation_number?: string
-    fei_number?: string[]
+    fei_number?: ReadonlyArray<string>
   }
 }
 
@@ -322,10 +322,10 @@ export type DeviceClassification = {
   third_party_flag?: string
   unclassified_reason?: string
   openfda?: {
-    fei_number?: string[]
-    k_number?: string[]
-    pma_number?: string[]
-    registration_number?: string[]
+    fei_number?: ReadonlyArray<string>
+    k_number?: ReadonlyArray<string>
+    pma_number?: ReadonlyArray<string>
+    registration_number?: ReadonlyArray<string>
   }
 }
 
@@ -350,8 +350,8 @@ export type DeviceAdverseEvent = {
   manufacturer_zip_code?: string
   manufacturer_country?: string
   event_type?: string
-  type_of_report?: string[]
-  device?: Array<{
+  type_of_report?: ReadonlyArray<string>
+  device?: ReadonlyArray<{
     brand_name?: string
     generic_name?: string
     manufacturer_d_name?: string
@@ -375,13 +375,13 @@ export type DeviceAdverseEvent = {
       regulation_number?: string
     }
   }>
-  patient?: Array<{
+  patient?: ReadonlyArray<{
     patient_sequence_number?: string
     date_received?: string
     sequence_number_treatment?: string
-    sequence_number_outcome?: string[]
+    sequence_number_outcome?: ReadonlyArray<string>
   }>
-  mdr_text?: Array<{
+  mdr_text?: ReadonlyArray<{
     mdr_text_key?: string
     text_type_code?: string
     patient_sequence_number?: string
@@ -417,10 +417,10 @@ export type DeviceEnforcement = {
     device_class?: string
     medical_specialty_description?: string
     regulation_number?: string
-    k_number?: string[]
-    pma_number?: string[]
-    fei_number?: string[]
-    registration_number?: string[]
+    k_number?: ReadonlyArray<string>
+    pma_number?: ReadonlyArray<string>
+    fei_number?: ReadonlyArray<string>
+    registration_number?: ReadonlyArray<string>
   }
 }
 

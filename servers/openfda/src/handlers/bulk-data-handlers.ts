@@ -80,8 +80,11 @@ function obJoinKey(record: { applType: string; applNo: string; productNo: string
 // slower on Orange Book-sized inputs.
 // Object.entries lists integer-like keys first, in ascending order; obJoinKey
 // keys are never integer-like, and these maps are only used for lookups.
-function groupEntries<T>(items: readonly T[], keyFn: (item: T) => string): [string, T[]][] {
-  return Object.entries(Object.groupBy(items, keyFn)).map(([key, group]): [string, T[]] => [key, group ?? []])
+function groupEntries<T>(items: readonly T[], keyFn: (item: T) => string): ReadonlyArray<[string, ReadonlyArray<T>]> {
+  return Object.entries(Object.groupBy(items, keyFn)).map(([key, group]): [string, ReadonlyArray<T>] => [
+    key,
+    group ?? [],
+  ])
 }
 
 // The lookup maps below are native: they are read once per row, and a functype Map
@@ -103,7 +106,7 @@ function groupSizes<T>(groups: ReadonlyMap<string, readonly T[]>): ReadonlyMap<s
 }
 
 // Items grouped by key
-function buildGroupMap<T>(items: readonly T[], keyFn: (item: T) => string): ReadonlyMap<string, T[]> {
+function buildGroupMap<T>(items: readonly T[], keyFn: (item: T) => string): ReadonlyMap<string, ReadonlyArray<T>> {
   return new globalThis.Map(groupEntries(items, keyFn))
 }
 
@@ -175,7 +178,7 @@ const NO_EXPIRY = "~"
  */
 function byExpiry<T extends { patentExpireDate: string }>(entries: List<T>): List<T> {
   return entries
-    .map((entry) => ({ entry, key: expiryKey(entry.patentExpireDate).orElse(NO_EXPIRY) }))
+    .map((entry) => ({ entry, key: expiryKey(entry.patentExpireDate).getOrElse(() => NO_EXPIRY) }))
     .sortBy((keyed) => keyed.key)
     .map((keyed) => keyed.entry)
 }
@@ -224,10 +227,10 @@ type FormattedOrangeBookProduct = {
 
 export async function handleSearchOrangeBook(
   params: OrangeBookSearchParams,
-): Promise<FDAToolResponse<FormattedOrangeBookProduct[]>> {
+): Promise<FDAToolResponse<ReadonlyArray<FormattedOrangeBookProduct>>> {
   loggers.tools("searchOrangeBook", params)
 
-  return (await bulkDataClient.getOrangeBookData()).fold(failure<FormattedOrangeBookProduct[]>, (data) => {
+  return (await bulkDataClient.getOrangeBookData()).fold(failure<ReadonlyArray<FormattedOrangeBookProduct>>, (data) => {
     const patentCounts = patentCountsByKey(data)
     const exclusivityCounts = exclusivityCountsByKey(data)
 
@@ -299,15 +302,15 @@ type FormattedOrangeBookPatent = {
   tradeName: string
   ingredient: string
   submissionDate: string
-  exclusivities: Array<{ code: string; date: string }>
+  exclusivities: ReadonlyArray<{ code: string; date: string }>
 }
 
 export async function handleSearchOrangeBookPatents(
   params: OrangeBookPatentsParams,
-): Promise<FDAToolResponse<FormattedOrangeBookPatent[]>> {
+): Promise<FDAToolResponse<ReadonlyArray<FormattedOrangeBookPatent>>> {
   loggers.tools("searchOrangeBookPatents", params)
 
-  return (await bulkDataClient.getOrangeBookData()).fold(failure<FormattedOrangeBookPatent[]>, (data) => {
+  return (await bulkDataClient.getOrangeBookData()).fold(failure<ReadonlyArray<FormattedOrangeBookPatent>>, (data) => {
     const productMap = productsByKey(data)
     const exclusivityMap = exclusivitiesByKey(data)
 
@@ -384,54 +387,57 @@ type FormattedPurpleBookEntry = {
 
 export async function handleSearchPurpleBook(
   params: PurpleBookSearchParams,
-): Promise<FDAToolResponse<FormattedPurpleBookEntry[]>> {
+): Promise<FDAToolResponse<ReadonlyArray<FormattedPurpleBookEntry>>> {
   loggers.tools("searchPurpleBook", params)
 
-  return (await bulkDataClient.getPurpleBookData()).fold(failure<FormattedPurpleBookEntry[]>, (entries) => {
-    const name = eitherContainsFilter(params.productName)
-    const applicant = containsFilter(params.applicant)
-    const blaNumber = exactFilter(params.blaNumber)
-    const licenseType = exactFilter(params.licenseType)
-    const biosimilar = flagFilter(params.biosimilar)
-    const interchangeable = flagFilter(params.interchangeable)
-    const filtered = List(entries).filter(
-      (e) =>
-        name(e.proprietaryName, e.properName) &&
-        applicant(e.applicant) &&
-        blaNumber(e.blaNumber) &&
-        licenseType(e.blaType) &&
-        biosimilar(e.biosimilar) &&
-        interchangeable(e.interchangeable),
-    )
+  return (await bulkDataClient.getPurpleBookData()).fold(
+    failure<ReadonlyArray<FormattedPurpleBookEntry>>,
+    (entries) => {
+      const name = eitherContainsFilter(params.productName)
+      const applicant = containsFilter(params.applicant)
+      const blaNumber = exactFilter(params.blaNumber)
+      const licenseType = exactFilter(params.licenseType)
+      const biosimilar = flagFilter(params.biosimilar)
+      const interchangeable = flagFilter(params.interchangeable)
+      const filtered = List(entries).filter(
+        (e) =>
+          name(e.proprietaryName, e.properName) &&
+          applicant(e.applicant) &&
+          blaNumber(e.blaNumber) &&
+          licenseType(e.blaType) &&
+          biosimilar(e.biosimilar) &&
+          interchangeable(e.interchangeable),
+      )
 
-    const { items, total } = applyPagination(filtered, params.limit, params.skip)
+      const { items, total } = applyPagination(filtered, params.limit, params.skip)
 
-    const formatted = items.map((e): FormattedPurpleBookEntry => ({
-      blaNumber: e.blaNumber,
-      proprietaryName: e.proprietaryName,
-      properName: e.properName,
-      applicant: e.applicant,
-      blaType: e.blaType,
-      strength: e.strength,
-      dosageForm: e.dosageForm,
-      route: e.route,
-      status: e.status,
-      licensingStatus: e.licensingStatus,
-      biosimilar: e.biosimilar,
-      interchangeable: e.interchangeable,
-      referenceProductBla: e.referenceProductBla,
-      referenceProductName: e.referenceProductProprietaryName,
-      approvalDate: e.approvalDate,
-    }))
+      const formatted = items.map((e): FormattedPurpleBookEntry => ({
+        blaNumber: e.blaNumber,
+        proprietaryName: e.proprietaryName,
+        properName: e.properName,
+        applicant: e.applicant,
+        blaType: e.blaType,
+        strength: e.strength,
+        dosageForm: e.dosageForm,
+        route: e.route,
+        status: e.status,
+        licensingStatus: e.licensingStatus,
+        biosimilar: e.biosimilar,
+        interchangeable: e.interchangeable,
+        referenceProductBla: e.referenceProductBla,
+        referenceProductName: e.referenceProductProprietaryName,
+        approvalDate: e.approvalDate,
+      }))
 
-    return {
-      success: true,
-      data: formatted.toArray(),
-      totalResults: total,
-      displayedResults: items.size,
-      dataSource: PURPLE_BOOK_SOURCE,
-    }
-  })
+      return {
+        success: true,
+        data: formatted.toArray(),
+        totalResults: total,
+        displayedResults: items.size,
+        dataSource: PURPLE_BOOK_SOURCE,
+      }
+    },
+  )
 }
 
 // ============================================================
@@ -457,24 +463,24 @@ type PatentExpiryEntry = {
   drugSubstanceFlag: string
   drugProductFlag: string
   patentUseCode: string
-  exclusivities: Array<{ code: string; date: string }>
+  exclusivities: ReadonlyArray<{ code: string; date: string }>
 }
 
 export async function handleSearchDrugPatentExpiry(
   params: DrugPatentExpiryParams,
-): Promise<FDAToolResponse<PatentExpiryEntry[]>> {
+): Promise<FDAToolResponse<ReadonlyArray<PatentExpiryEntry>>> {
   loggers.tools("searchDrugPatentExpiry", params)
 
   const includeExclusivity = params.includeExclusivity !== false
   const includePurpleBook = params.includePurpleBook === true
 
   return (await bulkDataClient.getOrangeBookData()).fold(
-    (error) => Promise.resolve(failure<PatentExpiryEntry[]>(error)),
+    (error) => Promise.resolve(failure<ReadonlyArray<PatentExpiryEntry>>(error)),
     async (data) => {
       const productMap = productsByKey(data)
       const exclusivityMap = includeExclusivity
         ? exclusivitiesByKey(data)
-        : new globalThis.Map<string, OrangeBookExclusivity[]>()
+        : new globalThis.Map<string, ReadonlyArray<OrangeBookExclusivity>>()
 
       // Filter patents by drug name / applNo
       const applNo = exactFilter(params.applNo)

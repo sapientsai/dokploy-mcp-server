@@ -40,7 +40,7 @@ export function buildDateQuery(field: string, dateFrom?: string, dateTo?: string
   const bound = (date?: string): string =>
     Option(date)
       .map((d) => d.replace(/-/g, ""))
-      .orElse("*")
+      .getOrElse(() => "*")
 
   const hasBound = [dateFrom, dateTo].some((date) => nonEmpty(date).isSome())
 
@@ -84,7 +84,10 @@ export type ClippedFields<K extends string> = Wire<{
  * were), so a caller can tell a shortened field from a short one.
  */
 export function clipFields<K extends string>(fields: Readonly<Record<K, Option<ClippedText>>>): ClippedFields<K> {
-  const entries = Object.entries(fields) as [K, Option<ClippedText>][]
+  // Object.entries types every key as string; these are the record's own keys, so K.
+  const entries = (Object.entries(fields) as ReadonlyArray<[string, Option<ClippedText>]>).map(
+    ([name, clipped]) => [name as K, clipped] as const,
+  )
   const truncated = entries.filter(([, clipped]) => clipped.exists((c) => c.truncated)).map(([name]) => name)
   return {
     text: Object.fromEntries(
@@ -100,8 +103,8 @@ export function toSearchResponse<R, F>(
   searchParams: SearchParams,
   format: (record: R) => F,
   client: FDAClient = fdaAPIClient,
-): FDAToolResponse<F[]> {
-  return result.fold(failure<F[]>, (response) => {
+): FDAToolResponse<ReadonlyArray<F>> {
+  return result.fold(failure<ReadonlyArray<F>>, (response) => {
     const results = response.results ?? []
     return {
       success: true,
