@@ -13,7 +13,7 @@ A pnpm workspace of small MCP servers built on somamcp. Each server is one npm p
 - **One lockfile.** Install from the root. A dependency bump for every server is one PR at the root, not one per server.
 - **Releases are per server, by tag.** `pnpm release <server> <patch|minor|major>` bumps, commits and tags `<package>@<version>`; `git push --follow-tags` publishes that package alone through `.github/workflows/publish.yml`. Never `npm publish` by hand, and never rename `publish.yml`: npm trusted publishing is configured against that file name.
 - **Docker images are per server.** A server with a container image has its own workflow, filtered by its path and triggered by its own tag. Its Dockerfile builds from the repo root (`docker build -f servers/<name>/Dockerfile .`).
-- **Keep each package's identity.** A server keeps its npm name, `mcpName` and image name when it moves in. Its `package.json` `repository` has `"directory": "servers/<name>"`, and its `server.json` `repository` has `"subfolder": "servers/<name>"`.
+- **Keep each package's identity.** A server keeps its npm name and image name when it moves in. Its `mcpName` must be `io.github.sapientsai/<name>`: the MCP Registry login in `publish.yml` (GitHub OIDC) can only publish under this repo's owner. temporal moved from `io.github.jordanburke/…` for that reason. Its `package.json` `repository` has `"directory": "servers/<name>"`, and its `server.json` `repository` has `"subfolder": "servers/<name>"`.
 
 ## Commands
 
