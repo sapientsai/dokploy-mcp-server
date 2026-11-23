@@ -1,0 +1,19 @@
+services:
+  openfda-mcp:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: openfda-mcp-server:latest
+    container_name: openfda-mcp
+    ports:
+      - "3000:3000"
+    environment:
+      - OPENFDA_API_KEY=${OPENFDA_API_KEY:-}
+      - DEBUG=${DEBUG:-}
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "node", "-e", "fetch('http://localhost:3000/mcp').catch(() => process.exit(1))"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s

@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "openfda": {
+      "command": "node",
+      "args": ["dist/index.js"],
+      "env": {
+        "OPENFDA_API_KEY": "${OPENFDA_API_KEY}"
+      }
+    }
+  }
+}
