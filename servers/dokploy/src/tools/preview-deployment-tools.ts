@@ -28,7 +28,7 @@ export function buildPreviewDeploymentProgram(
   return Match(args.action)
     .case("list", () =>
       client
-        .get<DokployPreviewDeployment[]>("previewDeployment.all", { applicationId: args.applicationId! })
+        .get<ReadonlyArray<DokployPreviewDeployment>>("previewDeployment.all", { applicationId: args.applicationId! })
         .map(formatPreviewDeploymentList),
     )
     .case("get", () =>

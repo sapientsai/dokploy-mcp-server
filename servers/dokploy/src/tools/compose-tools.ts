@@ -77,7 +77,7 @@ type ComposeArgs = {
   serverId?: string
   env?: string
   set?: string
-  unset?: string[]
+  unset?: ReadonlyArray<string>
   command?: string
   sourceType?: "github" | "git" | "raw"
   customGitUrl?: string
@@ -90,7 +90,11 @@ type ComposeArgs = {
   autoDeploy?: boolean
   appName?: string
   createEnvFile?: boolean
-  serviceNetworks?: Array<{ serviceName: string; networkIds: string[]; detachDokployNetwork: boolean }>
+  serviceNetworks?: ReadonlyArray<{
+    serviceName: string
+    networkIds: ReadonlyArray<string>
+    detachDokployNetwork: boolean
+  }>
   deleteVolumes?: boolean
   redeploy?: boolean
   freshVolumes?: boolean

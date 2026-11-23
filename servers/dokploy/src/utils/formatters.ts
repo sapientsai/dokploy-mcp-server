@@ -53,7 +53,7 @@ function formatDate(dateStr?: string): string {
       .toISOString()
       .replace("T", " ")
       .replace(/\.\d+Z$/, " UTC"),
-  ).orElse(dateStr)
+  ).getOrElse(() => dateStr)
 }
 
 /**
@@ -108,7 +108,7 @@ export function formatProject(project: DokployProject): string {
   Created: ${formatDate(project.createdAt)}`
 }
 
-export function formatProjectList(projects: DokployProject[]): string {
+export function formatProjectList(projects: ReadonlyArray<DokployProject>): string {
   if (projects.length === 0) return "No projects found."
   return `# Projects (${projects.length})\n\n${projects.map(formatProject).join("\n\n")}`
 }
@@ -123,7 +123,7 @@ export function formatEnvironment(env: DokployEnvironment): string {
   Created: ${formatDate(env.createdAt)}${services ? `\n${services}` : ""}`
 }
 
-export function formatEnvironmentList(envs: DokployEnvironment[]): string {
+export function formatEnvironmentList(envs: ReadonlyArray<DokployEnvironment>): string {
   if (envs.length === 0) return "No environments found."
   return `# Environments (${envs.length})\n\n${envs.map(formatEnvironment).join("\n\n")}`
 }
@@ -162,7 +162,7 @@ function formatEnvSummary(env: string | null | undefined): string {
   return `${count} var${count === 1 ? "" : "s"} set (values hidden — use getEnvKeys to list names, getEnvValuesUnsafe to reveal values)`
 }
 
-export function formatApplicationList(apps: DokployApplication[]): string {
+export function formatApplicationList(apps: ReadonlyArray<DokployApplication>): string {
   if (apps.length === 0) return "No applications found."
   return `# Applications (${apps.length})\n\n${apps.map(formatApplication).join("\n\n")}`
 }
@@ -174,7 +174,7 @@ export function formatDeployment(dep: DokployDeployment): string {
   Created: ${formatDate(dep.createdAt)}`
 }
 
-export function formatDeploymentList(deployments: DokployDeployment[]): string {
+export function formatDeploymentList(deployments: ReadonlyArray<DokployDeployment>): string {
   if (deployments.length === 0) return "No deployments found."
   return `# Deployments (${deployments.length})\n\n${deployments.map(formatDeployment).join("\n\n")}`
 }
@@ -189,7 +189,7 @@ export function formatCompose(compose: DokployCompose): string {
   Env: ${formatEnvSummary(compose.env)}`
 }
 
-export function formatComposeList(composes: DokployCompose[]): string {
+export function formatComposeList(composes: ReadonlyArray<DokployCompose>): string {
   if (composes.length === 0) return "No compose services found."
   return `# Compose Services (${composes.length})\n\n${composes.map(formatCompose).join("\n\n")}`
 }
@@ -204,7 +204,7 @@ export function formatDomain(domain: DokployDomain): string {
   Service: ${orElse(domain.serviceName, "N/A")}`
 }
 
-export function formatDomainList(domains: DokployDomain[]): string {
+export function formatDomainList(domains: ReadonlyArray<DokployDomain>): string {
   if (domains.length === 0) return "No domains found."
   return `# Domains (${domains.length})\n\n${domains.map(formatDomain).join("\n\n")}`
 }
@@ -218,7 +218,7 @@ export function formatServer(server: DokployServer): string {
   Created: ${formatDate(server.createdAt)}`
 }
 
-export function formatServerList(servers: DokployServer[]): string {
+export function formatServerList(servers: ReadonlyArray<DokployServer>): string {
   if (servers.length === 0) return "No servers found."
   return `# Servers (${servers.length})\n\n${servers.map(formatServer).join("\n\n")}`
 }
@@ -239,7 +239,7 @@ export function formatDatabase(db: DokployDatabase, dbType: string): string {
   Env: ${formatEnvSummary(db.env)}`
 }
 
-export function formatDatabaseList(dbs: DokployDatabase[], dbType: string): string {
+export function formatDatabaseList(dbs: ReadonlyArray<DokployDatabase>, dbType: string): string {
   if (dbs.length === 0) return `No ${dbType} databases found.`
   return `# ${dbType} Databases (${dbs.length})\n\n${dbs.map((db) => formatDatabase(db, dbType)).join("\n\n")}`
 }
@@ -253,7 +253,7 @@ export function formatContainer(container: DokployContainer): string {
   Ports: ${orElse(container.ports, "None")}`
 }
 
-export function formatContainerList(containers: DokployContainer[]): string {
+export function formatContainerList(containers: ReadonlyArray<DokployContainer>): string {
   if (containers.length === 0) return "No containers found."
   return `# Containers (${containers.length})\n\n${containers.map(formatContainer).join("\n\n")}`
 }
@@ -276,7 +276,7 @@ export function formatSshKey(sshKey: DokploySshKey): string {
   Created: ${formatDate(sshKey.createdAt)}`
 }
 
-export function formatSshKeyList(sshKeys: DokploySshKey[]): string {
+export function formatSshKeyList(sshKeys: ReadonlyArray<DokploySshKey>): string {
   if (sshKeys.length === 0) return "No SSH keys found."
   return `# SSH Keys (${sshKeys.length})\n\n${sshKeys.map(formatSshKey).join("\n\n")}`
 }
@@ -291,7 +291,7 @@ export function formatRegistry(registry: DokployRegistry): string {
   Created: ${formatDate(registry.createdAt)}`
 }
 
-export function formatRegistryList(registries: DokployRegistry[]): string {
+export function formatRegistryList(registries: ReadonlyArray<DokployRegistry>): string {
   if (registries.length === 0) return "No registries found."
   return `# Registries (${registries.length})\n\n${registries.map(formatRegistry).join("\n\n")}`
 }
@@ -306,7 +306,7 @@ export function formatDestination(destination: DokployDestination): string {
   Created: ${formatDate(destination.createdAt)}`
 }
 
-export function formatDestinationList(destinations: DokployDestination[]): string {
+export function formatDestinationList(destinations: ReadonlyArray<DokployDestination>): string {
   if (destinations.length === 0) return "No destinations found."
   return `# Destinations (${destinations.length})\n\n${destinations.map(formatDestination).join("\n\n")}`
 }
@@ -325,7 +325,7 @@ export function formatMount(mount: DokployMount): string {
   Service Type: ${orElse(mount.serviceType, "N/A")}`
 }
 
-export function formatMountList(mounts: DokployMount[]): string {
+export function formatMountList(mounts: ReadonlyArray<DokployMount>): string {
   if (mounts.length === 0) return "No mounts found."
   return `# Mounts (${mounts.length})\n\n${mounts.map(formatMount).join("\n\n")}`
 }
@@ -351,7 +351,7 @@ export function formatSchedule(schedule: DokploySchedule): string {
   Created: ${formatDate(schedule.createdAt)}`
 }
 
-export function formatScheduleList(schedules: DokploySchedule[]): string {
+export function formatScheduleList(schedules: ReadonlyArray<DokploySchedule>): string {
   if (schedules.length === 0) return "No schedules found."
   return `# Schedules (${schedules.length})\n\n${schedules.map(formatSchedule).join("\n\n")}`
 }
@@ -364,7 +364,7 @@ export function formatAuditLog(entry: DokployAuditLog): string {
   Who: ${who}`
 }
 
-export function formatAuditLogList(entries: DokployAuditLog[]): string {
+export function formatAuditLogList(entries: ReadonlyArray<DokployAuditLog>): string {
   if (entries.length === 0) return "No audit log entries found."
   return `# Audit Log (${entries.length})\n\n${entries.map(formatAuditLog).join("\n\n")}`
 }
@@ -380,7 +380,7 @@ export function formatPreviewDeployment(preview: DokployPreviewDeployment): stri
   Created: ${formatDate(preview.createdAt)}`
 }
 
-export function formatPreviewDeploymentList(previews: DokployPreviewDeployment[]): string {
+export function formatPreviewDeploymentList(previews: ReadonlyArray<DokployPreviewDeployment>): string {
   if (previews.length === 0) return "No preview deployments found."
   return `# Preview Deployments (${previews.length})\n\n${previews.map(formatPreviewDeployment).join("\n\n")}`
 }
@@ -407,7 +407,7 @@ export function formatVolumeBackup(backup: DokployVolumeBackup): string {
   Created: ${formatDate(backup.createdAt)}`
 }
 
-export function formatVolumeBackupList(backups: DokployVolumeBackup[]): string {
+export function formatVolumeBackupList(backups: ReadonlyArray<DokployVolumeBackup>): string {
   if (backups.length === 0) return "No volume backups found."
   return `# Volume Backups (${backups.length})\n\n${backups.map(formatVolumeBackup).join("\n\n")}`
 }

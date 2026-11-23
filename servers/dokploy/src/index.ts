@@ -1,8 +1,6 @@
-import { PinoTransport } from "@loglayer/transport-pino"
 import dotenv from "dotenv"
 import { Try } from "functype"
-import { logLayerAdapter, toDirectLogger } from "functype-log"
-import { LogLayer } from "loglayer"
+import { createDirectConsoleLogger, type LogEntry } from "functype-log"
 import pino from "pino"
 import { createLogLayerTelemetry, createServer } from "somamcp/node"
 
@@ -79,8 +77,15 @@ function setupDokployClient() {
 
 // Pino writes to stderr (fd 2) so stdio (used by MCP) stays clean for the JSON-RPC channel.
 const pinoLogger = pino({ level: process.env.LOG_LEVEL ?? "info" }, pino.destination(2))
-const logger = new LogLayer({ transport: new PinoTransport({ logger: pinoLogger }) })
-const telemetry = createLogLayerTelemetry(toDirectLogger(logLayerAdapter(logger)))
+// Each entry goes to pino with its metadata as fields and any error as `err`, as LogLayer's pino
+// transport wrote it. pino's level, from LOG_LEVEL, decides what is written.
+const toPino = (entry: LogEntry): void => {
+  pinoLogger[entry.level](
+    { ...entry.metadata, ...(entry.error === undefined ? {} : { err: entry.error }) },
+    entry.message,
+  )
+}
+const telemetry = createLogLayerTelemetry(createDirectConsoleLogger({ sink: toPino }))
 
 const server = createServer({
   name: "dokploy-mcp-server",

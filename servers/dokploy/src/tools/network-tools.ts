@@ -34,7 +34,7 @@ const CREATE_OPTIONAL_FIELDS = [
 
 type IpamConfig = {
   driver?: string
-  config?: Array<{ subnet?: string; gateway?: string; ipRange?: string }>
+  config?: ReadonlyArray<{ subnet?: string; gateway?: string; ipRange?: string }>
 }
 
 type NetworkArgs = {
@@ -49,7 +49,7 @@ type NetworkArgs = {
   enableIPv6?: boolean
   mtu?: number
   ipam?: IpamConfig
-  names?: string[]
+  names?: ReadonlyArray<string>
 }
 
 /** The id-keyed actions all take networkId and nothing else. */
