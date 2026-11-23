@@ -41,7 +41,7 @@ export function buildEnvironmentProgram(
     )
     .case("list", () =>
       client
-        .get<DokployEnvironment[]>("environment.byProjectId", { projectId: args.projectId! })
+        .get<ReadonlyArray<DokployEnvironment>>("environment.byProjectId", { projectId: args.projectId! })
         .map(formatEnvironmentList),
     )
     .case("update", () => {

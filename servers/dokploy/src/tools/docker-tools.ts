@@ -100,7 +100,7 @@ export function buildDockerProgram(
     .case("getContainers", () => {
       const params: Record<string, string> = {}
       if (args.serverId) params.serverId = args.serverId
-      return client.get<DokployContainer[]>("docker.getContainers", params).map(formatContainerList)
+      return client.get<ReadonlyArray<DokployContainer>>("docker.getContainers", params).map(formatContainerList)
     })
     .case("restartContainer", () => containerLifecycle(client, "restartContainer", args))
     .case("startContainer", () => containerLifecycle(client, "startContainer", args))
@@ -141,7 +141,9 @@ export function buildDockerProgram(
       if (args.serverId) params.serverId = args.serverId
       if (args.appType && method === "match") params.appType = args.appType
       if (args.type && method === "label") params.type = args.type
-      return client.get<DokployContainer[]>(FIND_CONTAINER_ENDPOINTS[method], params).map(formatContainerList)
+      return client
+        .get<ReadonlyArray<DokployContainer>>(FIND_CONTAINER_ENDPOINTS[method], params)
+        .map(formatContainerList)
     })
     .case("listContainerFiles", () => {
       const invalid = fileArgsError(args, false)

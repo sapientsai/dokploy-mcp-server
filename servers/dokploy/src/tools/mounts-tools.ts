@@ -69,7 +69,7 @@ export function buildMountProgram(
     )
     .case("listByServiceId", () =>
       client
-        .get<DokployMount[]>("mounts.listByServiceId", {
+        .get<ReadonlyArray<DokployMount>>("mounts.listByServiceId", {
           serviceType: args.serviceType!,
           serviceId: args.serviceId!,
         })
@@ -77,7 +77,7 @@ export function buildMountProgram(
     )
     .case("allNamedByApplicationId", () =>
       client
-        .get<DokployMount[]>("mounts.allNamedByApplicationId", { applicationId: args.applicationId! })
+        .get<ReadonlyArray<DokployMount>>("mounts.allNamedByApplicationId", { applicationId: args.applicationId! })
         .map(formatMountList),
     )
     .exhaustive()

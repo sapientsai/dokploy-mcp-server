@@ -103,7 +103,7 @@ export function buildVolumeBackupProgram(
     )
     .case("list", () =>
       client
-        .get<DokployVolumeBackup[]>("volumeBackups.list", {
+        .get<ReadonlyArray<DokployVolumeBackup>>("volumeBackups.list", {
           id: args.id!,
           volumeBackupType: args.volumeBackupType!,
         })

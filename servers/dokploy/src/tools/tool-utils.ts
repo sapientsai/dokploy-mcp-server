@@ -35,7 +35,7 @@ const isKv = (l: EnvLine): l is EnvKvLine => l.kind === "kv"
  * Whitespace around the key is trimmed; the value is taken verbatim after
  * the first `=`.
  */
-export function parseEnvLines(blob: string | null | undefined): EnvLine[] {
+export function parseEnvLines(blob: string | null | undefined): ReadonlyArray<EnvLine> {
   if (!blob) return []
   return blob.split("\n").map<EnvLine>((line) => {
     const trimmed = line.trim()
@@ -48,7 +48,7 @@ export function parseEnvLines(blob: string | null | undefined): EnvLine[] {
   })
 }
 
-export function serializeEnvLines(lines: EnvLine[]): string {
+export function serializeEnvLines(lines: ReadonlyArray<EnvLine>): string {
   return lines.map((l) => (l.kind === "kv" ? `${l.key}=${l.value}` : l.text)).join("\n")
 }
 
@@ -62,9 +62,9 @@ export function mergeEnv(
   current: string | null | undefined,
   setBlob: string | undefined,
   unsetKeys: readonly string[] | undefined,
-): { blob: string; setKeys: string[]; unsetKeys: string[] } {
+): { blob: string; setKeys: ReadonlyArray<string>; unsetKeys: ReadonlyArray<string> } {
   const existing = parseEnvLines(current)
-  const setEntries: EnvKvLine[] = parseEnvLines(setBlob).filter(isKv)
+  const setEntries: ReadonlyArray<EnvKvLine> = parseEnvLines(setBlob).filter(isKv)
   const setLookup: Record<string, string> = Object.fromEntries(setEntries.map((l) => [l.key, l.value]))
   const setKeyList = setEntries.map((l) => l.key)
   const unsetList = unsetKeys ?? []
@@ -81,7 +81,7 @@ export function mergeEnv(
     if (isSet(line.key)) return [{ kind: "kv", key: line.key, value: setLookup[line.key] }]
     return [line]
   })
-  const appended: EnvLine[] = setEntries
+  const appended: ReadonlyArray<EnvLine> = setEntries
     .filter((l) => !isReplaced(l.key))
     .map((l) => ({ kind: "kv", key: l.key, value: l.value }))
 
@@ -98,7 +98,7 @@ export function mergeEnv(
  * Extract key names only (no values) from an env blob, sorted alphabetically.
  * The values never leave the calling process.
  */
-export function listEnvKeys(blob: string | null | undefined): string[] {
+export function listEnvKeys(blob: string | null | undefined): ReadonlyArray<string> {
   return parseEnvLines(blob)
     .filter(isKv)
     .map((l) => l.key)
@@ -120,7 +120,7 @@ export function countEnvKeys(blob: string | null | undefined): number {
 export function formatEnvMutation(
   resource: string,
   resourceId: string,
-  result: { blob: string; setKeys: string[]; unsetKeys: string[] },
+  result: { blob: string; setKeys: ReadonlyArray<string>; unsetKeys: ReadonlyArray<string> },
 ): string {
   const total = countEnvKeys(result.blob)
   const setLine = result.setKeys.length ? `set ${result.setKeys.length} (${result.setKeys.join(", ")})` : "set 0"
@@ -156,12 +156,12 @@ export function jsonSection(title: string, value: unknown, emptyHint: string): s
  * `total` is the full match count before limit/offset, so it can exceed
  * `items.length`; callers report it so a truncated page is visible as one.
  */
-export function unwrapSearch<T>(payload: unknown): { items: T[]; total: number } {
-  if (Array.isArray(payload)) return { items: payload as T[], total: payload.length }
+export function unwrapSearch<T>(payload: unknown): { items: ReadonlyArray<T>; total: number } {
+  if (Array.isArray(payload)) return { items: payload as ReadonlyArray<T>, total: payload.length }
   if (payload != null && typeof payload === "object") {
     const p = payload as { items?: unknown; total?: unknown }
     if (Array.isArray(p.items)) {
-      return { items: p.items as T[], total: typeof p.total === "number" ? p.total : p.items.length }
+      return { items: p.items as ReadonlyArray<T>, total: typeof p.total === "number" ? p.total : p.items.length }
     }
   }
   return { items: [], total: 0 }

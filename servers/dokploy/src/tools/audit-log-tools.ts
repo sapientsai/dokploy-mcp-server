@@ -51,7 +51,7 @@ export function buildAuditLogProgram(
       const params = {
         ...pickDefined({ ...args, action: args.auditAction }, AUDIT_QUERY_FIELDS),
       } as Record<string, string | number | boolean | undefined>
-      return client.get<DokployAuditLog[]>("auditLog.all", params).map(formatAuditLogList)
+      return client.get<ReadonlyArray<DokployAuditLog>>("auditLog.all", params).map(formatAuditLogList)
     })
     .exhaustive()
 }

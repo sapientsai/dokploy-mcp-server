@@ -30,11 +30,11 @@ export function formatDuration(seconds: number): string {
     if (hours > 0) return `${hours}h ${minutes}m`
     if (minutes > 0) return `${minutes}m`
     return `${seconds}s`
-  }).orElse(`${seconds}s`)
+  }).getOrElse(() => `${seconds}s`)
 }
 
 export function productivityLabel(level: number): string {
-  return Option(PRODUCTIVITY_LABELS[level]).orElse("Unknown")
+  return Option(PRODUCTIVITY_LABELS[level]).getOrElse(() => "Unknown")
 }
 
 export function formatActivityData(response: AnalyticDataResponse, params: AnalyticDataParams): string {
@@ -61,7 +61,7 @@ export function formatActivityData(response: AnalyticDataResponse, params: Analy
     return `| ${formatted.map(tableCell).join(" | ")} |`
   })
 
-  const totalLine =
+  const totalLine: ReadonlyArray<string> =
     timeColIndex >= 0
       ? [
           "",
@@ -171,9 +171,11 @@ export function formatFocusSessions(
     return ["## Focus Sessions", "", "No recent focus sessions found."].join("\n")
   }
 
-  const startedSection = started.length > 0 ? ["### Started", "", ...started.map(formatSessionEntry), ""] : []
+  const startedSection: ReadonlyArray<string> =
+    started.length > 0 ? ["### Started", "", ...started.map(formatSessionEntry), ""] : []
 
-  const endedSection = ended.length > 0 ? ["### Ended", "", ...ended.map(formatSessionEntry)] : []
+  const endedSection: ReadonlyArray<string> =
+    ended.length > 0 ? ["### Ended", "", ...ended.map(formatSessionEntry)] : []
 
   return ["## Focus Sessions", "", ...startedSection, ...endedSection].join("\n")
 }

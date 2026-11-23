@@ -73,8 +73,8 @@ export function buildDomainProgram(
         return IO.fail<ApiError>(ValidationError("Provide applicationId or composeId"))
       }
       const io = args.applicationId
-        ? client.get<DokployDomain[]>("domain.byApplicationId", { applicationId: args.applicationId })
-        : client.get<DokployDomain[]>("domain.byComposeId", { composeId: args.composeId! })
+        ? client.get<ReadonlyArray<DokployDomain>>("domain.byApplicationId", { applicationId: args.applicationId })
+        : client.get<ReadonlyArray<DokployDomain>>("domain.byComposeId", { composeId: args.composeId! })
       return io.map(formatDomainList)
     })
     .case("get", () =>

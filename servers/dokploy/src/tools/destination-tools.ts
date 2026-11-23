@@ -35,7 +35,7 @@ type DestinationArgs = {
   region?: string
   endpoint?: string
   secretAccessKey?: string
-  additionalFlags?: string[]
+  additionalFlags?: ReadonlyArray<string>
   serverId?: string
 }
 
@@ -52,7 +52,7 @@ export function buildDestinationProgram(
   args: DestinationArgs,
 ): IO<never, ApiError, string> {
   return Match(args.action)
-    .case("list", () => client.get<DokployDestination[]>("destination.all").map(formatDestinationList))
+    .case("list", () => client.get<ReadonlyArray<DokployDestination>>("destination.all").map(formatDestinationList))
     .case("get", () =>
       client
         .get<DokployDestination>("destination.one", { destinationId: args.destinationId! })
