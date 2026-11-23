@@ -2,9 +2,10 @@
 
 Small [MCP](https://modelcontextprotocol.io) servers built on [somamcp](https://github.com/sapientsai/SomaMCP), one npm package per server.
 
-| Server                       | npm                                                                      | What it does                                     |
-| ---------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------ |
-| [dokploy](./servers/dokploy) | [`dokploy-mcp-server`](https://www.npmjs.com/package/dokploy-mcp-server) | Manage a [Dokploy](https://dokploy.com) instance |
+| Server                         | npm                                                                        | What it does                                          |
+| ------------------------------ | -------------------------------------------------------------------------- | ----------------------------------------------------- |
+| [dokploy](./servers/dokploy)   | [`dokploy-mcp-server`](https://www.npmjs.com/package/dokploy-mcp-server)   | Manage a [Dokploy](https://dokploy.com) instance      |
+| [temporal](./servers/temporal) | [`temporal-mcp-server`](https://www.npmjs.com/package/temporal-mcp-server) | Time and timezone tools; hosted at `time.somamcp.com` |
 
 Each server's README covers installing and configuring it.
 
