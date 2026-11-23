@@ -87,7 +87,7 @@ export function buildScheduleProgram(
     )
     .case("list", () =>
       client
-        .get<DokploySchedule[]>("schedule.list", {
+        .get<ReadonlyArray<DokploySchedule>>("schedule.list", {
           id: args.id!,
           scheduleType: args.scheduleType!,
         })

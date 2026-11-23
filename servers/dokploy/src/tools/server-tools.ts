@@ -32,7 +32,7 @@ export function buildServerProgram(
   args: ServerArgs,
 ): IO<never, ApiError, string> {
   return Match(args.action)
-    .case("list", () => client.get<DokployServer[]>("server.all").map(formatServerList))
+    .case("list", () => client.get<ReadonlyArray<DokployServer>>("server.all").map(formatServerList))
     .case("get", () =>
       client
         .get<DokployServer>("server.one", { serverId: args.serverId! })

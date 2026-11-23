@@ -27,7 +27,7 @@ function formatState(s: GlobalState, nowEpoch: number, zone: Option<string>): st
   const kind = stateKind(s)
   const label = s.state.label_name ?? s.label_name
   const remaining = s.expiration_epoch - nowEpoch
-  const lines = [
+  const lines: ReadonlyArray<string> = [
     `### ${kind}${label ? `: ${label}` : ""}`,
     "",
     `- **Started:** ${timeFromEpoch(s.start_time_epoch, zone)} (${formatDuration(Math.max(0, nowEpoch - s.start_time_epoch))} ago)`,
@@ -36,7 +36,7 @@ function formatState(s: GlobalState, nowEpoch: number, zone: Option<string>): st
       : `- **Ends:** ${timeFromEpoch(s.expiration_epoch, zone)} (${formatDuration(Math.max(0, remaining))} left)`,
     `- **Blocking:** apps and sites ${onOff(s.state.block_apps_sites)}, communication apps ${onOff(s.state.block_comms)}`,
   ]
-  const project = s.state.project ? [`- **Project:** ${s.state.project.name}`] : []
+  const project: ReadonlyArray<string> = s.state.project ? [`- **Project:** ${s.state.project.name}`] : []
   return [...lines, ...project].join("\n")
 }
 
@@ -69,7 +69,7 @@ export function formatStopResult(result: StopSessionResponse): string {
 
   const name = result.focus_session?.name
   const named = name ? ` "${name}"` : ""
-  const projectLine = result.project_time
+  const projectLine: ReadonlyArray<string> = result.project_time
     ? [
         "",
         `Logged ${formatDuration(result.project_time.duration)} to ${result.project_time.project?.name ?? result.project_time.name}.`,
@@ -132,7 +132,7 @@ function zoneNote(zone: Option<string>, entries: readonly ProjectTimeEntry[]): s
 export function formatProjectTime(days: readonly ProjectTimeDay[], rangeLabel: string, zone: Option<string>): string {
   const entries = days.flatMap((d) => d.response.project_times)
   const partial = days.filter((d) => !d.response.is_complete).map((d) => d.date)
-  const partialNote =
+  const partialNote: ReadonlyArray<string> =
     partial.length > 0
       ? ["", `*RescueTime was still computing ${partial.join(", ")}. Those days may be incomplete; ask again shortly.*`]
       : []
@@ -143,7 +143,7 @@ export function formatProjectTime(days: readonly ProjectTimeDay[], rangeLabel: s
 
   const total = entries.reduce((sum, e) => sum + e.duration, 0)
   const drafts = entries.filter((e) => e.extra?.draft).length
-  const draftNote =
+  const draftNote: ReadonlyArray<string> =
     drafts > 0
       ? [
           "",
@@ -204,7 +204,7 @@ export function formatRecentActivity(timeline: TimelineResponse, limit: number, 
   }
 
   const recent = tracked.toSorted(([a], [b]) => b.localeCompare(a)).slice(0, limit)
-  const guessNote = recent.some(([, a]) => a.guess)
+  const guessNote: ReadonlyArray<string> = recent.some(([, a]) => a.guess)
     ? [
         "*Guessed* rows are windows where RescueTime carried the activity before them forward and gave no time. *Nothing tracked* means it recorded nothing there. *Over other activity* means it recorded a different activity there, which isn't shown.",
       ]

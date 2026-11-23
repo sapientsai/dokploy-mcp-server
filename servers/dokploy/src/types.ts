@@ -25,7 +25,7 @@ export type DokployProject = {
   description?: string
   createdAt?: string
   organizationId?: string
-  environments?: DokployEnvironment[]
+  environments?: ReadonlyArray<DokployEnvironment>
 }
 
 export type DokployEnvironment = {
@@ -36,13 +36,13 @@ export type DokployEnvironment = {
   // as a query param, so the API treats it as known context and omits it from the payload.
   projectId?: string
   createdAt?: string
-  applications?: DokployApplication[]
-  compose?: DokployCompose[]
-  postgres?: DokployDatabase[]
-  mysql?: DokployDatabase[]
-  mariadb?: DokployDatabase[]
-  mongo?: DokployDatabase[]
-  redis?: DokployDatabase[]
+  applications?: ReadonlyArray<DokployApplication>
+  compose?: ReadonlyArray<DokployCompose>
+  postgres?: ReadonlyArray<DokployDatabase>
+  mysql?: ReadonlyArray<DokployDatabase>
+  mariadb?: ReadonlyArray<DokployDatabase>
+  mongo?: ReadonlyArray<DokployDatabase>
+  redis?: ReadonlyArray<DokployDatabase>
 }
 
 export type DokployApplication = {
@@ -65,7 +65,7 @@ export type DokployApplication = {
   createdAt?: string
   autoDeploy?: boolean
   env?: string
-  domains?: DokployDomain[]
+  domains?: ReadonlyArray<DokployDomain>
 }
 
 export type DokployCompose = {

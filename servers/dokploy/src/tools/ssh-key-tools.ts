@@ -42,7 +42,7 @@ export function buildSshKeyProgram(
           .map((sshKey) => `# SSH Key Created\n\n${formatSshKey(sshKey)}`),
       ),
     )
-    .case("list", () => client.get<DokploySshKey[]>("sshKey.all").map(formatSshKeyList))
+    .case("list", () => client.get<ReadonlyArray<DokploySshKey>>("sshKey.all").map(formatSshKeyList))
     .case("get", () =>
       client
         .get<DokploySshKey>("sshKey.one", { sshKeyId: args.sshKeyId! })

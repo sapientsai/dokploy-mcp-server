@@ -27,7 +27,7 @@ export function buildProjectProgram(
   args: ProjectArgs,
 ): IO<never, ApiError, string> {
   return Match(args.action)
-    .case("list", () => client.get<DokployProject[]>("project.all").map(formatProjectList))
+    .case("list", () => client.get<ReadonlyArray<DokployProject>>("project.all").map(formatProjectList))
     .case("get", () =>
       client
         .get<DokployProject>("project.one", { projectId: args.projectId! })

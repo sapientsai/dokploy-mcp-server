@@ -54,7 +54,7 @@
   },
   "devDependencies": {
     "@types/node": "^24.19.2",
-    "ts-builds": "^4.7.0",
+    "ts-builds": "^5.0.0",
     "tsdown": "^0.23.7",
     "wrangler": "^4.158.0"
   },
@@ -79,8 +79,8 @@
   ],
   "prettier": "ts-builds/prettier",
   "dependencies": {
-    "functype": "^1.27.0",
-    "somamcp": "^2.6.0",
+    "functype": "^2.0.0",
+    "somamcp": "^2.11.0",
     "zod": "^4.6.7"
   }
 }

@@ -50,7 +50,7 @@ export function buildRegistryProgram(
   args: RegistryArgs,
 ): IO<never, ApiError, string> {
   return Match(args.action)
-    .case("list", () => client.get<DokployRegistry[]>("registry.all").map(formatRegistryList))
+    .case("list", () => client.get<ReadonlyArray<DokployRegistry>>("registry.all").map(formatRegistryList))
     .case("get", () =>
       client
         .get<DokployRegistry>("registry.one", { registryId: args.registryId! })

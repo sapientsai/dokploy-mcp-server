@@ -97,11 +97,11 @@ type ApplicationArgs = {
   customGitUrl?: string
   customGitBranch?: string
   githubId?: string
-  networkIds?: string[]
+  networkIds?: ReadonlyArray<string>
   detachDokployNetwork?: boolean
   env?: string
   set?: string
-  unset?: string[]
+  unset?: ReadonlyArray<string>
   buildArgs?: string
   buildSecrets?: string
   createEnvFile?: boolean

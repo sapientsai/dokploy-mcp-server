@@ -92,7 +92,7 @@ type DatabaseArgs = {
   applicationStatus?: "idle" | "running" | "done" | "error"
   env?: string
   set?: string
-  unset?: string[]
+  unset?: ReadonlyArray<string>
   externalPort?: number
   externalGRPCPort?: number
   externalAdminPort?: number
