@@ -17,13 +17,14 @@
   ],
   "author": "Jordan Burke <jordan.burke@gmail.com>",
   "license": "MIT",
-  "homepage": "https://github.com/sapientsai/rescuetime-mcp-server",
+  "homepage": "https://github.com/sapientsai/mcp-servers/tree/main/servers/rescuetime#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sapientsai/rescuetime-mcp-server"
+    "url": "git+https://github.com/sapientsai/mcp-servers.git",
+    "directory": "servers/rescuetime"
   },
   "bugs": {
-    "url": "https://github.com/sapientsai/rescuetime-mcp-server/issues"
+    "url": "https://github.com/sapientsai/mcp-servers/issues"
   },
   "scripts": {
     "validate": "ts-builds validate",

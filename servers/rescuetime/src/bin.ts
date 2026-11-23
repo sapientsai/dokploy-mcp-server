@@ -29,7 +29,7 @@ Environment Variables:
   TRANSPORT_TYPE        Transport mode: stdio (default) or httpStream
   PORT                  HTTP port when using httpStream (default: 3000)
 
-For more information, visit: https://github.com/sapientsai/rescuetime-mcp-server
+For more information, visit: https://github.com/sapientsai/mcp-servers/tree/main/servers/rescuetime
 `)
   process.exit(0)
 }

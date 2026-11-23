@@ -172,8 +172,10 @@ Log time spent away from the computer (meetings, breaks, etc.).
 
 ## Development
 
+This server is `servers/rescuetime` in the [sapientsai/mcp-servers](https://github.com/sapientsai/mcp-servers) monorepo. Install from the repo root, then work in this folder:
+
 ```bash
-pnpm install
+pnpm install         # at the repo root
 pnpm validate        # format + lint + typecheck + test + build
 pnpm run ci          # validate's checks without fixing, as CI runs them (type `run`: `pnpm ci` is a clean install)
 pnpm inspect         # Build + launch MCP Inspector for interactive testing

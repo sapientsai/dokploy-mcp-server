@@ -12,6 +12,8 @@ allowBuilds:
 # Drop this once openapi-typescript ships a Redocly that allows >= 4.3.1.
 overrides:
   js-yaml@4.3.0: 4.3.1
+  # rescuetime: eslint (dev only) caps minimatch below GHSA-g3hv-75wg-m249's fix.
+  "minimatch@>=7.0.0 <11.0.1": "^11.0.1"
 
 minimumReleaseAgeExclude:
   - "*functype*"
