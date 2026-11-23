@@ -50,7 +50,7 @@ function errorForStatus(status: number, statusText: string, body: unknown): Erro
     const message = Option(body as ErrorBody | null)
       .flatMap((b) => Option(b.error))
       .flatMap((e) => Option(e.message))
-      .orElse("Bad request parameters")
+      .getOrElse(() => "Bad request parameters")
     return new Error(`Invalid request: ${message}`)
   }
   return new Error(`FDA API error: ${status} ${statusText}`)
@@ -110,12 +110,13 @@ const redact = (url: string, apiKey: Option<string>): string =>
 
 async function readResponse<T>(response: Response): Promise<Either<Error, FDAResponse<T>>> {
   if (response.status === 404) {
-    await Try.fromPromise(response.body?.cancel() ?? Promise.resolve()) // release the connection
+    // Release the connection; a failure to cancel changes nothing for the caller.
+    void (await Try.fromPromise(response.body?.cancel() ?? Promise.resolve()))
     return Right({ results: [] }) // No results found
   }
 
   if (!response.ok) {
-    const body = (await Try.fromPromise(response.json() as Promise<unknown>)).orElse({})
+    const body = (await Try.fromPromise(response.json() as Promise<unknown>)).getOrElse(() => ({}))
     return Left(errorForStatus(response.status, response.statusText, body))
   }
 

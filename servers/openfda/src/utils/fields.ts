@@ -24,16 +24,17 @@ export const textField = (row: Readonly<Record<string, unknown>>, ...keys: reado
 }
 
 /** The first n items of a list from an FDA record, mapped; [] when the list is missing or not an array */
-export const mapFirst = <T, U>(items: readonly T[] | undefined, n: number, f: (item: T) => U): U[] =>
+export const mapFirst = <T, U>(items: readonly T[] | undefined, n: number, f: (item: T) => U): ReadonlyArray<U> =>
   Option(items)
     .filter((xs) => Array.isArray(xs))
     .fold(
-      (): U[] => [],
+      (): ReadonlyArray<U> => [],
       (xs) => List(xs).take(n).map(f).toArray(),
     )
 
 /** The first n items of a list from an FDA record; [] when the list is missing */
-export const takeFirst = <T>(items: readonly T[] | undefined, n: number): T[] => mapFirst(items, n, (item) => item)
+export const takeFirst = <T>(items: readonly T[] | undefined, n: number): ReadonlyArray<T> =>
+  mapFirst(items, n, (item) => item)
 
 /** A text field that is present and not empty */
 export const nonEmpty = (value: string | undefined): Option<string> => Option(value).filter((v) => v !== "")

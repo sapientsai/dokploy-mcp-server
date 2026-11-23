@@ -38,8 +38,10 @@ describe("buildDateQuery", () => {
   })
 
   it("fills an open bound with *", () => {
-    expect(buildDateQuery("receivedate", "2024-01-01").orElse("")).toBe("receivedate:[20240101 TO *]")
-    expect(buildDateQuery("receivedate", undefined, "2024-12-31").orElse("")).toBe("receivedate:[* TO 20241231]")
+    expect(buildDateQuery("receivedate", "2024-01-01").getOrElse(() => "")).toBe("receivedate:[20240101 TO *]")
+    expect(buildDateQuery("receivedate", undefined, "2024-12-31").getOrElse(() => "")).toBe(
+      "receivedate:[* TO 20241231]",
+    )
   })
 })
 
