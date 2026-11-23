@@ -1,0 +1,48 @@
+# This workflow will do a clean installation of node dependencies, cache/restore them, build the source code and run tests across different versions of node
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-nodejs
+
+name: Node.js CI
+
+on:
+  push:
+    branches: ["main"]
+  pull_request:
+    branches: ["main"]
+
+# A newer push to a pull request cancels the build it supersedes. A push to main gets a group of its own,
+# because GitHub cancels a waiting run when a newer one joins its group, even with cancel-in-progress off.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    strategy:
+      matrix:
+        node-version: [22.x, 24.x]
+        # See supported Node.js release schedule at https://nodejs.org/en/about/releases/
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+        name: Install pnpm
+        with:
+          run_install: false
+
+      - name: Setup Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      # validate's steps, checking format and lint instead of fixing them. Type "run": a bare `pnpm ci` is
+      # pnpm's own clean install, not this script.
+      - name: Run CI Pipeline
+        run: pnpm run ci

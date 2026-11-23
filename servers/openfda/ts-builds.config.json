@@ -1,0 +1,8 @@
+{
+  "srcDir": "./src",
+  "validateChain": ["format", "lint", "typecheck", "test", "build"],
+  "commands": {
+    "lint": "eslint ./src ./test --fix --max-warnings=0",
+    "lint:check": "eslint ./src ./test --max-warnings=0"
+  }
+}
