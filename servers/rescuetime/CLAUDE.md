@@ -8,6 +8,8 @@ RescueTime MCP Server — a Model Context Protocol server providing AI assistant
 
 **Key patterns**: functype `IO<never, Error, T>` for lazy composable API effects with `IO.gen` do-notation, `Ref<Option<T>>` for singleton client, `Try` for safe formatting, `.runOrThrow()` at tool boundaries.
 
+This server lives in `servers/rescuetime` of the `sapientsai/mcp-servers` monorepo; the root CLAUDE.md has the repo-wide rules. Install from the repo root. Release from the root too: `pnpm release rescuetime <patch|minor|major>` tags `rescuetime-mcp-server@<version>`, and `git push --follow-tags` publishes this package alone.
+
 ## Development Commands
 
 ```bash
