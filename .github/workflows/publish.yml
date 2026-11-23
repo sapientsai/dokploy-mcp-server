@@ -111,6 +111,27 @@ jobs:
             npm publish --provenance --access public
           fi
 
+      - name: Wait for npm to serve the tarball
+        # npm writes version metadata before the tarball, so a publish that exits 0
+        # can still leave `npm install` failing. Every release waits until the tarball
+        # is served; the MCP Registry also rejects a version npm doesn't serve yet.
+        # dokploy 1.10.0 lost that race by seconds; the tarball took ~6 minutes.
+        env:
+          NAME: ${{ steps.pkg.outputs.name }}
+          VERSION: ${{ steps.pkg.outputs.version }}
+        run: |
+          URL="https://registry.npmjs.org/$NAME/-/$NAME-$VERSION.tgz"
+          for i in $(seq 1 60); do
+            if curl -sfI "$URL" > /dev/null; then
+              echo "$URL is served"
+              exit 0
+            fi
+            echo "Waiting for $URL ($i/60)"
+            sleep 30
+          done
+          echo "::error::$URL still 404 after 30 minutes"
+          exit 1
+
       - name: Create GitHub Release
         if: startsWith(github.ref, 'refs/tags/')
         uses: softprops/action-gh-release@v3
@@ -137,27 +158,6 @@ jobs:
         run: |
           curl -L "https://github.com/modelcontextprotocol/registry/releases/download/v1.7.9/mcp-publisher_$(uname -s | tr '[:upper:]' '[:lower:]')_$(uname -m | sed 's/x86_64/amd64/;s/aarch64/arm64/').tar.gz" | tar xz mcp-publisher
           chmod +x ./mcp-publisher
-
-      - name: Wait for npm to serve the tarball
-        if: steps.registry.outputs.listed == 'true'
-        # npm writes version metadata before the tarball, and the MCP Registry
-        # rejects a version npm doesn't serve yet. 1.10.0 lost this race by
-        # seconds; the tarball took ~6 minutes to appear.
-        env:
-          NAME: ${{ steps.pkg.outputs.name }}
-          VERSION: ${{ steps.pkg.outputs.version }}
-        run: |
-          URL="https://registry.npmjs.org/$NAME/-/$NAME-$VERSION.tgz"
-          for i in $(seq 1 60); do
-            if curl -sfI "$URL" > /dev/null; then
-              echo "$URL is served"
-              exit 0
-            fi
-            echo "Waiting for $URL ($i/60)"
-            sleep 30
-          done
-          echo "::error::$URL still 404 after 30 minutes"
-          exit 1
 
       - name: Login to MCP Registry
         if: steps.registry.outputs.listed == 'true'
