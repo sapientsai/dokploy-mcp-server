@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "rescuetime": {
+      "command": "node",
+      "args": ["./dist/bin.js"],
+      "env": {
+        "RESCUETIME_API_KEY": "${RESCUETIME_API_KEY}"
+      }
+    }
+  }
+}
