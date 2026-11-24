@@ -37,6 +37,8 @@ if (config.transport === "httpStream") {
     httpStream: {
       port: config.port,
       host: process.env.HOST ?? "0.0.0.0",
+      // Open to browser clients, as the FastMCP build was (any origin).
+      cors: true,
     },
   })
 } else {
