@@ -1,6 +1,8 @@
 .idea
 *.iml
-lib
+# Build output: at the root and in each server. Not a bare `lib`, which also matches src/lib.
+/lib
+/servers/*/lib
 dist
 
 *.ts-builds
