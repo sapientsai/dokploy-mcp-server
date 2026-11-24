@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-FastMCP TypeScript patent intelligence MCP server. Provides ~45 tools across 4 data sources (USPTO ODP, EPO OPS, BigQuery, PTAB) for competitive IP landscape analysis, freedom-to-operate research, and patent monitoring.
+Patent intelligence MCP server, built on SomaMCP. Provides ~45 tools across 4 data sources (USPTO ODP, EPO OPS, BigQuery, PTAB) for competitive IP landscape analysis, freedom-to-operate research, and patent monitoring.
 
 Ported from Python `riemannzeta/patent_mcp_server` (51 tools) with EPO OPS and BigQuery added. PPUBS dependency killed (broken auth, reverse-engineered API). \*\*PatentsView removed (2026-05): its API host `search.patentsview.org` was decommissioned March 20, 2026 when PatentsView migrated to USPTO ODP as bulk-download datasets only — no live API replacement exists. See `docs/MCP_PLAN-PatentsView-Rehoming_2026-05-30.md` and `docs/superpowers/specs/2026-05-30-patentsview-duckdb-r2-design.md`.
 
@@ -26,9 +26,9 @@ pnpm fetch-specs     # Re-download OpenAPI specs from upstream
 
 ## Architecture
 
-### MCP Server: FastMCP + Zod
+### MCP Server: SomaMCP + Zod
 
-- **FastMCP** ^3.34.0 — MCP server framework
+- **SomaMCP** (`somamcp/node`) — MCP server framework. It replaced FastMCP in 2026-11. Over HTTP it serves Streamable HTTP statelessly at `/mcp`: no sessions, and no SSE transport (`/sse`). It also adds an `info` tool, and `/health`, `/info`, `/health/detail` and `/dashboard` routes
 - **Zod** ^4 — parameter validation for all tools + response validation via generated schemas
 - **Transport**: stdio (default) or httpStream (for deployment)
 - **Tool naming**: kebab-case with source prefix (e.g., `epo-family-lookup`)
@@ -39,7 +39,7 @@ pnpm fetch-specs     # Re-download OpenAPI specs from upstream
 ```
 src/
 ├── index.ts                    # Entry point: register tools, start server
-├── server.ts                   # FastMCP instance
+├── server.ts                   # SomaMCP server instance
 ├── tools/
 │   ├── index.ts                # registerAllTools — conditional on API key presence
 │   ├── odp.tools.ts            # 13 tools — USPTO Open Data Portal (incl. document download)

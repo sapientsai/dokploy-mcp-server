@@ -1,4 +1,6 @@
 #!/usr/bin/env node
+import type { TransportConfig } from "somamcp"
+
 import { config } from "./lib/config"
 import { registerPrompts } from "./prompts/index"
 import { registerResources } from "./resources/index"
@@ -6,6 +8,13 @@ import { registerResourceRoutes } from "./resources/routes"
 import { resourceStore } from "./resources/store"
 import { server } from "./server"
 import { registerAllTools } from "./tools/index"
+
+/** Starts the server, or exits with the reason when it can't (a port in use, say). */
+const startOrExit = (transport: TransportConfig): Promise<void> =>
+  server.start(transport).catch((error: unknown) => {
+    console.error("[patents-mcp-server] failed to start:", error)
+    process.exit(1)
+  })
 
 registerAllTools(server)
 registerResources(server)
@@ -23,7 +32,7 @@ if (config.transport === "httpStream") {
         `${config.publicBaseUrl}. Set PUBLIC_BASE_URL to the origin clients reach this server on.`,
     )
   }
-  server.start({
+  void startOrExit({
     transportType: "httpStream",
     httpStream: {
       port: config.port,
@@ -31,7 +40,7 @@ if (config.transport === "httpStream") {
     },
   })
 } else {
-  server.start({
+  void startOrExit({
     transportType: "stdio",
   })
 }

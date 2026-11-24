@@ -1,4 +1,4 @@
-import type { FastMCP } from "fastmcp"
+import type { SomaServerInstance } from "somamcp"
 import { z } from "zod"
 
 import { OdpClient } from "../clients/odp.client"
@@ -29,7 +29,7 @@ const createClient = (): OdpClient => {
   })
 }
 
-export const registerPtabTools = (server: FastMCP): void => {
+export const registerPtabTools = (server: SomaServerInstance): void => {
   server.addTool({
     name: "ptab-search-proceedings",
     description:

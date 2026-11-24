@@ -1,4 +1,4 @@
-import type { FastMCP } from "fastmcp"
+import type { SomaServerInstance } from "somamcp"
 import { z } from "zod"
 
 import {
@@ -29,7 +29,7 @@ const readOnlyAnnotations = {
   openWorldHint: true as const,
 }
 
-export const registerEpoTools = (server: FastMCP): void => {
+export const registerEpoTools = (server: SomaServerInstance): void => {
   server.addTool({
     name: "epo-search-patents",
     description: `Search European Patent Office via CQL query syntax.

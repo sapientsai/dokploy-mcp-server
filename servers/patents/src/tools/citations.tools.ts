@@ -1,4 +1,4 @@
-import type { FastMCP } from "fastmcp"
+import type { SomaServerInstance } from "somamcp"
 import { z } from "zod"
 
 import { OdpClient } from "../clients/odp.client"
@@ -29,7 +29,7 @@ const createClient = (): OdpClient => {
   })
 }
 
-export const registerCitationsTools = (server: FastMCP): void => {
+export const registerCitationsTools = (server: SomaServerInstance): void => {
   server.addTool({
     name: "citations-get-enriched",
     description:

@@ -1,7 +1,7 @@
 import { createReadStream } from "node:fs"
 import { Readable } from "node:stream"
 
-import type { FastMCP } from "fastmcp"
+import type { SomaServerInstance } from "somamcp"
 
 import { type FileStore, resourceStore, UUID_V4 } from "./store"
 
@@ -14,7 +14,7 @@ const notFound = (message: string): Response => new Response(message, { status: 
  * unguessable v4 UUID and the TTL are defense-in-depth, not the capability. Strict UUID
  * validation runs before any filesystem access, so `:file` is never interpolated into a path.
  */
-export const registerResourceRoutes = (server: FastMCP, store: FileStore = resourceStore): void => {
+export const registerResourceRoutes = (server: SomaServerInstance, store: FileStore = resourceStore): void => {
   server.getApp().get("/resources/:file", (c) => {
     const file = c.req.param("file")
     if (!file.endsWith(".pdf")) return notFound("Not found")

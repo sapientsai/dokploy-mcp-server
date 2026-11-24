@@ -1,7 +1,7 @@
-import { FastMCP } from "fastmcp"
 import { mkdtempSync, utimesSync } from "node:fs"
 import { tmpdir } from "node:os"
 import { join } from "node:path"
+import { createServer } from "somamcp"
 import { beforeAll, describe, expect, it } from "vitest"
 
 import { registerResourceRoutes } from "../src/resources/routes"
@@ -9,7 +9,7 @@ import { createFileStore } from "../src/resources/store"
 
 const dir = mkdtempSync(join(tmpdir(), "odp-route-"))
 const store = createFileStore({ dir, ttlSeconds: 600 })
-const server = new FastMCP({ name: "test", version: "0.0.0" })
+const server = createServer({ name: "test", version: "0.0.0" })
 
 let validId: string
 let staleId: string

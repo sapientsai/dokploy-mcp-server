@@ -1,4 +1,4 @@
-import type { FastMCP } from "fastmcp"
+import type { SomaServerInstance } from "somamcp"
 import { z } from "zod"
 
 import {
@@ -16,7 +16,7 @@ const readOnlyAnnotations = {
   openWorldHint: true as const,
 }
 
-export const registerBigQueryTools = (server: FastMCP): void => {
+export const registerBigQueryTools = (server: SomaServerInstance): void => {
   server.addTool({
     name: "bigquery-patent-search",
     description: `Full-text search across 90M+ patent documents in Google Patents Public Data (BigQuery).

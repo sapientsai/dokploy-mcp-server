@@ -1,4 +1,4 @@
-import type { FastMCP } from "fastmcp"
+import type { SomaServerInstance } from "somamcp"
 
 import { config } from "../lib/config"
 import { registerBigQueryTools } from "./bigquery.tools"
@@ -9,7 +9,7 @@ import { registerOfficeActionsTools } from "./office-actions.tools"
 import { registerPtabTools } from "./ptab.tools"
 import { registerUtilityTools } from "./utility.tools"
 
-export const registerAllTools = (server: FastMCP): void => {
+export const registerAllTools = (server: SomaServerInstance): void => {
   if (config.usptoApiKey) {
     registerOdpTools(server)
     registerPtabTools(server)

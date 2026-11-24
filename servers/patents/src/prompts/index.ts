@@ -1,6 +1,6 @@
-import type { FastMCP } from "fastmcp"
+import type { SomaServerInstance } from "somamcp"
 
-export const registerPrompts = (server: FastMCP): void => {
+export const registerPrompts = (server: SomaServerInstance): void => {
   server.addPrompt({
     name: "prior_art_search",
     description: "Workflow for finding prior art across all available patent data sources",

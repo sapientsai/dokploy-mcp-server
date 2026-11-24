@@ -1,8 +1,9 @@
 {
   "extends": "ts-builds/tsconfig",
   "compilerOptions": {
-    "rootDir": "src",
-    "outDir": "lib"
+    "rootDir": ".",
+    "outDir": "lib",
+    "resolveJsonModule": true
   },
   "include": ["src/**/*"]
 }

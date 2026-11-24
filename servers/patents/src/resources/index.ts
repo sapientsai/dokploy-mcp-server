@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs"
 
-import { type FastMCP, UserError } from "fastmcp"
+import { type SomaServerInstance, UserError } from "somamcp"
 
 import { resourceStore, UUID_V4 } from "./store"
 
@@ -113,7 +113,7 @@ Standard SQL against patents-public-data.patents.publications:
 - Date: \`WHERE publication_date >= 20200101\`
 - Publication number in DOCDB format: US-7650331-B1`
 
-export const registerResources = (server: FastMCP): void => {
+export const registerResources = (server: SomaServerInstance): void => {
   /**
    * The transient PDFs `odp-download-document` writes, addressable over MCP itself.
    *
