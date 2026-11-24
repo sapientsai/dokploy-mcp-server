@@ -1,0 +1,47 @@
+.idea
+*.iml
+/lib
+/dist
+/.ts-builds
+
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+
+# Runtime data
+pids
+*.pid
+*.seed
+*.pid.lock
+
+# Coverage
+coverage
+*.lcov
+.nyc_output
+
+# Dependencies
+node_modules/
+
+# TypeScript cache
+*.tsbuildinfo
+
+# Optional caches
+.npm
+.eslintcache
+
+# Output of 'npm pack'
+*.tgz
+
+# dotenv environment variable files
+.env
+.env.*.local
+.env.local
+
+# Claude Code
+.claude/settings.local.json
+
+# MCP Registry publisher binary, downloaded by CI
+mcp-publisher
