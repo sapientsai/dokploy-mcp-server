@@ -13,10 +13,14 @@
   ],
   "author": "Jordan Burke <jordan.burke@gmail.com>",
   "license": "MIT",
-  "homepage": "https://github.com/sapientsai/patents-mcp-server",
+  "homepage": "https://github.com/sapientsai/mcp-servers/tree/main/servers/patents#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/sapientsai/patents-mcp-server"
+    "url": "git+https://github.com/sapientsai/mcp-servers.git",
+    "directory": "servers/patents"
+  },
+  "bugs": {
+    "url": "https://github.com/sapientsai/mcp-servers/issues"
   },
   "scripts": {
     "validate": "ts-builds validate",
@@ -63,7 +67,6 @@
     "dist"
   ],
   "prettier": "ts-builds/prettier",
-  "packageManager": "pnpm@12.21.0+sha512.66fd8278ee28935ce951792d34367ff3af5c432a2756445823029533835b8da529bbe0be5130afd56ed0713fb8789e47bad82d93bd5ae2fe54b15562d6276ef0",
   "dependencies": {
     "@google-cloud/bigquery": "^8.3.1",
     "fast-xml-parser": "^5.11.1",

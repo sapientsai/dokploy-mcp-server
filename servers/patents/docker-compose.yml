@@ -1,8 +1,9 @@
 services:
   patents-mcp:
+    # The build context is the monorepo root, where the lockfile lives.
     build:
-      context: .
-      dockerfile: Dockerfile
+      context: ../..
+      dockerfile: servers/patents/Dockerfile
     image: patents-mcp-server:latest
     container_name: patents-mcp
     ports:

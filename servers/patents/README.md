@@ -16,8 +16,11 @@ Tools only register when their required API keys are configured — no broken to
 
 ## Quick Start
 
+This server is `servers/patents` in the [sapientsai/mcp-servers](https://github.com/sapientsai/mcp-servers) monorepo. Install from the repo root, then work in this folder:
+
 ```bash
-pnpm install
+pnpm install            # at the repo root
+cd servers/patents
 cp .env.example .env    # Add your API keys
 pnpm build
 ```
