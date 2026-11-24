@@ -8,7 +8,7 @@ type Registered = { name: string; description?: string }
  * Which tools exist is decided by which credentials are present, and a break in that logic
  * removes capability *silently* — tools do not fail, they simply stop being offered. Nothing in
  * the suite checked it; the 41-tool count was only ever confirmed by driving a live session by
- * hand. A recording stand-in for FastMCP is enough, and needs no credentials or network.
+ * hand. A recording stand-in for the server is enough, and needs no credentials or network.
  */
 const registerWith = async (env: Record<string, string>): Promise<Registered[]> => {
   for (const key of [

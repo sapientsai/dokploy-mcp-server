@@ -1,4 +1,4 @@
-import type { FastMCP } from "fastmcp"
+import type { SomaServerInstance } from "somamcp"
 import { z } from "zod"
 
 import { epoHealthCheck } from "../clients/epo-ops.client"
@@ -194,7 +194,7 @@ export const buildApiStatuses = async (probes: HealthProbes = defaultProbes): Pr
   return statuses
 }
 
-export const registerUtilityTools = (server: FastMCP): void => {
+export const registerUtilityTools = (server: SomaServerInstance): void => {
   server.addTool({
     name: "check-api-status",
     description: "Check the health and configuration status of all patent data APIs (ODP, EPO, BigQuery).",

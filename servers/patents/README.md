@@ -1,6 +1,6 @@
 # patents-mcp-server
 
-FastMCP TypeScript patent intelligence MCP server. 45 tools across USPTO, EPO, and Google Patents for IP landscape analysis, freedom-to-operate research, and patent monitoring.
+Patent intelligence MCP server, built on [SomaMCP](https://github.com/sapientsai/SomaMCP). 45 tools across USPTO, EPO, and Google Patents for IP landscape analysis, freedom-to-operate research, and patent monitoring.
 
 > **Note:** PatentsView support was removed in May 2026 — its API host `search.patentsview.org` was decommissioned on 2026-03-20 when PatentsView migrated to USPTO ODP as bulk-download datasets only (no live API replacement). US full-text search is now available via Google BigQuery; bibliographic data via USPTO ODP. See `docs/MCP_PLAN-PatentsView-Rehoming_2026-05-30.md` for the options analysis.
 
@@ -205,12 +205,12 @@ Tests skip gracefully when API keys are absent.
 
 ## Architecture
 
-Built with [FastMCP](https://github.com/punkpeye/fastmcp) + [Zod](https://zod.dev/) + [ts-builds](https://github.com/jordanburke/ts-builds) + [functype-os](https://github.com/jordanburke/functype-os).
+Built with [SomaMCP](https://github.com/sapientsai/SomaMCP) + [Zod](https://zod.dev/) + [ts-builds](https://github.com/jordanburke/ts-builds) + [functype-os](https://github.com/jordanburke/functype-os).
 
 ```
 src/
 ├── index.ts                    # Entry point
-├── server.ts                   # FastMCP instance
+├── server.ts                   # SomaMCP server instance
 ├── tools/                      # 45 tools across 7 modules (conditional registration)
 ├── clients/                    # API clients (base, ODP, EPO, BigQuery)
 ├── generated/                  # Zod schemas from OpenAPI specs (Hey API codegen)

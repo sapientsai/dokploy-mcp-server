@@ -1,12 +1,12 @@
 {
   "name": "patents-mcp-server",
   "version": "1.2.3",
-  "description": "FastMCP TypeScript patent intelligence MCP server — 55 tools across USPTO, EPO, and BigQuery",
+  "description": "Patent intelligence MCP server, built on SomaMCP — 45 tools across USPTO, EPO, and BigQuery",
   "mcpName": "io.github.sapientsai/patents-mcp-server",
   "keywords": [
     "mcp",
     "patents",
-    "fastmcp",
+    "somamcp",
     "uspto",
     "epo",
     "patent-search"
@@ -70,9 +70,9 @@
   "dependencies": {
     "@google-cloud/bigquery": "^8.3.1",
     "fast-xml-parser": "^5.11.1",
-    "fastmcp": "^4.20.14",
     "functype": "^1.9.0",
     "functype-os": "^1.9.0",
+    "somamcp": "^2.11.0",
     "zod": "^4.6.5"
   }
 }

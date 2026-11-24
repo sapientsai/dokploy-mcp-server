@@ -1,4 +1,4 @@
-import { UserError } from "fastmcp"
+import { UserError } from "somamcp"
 
 export { UserError }
 

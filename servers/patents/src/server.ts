@@ -1,6 +1,8 @@
-import { FastMCP } from "fastmcp"
+import { createServer } from "somamcp/node"
 
-export const server = new FastMCP({
+import { VERSION } from "./version"
+
+export const server = createServer({
   name: "patents-mcp-server",
-  version: "1.0.0",
+  version: VERSION,
 })
