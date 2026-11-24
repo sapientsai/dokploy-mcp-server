@@ -224,8 +224,8 @@ importers:
         specifier: ^10.4.0
         version: 10.4.0
       somamcp:
-        specifier: ^2.11.0
-        version: 2.11.0
+        specifier: ^2.11.1
+        version: 2.11.1
       zod:
         specifier: ^4.6.7
         version: 4.6.7
@@ -264,8 +264,8 @@ importers:
         specifier: ^2.0.0
         version: 2.0.0(functype@2.0.0)
       somamcp:
-        specifier: ^2.11.0
-        version: 2.11.0
+        specifier: ^2.11.1
+        version: 2.11.1
       zod:
         specifier: ^4.6.7
         version: 4.6.7
@@ -304,8 +304,8 @@ importers:
         specifier: ^2.0.0
         version: 2.0.0(functype@2.0.0)
       somamcp:
-        specifier: ^2.11.0
-        version: 2.11.0
+        specifier: ^2.11.1
+        version: 2.11.1
       zod:
         specifier: ^4.6.5
         version: 4.6.7
@@ -332,8 +332,8 @@ importers:
         specifier: ^2.0.0
         version: 2.0.0
       somamcp:
-        specifier: ^2.11.0
-        version: 2.11.0
+        specifier: ^2.11.1
+        version: 2.11.1
       zod:
         specifier: ^4.6.7
         version: 4.6.7
@@ -354,8 +354,8 @@ importers:
         specifier: ^2.0.0
         version: 2.0.0
       somamcp:
-        specifier: ^2.11.0
-        version: 2.11.0
+        specifier: ^2.11.1
+        version: 2.11.1
       zod:
         specifier: ^4.6.7
         version: 4.6.7
@@ -3171,8 +3171,8 @@ packages:
   sisteransi@1.0.5:
     resolution: {integrity: sha512-bLGGlR1QxBcynn2d5YmDX4MGjlZvy2MRBDRNHLJ8VI6l6+9FUiyTFNJ0IveOSP0bcXgVDPRcfGqA0pjaqUpfVg==}
 
-  somamcp@2.11.0:
-    resolution: {integrity: sha512-6zNHf7LMw3ba0Qzo+2AcBsrT+zq936aO88jhqEhmLAT+vDNmpN0hJUFqBuzxmsPI+2vV2sj36IHDn5OcjcEQEw==}
+  somamcp@2.11.1:
+    resolution: {integrity: sha512-Hg57zCTa1Y/0N2Lo+FtwpcB/SQzd/n7M3X60LdnYiOwZIg45GolxYvBPBFB1IfD2+/2Un/wzhqmRjB7Flfm58A==}
     peerDependencies:
       '@opentelemetry/api': ^1.9.0
     peerDependenciesMeta:
@@ -6294,7 +6294,7 @@ snapshots:
 
   sisteransi@1.0.5: {}
 
-  somamcp@2.11.0:
+  somamcp@2.11.1:
     dependencies:
       '@hono/node-server': 2.1.11(hono@4.13.19)
       '@modelcontextprotocol/client': 2.4.0

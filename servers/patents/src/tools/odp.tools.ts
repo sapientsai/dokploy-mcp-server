@@ -85,18 +85,17 @@ export const buildDownloadResult = async (
           }
         })()
 
-  // TODO: somamcp's ResourceLink type lacks the MCP spec's optional `description`. somamcp sends
-  // content as given, so building the link apart keeps `description` on the wire; inline it once
-  // the type has the field.
-  const link = {
-    type: "resource_link" as const,
-    uri: `patents://document/${id}`,
-    name: `${applicationNumberText}-${documentIdentifier}.pdf`,
-    description: `File-wrapper document ${documentIdentifier} for application ${applicationNumberText}.`,
-    mimeType: "application/pdf",
-  }
   return {
-    content: [{ type: "text", text: JSON.stringify({ ...handle, resourceUri: `patents://document/${id}` }) }, link],
+    content: [
+      { type: "text", text: JSON.stringify({ ...handle, resourceUri: `patents://document/${id}` }) },
+      {
+        type: "resource_link",
+        uri: `patents://document/${id}`,
+        name: `${applicationNumberText}-${documentIdentifier}.pdf`,
+        description: `File-wrapper document ${documentIdentifier} for application ${applicationNumberText}.`,
+        mimeType: "application/pdf",
+      },
+    ],
   }
 }
 
