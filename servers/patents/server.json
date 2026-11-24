@@ -3,8 +3,9 @@
   "name": "io.github.sapientsai/patents-mcp-server",
   "description": "Patent intelligence — USPTO Open Data, PTAB, EPO OPS and BigQuery full-text search.",
   "repository": {
-    "url": "https://github.com/sapientsai/patents-mcp-server",
-    "source": "github"
+    "url": "https://github.com/sapientsai/mcp-servers",
+    "source": "github",
+    "subfolder": "servers/patents"
   },
   "version": "1.2.3",
   "packages": [

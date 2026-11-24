@@ -1,49 +1,38 @@
-# Build stage
-FROM node:22-alpine AS builder
+# Built from the monorepo root, where the lockfile and workspace settings live:
+#   docker build -f servers/patents/Dockerfile -t patents-mcp-server .
+# Only this server is installed.
 
-# Install pnpm
-# The pnpm version comes from package.json's `packageManager` field, which corepack honours.
-# Pinning one here too only creates drift — this pin read 10.32.1 while builds ran 11.27.0.
+# Build stage
+FROM node:24.21.0-alpine AS builder
+
+# corepack activates the pnpm version pinned in the root package.json's packageManager
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable
 
 WORKDIR /app
 
-# Copy package files
-# pnpm-workspace.yaml carries the `overrides` block; without it `--frozen-lockfile` fails with
-# ERR_PNPM_LOCKFILE_CONFIG_MISMATCH, because the lockfile records overrides the config lacks.
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY servers/patents/package.json servers/patents/
+RUN pnpm install --frozen-lockfile --filter patents-mcp-server
 
-# Install dependencies
-RUN pnpm install --frozen-lockfile
-
-# Copy source
-COPY . .
-
-# Build (use tsdown directly — ts-builds wrapper needs rimraf in PATH)
-RUN rm -rf dist && pnpm exec tsdown --outDir dist
+COPY servers/patents servers/patents
+RUN pnpm --filter patents-mcp-server exec tsdown --outDir dist
 
 # Production stage
-FROM node:22-alpine AS production
+FROM node:24.21.0-alpine AS production
 
-# Install pnpm for production deps
-# The pnpm version comes from package.json's `packageManager` field, which corepack honours.
-# Pinning one here too only creates drift — this pin read 10.32.1 while builds ran 11.27.0.
 ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 RUN corepack enable
 
 WORKDIR /app
 
-# Copy package files
-# pnpm-workspace.yaml carries the `overrides` block; without it `--frozen-lockfile` fails with
-# ERR_PNPM_LOCKFILE_CONFIG_MISMATCH, because the lockfile records overrides the config lacks.
-COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
+COPY package.json pnpm-lock.yaml pnpm-workspace.yaml .npmrc ./
+COPY servers/patents/package.json servers/patents/
+RUN pnpm install --frozen-lockfile --prod --ignore-scripts --filter patents-mcp-server && pnpm store prune
 
-# Install production dependencies only
-RUN pnpm install --frozen-lockfile --prod
+COPY --from=builder /app/servers/patents/dist ./servers/patents/dist
 
-# Copy built files from builder
-COPY --from=builder /app/dist ./dist
+WORKDIR /app/servers/patents
 
 # Set environment defaults
 ENV PORT=3000

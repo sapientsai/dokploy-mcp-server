@@ -8,6 +8,8 @@ FastMCP TypeScript patent intelligence MCP server. Provides ~45 tools across 4 d
 
 Ported from Python `riemannzeta/patent_mcp_server` (51 tools) with EPO OPS and BigQuery added. PPUBS dependency killed (broken auth, reverse-engineered API). \*\*PatentsView removed (2026-05): its API host `search.patentsview.org` was decommissioned March 20, 2026 when PatentsView migrated to USPTO ODP as bulk-download datasets only — no live API replacement exists. See `docs/MCP_PLAN-PatentsView-Rehoming_2026-05-30.md` and `docs/superpowers/specs/2026-05-30-patentsview-duckdb-r2-design.md`.
 
+This server lives in `servers/patents` of the `sapientsai/mcp-servers` monorepo; the root CLAUDE.md has the repo-wide rules. Install from the repo root. Release from the root too: `pnpm release patents <patch|minor|major>` tags `patents-mcp-server@<version>`, and `git push --follow-tags` runs the root `publish.yml` for this package alone (npm, then the MCP Registry). Never `npm publish` by hand.
+
 ## Development Commands
 
 ```bash
