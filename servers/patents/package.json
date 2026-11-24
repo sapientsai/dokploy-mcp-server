@@ -45,7 +45,7 @@
   "devDependencies": {
     "@hey-api/openapi-ts": "^0.94.5",
     "@types/node": "^24.13.4",
-    "ts-builds": "^4.7.0",
+    "ts-builds": "^5.0.0",
     "tsdown": "^0.22.14"
   },
   "bin": {
@@ -70,8 +70,8 @@
   "dependencies": {
     "@google-cloud/bigquery": "^8.3.1",
     "fast-xml-parser": "^5.11.1",
-    "functype": "^1.9.0",
-    "functype-os": "^1.9.0",
+    "functype": "^2.0.0",
+    "functype-os": "^2.0.0",
     "somamcp": "^2.11.0",
     "zod": "^4.6.5"
   }
