@@ -1,0 +1,76 @@
+name: patents Docker build
+
+# patents ships a Dockerfile and docker-compose.yml for running it yourself, but no image is
+# published. This builds the image and proves it serves MCP, so the Dockerfile stays working.
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "servers/patents/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".npmrc"
+      - ".dockerignore"
+      - ".github/workflows/docker-patents.yml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "servers/patents/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".npmrc"
+      - ".dockerignore"
+      - ".github/workflows/docker-patents.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: servers/patents/Dockerfile
+          load: true
+          tags: patents-mcp-server:smoke
+          cache-from: type=gha,scope=patents
+          cache-to: type=gha,mode=max,scope=patents
+
+      - name: Smoke test container
+        run: |
+          # No API keys: only the keyless utility tools register (get-cpc-info, get-status-code,
+          # check-api-status), plus somamcp's info tool.
+          docker run -d --name smoke -p 3000:3000 patents-mcp-server:smoke
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:3000/health > /dev/null; then break; fi
+            sleep 1
+          done
+          curl -sf http://127.0.0.1:3000/health > /dev/null || { docker logs smoke; exit 1; }
+          HDR=(-H 'content-type: application/json' -H 'accept: application/json, text/event-stream' -H 'mcp-protocol-version: 2025-06-18')
+          INIT=$(curl -s -X POST http://127.0.0.1:3000/mcp "${HDR[@]}" \
+            -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"1"}}}')
+          echo "$INIT" | grep -q '"name":"patents-mcp-server"' || { echo "initialize failed: $INIT"; docker logs smoke; exit 1; }
+          TOOLS=$(curl -s -X POST http://127.0.0.1:3000/mcp "${HDR[@]}" -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' \
+            | sed -n 's/^data: //p' | jq '.result.tools | length')
+          [ "$TOOLS" -eq 4 ] || { echo "expected 4 tools without keys, got $TOOLS"; docker logs smoke; exit 1; }
+          PROMPTS=$(curl -s -X POST http://127.0.0.1:3000/mcp "${HDR[@]}" -d '{"jsonrpc":"2.0","id":3,"method":"prompts/list"}' \
+            | sed -n 's/^data: //p' | jq '.result.prompts | length')
+          [ "$PROMPTS" -eq 6 ] || { echo "expected 6 prompts, got $PROMPTS"; docker logs smoke; exit 1; }
+          echo "container serves MCP: health ok, initialize ok, $TOOLS tools, $PROMPTS prompts"
+          docker rm -f smoke
