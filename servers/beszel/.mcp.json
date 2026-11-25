@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "beszel": {
+      "command": "node",
+      "args": ["./dist/bin.js"],
+      "env": {
+        "BESZEL_URL": "${BESZEL_URL}",
+        "BESZEL_EMAIL": "${BESZEL_EMAIL}",
+        "BESZEL_PASSWORD": "${BESZEL_PASSWORD}"
+      }
+    }
+  }
+}
