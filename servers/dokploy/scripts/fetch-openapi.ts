@@ -42,7 +42,13 @@ const EXAMPLE_HOST = "dokploy.example.com"
 
 const envelope = (await response.json()) as { result: { data: { json: unknown } } }
 const spec = envelope.result.data.json
-const text = JSON.stringify(spec, null, 2).replaceAll(new URL(baseUrl).host, EXAMPLE_HOST)
+// The hostname, not the host: DOKPLOY_URL may carry a port that the spec's URLs leave out.
+const instanceHost = new URL(baseUrl).hostname
+const text = JSON.stringify(spec, null, 2).replaceAll(instanceHost, EXAMPLE_HOST)
+if (text.toLowerCase().includes(instanceHost.toLowerCase())) {
+  console.error("The spec still names the instance host after the rewrite; not writing it.")
+  process.exit(1)
+}
 
 const outPath = resolve(import.meta.dirname, "..", "openapi.json")
 writeFileSync(outPath, text + "\n")
