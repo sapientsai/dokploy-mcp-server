@@ -47,7 +47,7 @@ const hostPattern = (host: string): RegExp =>
   new RegExp(`(?<![\\p{L}\\p{N}-])${escapeRegExp(host)}(?![\\p{L}\\p{N}-])`, "giu")
 
 // Rewrites every string in the parsed spec, keys included. Working on values rather than the
-// serialized JSON keeps escapes such as "\\n" from hiding a host from the whole-name match.
+// serialized JSON keeps escapes such as "\n" from hiding a host from the whole-name match.
 const mapStrings = (value: unknown, rewrite: (text: string) => string): unknown => {
   if (typeof value === "string") return rewrite(value)
   if (Array.isArray(value)) return value.map((item) => mapStrings(item, rewrite))
