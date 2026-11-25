@@ -32,10 +32,16 @@ export const tokenRefused = (usingToken: boolean): UserError =>
     suggestions: [usingToken ? TOKEN_HINT : PASSWORD_HINT],
   })
 
+/**
+ * PocketBase answers 403 on a list only when the collection has no list rule, i.e. superusers only.
+ * A system the user isn't shared on gives no 403: its records just don't come back.
+ */
 export const forbidden = (collection: string): UserError =>
-  new UserError(`This Beszel user can't read ${collection} (HTTP 403).`, {
+  new UserError(`This hub lets only superusers list ${collection} (HTTP 403).`, {
     category: "auth",
-    suggestions: ["Give the user access to the system, or use a user with the readonly or admin role."],
+    suggestions: [
+      "A newer Beszel may have changed this collection's access rules. This server was checked against Beszel 0.21.",
+    ],
   })
 
 export const rateLimited = (): UserError =>

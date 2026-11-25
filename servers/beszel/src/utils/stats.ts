@@ -25,6 +25,16 @@ export const summarize = (series: ReadonlyArray<Option<number>>): Option<Summary
   }))
 }
 
+/**
+ * A summary whose maximum also counts each record's own peak. Beszel stores the highest reading
+ * inside an averaged record beside the average, so the max of averages alone understates spikes.
+ */
+export const summarizeWithPeaks = (
+  series: ReadonlyArray<Option<number>>,
+  peaks: ReadonlyArray<Option<number>>,
+): Option<Summary> =>
+  summarize(series).map((s) => ({ ...s, max: Math.max(s.max, ...peaks.flatMap((p) => p.toArray())) }))
+
 /** The sum of a pair such as [sent, received], when both parts are present. */
 export const pairSum = (pair: ReadonlyArray<number> = []): Option<number> =>
   pair.length < 2 ? Option.none() : present((pair[0] ?? 0) + (pair[1] ?? 0))

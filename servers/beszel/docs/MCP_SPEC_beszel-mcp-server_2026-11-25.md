@@ -26,7 +26,7 @@ The collections it reads, and what a normal user may list (from `internal/hub/co
 | `systemd_services` | name, state, sub-state, cpu, memory, and their peaks                             | the system's users |
 | `smart_devices`    | disk model, state, temperature, power-on hours, attributes                       | the system's users |
 | `alerts`           | the user's thresholds per system and whether each is triggered                   | the alert's owner  |
-| `alerts_history`   | when an alert fired and when it resolved; kept 90 days                           | the alert's owner  |
+| `alerts_history`   | when an alert fired and when it resolved; the newest 200 to 250 per user         | the alert's owner  |
 
 With `SHARE_ALL_SYSTEMS=true` on the hub, any signed-in user can read every system. A user with Beszel's `readonly` role can read all of the above and can't write anything else, so **the README recommends a `readonly` user for this server.**
 
@@ -94,6 +94,12 @@ Every tool is read-only and returns markdown text: a short summary line, then a 
 | `7d`  | 120m     | 84               |
 | `30d` | 480m     | 90               |
 
+**Max uses Beszel's peaks.** A 10-minute or longer record averages the readings in it, and keeps the highest beside the average: `cpum` for CPU, `memm` for used memory, `bm` for network and `diom` for disk I/O (`internal/records/records.go`). Max takes those where they exist, so a short spike still shows. Other metrics, and containers, have no stored peak, and the output says their Max is the highest interval average.
+
+**A missing rate is zero.** Beszel leaves a zero network or disk I/O rate out of the record (`omitzero`), so a record without one counts as an idle interval, not a missing one.
+
+**Lists never come back partial.** Past 5,000 records a list fails and asks to narrow the request, rather than summarize part of the data. Sorts add `id` as a tiebreak, so paging can't skip or repeat a record.
+
 They filter on `created >= <now - range>` and sort by `created`. PocketBase stores dates as text in the layout `2006-01-02 15:04:05.000Z` and compares them as text, so the start time is written in that layout. An ISO string with a `T` would compare wrongly within a day.
 
 ### Filters are built, never interpolated
@@ -106,7 +112,7 @@ Errors follow the others here: a `UserError` with a category and suggestions, so
 
 - **Unreachable hub:** names `BESZEL_URL` and the network error.
 - **401 after a fresh sign-in:** names the sign-in variables in use.
-- **403:** this user can't see that collection or system. Suggests the `readonly` role or `SHARE_ALL_SYSTEMS`.
+- **403:** PocketBase gives it on a list only when the collection has no list rule, so superusers alone can read it. That would mean a newer Beszel changed the collection's rules. A system that isn't shared with this user gives no error: its records just don't come back.
 - **400:** PocketBase's own message, which usually means a bad filter.
 - **429:** the hub's rate limit. Says to wait a minute.
 - **Unknown system:** lists the names this user can see.

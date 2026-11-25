@@ -19,9 +19,13 @@ const parseUrl = (raw: string): Either<string, string> =>
   Try(() => new URL(raw)).fold(
     () => Either.left<string, string>(`BESZEL_URL is not a URL: ${raw}`),
     (url) =>
-      url.protocol === "http:" || url.protocol === "https:"
-        ? Either.right<string, string>(url.href.replace(/\/+$/, ""))
-        : Either.left<string, string>(`BESZEL_URL must start with http:// or https://, not ${url.protocol}`),
+      url.username !== "" || url.password !== ""
+        ? Either.left<string, string>(
+            "BESZEL_URL must not carry a user or password; set BESZEL_EMAIL and BESZEL_PASSWORD instead.",
+          )
+        : url.protocol === "http:" || url.protocol === "https:"
+          ? Either.right<string, string>(url.href.replace(/\/+$/, ""))
+          : Either.left<string, string>(`BESZEL_URL must start with http:// or https://, not ${url.protocol}`),
   )
 
 const readAuth = (env: Env): Either<string, BeszelAuth> => {

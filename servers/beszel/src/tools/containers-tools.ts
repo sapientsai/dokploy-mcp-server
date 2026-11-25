@@ -49,9 +49,12 @@ export function registerContainerTools(server: SomaServerInstance): void {
         listSystems(client).flatMap((systems) => {
           const scope =
             args.system === undefined
-              ? client.listAll<ContainerRecord>("containers", { sort: "name" })
+              ? client.listAll<ContainerRecord>("containers", { sort: "name,id" })
               : pickSystem(systems, args.system).flatMap((system) =>
-                  client.listAll<ContainerRecord>("containers", { filter: equals("system", system.id), sort: "name" }),
+                  client.listAll<ContainerRecord>("containers", {
+                    filter: equals("system", system.id),
+                    sort: "name,id",
+                  }),
                 )
           const wantedHealth = args.health === undefined ? undefined : CONTAINER_HEALTH_NAMES.indexOf(args.health)
           return scope.map((containers) =>

@@ -41,11 +41,11 @@ export function registerDiskTools(server: SomaServerInstance): void {
       withClient((client) =>
         listSystems(client).flatMap((systems) =>
           (args.system === undefined
-            ? client.listAll<SmartDeviceRecord>("smart_devices", { sort: "name" })
+            ? client.listAll<SmartDeviceRecord>("smart_devices", { sort: "name,id" })
             : pickSystem(systems, args.system).flatMap((system) =>
                 client.listAll<SmartDeviceRecord>("smart_devices", {
                   filter: equals("system", system.id),
-                  sort: "name",
+                  sort: "name,id",
                 }),
               )
           ).map((devices) => formatSmartDevices(devices, systemNames(systems))),

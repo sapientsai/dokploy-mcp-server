@@ -85,6 +85,16 @@ export type GpuStats = {
 /** `system_stats.stats`. Byte arrays are newer; the GB fields are what older agents send. */
 export type SystemStats = {
   readonly cpu?: number
+  /** Peaks within an averaged record (10m and longer): CPU %, used memory bytes, and [sent, received] and [read, write] bytes/s. */
+  readonly cpum?: number
+  readonly memm?: number
+  readonly bm?: ReadonlyArray<number>
+  readonly diom?: ReadonlyArray<number>
+  /** Agents before 0.13 / 0.18.3: disk I/O and network in MB/s. */
+  readonly dr?: number
+  readonly dw?: number
+  readonly ns?: number
+  readonly nr?: number
   readonly mp?: number
   readonly mem?: ReadonlyArray<number>
   readonly m?: number

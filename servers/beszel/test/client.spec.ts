@@ -133,10 +133,61 @@ describe("sign-in", () => {
     expect(await failureOf(passwordClient().list("systems"))).toMatch(message)
   })
 
-  it("never puts the password or token in an error", async () => {
-    mockFetch.mockImplementation(() => reply(400, { message: "Failed to authenticate." }))
-    const message = await failureOf(passwordClient().list("systems"))
-    expect(message).not.toContain("pw")
+  it("keeps a fresh token that a call running alongside already got", async () => {
+    const tokens = ["t1", "t2", "t3"]
+    const pendingSecond = { resolve: (_: unknown) => {} }
+    let alertsCalls = 0
+    mockFetch.mockImplementation((url: string, init: RequestInit) => {
+      if (url.includes("auth-with-password")) return reply(200, { token: tokens.shift() })
+      const token = (init.headers as Record<string, string>).Authorization
+      if (url.includes("/alerts/")) alertsCalls += 1
+      if (url.includes("/alerts/") && alertsCalls === 1) {
+        // The second call's refusal of t1 arrives only after the first call has signed in again.
+        return new Promise((resolve) => {
+          pendingSecond.resolve = resolve
+        }).then(() => reply(401, {}))
+      }
+      return token === "t1" ? reply(401, {}) : reply(200, page([]))
+    })
+    const client = passwordClient()
+
+    const second = client.list("alerts").runOrThrow()
+    const first = client.list("systems").runOrThrow()
+    await vi.waitFor(() => expect(alertsCalls).toBe(1))
+    await first
+    pendingSecond.resolve(undefined)
+    await second
+
+    expect(calls().filter((c) => c.url.includes("auth-with-password"))).toHaveLength(2)
+  })
+})
+
+describe("secrets in errors", () => {
+  const PASSWORD = "s3cret-password-value"
+  const TOKEN = "tok3n-secret-value"
+  const secretClient = (kind: "password" | "token") =>
+    new BeszelClient(
+      {
+        baseUrl: BASE,
+        auth: kind === "password" ? { kind, email: "ro@example.com", password: PASSWORD } : { kind, token: TOKEN },
+      },
+      () => NOW,
+    )
+
+  it.each([
+    ["password", 400, {}],
+    ["password", 401, { mfaId: "x" }],
+    ["password", 403, { message: "refused" }],
+    ["password", 429, {}],
+    ["password", 500, { message: "boom" }],
+    ["token", 401, {}],
+    ["token", 403, {}],
+    ["token", 400, { message: "bad filter" }],
+  ] as const)("never names the %s on HTTP %i", async (kind, status, body) => {
+    mockFetch.mockImplementation(() => reply(status, body))
+    const message = await failureOf(secretClient(kind).list("systems"))
+    expect(message).not.toContain(PASSWORD)
+    expect(message).not.toContain(TOKEN)
   })
 })
 
@@ -187,8 +238,15 @@ describe("records requests", () => {
     expect(new URL(calls()[1]?.url ?? "").searchParams.get("page")).toBe("2")
   })
 
+  it("refuses to return part of a list past the cap", async () => {
+    const full = Array.from({ length: 500 }, (_, i) => ({ id: `r${i}` }))
+    mockFetch.mockImplementation(() => reply(200, { ...page(full), totalPages: 3 }))
+
+    expect(await failureOf(tokenClient().listAll("containers", {}, 600))).toMatch(/More than 600 containers records/)
+  })
+
   it.each([
-    [403, /can't read systems/],
+    [403, /only superusers list systems/],
     [404, /no systems collection/],
     [429, /rate-limiting/],
     [400, /HTTP 400 for systems: invalid filter/],

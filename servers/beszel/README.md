@@ -18,7 +18,7 @@ It only reads. It can't pause a system, change an alert or touch a user.
 | **Services**   | `list_systemd_services` | systemd services with state, CPU and memory, or only the failed ones                                |
 | **Disks**      | `list_smart_devices`    | S.M.A.R.T. health: model, status, temperature, power-on hours and power cycles                      |
 | **Alerts**     | `list_alerts`           | Your alert rules, their thresholds, and which are triggered now                                     |
-|                | `get_alert_history`     | When alerts fired and resolved (Beszel keeps 90 days)                                               |
+|                | `get_alert_history`     | When alerts fired and resolved (Beszel keeps each user's newest 200–250)                            |
 | **Server**     | `info`                  | Server name, version, build, and capability counts (built into SomaMCP)                             |
 
 Ranges are `1h`, `12h`, `24h`, `7d` and `30d`. Each reads the interval Beszel keeps for it, from 1-minute points for an hour to 8-hour points for 30 days, so a call reads at most about a hundred records.

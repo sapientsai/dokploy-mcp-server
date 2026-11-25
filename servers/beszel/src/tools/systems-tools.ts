@@ -128,10 +128,25 @@ export const formatSystem = (
     )
     return present.length === 0 ? [] : ["", `## ${title}`, ...present]
   }
+  const readingTime = latest.fold(
+    () => "",
+    (r) => r.created ?? "",
+  )
+  const asOf =
+    system.status === "up"
+      ? Option.none<string>()
+      : Option(
+          `> ${system.name} is ${system.status}. "Now" shows the last readings Beszel has${readingTime === "" ? "" : `, from ${readingTime} UTC`}, not current use.`,
+        )
+  const readingLine = readingTime === "" ? [] : [`- **Latest reading:** ${readingTime} UTC`]
   return [
     `# ${system.name} (${system.id})`,
+    ...asOf.fold(
+      () => [],
+      (note) => ["", note],
+    ),
     ...section("Overview", overview),
-    ...section("Now", usage),
+    ...section("Now", [...usage, ...readingLine]),
     ...section("Other filesystems", filesystems),
     ...section("Temperatures", temperatures),
   ].join("\n")

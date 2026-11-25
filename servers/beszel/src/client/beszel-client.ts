@@ -95,7 +95,10 @@ export class BeszelClient {
     )
   }
 
-  /** Every record that matches, page by page, up to `maxItems`. */
+  /**
+   * Every record that matches, page by page. Past `maxItems` it fails rather than return a partial
+   * list, so a tool never reports a count or a summary from part of the data.
+   */
   listAll<T>(
     collection: string,
     query: ListQuery = {},
@@ -104,8 +107,15 @@ export class BeszelClient {
     const step = (page: number, acc: ReadonlyArray<T>): IO<never, Error, ReadonlyArray<T>> =>
       this.list<T>(collection, { ...query, page, perPage: PAGE_SIZE }).flatMap((result) => {
         const items = acc.concat(result.items)
-        const done = page >= result.totalPages || result.items.length < PAGE_SIZE || items.length >= maxItems
-        return done ? IO.succeed(items.slice(0, maxItems)) : step(page + 1, items)
+        if (items.length > maxItems) {
+          return IO.fail<Error>(
+            new UserError(`More than ${maxItems} ${collection} records match.`, {
+              suggestions: ["Narrow the request, for example to one system."],
+            }),
+          )
+        }
+        const done = page >= result.totalPages || result.items.length < PAGE_SIZE
+        return done ? IO.succeed(items) : step(page + 1, items)
       })
     return step(1, [])
   }
@@ -122,11 +132,12 @@ export class BeszelClient {
   private authorized(path: string, collection: string): IO<never, Error, unknown> {
     const usingPassword = this.config.auth.kind === "password"
     return this.currentToken()
-      .flatMap((token) => this.send(path, token))
-      .flatMap((response) => {
+      .flatMap((token) => this.send(path, token).map((response) => ({ response, token })))
+      .flatMap(({ response, token }) => {
         if (response.status !== 401) return IO.succeed(response)
         if (!usingPassword) return IO.fail<Error>(tokenRefused(true))
-        this.session.set(Option.none())
+        // Drop only the refused token: a call running alongside may already have signed in afresh.
+        if (this.session.get().exists((s) => s.token === token)) this.session.set(Option.none())
         return this.currentToken()
           .flatMap((token) => this.send(path, token))
           .flatMap((retry) => (retry.status === 401 ? IO.fail<Error>(tokenRefused(false)) : IO.succeed(retry)))

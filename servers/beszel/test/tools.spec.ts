@@ -127,6 +127,15 @@ describe("get_system", () => {
     })
   })
 
+  it("says a down system's figures are its last readings, not current use", async () => {
+    hub({ systems, system_details: [], system_stats: [{ ...latestStats, system: "sysbravo0000002" }] })
+    const text = await run("get_system", { system: "bravo" })
+    expect(text).toContain(
+      '> bravo is down. "Now" shows the last readings Beszel has, from 2026-11-25 12:00:00.000Z UTC',
+    )
+    expect(text).toContain("- **Latest reading:** 2026-11-25 12:00:00.000Z UTC")
+  })
+
   it("refuses a name two systems share", async () => {
     hub({ systems: [...systems, { ...systems[0], id: "sysalpha0000009" }] })
     await expect(run("get_system", { system: "alpha" })).rejects.toThrow(/2 systems are named "alpha"/)
@@ -157,6 +166,26 @@ describe("get_system_stats", () => {
     expect(await run("get_system_stats", { system: "alpha", range: "1h" })).toContain(
       "| Memory used | 9.5 GB | 9.5 GB | 9.5 GB | 9.5 GB |",
     )
+  })
+
+  it("takes Max from the peaks Beszel keeps inside averaged records", async () => {
+    const withPeaks = statsSeries.map((r, i) => ({
+      ...r,
+      stats: { ...r.stats, cpum: i === 1 ? 100 : undefined, bm: [5000, 9000 * (i + 1)] },
+    }))
+    hub({ systems, system_stats: withPeaks })
+    const text = await run("get_system_stats", { system: "alpha", range: "7d" })
+    expect(text).toContain("| CPU | 10.0% | 20.0% | 100.0% | 20.0% |")
+    expect(text).toContain("| Network received | 2.9 KB/s | 5.9 KB/s | 26.4 KB/s | 8.8 KB/s |")
+    expect(text).toMatch(/Max is the highest single reading/)
+  })
+
+  it("counts an interval with no traffic as zero, since Beszel leaves zero rates out", async () => {
+    const idle = { ...statsSeries[0], id: "idle", stats: { cpu: 1, mp: 40 } } as (typeof statsSeries)[number]
+    hub({ systems, system_stats: [...statsSeries, idle] })
+    const text = await run("get_system_stats", { system: "alpha", range: "24h" })
+    expect(text).toContain("| Network sent | 0 B/s |")
+    expect(text).toContain("| Disk read | 0 B/s |")
   })
 
   it("says so when there's nothing in the range", async () => {
@@ -239,6 +268,13 @@ describe("alerts", () => {
     expect(text).toContain("| alpha | Temperature | 85°C | 1 min | ok |")
   })
 
+  it("gives a certificate alert's threshold in days", async () => {
+    hub({ systems, alerts: [{ id: "al9", system: "sysalpha0000001", name: "NetworkMonitorCert", value: 14, min: 0 }] })
+    expect(await run("list_alerts", { triggered_only: false })).toContain(
+      "| alpha | NetworkMonitorCert | 14 days before expiry |",
+    )
+  })
+
   it("shows only triggered alerts when asked", async () => {
     hub({ systems, alerts })
     const text = await run("list_alerts", { triggered_only: true })
@@ -250,7 +286,7 @@ describe("alerts", () => {
     const text = await run("get_alert_history", { active_only: false, limit: 100 })
     expect(text).toContain("2 alert events, 1 still active.")
     expect(text).toContain("| 2026-11-25 09:00:00.000Z | bravo | Status | 0 | **active** |")
-    expect(requestFor("alerts_history")?.searchParams.get("sort")).toBe("-created")
+    expect(requestFor("alerts_history")?.searchParams.get("sort")).toBe("-created,-id")
   })
 
   it("builds the history filter from the arguments", async () => {

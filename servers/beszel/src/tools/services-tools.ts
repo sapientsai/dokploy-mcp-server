@@ -48,7 +48,7 @@ export function registerServiceTools(server: SomaServerInstance): void {
       withClient((client) =>
         resolveSystem(client, args.system).flatMap((system) =>
           client
-            .listAll<SystemdServiceRecord>("systemd_services", { filter: equals("system", system.id), sort: "name" })
+            .listAll<SystemdServiceRecord>("systemd_services", { filter: equals("system", system.id), sort: "name,id" })
             .map((services) => formatServices(system, services, args.failed_only)),
         ),
       ),

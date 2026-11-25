@@ -115,6 +115,7 @@ describe("readConfig", () => {
   it.each([
     [{}, /BESZEL_URL is required/],
     [{ BESZEL_URL: "beszel.example.com", BESZEL_TOKEN: "t" }, /not a URL/],
+    [{ BESZEL_URL: "https://user:secret@beszel.example.com", BESZEL_TOKEN: "t" }, /must not carry a user or password/],
     [{ BESZEL_URL: "ftp://beszel.example.com", BESZEL_TOKEN: "t" }, /http:\/\/ or https:\/\//],
     [{ BESZEL_URL: "https://beszel.example.com" }, /BESZEL_EMAIL and BESZEL_PASSWORD, or BESZEL_TOKEN/],
     [{ BESZEL_URL: "https://beszel.example.com", BESZEL_EMAIL: "a" }, /BESZEL_PASSWORD is required/],

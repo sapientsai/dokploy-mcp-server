@@ -27,6 +27,7 @@ const thresholdOf = (alert: AlertRecord): string => {
   if (PERCENT_ALERTS.includes(alert.name)) return `${alert.value}%`
   if (alert.name === "Temperature") return `${alert.value}°C`
   if (alert.name === "Bandwidth") return `${alert.value} MB/s`
+  if (alert.name === "NetworkMonitorCert") return `${alert.value} days before expiry`
   return `${alert.value}`
 }
 
@@ -51,7 +52,8 @@ export const formatAlertHistory = (
   entries: ReadonlyArray<AlertHistoryRecord>,
   names: ReadonlyMap<string, string>,
 ): string => {
-  if (entries.length === 0) return "No alert history matches. Beszel keeps it for 90 days."
+  if (entries.length === 0)
+    return "No alert history matches. Beszel keeps only each user's newest 200 to 250 events, so older ones may be gone."
   const active = entries.filter((e) => e.resolved === undefined || e.resolved === "").length
   const rows = entries.map((e) => [
     e.created ?? "–",
@@ -90,9 +92,9 @@ export function registerAlertTools(server: SomaServerInstance): void {
       withClient((client) =>
         listSystems(client).flatMap((systems) =>
           (args.system === undefined
-            ? client.listAll<AlertRecord>("alerts", { sort: "name" })
+            ? client.listAll<AlertRecord>("alerts", { sort: "name,id" })
             : pickSystem(systems, args.system).flatMap((system) =>
-                client.listAll<AlertRecord>("alerts", { filter: equals("system", system.id), sort: "name" }),
+                client.listAll<AlertRecord>("alerts", { filter: equals("system", system.id), sort: "name,id" }),
               )
           ).map((alerts) =>
             formatAlerts(
@@ -107,7 +109,7 @@ export function registerAlertTools(server: SomaServerInstance): void {
   server.addTool({
     name: "get_alert_history",
     description:
-      "When this user's alerts fired and resolved, newest first. Beszel keeps 90 days. Across all systems unless one is given.",
+      "When this user's alerts fired and resolved, newest first. Beszel keeps only each user's newest 200 to 250 events, however old. Across all systems unless one is given.",
     parameters: z.object({
       system: systemParam.optional(),
       since: z.string().optional().describe("Only events since this date or time (ISO 8601, e.g. 2026-11-01)."),
@@ -129,7 +131,7 @@ export function registerAlertTools(server: SomaServerInstance): void {
                   ),
                   args.active_only ? 'resolved = ""' : "",
                 ),
-                sort: "-created",
+                sort: "-created,-id",
                 perPage: args.limit,
               })
             return (

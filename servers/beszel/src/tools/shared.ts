@@ -25,7 +25,7 @@ export const withClient = <T>(use: (client: BeszelClient) => IO<never, Error, T>
     .runOrThrow()
 
 export const listSystems = (client: BeszelClient): IO<never, Error, ReadonlyArray<SystemRecord>> =>
-  client.listAll<SystemRecord>("systems", { sort: "name" })
+  client.listAll<SystemRecord>("systems", { sort: "name,id" })
 
 /** Finds one system by id, or by name ignoring case. A name two systems share is refused, with both listed. */
 export const pickSystem = (systems: ReadonlyArray<SystemRecord>, nameOrId: string): IO<never, Error, SystemRecord> => {

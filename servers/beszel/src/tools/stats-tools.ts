@@ -10,7 +10,7 @@ import { bytes, celsius, gigabytes, megabytes, number, percent, rate, table } fr
 import type { Range } from "../utils/ranges"
 import { intervalFor, startOf } from "../utils/ranges"
 import type { Summary } from "../utils/stats"
-import { distinctSorted, pairSum, present, summarize } from "../utils/stats"
+import { distinctSorted, pairSum, present, summarize, summarizeWithPeaks } from "../utils/stats"
 import { rangeParam, resolveSystem, systemParam, withClient } from "./shared"
 
 const MB = 1024 ** 2
@@ -26,6 +26,23 @@ const rangeFilter = (systemId: string, range: Range, now: number): string =>
 /** Used memory in bytes: the byte array newer agents send, else the GB figure older ones do. */
 const memoryUsed = (s: SystemStats): Option<number> =>
   present(s.mem?.[1]).orElse(() => present(s.mu).map((gb) => gb * GB))
+
+/**
+ * A rate in bytes/s. Beszel leaves a zero rate out of the record (`omitzero`), so a record without
+ * one is an idle interval and counts as 0; older agents send MB/s under another key.
+ */
+const rateOf = (bytesPerSecond: number | undefined, legacyMbPerSecond: number | undefined): Option<number> =>
+  present(bytesPerSecond)
+    .orElse(() => present(legacyMbPerSecond).map((mb) => mb * MB))
+    .orElse(() => Option(0))
+
+const diskRead = (s: SystemStats): Option<number> => rateOf(s.dio?.[0], s.dr)
+const diskWrite = (s: SystemStats): Option<number> => rateOf(s.dio?.[1], s.dw)
+const netSent = (s: SystemStats): Option<number> => rateOf(s.b?.[0], s.ns)
+const netReceived = (s: SystemStats): Option<number> => rateOf(s.b?.[1], s.nr)
+
+/** A record's own peak where Beszel keeps one, else its value. */
+const peakOr = (peak: number | undefined, value: Option<number>): Option<number> => present(peak).orElse(() => value)
 
 type Row = { readonly label: string; readonly summary: Option<Summary>; readonly show: (n: number) => string }
 
@@ -54,15 +71,57 @@ export const formatSystemStats = (
     summarize(stats.map((s) => present(pick(s))))
   const sensors = distinctSorted(stats.flatMap((s) => Object.keys(s.t ?? {})))
   const rows: ReadonlyArray<Row> = [
-    { label: "CPU", summary: series((s) => s.cpu), show: percent },
+    {
+      label: "CPU",
+      summary: summarizeWithPeaks(
+        stats.map((s) => present(s.cpu)),
+        stats.map((s) => peakOr(s.cpum, present(s.cpu))),
+      ),
+      show: percent,
+    },
     { label: "Memory", summary: series((s) => s.mp), show: percent },
-    { label: "Memory used", summary: summarize(stats.map(memoryUsed)), show: bytes },
+    {
+      label: "Memory used",
+      summary: summarizeWithPeaks(
+        stats.map(memoryUsed),
+        stats.map((s) => peakOr(s.memm, memoryUsed(s))),
+      ),
+      show: bytes,
+    },
     { label: "Disk", summary: series((s) => s.dp), show: percent },
     { label: "Disk used", summary: series((s) => s.du), show: gigabytes },
-    { label: "Disk read", summary: series((s) => s.dio?.[0]), show: rate },
-    { label: "Disk write", summary: series((s) => s.dio?.[1]), show: rate },
-    { label: "Network sent", summary: series((s) => s.b?.[0]), show: rate },
-    { label: "Network received", summary: series((s) => s.b?.[1]), show: rate },
+    {
+      label: "Disk read",
+      summary: summarizeWithPeaks(
+        stats.map(diskRead),
+        stats.map((s) => peakOr(s.diom?.[0], diskRead(s))),
+      ),
+      show: rate,
+    },
+    {
+      label: "Disk write",
+      summary: summarizeWithPeaks(
+        stats.map(diskWrite),
+        stats.map((s) => peakOr(s.diom?.[1], diskWrite(s))),
+      ),
+      show: rate,
+    },
+    {
+      label: "Network sent",
+      summary: summarizeWithPeaks(
+        stats.map(netSent),
+        stats.map((s) => peakOr(s.bm?.[0], netSent(s))),
+      ),
+      show: rate,
+    },
+    {
+      label: "Network received",
+      summary: summarizeWithPeaks(
+        stats.map(netReceived),
+        stats.map((s) => peakOr(s.bm?.[1], netReceived(s))),
+      ),
+      show: rate,
+    },
     { label: "Load 1m", summary: series((s) => s.la?.[0]), show: (n) => number(n) },
     { label: "Load 5m", summary: series((s) => s.la?.[1]), show: (n) => number(n) },
     { label: "Load 15m", summary: series((s) => s.la?.[2]), show: (n) => number(n) },
@@ -74,14 +133,21 @@ export const formatSystemStats = (
     `${system.name}, last ${range}: ${records.length} ${intervalFor(range)} records from ${first} to ${last} (UTC).`,
     "",
     summaryTable(rows),
+    "",
+    "Min, Avg and Latest are of the interval averages. Max is the highest single reading for CPU, memory used, disk I/O and network, which Beszel records inside each interval; for the rest it is the highest interval average.",
   ].join("\n")
 }
 
-/** Bytes per second: newer agents send [sent, received] bytes, older ones MB sent and received. */
+/**
+ * Bytes per second: newer agents send [sent, received] bytes, older ones MB sent and received.
+ * A zero rate is left out of the record, so a container without one was idle.
+ */
 const containerNetwork = (c: ContainerStat): Option<number> =>
-  pairSum(c.b).orElse(() =>
-    c.ns === undefined && c.nr === undefined ? Option.none() : present(((c.ns ?? 0) + (c.nr ?? 0)) * MB),
-  )
+  pairSum(c.b)
+    .orElse(() =>
+      c.ns === undefined && c.nr === undefined ? Option.none<number>() : present(((c.ns ?? 0) + (c.nr ?? 0)) * MB),
+    )
+    .orElse(() => Option(0))
 
 export const formatContainerStats = (
   system: SystemRecord,
@@ -111,6 +177,8 @@ export const formatContainerStats = (
         { label: "Memory", summary: summarize(points.map((c) => present(c.m))), show: megabytes },
         { label: "Network", summary: summarize(points.map(containerNetwork)), show: rate },
       ]),
+      "",
+      "Max is the highest interval average: Beszel keeps no peaks for containers, so a short spike can read lower.",
     ].join("\n"),
   )
 }
@@ -121,7 +189,7 @@ const systemStats = (
   range: Range,
   now: number,
 ): IO<never, Error, ReadonlyArray<SystemStatsRecord>> =>
-  client.listAll<SystemStatsRecord>("system_stats", { filter: rangeFilter(systemId, range, now), sort: "created" })
+  client.listAll<SystemStatsRecord>("system_stats", { filter: rangeFilter(systemId, range, now), sort: "created,id" })
 
 const containerStats = (
   client: BeszelClient,
@@ -131,7 +199,7 @@ const containerStats = (
 ): IO<never, Error, ReadonlyArray<ContainerStatsRecord>> =>
   client.listAll<ContainerStatsRecord>("container_stats", {
     filter: rangeFilter(systemId, range, now),
-    sort: "created",
+    sort: "created,id",
   })
 
 export function registerStatsTools(server: SomaServerInstance, now: () => number = Date.now): void {
