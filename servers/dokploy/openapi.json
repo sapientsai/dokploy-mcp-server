@@ -7,7 +7,7 @@
   },
   "servers": [
     {
-      "url": "https://cluster.0x64.us/api"
+      "url": "https://dokploy.example.com/api"
     }
   ],
   "tags": [
@@ -142,7 +142,7 @@
     }
   ],
   "externalDocs": {
-    "url": "https://cluster.0x64.us/api/settings.getOpenApiDocument"
+    "url": "https://dokploy.example.com/api/settings.getOpenApiDocument"
   },
   "paths": {
     "/admin.setupMonitoring": {
