@@ -133,16 +133,20 @@ Add to `.cursor/mcp.json`:
 
 ### Docker
 
-Images are published to GitHub Container Registry for `linux/amd64` and `linux/arm64`. They serve MCP over HTTP at `/mcp`, with a health check at `/health`.
+Build the image from `servers/dokploy/Dockerfile`, with the root of the [sapientsai/mcp-servers](https://github.com/sapientsai/mcp-servers) monorepo as the build context. It serves MCP over HTTP at `/mcp`, with a health check at `/health`.
 
 ```bash
+# at the repo root, on main or on a dokploy-mcp-server@<version> release tag (from the next release on)
+docker build -f servers/dokploy/Dockerfile -t dokploy-mcp-server .
 docker run -e DOKPLOY_URL=https://dokploy.example.com \
            -e DOKPLOY_API_KEY=your-api-key \
            -p 3000:3000 \
-           ghcr.io/sapientsai/dokploy-mcp-server:latest
+           dokploy-mcp-server
 ```
 
-Then point your MCP client at `http://localhost:3000/mcp`. Tags: `latest` and version tags (`1.11.2`, `1.11`, `1`) are published with each npm release; `main` tracks the default branch.
+Then point your MCP client at `http://localhost:3000/mcp`. On Dokploy, use the Dockerfile build type with Dockerfile path `servers/dokploy/Dockerfile` and the repo root as the build context.
+
+No image is published any more. The images already on `ghcr.io/sapientsai/dokploy-mcp-server` stay, but get no new versions.
 
 ## Environment Variables
 
