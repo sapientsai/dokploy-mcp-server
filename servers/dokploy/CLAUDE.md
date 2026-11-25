@@ -140,7 +140,7 @@ This server lives in `servers/dokploy` of the `sapientsai/mcp-servers` monorepo;
 
 ```bash
 pnpm release dokploy patch|minor|major   # bump, commit, tag dokploy-mcp-server@<version>
-git push --follow-tags                   # the tag runs publish.yml and the Docker image build
+git push --follow-tags                   # the tag runs publish.yml
 ```
 
-`publish.yml` runs this package's `pnpm run ci`, publishes to npm with provenance, then to the MCP Registry. The Docker image keeps the name `ghcr.io/sapientsai/dokploy-mcp-server`.
+`publish.yml` runs this package's `pnpm run ci`, publishes to npm with provenance, then to the MCP Registry. No Docker image is published: a deployment builds `Dockerfile` from the repo root, and `docker-dokploy.yml` smoke-tests it.

@@ -1,0 +1,74 @@
+name: dokploy Docker build
+
+# dokploy ships a Dockerfile for self-hosting it over HTTP (on Dokploy, for one). No image is
+# published: a deployment builds from servers/dokploy/Dockerfile with the repo root as context.
+# This builds the image and proves it serves MCP, so the Dockerfile stays working.
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - "servers/dokploy/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".npmrc"
+      - ".dockerignore"
+      - ".github/workflows/docker-dokploy.yml"
+  pull_request:
+    branches: ["main"]
+    paths:
+      - "servers/dokploy/**"
+      - "package.json"
+      - "pnpm-lock.yaml"
+      - "pnpm-workspace.yaml"
+      - ".npmrc"
+      - ".dockerignore"
+      - ".github/workflows/docker-dokploy.yml"
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.run_id }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          file: servers/dokploy/Dockerfile
+          load: true
+          tags: dokploy-mcp-server:smoke
+          cache-from: type=gha,scope=dokploy
+          cache-to: type=gha,mode=max,scope=dokploy
+
+      - name: Smoke test container
+        run: |
+          docker run -d --name smoke -p 3000:3000 \
+            -e DOKPLOY_URL=http://127.0.0.1:9 -e DOKPLOY_API_KEY=smoke \
+            dokploy-mcp-server:smoke
+          for i in $(seq 1 30); do
+            if curl -sf http://127.0.0.1:3000/health > /dev/null; then break; fi
+            sleep 1
+          done
+          curl -sf http://127.0.0.1:3000/health > /dev/null || { docker logs smoke; exit 1; }
+          HDR=(-H 'content-type: application/json' -H 'accept: application/json, text/event-stream' -H 'mcp-protocol-version: 2025-06-18')
+          INIT=$(curl -s -X POST http://127.0.0.1:3000/mcp "${HDR[@]}" \
+            -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2025-06-18","capabilities":{},"clientInfo":{"name":"ci","version":"1"}}}')
+          echo "$INIT" | grep -q '"name":"dokploy-mcp-server"' || { echo "initialize failed: $INIT"; docker logs smoke; exit 1; }
+          TOOLS=$(curl -s -X POST http://127.0.0.1:3000/mcp "${HDR[@]}" -d '{"jsonrpc":"2.0","id":2,"method":"tools/list"}' \
+            | grep -o '"name":"dokploy_[a-z_]*"' | wc -l)
+          [ "$TOOLS" -eq 27 ] || { echo "expected 27 dokploy_* tools, got $TOOLS"; docker logs smoke; exit 1; }
+          echo "container serves MCP: health ok, initialize ok, $TOOLS dokploy_* tools"
+          docker rm -f smoke
