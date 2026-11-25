@@ -4,6 +4,9 @@
  * Usage: npx tsx scripts/fetch-openapi.ts
  *
  * Requires DOKPLOY_URL and DOKPLOY_API_KEY environment variables.
+ *
+ * The spec names the instance it came from (its servers URL). That host is written as
+ * EXAMPLE_HOST, so a committed spec never names a real deployment.
  */
 
 import { writeFileSync } from "node:fs"
@@ -35,9 +38,14 @@ if (!response.ok) {
   process.exit(1)
 }
 
+const EXAMPLE_HOST = "dokploy.example.com"
+
 const envelope = (await response.json()) as { result: { data: { json: unknown } } }
 const spec = envelope.result.data.json
+const text = JSON.stringify(spec, null, 2).replaceAll(new URL(baseUrl).host, EXAMPLE_HOST)
 
 const outPath = resolve(import.meta.dirname, "..", "openapi.json")
-writeFileSync(outPath, JSON.stringify(spec, null, 2) + "\n")
-console.error(`Written to ${outPath} (${(JSON.stringify(spec).length / 1024).toFixed(0)} KB)`)
+writeFileSync(outPath, text + "\n")
+console.error(
+  `Written to ${outPath} (${(text.length / 1024).toFixed(0)} KB), with the instance host as ${EXAMPLE_HOST}`,
+)
