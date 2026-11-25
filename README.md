@@ -34,3 +34,7 @@ git push --follow-tags       # the tag publishes that server alone
 ## License
 
 MIT
+
+---
+
+**A <a href="https://sapientsai.com/"><img src="https://sapientsai.com/images/logo.svg" alt="" width="20" style="vertical-align: middle;"> SapientsAI</a> project** · Maintained by [Jordan Burke](https://github.com/jordanburke)
