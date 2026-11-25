@@ -136,7 +136,7 @@ Add to `.cursor/mcp.json`:
 Build the image from `servers/dokploy/Dockerfile`, with the root of the [sapientsai/mcp-servers](https://github.com/sapientsai/mcp-servers) monorepo as the build context. It serves MCP over HTTP at `/mcp`, with a health check at `/health`.
 
 ```bash
-# at the repo root; check out a release tag, such as dokploy-mcp-server@1.11.2, for a released build
+# at the repo root, on main or on a dokploy-mcp-server@<version> release tag (from the next release on)
 docker build -f servers/dokploy/Dockerfile -t dokploy-mcp-server .
 docker run -e DOKPLOY_URL=https://dokploy.example.com \
            -e DOKPLOY_API_KEY=your-api-key \
