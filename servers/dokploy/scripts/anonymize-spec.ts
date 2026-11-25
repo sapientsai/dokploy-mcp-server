@@ -46,6 +46,15 @@ const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/
 const hostPattern = (host: string): RegExp =>
   new RegExp(`(?<![\\p{L}\\p{N}-])${escapeRegExp(host)}(?![\\p{L}\\p{N}-])`, "giu")
 
+// Rewrites every string in the parsed spec, keys included. Working on values rather than the
+// serialized JSON keeps escapes such as "\\n" from hiding a host from the whole-name match.
+const mapStrings = (value: unknown, rewrite: (text: string) => string): unknown => {
+  if (typeof value === "string") return rewrite(value)
+  if (Array.isArray(value)) return value.map((item) => mapStrings(item, rewrite))
+  if (typeof value !== "object" || value === null) return value
+  return Object.fromEntries(Object.entries(value).map(([key, item]) => [rewrite(key), mapStrings(item, rewrite)]))
+}
+
 export type Anonymized = { readonly ok: true; readonly text: string } | { readonly ok: false; readonly reason: string }
 
 export const anonymizeSpec = (spec: unknown, fetchedFrom: string): Anonymized => {
@@ -55,9 +64,12 @@ export const anonymizeSpec = (spec: unknown, fetchedFrom: string): Anonymized =>
   if (clash !== undefined) {
     return { ok: false, reason: `The instance host "${clash}" is part of ${EXAMPLE_HOST}, so it can't be rewritten.` }
   }
-  const text = hosts.reduce((acc, host) => acc.replace(hostPattern(host), EXAMPLE_HOST), JSON.stringify(spec, null, 2))
-  const left = instanceHosts(JSON.parse(text), fetchedFrom).filter((host) => hostPattern(host).test(text))
+  const rewrite = (text: string): string =>
+    hosts.reduce((acc, host) => acc.replace(hostPattern(host), EXAMPLE_HOST), text)
+  const rewritten = mapStrings(spec, rewrite)
+  // A backstop that parses URLs instead of matching text: the spec's own URLs must name no host but the example.
+  const left = instanceHosts(rewritten, `https://${EXAMPLE_HOST}`)
   return left.length === 0
-    ? { ok: true, text }
+    ? { ok: true, text: JSON.stringify(rewritten, null, 2) }
     : { ok: false, reason: `The spec still names ${left.join(", ")} after the rewrite.` }
 }
