@@ -1,6 +1,6 @@
 {
   "name": "patents-mcp-server",
-  "version": "1.2.3",
+  "version": "2.0.0",
   "description": "Patent intelligence MCP server, built on SomaMCP — 45 tools across USPTO, EPO, and BigQuery",
   "mcpName": "io.github.sapientsai/patents-mcp-server",
   "keywords": [
