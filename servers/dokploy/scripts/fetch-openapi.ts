@@ -5,7 +5,7 @@
  *
  * Requires DOKPLOY_URL and DOKPLOY_API_KEY environment variables.
  *
- * The spec names the instance it came from (its servers URL). That host is written as
+ * The spec names the instance it came from. anonymizeSpec writes every such host as
  * EXAMPLE_HOST, so a committed spec never names a real deployment.
  */
 
@@ -13,6 +13,8 @@ import { writeFileSync } from "node:fs"
 import { resolve } from "node:path"
 
 import dotenv from "dotenv"
+
+import { anonymizeSpec, EXAMPLE_HOST } from "./anonymize-spec"
 
 dotenv.config()
 
@@ -38,20 +40,16 @@ if (!response.ok) {
   process.exit(1)
 }
 
-const EXAMPLE_HOST = "dokploy.example.com"
-
 const envelope = (await response.json()) as { result: { data: { json: unknown } } }
-const spec = envelope.result.data.json
-// The hostname, not the host: DOKPLOY_URL may carry a port that the spec's URLs leave out.
-const instanceHost = new URL(baseUrl).hostname
-const text = JSON.stringify(spec, null, 2).replaceAll(instanceHost, EXAMPLE_HOST)
-if (text.toLowerCase().includes(instanceHost.toLowerCase())) {
-  console.error("The spec still names the instance host after the rewrite; not writing it.")
+const anonymized = anonymizeSpec(envelope.result.data.json, baseUrl)
+if (!anonymized.ok) {
+  console.error(`${anonymized.reason} Not writing the spec.`)
   process.exit(1)
 }
+const { text } = anonymized
 
 const outPath = resolve(import.meta.dirname, "..", "openapi.json")
 writeFileSync(outPath, text + "\n")
 console.error(
-  `Written to ${outPath} (${(text.length / 1024).toFixed(0)} KB), with the instance host as ${EXAMPLE_HOST}`,
+  `Written to ${outPath} (${(text.length / 1024).toFixed(0)} KB), with the instance hosts as ${EXAMPLE_HOST}`,
 )
