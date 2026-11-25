@@ -79,6 +79,19 @@ describe("anonymizeSpec", () => {
     expect(JSON.parse(text).servers[0].url).toBe(`https://${EXAMPLE_HOST}/api`)
   })
 
+  it("rewrites a host that follows a newline or a tab", () => {
+    const spec = { ...specFor("/api", "/docs"), info: { description: "Reach it at:\npanel.real.test\tor\n10.0.0.5" } }
+    const text = textOf(anonymizeSpec(spec, "http://10.0.0.5"))
+    expect(text).not.toContain("10.0.0.5")
+    expect(JSON.parse(text).info.description).toBe(`Reach it at:\npanel.real.test\tor\n${EXAMPLE_HOST}`)
+  })
+
+  it("rewrites a host in an object key", () => {
+    const spec = { ...specFor("/api", "/docs"), "x-hosts": { "panel.real.test": true } }
+    const text = textOf(anonymizeSpec(spec, "https://panel.real.test"))
+    expect(JSON.parse(text)["x-hosts"]).toEqual({ [EXAMPLE_HOST]: true })
+  })
+
   it.each(["http://dokploy:3000", "https://example.com"])("refuses %s, which the example host contains", (url) => {
     const result = anonymizeSpec(specFor("/api", "/docs"), url)
     expect(result.ok).toBe(false)
