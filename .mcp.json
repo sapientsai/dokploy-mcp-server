@@ -1,0 +1,8 @@
+{
+  "mcpServers": {
+    "beszel": {
+      "command": "envpkt",
+      "args": ["exec", "--skip-audit", "--", "node", "servers/beszel/dist/bin.js"]
+    }
+  }
+}
