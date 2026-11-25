@@ -41,7 +41,12 @@ if (!response.ok) {
 }
 
 const envelope = (await response.json()) as { result: { data: { json: unknown } } }
-const text = anonymizeSpec(envelope.result.data.json, baseUrl)
+const anonymized = anonymizeSpec(envelope.result.data.json, baseUrl)
+if (!anonymized.ok) {
+  console.error(`${anonymized.reason} Not writing the spec.`)
+  process.exit(1)
+}
+const { text } = anonymized
 
 const outPath = resolve(import.meta.dirname, "..", "openapi.json")
 writeFileSync(outPath, text + "\n")

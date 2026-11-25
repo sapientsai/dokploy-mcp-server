@@ -9,35 +9,55 @@
 
 export const EXAMPLE_HOST = "dokploy.example.com"
 
+// Loopback names identify no deployment, and rewriting them would mangle every "localhost" in the text.
+const LOOPBACK = new Set(["localhost", "127.0.0.1", "[::1]"])
+
 type SelfUrls = {
   readonly servers?: ReadonlyArray<{ readonly url?: unknown }>
   readonly externalDocs?: { readonly url?: unknown }
 }
 
+// The host as written, which for a Unicode name differs from URL.hostname's punycode form.
+const RAW_HOST = /^[a-z][a-z0-9+.-]*:\/\/(?:[^/?#@]*@)?(\[[^\]]*\]|[^/?#:]+)/i
+
 // The hostname, not the host: a URL may carry a port that the spec's URLs leave out.
-const hostnameOf = (url: unknown): string | undefined => {
-  if (typeof url !== "string") return undefined
+const hostnamesOf = (url: unknown): ReadonlyArray<string> => {
+  if (typeof url !== "string") return []
   try {
-    return new URL(url).hostname || undefined
+    const parsed = new URL(url).hostname
+    const raw = RAW_HOST.exec(url)?.[1]
+    return [parsed, ...(raw === undefined ? [] : [raw])].map((host) => host.toLowerCase()).filter(Boolean)
   } catch {
-    return undefined // A relative server URL such as "/api" names no host.
+    return [] // A relative server URL such as "/api" names no host.
   }
 }
 
 export const instanceHosts = (spec: unknown, fetchedFrom: string): ReadonlyArray<string> => {
   const self = (typeof spec === "object" && spec !== null ? spec : {}) as SelfUrls
   const urls = [fetchedFrom, ...(self.servers ?? []).map((server) => server.url), self.externalDocs?.url]
-  const hosts = new Set(
-    urls.map(hostnameOf).filter((host): host is string => host !== undefined && host !== EXAMPLE_HOST),
-  )
+  const hosts = new Set(urls.flatMap(hostnamesOf).filter((host) => host !== EXAMPLE_HOST && !LOOPBACK.has(host)))
   // Longest first, so a host that contains another is replaced whole.
   return [...hosts].sort((a, b) => b.length - a.length)
 }
 
 const escapeRegExp = (text: string): string => text.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")
 
-export const anonymizeSpec = (spec: unknown, fetchedFrom: string): string =>
-  instanceHosts(spec, fetchedFrom).reduce(
-    (text, host) => text.replace(new RegExp(escapeRegExp(host), "gi"), EXAMPLE_HOST),
-    JSON.stringify(spec, null, 2),
-  )
+// A host matches only as a whole label run: 10.0.0.5 must not match inside 110.0.0.50.
+const hostPattern = (host: string): RegExp =>
+  new RegExp(`(?<![\\p{L}\\p{N}-])${escapeRegExp(host)}(?![\\p{L}\\p{N}-])`, "giu")
+
+export type Anonymized = { readonly ok: true; readonly text: string } | { readonly ok: false; readonly reason: string }
+
+export const anonymizeSpec = (spec: unknown, fetchedFrom: string): Anonymized => {
+  const hosts = instanceHosts(spec, fetchedFrom)
+  // Such a host would be rewritten inside the example host itself, e.g. "dokploy" or "example.com".
+  const clash = hosts.find((host) => EXAMPLE_HOST.includes(host))
+  if (clash !== undefined) {
+    return { ok: false, reason: `The instance host "${clash}" is part of ${EXAMPLE_HOST}, so it can't be rewritten.` }
+  }
+  const text = hosts.reduce((acc, host) => acc.replace(hostPattern(host), EXAMPLE_HOST), JSON.stringify(spec, null, 2))
+  const left = instanceHosts(JSON.parse(text), fetchedFrom).filter((host) => hostPattern(host).test(text))
+  return left.length === 0
+    ? { ok: true, text }
+    : { ok: false, reason: `The spec still names ${left.join(", ")} after the rewrite.` }
+}
