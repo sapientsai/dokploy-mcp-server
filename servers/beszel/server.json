@@ -1,0 +1,51 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.sapientsai/beszel-mcp-server",
+  "description": "Read a Beszel hub: monitored systems, metrics over time, containers, systemd services, disks and alerts.",
+  "repository": {
+    "url": "https://github.com/sapientsai/mcp-servers",
+    "source": "github",
+    "subfolder": "servers/beszel"
+  },
+  "version": "0.1.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "beszel-mcp-server",
+      "version": "0.1.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "BESZEL_URL",
+          "description": "Your Beszel hub's base URL, e.g. https://beszel.example.com",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "BESZEL_EMAIL",
+          "description": "Email of the Beszel user to sign in as, ideally one with the readonly role. Not needed with BESZEL_TOKEN.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "BESZEL_PASSWORD",
+          "description": "That user's password. Not needed with BESZEL_TOKEN.",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "BESZEL_TOKEN",
+          "description": "A PocketBase auth token, instead of an email and password (for hubs that allow OAuth sign-in only).",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": true
+        }
+      ]
+    }
+  ]
+}
