@@ -55,9 +55,44 @@ const upstream = (url: string): Response => {
   return new Response("not found", { status: 404 })
 }
 
+/**
+ * A fixed CPU-bound task shaped like the work under test: build rows, split their fields, filter, sort.
+ * Its fastest run, in ms, on the dev machine the budgets below were set on.
+ */
+const calibrationTask = (): number => {
+  const parsed = Array.from(
+    { length: 60_000 },
+    (_, i) => `N~${String(i).padStart(6, "0")}~001~${7_000_000 + i}~${(i * 7) % 12} ${(i * 13) % 28}~Y`,
+  ).map((row) => row.split("~"))
+  const hits = parsed.filter((fields) => fields[1]!.endsWith("7"))
+  hits.sort((a, b) => (a[4]! < b[4]! ? -1 : a[4]! > b[4]! ? 1 : 0))
+  return hits.length
+}
+const CALIBRATION_REFERENCE_MS = 23
+
+/**
+ * How many times slower this machine is than the dev machine, never below 1. Every budget is multiplied
+ * by it, so a slow shared runner gets proportionally more time and each budget keeps its margin over
+ * the regression it guards against. Fastest of seven runs, after one to warm up.
+ */
+const measureSlowdown = (): number => {
+  calibrationTask()
+  const runs = Array.from({ length: 7 }, () => {
+    const started = performance.now()
+    calibrationTask()
+    return performance.now() - started
+  })
+  return Math.max(1, Math.min(...runs) / CALIBRATION_REFERENCE_MS)
+}
+
 let mf: Miniflare
+let slowdown = 1
+const budget = (devMs: number): number => devMs * slowdown
+const describeBudget = (devMs: number): string =>
+  `budget ${budget(devMs).toFixed(0)} ms: ${devMs} ms on the dev machine × ${slowdown.toFixed(2)} for this one`
 
 beforeAll(async () => {
+  slowdown = measureSlowdown()
   mf = new Miniflare({
     compatibilityDate: "2026-07-01",
     compatibilityFlags: [],
@@ -103,12 +138,14 @@ describe("bulk file loads in workerd", () => {
   // ~65 ms it took when each row's filter built Options, so it catches a full regression, not a
   // partial one. It can't be loosened past ~65 ms without letting that regression through, so it
   // takes the fastest of ten calls instead: a slow moment on a shared runner only adds time.
+  // Each budget is in dev-machine time and scaled by `slowdown`, so a CI runner several times
+  // slower than the dev machine keeps the same margins rather than failing at random.
   it("load and search a full-size Orange Book within 2 s", async () => {
     const { ms, payload } = await timedCall("search_fda_orange_book", { drugName: "lipitor", limit: 1 })
     expect(payload.success).toBe(true)
     expect(payload.totalResults).toBe(1)
     expect(JSON.stringify(payload.data)).toContain("LIPITOR")
-    expect(ms).toBeLessThan(2_000)
+    expect(ms, describeBudget(2_000)).toBeLessThan(budget(2_000))
   }, 60_000)
 
   it("sort every Orange Book patent by expiry within 300 ms, once loaded", async () => {
@@ -129,7 +166,9 @@ describe("bulk file loads in workerd", () => {
       "7000840",
     ])
     const samples = calls.map((c) => c.ms.toFixed(1)).join(", ")
-    expect(Math.min(...calls.map((c) => c.ms)), `fastest of: ${samples} ms`).toBeLessThan(300)
+    expect(Math.min(...calls.map((c) => c.ms)), `fastest of: ${samples} ms; ${describeBudget(300)}`).toBeLessThan(
+      budget(300),
+    )
   }, 60_000)
 
   it("filter a loaded Orange Book's patents by drug name within 45 ms", async () => {
@@ -146,7 +185,9 @@ describe("bulk file loads in workerd", () => {
     expect(payload.totalResults).toBe(1)
     expect((payload.data as Array<{ patentNo: string }>).map((e) => e.patentNo)).toEqual(["7000007"])
     const samples = calls.map((c) => c.ms.toFixed(1)).join(", ")
-    expect(Math.min(...calls.map((c) => c.ms)), `fastest of: ${samples} ms`).toBeLessThan(45)
+    expect(Math.min(...calls.map((c) => c.ms)), `fastest of: ${samples} ms; ${describeBudget(45)}`).toBeLessThan(
+      budget(45),
+    )
   }, 60_000)
 
   it("load and search a full-size Purple Book within 1 s", async () => {
@@ -155,6 +196,6 @@ describe("bulk file loads in workerd", () => {
     // Every fixture row names Humira as its reference product; only one is named Humira
     expect(payload.totalResults).toBe(1)
     expect(JSON.stringify(payload.data)).toContain('"proprietaryName":"Humira"')
-    expect(ms).toBeLessThan(1_000)
+    expect(ms, describeBudget(1_000)).toBeLessThan(budget(1_000))
   }, 60_000)
 })
