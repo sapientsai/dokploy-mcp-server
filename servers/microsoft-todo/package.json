@@ -1,0 +1,80 @@
+{
+  "name": "microsoft-todo-mcp-server",
+  "version": "1.5.4",
+  "description": "Microsoft Todo MCP service for Claude and Cursor. Fork of @jhirono/todomcp",
+  "mcpName": "io.github.jordanburke/microsoft-todo-mcp-server",
+  "main": "dist/todo-index.js",
+  "dependencies": {
+    "@azure/msal-node": "^7.2.2",
+    "dotenv": "^18.0.10",
+    "express": "^5.3.0",
+    "functype": "^1.27.0",
+    "somamcp": "^2.10.1",
+    "zod": "^4.6.7"
+  },
+  "scripts": {
+    "validate": "ts-builds validate",
+    "ci": "ts-builds ci",
+    "build": "ts-builds build",
+    "build:watch": "ts-builds build:watch",
+    "dev": "ts-builds build && node dist/cli.js",
+    "start": "node dist/cli.js",
+    "cli": "node dist/cli.js",
+    "http": "node dist/http.js",
+    "auth": "node dist/auth-server.js",
+    "setup": "node dist/setup.js",
+    "create-config": "node dist/create-mcp-config.js",
+    "format": "ts-builds format",
+    "format:check": "ts-builds format:check",
+    "lint": "ts-builds lint",
+    "lint:check": "ts-builds lint:check",
+    "typecheck": "ts-builds typecheck",
+    "test": "ts-builds test",
+    "test:watch": "ts-builds test:watch",
+    "prepublishOnly": "pnpm run ci && pnpm check:server-json",
+    "sync:server-json": "node scripts/sync-server-json.mjs",
+    "check:server-json": "node scripts/sync-server-json.mjs --check",
+    "version": "node scripts/sync-server-json.mjs && git add server.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jordanburke/microsoft-todo-mcp-server.git"
+  },
+  "keywords": [
+    "mcp",
+    "cursor",
+    "claude",
+    "microsoft-todo",
+    "todo"
+  ],
+  "author": "Jordan Burke <jordan.burke@gmail.com>",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/jordanburke/microsoft-todo-mcp-server/issues"
+  },
+  "homepage": "https://github.com/jordanburke/microsoft-todo-mcp-server#readme",
+  "devDependencies": {
+    "@types/express": "^5.0.6",
+    "@types/node": "^22.20.5",
+    "ts-builds": "^4.7.0",
+    "tsdown": "^0.23.7"
+  },
+  "type": "module",
+  "engines": {
+    "node": ">=22.18.0"
+  },
+  "bin": {
+    "microsoft-todo-mcp-server": "./dist/cli.js",
+    "mstodo": "./dist/cli.js",
+    "mstodo-config": "./dist/create-mcp-config.js",
+    "mstodo-setup": "./dist/setup.js",
+    "mstodo-http": "./dist/http.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "packageManager": "pnpm@12.21.0+sha512.66fd8278ee28935ce951792d34367ff3af5c432a2756445823029533835b8da529bbe0be5130afd56ed0713fb8789e47bad82d93bd5ae2fe54b15562d6276ef0"
+}
