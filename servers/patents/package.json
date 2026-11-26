@@ -43,7 +43,7 @@
     "version": "node scripts/sync-server-json.mjs && git add server.json"
   },
   "devDependencies": {
-    "@hey-api/openapi-ts": "^0.94.5",
+    "@hey-api/openapi-ts": "^0.97.3",
     "@types/node": "^24.13.4",
     "ts-builds": "^5.0.0",
     "tsdown": "^0.22.14"
