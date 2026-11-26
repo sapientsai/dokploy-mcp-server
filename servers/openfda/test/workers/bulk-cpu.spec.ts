@@ -7,6 +7,7 @@ import { Miniflare } from "miniflare"
 import { afterAll, beforeAll, describe, expect, it } from "vitest"
 
 import { bundleWorker } from "./bundle.js"
+import { CALIBRATE_PATH } from "./calibration.js"
 
 const rows = (n: number, row: (i: number) => string): string => Array.from({ length: n }, (_, i) => row(i)).join("\n")
 
@@ -55,7 +56,48 @@ const upstream = (url: string): Response => {
   return new Response("not found", { status: 404 })
 }
 
+/** The fastest calibration run, in ms, on the dev machine the budgets below were set on. */
+const CALIBRATION_REFERENCE_MS = 24
+/** Past this, the runner is too slow for a timing to mean anything: fail loudly rather than pass. */
+const MAX_SLOWDOWN = 8
+
 let mf: Miniflare
+let slowdown = 1
+
+/** One run of the test Worker's calibration route (calibration.ts), timed like a tool call. */
+const calibrateOnce = async (): Promise<number> => {
+  const started = performance.now()
+  await (await mf.dispatchFetch(`http://worker${CALIBRATE_PATH}`)).text()
+  return performance.now() - started
+}
+
+/**
+ * Takes calibration runs into `slowdown`: how many times slower this machine runs workerd than the
+ * dev machine, from the fastest run. It keeps the lowest reading so far, never below 1: noise on a
+ * busy runner only makes the task slower, which would loosen every budget.
+ */
+const useCalibration = (runs: ReadonlyArray<number>): void => {
+  slowdown = Math.max(1, Math.min(slowdown, Math.min(...runs) / CALIBRATION_REFERENCE_MS))
+}
+
+/**
+ * Times `count` calls of one tool, with two calibration runs before each, so the calibration sees
+ * the same busy and quiet moments as the calls. The tightly guarded checks use it.
+ */
+const timedCallsWithCalibration = async (count: number, name: string, args: Record<string, unknown>) => {
+  const calls: Array<Awaited<ReturnType<typeof timedCall>>> = []
+  const runs: Array<number> = []
+  for (let i = 0; i < count; i++) {
+    runs.push(await calibrateOnce(), await calibrateOnce())
+    calls.push(await timedCall(name, args))
+  }
+  useCalibration(runs)
+  return calls
+}
+
+const budget = (devMs: number): number => devMs * slowdown
+const describeBudget = (devMs: number): string =>
+  `budget ${budget(devMs).toFixed(0)} ms: ${devMs} ms on the dev machine × ${slowdown.toFixed(2)} for this one`
 
 beforeAll(async () => {
   mf = new Miniflare({
@@ -66,6 +108,18 @@ beforeAll(async () => {
     script: await bundleWorker(),
   })
   await mf.ready
+  await calibrateOnce()
+  await calibrateOnce()
+  // Starts high so the first reading sets it; later readings can only lower it.
+  slowdown = MAX_SLOWDOWN
+  useCalibration(
+    await Array.from({ length: 25 }).reduce<Promise<Array<number>>>(
+      async (done) => [...(await done), await calibrateOnce()],
+      Promise.resolve([]),
+    ),
+  )
+  console.info(`[bulk-cpu] this machine runs workerd ${slowdown.toFixed(2)}× slower than the dev machine`)
+  expect(slowdown, `this runner is over ${MAX_SLOWDOWN}× slower than the dev machine`).toBeLessThan(MAX_SLOWDOWN)
 }, 120_000)
 
 afterAll(async () => {
@@ -103,22 +157,21 @@ describe("bulk file loads in workerd", () => {
   // ~65 ms it took when each row's filter built Options, so it catches a full regression, not a
   // partial one. It can't be loosened past ~65 ms without letting that regression through, so it
   // takes the fastest of ten calls instead: a slow moment on a shared runner only adds time.
+  // Each budget is in dev-machine time and scaled by `slowdown`, so a CI runner several times
+  // slower than the dev machine keeps the same margins rather than failing at random. The
+  // titles give dev-machine times.
   it("load and search a full-size Orange Book within 2 s", async () => {
     const { ms, payload } = await timedCall("search_fda_orange_book", { drugName: "lipitor", limit: 1 })
     expect(payload.success).toBe(true)
     expect(payload.totalResults).toBe(1)
     expect(JSON.stringify(payload.data)).toContain("LIPITOR")
-    expect(ms).toBeLessThan(2_000)
+    expect(ms, describeBudget(2_000)).toBeLessThan(budget(2_000))
   }, 60_000)
 
   it("sort every Orange Book patent by expiry within 300 ms, once loaded", async () => {
     await timedCall("search_fda_drug_patent_expiry", { includeExclusivity: false, limit: 1 })
     // Fastest of three, so one slow moment on a shared runner doesn't fail the build
-    const calls = [
-      await timedCall("search_fda_drug_patent_expiry", { limit: 3 }),
-      await timedCall("search_fda_drug_patent_expiry", { limit: 3 }),
-      await timedCall("search_fda_drug_patent_expiry", { limit: 3 }),
-    ]
+    const calls = await timedCallsWithCalibration(3, "search_fda_drug_patent_expiry", { limit: 3 })
     const { payload } = calls[0]!
     expect(payload.success).toBe(true)
     expect(payload.totalResults).toBe(23_000)
@@ -129,24 +182,25 @@ describe("bulk file loads in workerd", () => {
       "7000840",
     ])
     const samples = calls.map((c) => c.ms.toFixed(1)).join(", ")
-    expect(Math.min(...calls.map((c) => c.ms)), `fastest of: ${samples} ms`).toBeLessThan(300)
+    expect(Math.min(...calls.map((c) => c.ms)), `fastest of: ${samples} ms; ${describeBudget(300)}`).toBeLessThan(
+      budget(300),
+    )
   }, 60_000)
 
   it("filter a loaded Orange Book's patents by drug name within 45 ms", async () => {
     await timedCall("search_fda_orange_book_patents", { drugName: "lipitor" })
     // Fastest of ten, one after another (~11 ms each). Each call checks every patent's product
     // against the name.
-    const calls = await Array.from({ length: 10 }).reduce<Promise<Array<Awaited<ReturnType<typeof timedCall>>>>>(
-      async (done, _) => [...(await done), await timedCall("search_fda_orange_book_patents", { drugName: "lipitor" })],
-      Promise.resolve([]),
-    )
+    const calls = await timedCallsWithCalibration(10, "search_fda_orange_book_patents", { drugName: "lipitor" })
     const { payload } = calls[0]!
     expect(payload.success).toBe(true)
     // Only product 7 is LIPITOR, and only its patent (7000007) shares its application number
     expect(payload.totalResults).toBe(1)
     expect((payload.data as Array<{ patentNo: string }>).map((e) => e.patentNo)).toEqual(["7000007"])
     const samples = calls.map((c) => c.ms.toFixed(1)).join(", ")
-    expect(Math.min(...calls.map((c) => c.ms)), `fastest of: ${samples} ms`).toBeLessThan(45)
+    expect(Math.min(...calls.map((c) => c.ms)), `fastest of: ${samples} ms; ${describeBudget(45)}`).toBeLessThan(
+      budget(45),
+    )
   }, 60_000)
 
   it("load and search a full-size Purple Book within 1 s", async () => {
@@ -155,6 +209,6 @@ describe("bulk file loads in workerd", () => {
     // Every fixture row names Humira as its reference product; only one is named Humira
     expect(payload.totalResults).toBe(1)
     expect(JSON.stringify(payload.data)).toContain('"proprietaryName":"Humira"')
-    expect(ms).toBeLessThan(1_000)
+    expect(ms, describeBudget(1_000)).toBeLessThan(budget(1_000))
   }, 60_000)
 })

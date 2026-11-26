@@ -4,6 +4,7 @@ import { createServer, getRequestHeader } from "somamcp"
 
 // Only what `openfda-mcp-server/tools` exports, so this is the Worker a consumer can build.
 import { createFDAAPIClient, registerOpenFDATools, VERSION } from "../../src/register.js"
+import { CALIBRATE_PATH, calibrationTask } from "./calibration.js"
 
 type Session = { apiKey?: string }
 
@@ -16,4 +17,9 @@ const server = createServer<Session>({
 
 registerOpenFDATools(server, { client: (session) => createFDAAPIClient({ apiKey: session?.apiKey }) })
 
-export default { fetch: (request: Request) => server.fetch(request) }
+export default {
+  fetch: (request: Request) =>
+    new URL(request.url).pathname === CALIBRATE_PATH
+      ? Promise.resolve(new Response(String(calibrationTask())))
+      : server.fetch(request),
+}
