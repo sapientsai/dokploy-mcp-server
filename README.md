@@ -10,6 +10,7 @@ Small [MCP](https://modelcontextprotocol.io) servers built on [somamcp](https://
 | [patents](./servers/patents)       | [`patents-mcp-server`](https://www.npmjs.com/package/patents-mcp-server)       | Patent data from USPTO Open Data, PTAB, EPO OPS and BigQuery                                                |
 | [rescuetime](./servers/rescuetime) | [`rescuetime-mcp-server`](https://www.npmjs.com/package/rescuetime-mcp-server) | Read your [RescueTime](https://www.rescuetime.com) productivity data                                        |
 | [beszel](./servers/beszel)         | [`beszel-mcp-server`](https://www.npmjs.com/package/beszel-mcp-server)         | Read a [Beszel](https://beszel.dev) hub: systems, metrics, containers, disks, alerts; optional system edits |
+| [quota](./servers/quota)           | [`quota-mcp-server`](https://www.npmjs.com/package/quota-mcp-server)           | A shared API-quota broker for agent fleets: one ledger per account, owner-set rate and concurrency limits   |
 
 Each server's README covers installing and configuring it.
 
