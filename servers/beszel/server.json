@@ -1,7 +1,7 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.sapientsai/beszel-mcp-server",
-  "description": "Read a Beszel hub: monitored systems, metrics over time, containers, systemd services, disks and alerts.",
+  "description": "Read a Beszel hub: systems, metrics, containers, services, disks and alerts. Optional system edits.",
   "repository": {
     "url": "https://github.com/sapientsai/mcp-servers",
     "source": "github",
