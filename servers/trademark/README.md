@@ -1,7 +1,5 @@
 # Trademark MCP Server
 
-[![smithery badge](https://smithery.ai/badge/@jordanburke/trademark-mcp-server)](https://smithery.ai/server/@jordanburke/trademark-mcp-server)
-
 A Model Context Protocol (MCP) server that provides tools for searching and retrieving USPTO trademark information using the TSDR API.
 
 ## Features
@@ -16,17 +14,15 @@ This MCP server provides the following tools:
 
 ## Installation
 
-### Installing via Smithery
+### From source
 
-To install trademark-mcp-server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@jordanburke/trademark-mcp-server):
+This server lives in `servers/trademark` of [sapientsai/mcp-servers](https://github.com/sapientsai/mcp-servers):
 
 ```bash
-npx -y @smithery/cli install @jordanburke/trademark-mcp-server --client claude
-```
-
-### Manual Installation
-```bash
+git clone https://github.com/sapientsai/mcp-servers.git
+cd mcp-servers
 pnpm install
+cd servers/trademark
 pnpm build
 ```
 
@@ -35,7 +31,7 @@ pnpm build
 **Important**: The USPTO TSDR API requires an API key since October 2020. You must:
 
 1. **Register** at [USPTO Developer Portal](https://developer.uspto.gov/)
-2. **Get your API key** from your account dashboard  
+2. **Get your API key** from your account dashboard
 3. **Set environment variable**: `USPTO_API_KEY=your_api_key_here`
 
 Without an API key, all requests will return 401 Unauthorized errors.
@@ -90,81 +86,12 @@ PORT=8080 pnpm serve
 ```
 
 The HTTP server provides:
+
 - Health check: `http://localhost:3000/health`
 - Server info: `http://localhost:3000/`
 - MCP endpoint: `http://localhost:3001/mcp` (FastMCP on port+1)
 
-## 🐳 Docker Support
-
-### Quick Start with Docker
-
-Run the trademark server as a Docker container:
-
-```bash
-# Pull and run from GitHub Container Registry
-docker run -d \
-  --name trademark-mcp-server \
-  -p 3000:3000 \
-  -e USPTO_API_KEY=your_api_key_here \
-  ghcr.io/jordanburke/trademark-mcp-server:latest
-```
-
-### Docker Compose
-
-Create a `docker-compose.yml` file:
-
-```yaml
-version: '3.8'
-services:
-  trademark-mcp-server:
-    image: ghcr.io/jordanburke/trademark-mcp-server:latest
-    ports:
-      - "3000:3000"
-    environment:
-      - USPTO_API_KEY=your_api_key_here
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-```
-
-Then run:
-
-```bash
-docker-compose up -d
-```
-
-### Building Docker Image Locally
-
-```bash
-# Build the image
-docker build -t trademark-mcp-server .
-
-# Run the container
-docker run -d \
-  --name trademark-mcp-server \
-  -p 3000:3000 \
-  -e USPTO_API_KEY=your_api_key_here \
-  trademark-mcp-server
-
-# View logs
-docker logs trademark-mcp-server
-
-# Health check
-curl http://localhost:3000/health
-```
-
-### Docker Image Details
-
-- **Base Image**: `node:18-alpine` (lightweight Linux distribution)
-- **Multi-architecture**: Supports both `linux/amd64` and `linux/arm64`
-- **Security**: Runs as non-root user (`trademark:nodejs`)
-- **Health Checks**: Built-in health monitoring on `/health`
-- **Production Ready**: Optimized for production deployments
-
-### Development
+## Development
 
 ```bash
 # Set your API key first
@@ -175,8 +102,6 @@ pnpm serve:dev
 
 # Run with MCP Inspector for debugging and testing
 pnpm inspect
-# or use the convenience script
-./inspect-server.sh
 
 # Run tests
 pnpm test
@@ -193,12 +118,10 @@ The MCP Inspector provides a web-based interface for testing MCP servers:
 ```bash
 # Start the inspector (opens browser at http://localhost:5173)
 pnpm inspect
-
-# Or use the standalone script
-./inspect-server.sh
 ```
 
 The inspector allows you to:
+
 - **Test all tools** interactively through a web UI
 - **View server capabilities** and available tools
 - **Send requests** and see responses in real-time
@@ -251,7 +174,7 @@ You can test these examples using the MCP Inspector (`pnpm inspect`) or by calli
 ```typescript
 // Example registration number: 1234567
 {
-  "name": "trademark_search_by_registration", 
+  "name": "trademark_search_by_registration",
   "arguments": {
     "registrationNumber": "1234567"
   }
@@ -272,6 +195,7 @@ You can test these examples using the MCP Inspector (`pnpm inspect`) or by calli
 ### Test with Real Data
 
 Try these working examples in the MCP Inspector:
+
 - **Apple trademark**: Serial number `78462704`
 - **Nike trademark**: Serial number `72016902`
 - **Microsoft trademark**: Serial number `78213220`
@@ -346,5 +270,6 @@ MIT
 ## API Reference
 
 For more information about the USPTO TSDR API, visit:
+
 - [USPTO Developer Portal](https://developer.uspto.gov/api-catalog/tsdr-data-api)
 - [TSDR API Swagger Documentation](https://developer.uspto.gov/swagger/tsdr-api-v1)
