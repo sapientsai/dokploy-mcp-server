@@ -78,6 +78,28 @@ Before a batch, such as a script that will make 200 calls, `quota_acquire` reser
 | `quota_release`  | Gives back what a lease didn't use                                                              |
 | `quota_report`   | Records a response's rate-limit headers, or a status endpoint's body                            |
 
+## The hook
+
+The package ships `quota-hook`, a Claude Code hook that checks every `gh` call in a Bash command with the broker before it runs. Register it for `PreToolUse` and `PostToolUse` on `Bash`:
+
+```jsonc
+{
+  "hooks": {
+    "PreToolUse": [{ "matcher": "Bash", "hooks": [{ "type": "command", "command": "quota-hook", "timeout": 20 }] }],
+    "PostToolUse": [{ "matcher": "Bash", "hooks": [{ "type": "command", "command": "quota-hook", "timeout": 5 }] }],
+  },
+}
+```
+
+- **It finds every `gh` call** in the command: after `&&`, `|` and `;`; inside `$(…)`, backticks and `bash -c '…'`; in `if`, `while` and `until` conditions; and past assignments and wrappers (`sudo -u`, `timeout -k 5 30`, `env`, `xargs`, `watch`). Heredoc bodies and comments are data, not commands. A command with no `gh` costs only Node's start, about 80 ms.
+- **It labels each call** from known words only: a known subcommand (`gh pr view`), a known HTTP method (`gh api PATCH`), or else just the family (`gh browse`) or `gh`. No argument ever reaches a label. It classes each call as a read or a write, and names the budget: GraphQL for `gh pr`, `gh issue` and `gh repo`, REST for `gh run`, `gh release` and `gh api`.
+- **It refuses fast polling itself,** broker or no broker: `gh run watch` or `gh pr checks --watch` under a 30 s interval, `watch` around `gh` under 30 s, and a `while` or `until` loop with `gh` in it that sleeps less than 30 s. A `for` loop over a list is bounded, so it's allowed.
+- **It waits when told to,** up to 10 s for a whole command, asking again no sooner than every 250 ms, and starts a background `gh api rate_limit` when the broker asks for a reading. When it refuses a command, it frees the calls the broker had already booked.
+- **It fails open.** If the broker doesn't answer within 800 ms, the call runs, the rest of the command isn't checked, and the session is told once.
+- **Modes:** `QUOTA_HOOK=warn`, the default, tells the agent what the broker would refuse and refuses nothing; `enforce` refuses; `off` does nothing.
+- **Where it finds the broker:** `QUOTA_URL` and `QUOTA_KEY` in the environment, or else from envpkt, once (`envpkt exec` takes most of a second), cached in `~/.cache/quota-hook/broker.json`, readable only by you. With no broker configured, it checks envpkt again every 10 minutes. The GitHub account comes from gh's own `hosts.yml`.
+- **What it can't see:** `gh` run by a script, an alias or a tool other than Bash, and a loop's later rounds. The broker's own probe still counts that spending.
+
 ## The hook's API
 
 Every request sends `Authorization: Bearer <QUOTA_KEY>`. Bodies are JSON.
