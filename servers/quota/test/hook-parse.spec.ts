@@ -129,6 +129,18 @@ group("review follow-ups", () => {
     expect(ghCalls(`eval "gh issue list"`).map((c) => c.args[0])).toEqual(["issue"])
   })
 
+  it("reads text after a $(…) inside a quoted argument as text, not a command", () => {
+    expect(ghCalls(`gh pr comment 5 --body "see $(date) gh run watch was slow"`).map((c) => c.args[0])).toEqual(["pr"])
+    expect(one(`gh pr comment 5 --body "see $(date) gh run watch was slow"`)?.refuse).toBeUndefined()
+    expect(ghCalls(`echo "$(pwd) gh pr merge 5"`)).toEqual([])
+    expect(loopRefusal(`git commit -m "$(date) while true; do gh run list; done"`).isNone()).toBe(true)
+  })
+
+  it("reads while with assignments before read as bounded, and counts bash -c calls inside a loop", () => {
+    expect(loopRefusal(`while IFS= read -r n; do gh pr view "$n"; done < f`).isNone()).toBe(true)
+    expect(loopRefusal(`while true; do bash -c 'gh run list'; sleep 5; done`).orNull()).toContain("sleeps 5 s")
+  })
+
   it("treats while read as bounded by its input, and keeps an outer loop open past an inner for", () => {
     expect(loopRefusal("gh pr list | while read n; do gh pr view $n; done").isNone()).toBe(true)
     expect(loopRefusal("while true; do for x in a; do echo $x; done; gh pr view 1; done").isSome()).toBe(true)

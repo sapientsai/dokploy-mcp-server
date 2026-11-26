@@ -108,22 +108,10 @@ export const segments = (command: string): ReadonlyArray<ReadonlyArray<string>> 
 /* ---------- Seeing past wrappers ---------- */
 
 const ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/
-/** Keywords and wrappers that run the command after them, with no flags of their own to skip. */
-const KEYWORDS = List.of(
-  "then",
-  "do",
-  "else",
-  "elif",
-  "if",
-  "while",
-  "until",
-  "!",
-  "{",
-  "time",
-  "nohup",
-  "exec",
-  "command",
-)
+/** Shell keywords that come before a command. */
+const KEYWORDS = List.of("then", "do", "else", "elif", "if", "while", "until", "!", "{")
+/** Wrappers with no flags of their own to skip, that run the command after them. */
+const PLAIN_WRAPPERS = List.of("time", "nohup", "exec", "command")
 const DURATION = /^\d+(?:\.\d+)?[smhd]?$/
 
 /** Skips a wrapper's flags: `valued` ones take the next word too. Returns the words after them. */
@@ -144,28 +132,35 @@ const watchInterval = (words: ReadonlyArray<string>): number => {
   return Number.isFinite(n) && n > 0 ? n : 2
 }
 
-type Unwrapped = { readonly words: ReadonlyArray<string>; readonly repeatEvery?: number }
+type Unwrapped = {
+  readonly words: ReadonlyArray<string>
+  readonly repeatEvery?: number
+  /** True when a wrapper such as `watch` or `timeout` ran what's left, which may be one quoted command. */
+  readonly wrapped: boolean
+}
 
-const withRepeat = (words: ReadonlyArray<string>, repeatEvery: number | undefined): Unwrapped =>
-  repeatEvery === undefined ? { words } : { words, repeatEvery }
-
-/** Drops what runs a command rather than being it, so `FOO=1 sudo -u me timeout -k 5 30 gh …` is a `gh` call. */
-const unwrap = (words: ReadonlyArray<string>, repeatEvery?: number): Unwrapped => {
+/**
+ * Drops what runs a command rather than being it, so `FOO=1 sudo -u me timeout -k 5 30 gh …` is a
+ * `gh` call. Notes whether a wrapper did the running, and `watch`'s interval.
+ */
+const unwrap = (words: ReadonlyArray<string>, repeatEvery?: number, wrapped = false): Unwrapped => {
   const head = words.at(0)
   const rest = words.slice(1)
-  const again = (next: ReadonlyArray<string>): Unwrapped => unwrap(next, repeatEvery)
-  if (head === undefined) return withRepeat(words, repeatEvery)
-  if (ASSIGNMENT.test(head) || KEYWORDS.contains(head)) return again(rest)
-  if (head === "sudo") return again(skipFlags(rest, ["-u", "-g", "-U", "-C", "-h", "-p", "-r", "-t", "-D"]))
-  if (head === "env") return again(skipFlags(rest, ["-u", "-C", "-S"]))
-  if (head === "nice") return again(skipFlags(rest, ["-n"]))
-  if (head === "xargs") return again(skipFlags(rest, ["-n", "-I", "-P", "-L", "-s", "-d", "-E", "-a"]))
+  const keep = (next: ReadonlyArray<string>): Unwrapped => unwrap(next, repeatEvery, wrapped)
+  const wrap = (next: ReadonlyArray<string>, every = repeatEvery): Unwrapped => unwrap(next, every, true)
+  if (head === undefined) return { words, wrapped, ...(repeatEvery === undefined ? {} : { repeatEvery }) }
+  if (ASSIGNMENT.test(head) || KEYWORDS.contains(head)) return keep(rest)
+  if (PLAIN_WRAPPERS.contains(head)) return wrap(rest)
+  if (head === "sudo") return wrap(skipFlags(rest, ["-u", "-g", "-U", "-C", "-h", "-p", "-r", "-t", "-D"]))
+  if (head === "env") return wrap(skipFlags(rest, ["-u", "-C", "-S"]))
+  if (head === "nice") return wrap(skipFlags(rest, ["-n"]))
+  if (head === "xargs") return wrap(skipFlags(rest, ["-n", "-I", "-P", "-L", "-s", "-d", "-E", "-a"]))
   if (head === "timeout") {
     const after = skipFlags(rest, ["-k", "-s", "--kill-after", "--signal"])
-    return again(DURATION.test(after[0] ?? "") ? after.slice(1) : after)
+    return wrap(DURATION.test(after[0] ?? "") ? after.slice(1) : after)
   }
-  if (head === "watch") return unwrap(skipFlags(rest, ["-n", "--interval"]), watchInterval(rest))
-  return withRepeat(words, repeatEvery)
+  if (head === "watch") return wrap(skipFlags(rest, ["-n", "--interval"]), watchInterval(rest))
+  return { words, wrapped, ...(repeatEvery === undefined ? {} : { repeatEvery }) }
 }
 
 const isGh = (word: string): boolean => word === "gh" || word.endsWith("/gh")
@@ -182,12 +177,14 @@ const shellScript = (args: ReadonlyArray<string>): Option<string> => {
  * The text a segment runs as a command of its own: a shell's `-c` script, `eval`'s arguments, or a
  * command `watch` (or another wrapper) was given as one quoted string.
  */
-export const nestedScript = (words: ReadonlyArray<string>): Option<string> => {
+export const nestedScript = ({ words, wrapped }: Unwrapped): Option<string> => {
   const head = words.at(0)
   if (head === undefined) return Option.none()
   if (isShell(head)) return shellScript(words.slice(1))
   if (head === "eval") return Option(words.slice(1).join(" "))
-  return words.length === 1 && /\s/.test(head) ? Option(head) : Option.none()
+  // Only a wrapper hands over one quoted command; a lone word with spaces is otherwise just text,
+  // such as what's left of a quoted argument after a $(…) in it.
+  return wrapped && words.length === 1 && /\s/.test(head) ? Option(head) : Option.none()
 }
 
 const callsIn = (command: string, repeatEvery: number | undefined): ReadonlyArray<GhCall> =>
@@ -197,7 +194,7 @@ const callsIn = (command: string, repeatEvery: number | undefined): ReadonlyArra
     const { words } = unwrapped
     const head = words.at(0)
     if (head === undefined) return []
-    return nestedScript(words).fold(
+    return nestedScript(unwrapped).fold(
       () => (isGh(head) ? [{ args: words.slice(1), ...(every === undefined ? {} : { repeatEvery: every }) }] : []),
       (script) => callsIn(script, every),
     )
@@ -228,7 +225,10 @@ const LEADERS = List.of("then", "do", "else", "elif", "{", "!", "time")
 /** A segment's first word that isn't a leader, and the word after it. */
 const leading = (segment: ReadonlyArray<string>): { readonly head: string; readonly next: string } => {
   const at = segment.findIndex((w) => !LEADERS.contains(w))
-  return at < 0 ? { head: "", next: "" } : { head: segment[at] ?? "", next: segment[at + 1] ?? "" }
+  if (at < 0) return { head: "", next: "" }
+  // The word after the head, past assignments, so `while IFS= read -r n` reads as `while read`.
+  const next = segment.slice(at + 1).find((w) => !ASSIGNMENT.test(w)) ?? ""
+  return { head: segment[at] ?? "", next }
 }
 
 /**
@@ -248,9 +248,13 @@ export const loopOf = (command: string): { readonly loops: boolean; readonly sle
             : []
       const stack = acc.stack.concat(opened)
       const inside = stack.includes("open")
-      const { words } = unwrap(segment)
-      const nested = nestedScript(words).map(loopOf)
-      const ghHere = inside && words.length > 0 && isGh(words[0] ?? "")
+      const unwrapped = unwrap(segment)
+      const { words } = unwrapped
+      const script = nestedScript(unwrapped)
+      const nested = script.map(loopOf)
+      // A gh call run through `bash -c` inside the loop counts as one in it.
+      const ghHere =
+        inside && ((words.length > 0 && isGh(words[0] ?? "")) || script.exists((sc) => ghCalls(sc).length > 0))
       const sleep = inside && words[0] === "sleep" ? [sleepSeconds(words[1] ?? "")] : []
       return {
         stack: head === "done" ? stack.slice(0, -1) : stack,
