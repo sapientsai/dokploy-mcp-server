@@ -1,10 +1,11 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.jordanburke/microsoft-todo-mcp-server",
-  "description": "Microsoft To Do via Graph — task lists, tasks, checklist items and reminders.",
+  "name": "io.github.sapientsai/microsoft-todo-mcp-server",
+  "description": "Microsoft To Do via Graph \u2014 task lists, tasks, checklist items and reminders.",
   "repository": {
-    "url": "https://github.com/jordanburke/microsoft-todo-mcp-server",
-    "source": "github"
+    "url": "https://github.com/sapientsai/mcp-servers",
+    "source": "github",
+    "subfolder": "servers/microsoft-todo"
   },
   "version": "1.5.4",
   "packages": [

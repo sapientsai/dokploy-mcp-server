@@ -1,6 +1,6 @@
 # Microsoft To Do MCP
 
-[![CI](https://github.com/jordanburke/microsoft-todo-mcp-server/actions/workflows/ci.yml/badge.svg)](https://github.com/jordanburke/microsoft-todo-mcp-server/actions/workflows/ci.yml)
+[![CI](https://github.com/sapientsai/mcp-servers/actions/workflows/node.js.yml/badge.svg)](https://github.com/sapientsai/mcp-servers/actions/workflows/node.js.yml)
 [![npm version](https://badge.fury.io/js/microsoft-todo-mcp-server.svg)](https://www.npmjs.com/package/microsoft-todo-mcp-server)
 
 A Model Context Protocol (MCP) server that enables AI assistants like Claude and Cursor to interact with Microsoft To Do via the Microsoft Graph API. This service provides comprehensive task management capabilities through a secure OAuth 2.0 authentication flow.
@@ -67,9 +67,10 @@ The package provides five commands:
 ### Option 2: Clone and Run Locally
 
 ```bash
-git clone https://github.com/jordanburke/microsoft-todo-mcp-server.git
-cd microsoft-todo-mcp-server
+git clone https://github.com/sapientsai/mcp-servers.git
+cd mcp-servers
 pnpm install
+cd servers/microsoft-todo
 pnpm run build
 ```
 
@@ -93,7 +94,7 @@ pnpm run build
 
 ### Environment Setup
 
-Create a `.env` file in the repository root, where you run `pnpm run auth` (required for sign-in):
+Create a `.env` file in `servers/microsoft-todo` of your clone, where you run `pnpm run auth` (required for sign-in):
 
 ```env
 CLIENT_ID=your_client_id
@@ -155,17 +156,18 @@ How the expiry is known depends on your account type. Work and school accounts g
 
 #### Step 1: Sign in with Microsoft
 
-Sign-in runs from a clone of this repository, with the `.env` file from [Configuration](#configuration) in its root:
+Sign-in runs from a clone of [sapientsai/mcp-servers](https://github.com/sapientsai/mcp-servers), with the `.env` file from [Configuration](#configuration) in `servers/microsoft-todo`:
 
 ```bash
-git clone https://github.com/jordanburke/microsoft-todo-mcp-server.git
-cd microsoft-todo-mcp-server
+git clone https://github.com/sapientsai/mcp-servers.git
+cd mcp-servers
 pnpm install
+cd servers/microsoft-todo
 pnpm run build
 pnpm run auth
 ```
 
-Open <http://localhost:3000> and sign in. Microsoft sends you back to `/callback`, and the server writes `tokens.json` in the repository root. Stop it with Ctrl+C when the page says authentication succeeded.
+Open <http://localhost:3000> and sign in. Microsoft sends you back to `/callback`, and the server writes `tokens.json` in `servers/microsoft-todo`. Stop it with Ctrl+C when the page says authentication succeeded.
 
 #### Step 2: Move the tokens where the server looks
 
@@ -470,7 +472,7 @@ MIT License - See [LICENSE](LICENSE) file for details
 
 ## Support
 
-- [GitHub Issues](https://github.com/jordanburke/microsoft-todo-mcp-server/issues)
+- [GitHub Issues](https://github.com/sapientsai/mcp-servers/issues)
 - [npm Package](https://www.npmjs.com/package/microsoft-todo-mcp-server)
 
 ---
