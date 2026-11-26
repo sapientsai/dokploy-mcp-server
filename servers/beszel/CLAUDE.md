@@ -43,6 +43,7 @@ src/
 - **Units:** `b`, `bb`, `dio` and a container's `net` are bytes per second. Container memory is MB. Disk `d` and `du` are GB. `mem` and `swap` are byte arrays; older agents send `m` and `mu` in GB instead. Sizes print 1024-based, as Beszel does.
 - **Write tools are registered only when writes are on.** `registerAllTools` takes `{ writes }`; `smoke:live` always passes `false`, so a smoke run never changes the hub.
 - **Never read a fingerprint's `token`.** It's the agent's secret. Every `fingerprints` request names `fields` without it, and `FingerprintRecord` has no `token` field.
-- **Do what Beszel's web UI does.** A moved system is set to `pending` so the hub reconnects; resume sets `pending` too; a fingerprint reset sets `fingerprint` to `""`. Changing any `fingerprints` record makes the hub drop that agent's connection.
+- **Follow Beszel's web UI, but narrower.** Resume sets `pending`, as the UI does. The UI's edit dialog sets `pending` on every edit, which also resumes a paused system; `update_system` sets it only for a host or port change, and never on a paused system. The UI's reset re-sends `token` with `fingerprint: ""`; `reset_system_fingerprint` sends only `fingerprint`. Changing any `fingerprints` record makes the hub drop a WebSocket agent's connection and mark the system down.
+- **A readonly user sees no fingerprints.** The `fingerprints` list rule is the write rule, so its list comes back empty, not refused.
 - **No real hub in the repo.** Tests, docs and examples use `beszel.example.com` and made-up systems.
 - **Beszel's API may change in a minor release.** When the hub moves past 0.21, read its `internal/migrations` and `internal/hub/collections.go` for new fields and access rules.

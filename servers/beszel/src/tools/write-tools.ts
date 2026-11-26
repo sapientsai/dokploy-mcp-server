@@ -54,7 +54,10 @@ export const formatUpdate = (before: SystemRecord, after: SystemRecord, reconnec
       .filter((field) => (before[field] ?? "") !== (after[field] ?? ""))
       .map((field) => `- ${field}: ${shown(before[field])} → ${shown(after[field])}`),
     ...(reconnecting
-      ? ["", `Beszel connects to it again at the new address. Its status is ${after.status} until the agent answers.`]
+      ? [
+          "",
+          `Its status is ${after.status} until Beszel hears from the agent. An agent connected over WebSocket keeps its connection; otherwise Beszel connects to the new address.`,
+        ]
       : []),
   ].join("\n")
 
@@ -65,7 +68,8 @@ const updateSystem = (client: BeszelClient, nameOrId: string, wanted: SystemChan
       if (Object.keys(changes).length === 0) {
         return IO.succeed(`Nothing to change: ${label(system)} already has those values.`)
       }
-      // Beszel's own edit dialog sets a moved system to pending, which makes the hub reconnect. A paused one stays paused.
+      // Beszel's edit dialog sets every edited system to pending, which also resumes a paused one. This sets pending only
+      // for a move, so the hub reconnects, and leaves a paused system paused.
       const reconnecting = (changes.host !== undefined || changes.port !== undefined) && system.status !== "paused"
       return checkNameFree(systems, system, changes.name)
         .flatMap(() =>
@@ -108,7 +112,10 @@ const resetFingerprint = (client: BeszelClient, nameOrId: string): IO<never, Err
           if (records.length === 0) {
             return IO.fail<Error>(
               new UserError(`${label(system)} has no fingerprint record, so there's nothing to reset.`, {
-                suggestions: ["Beszel keeps one for each system an agent connects to over WebSocket."],
+                suggestions: [
+                  "Beszel keeps one for each system an agent connects to over WebSocket.",
+                  "A Beszel user with the readonly role sees no fingerprints at all. Sign in as a user with the user or admin role.",
+                ],
               }),
             )
           }
@@ -122,8 +129,9 @@ const resetFingerprint = (client: BeszelClient, nameOrId: string): IO<never, Err
             client.update<FingerprintRecord>("fingerprints", r.id, { fingerprint: "" }, FINGERPRINT_FIELDS),
           ).map(() =>
             [
-              `Cleared the stored fingerprint of ${label(system)}, and Beszel dropped its agent's connection.`,
+              `Cleared the stored fingerprint of ${label(system)}.`,
               "",
+              `If its agent was connected over WebSocket, Beszel dropped that connection and marked ${system.name} down, which can send a status alert.`,
               `The next agent that connects with ${system.name}'s token claims it. If the wrong machine still has that token, stop its agent or give it its own system first, or it claims ${system.name} again.`,
               "The token itself is unchanged. This server never reads it.",
             ].join("\n"),

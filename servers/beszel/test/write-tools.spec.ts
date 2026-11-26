@@ -125,7 +125,7 @@ describe("update_system", () => {
     expect(patches()[0]?.body).toEqual({ host: "10.0.0.99", port: "45877", status: "pending" })
     expect(text).toContain("- host: 10.0.0.11 → 10.0.0.99")
     expect(text).toContain("- port: 45876 → 45877")
-    expect(text).toContain("Its status is pending until the agent answers.")
+    expect(text).toContain("Its status is pending until Beszel hears from the agent.")
   })
 
   it("keeps a paused system paused when it moves", async () => {
@@ -250,8 +250,10 @@ describe("reset_system_fingerprint", () => {
     const store = fresh()
     store.fingerprints = []
     hub(store)
-    await expect(run("reset_system_fingerprint", { system: "alpha" })).rejects.toThrow(
-      "alpha (sysalpha0000001) has no fingerprint record",
-    )
+    const failure = await run("reset_system_fingerprint", { system: "alpha" }).catch((e: unknown) => e)
+    expect(failure).toBeInstanceOf(Error)
+    expect((failure as Error).message).toContain("alpha (sysalpha0000001) has no fingerprint record")
+    // A readonly user's list comes back empty rather than refused, so the error has to say so.
+    expect(JSON.stringify(failure, Object.getOwnPropertyNames(failure))).toContain("readonly role sees no fingerprints")
   })
 })

@@ -90,7 +90,7 @@ Beszel ties each system to one agent, by a token and the fingerprint the agent s
 1. Rename the system after the machine now reporting into it, with `update_system`.
 2. In Beszel's web UI, add the displaced machine as a new system, and set its agent up with the new token. This step stays in the UI, because it hands out the agent's secret token.
 
-`reset_system_fingerprint` is for the other case: when the right machine was reinstalled, or the wrong one has since been given its own system. Run it while the wrong machine still holds the token, and that machine claims the system again.
+`reset_system_fingerprint` is for the other case: when the right machine was reinstalled, or the wrong one has since been given its own system. Run it while the wrong machine still holds the token, and that machine claims the system again. If its agent was connected over WebSocket, Beszel drops the connection and marks the system down until an agent reconnects, which can send a status alert. This holds for a token that belongs to one system; with a token shared by several systems, Beszel refuses an agent whose fingerprint matches none of them.
 
 ## Beszel versions
 
