@@ -68,7 +68,7 @@
   ],
   "prettier": "ts-builds/prettier",
   "dependencies": {
-    "@google-cloud/bigquery": "^8.3.1",
+    "@google-cloud/bigquery": "^9.6.1",
     "fast-xml-parser": "^5.11.1",
     "functype": "^2.0.0",
     "functype-os": "^2.0.0",
