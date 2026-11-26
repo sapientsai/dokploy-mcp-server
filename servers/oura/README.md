@@ -1,6 +1,6 @@
 # oura-ring-mcp-server
 
-[![Node.js CI](https://github.com/jordanburke/oura-ring-mcp-server/actions/workflows/node.js.yml/badge.svg)](https://github.com/jordanburke/oura-ring-mcp-server/actions/workflows/node.js.yml)
+[![CI](https://github.com/sapientsai/mcp-servers/actions/workflows/node.js.yml/badge.svg)](https://github.com/sapientsai/mcp-servers/actions/workflows/node.js.yml)
 [![npm version](https://img.shields.io/npm/v/oura-ring-mcp-server.svg)](https://www.npmjs.com/package/oura-ring-mcp-server)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 

@@ -10,11 +10,11 @@
     "email": "jordan.burke@gmail.com",
     "url": "https://github.com/jordanburke"
   },
-  "homepage": "https://github.com/jordanburke/oura-ring-mcp-server",
-  "documentation": "https://github.com/jordanburke/oura-ring-mcp-server#readme",
+  "homepage": "https://github.com/sapientsai/mcp-servers/tree/main/servers/oura",
+  "documentation": "https://github.com/sapientsai/mcp-servers/tree/main/servers/oura#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jordanburke/oura-ring-mcp-server"
+    "url": "https://github.com/sapientsai/mcp-servers"
   },
   "license": "MIT",
   "keywords": ["oura", "oura-ring", "health", "sleep", "readiness", "hrv", "mcp"],

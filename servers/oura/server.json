@@ -1,17 +1,18 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.jordanburke/oura-ring-mcp-server",
+  "name": "io.github.sapientsai/oura-ring-mcp-server",
   "description": "Oura Ring MCP server for the Oura API v2: sleep, readiness, activity, heart rate, and more.",
   "repository": {
-    "url": "https://github.com/jordanburke/oura-ring-mcp-server",
-    "source": "github"
+    "url": "https://github.com/sapientsai/mcp-servers",
+    "source": "github",
+    "subfolder": "servers/oura"
   },
-  "version": "0.1.2",
+  "version": "0.2.0",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "oura-ring-mcp-server",
-      "version": "0.1.2",
+      "version": "0.2.0",
       "transport": {
         "type": "stdio"
       },

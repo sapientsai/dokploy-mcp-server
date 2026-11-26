@@ -2,7 +2,7 @@
   "name": "oura-ring-mcp-server",
   "version": "0.2.0",
   "description": "A Model Context Protocol (MCP) server for the Oura Ring API v2 - query sleep, readiness, activity, heart rate, and more from your Oura data.",
-  "mcpName": "io.github.jordanburke/oura-ring-mcp-server",
+  "mcpName": "io.github.sapientsai/oura-ring-mcp-server",
   "keywords": [
     "oura",
     "oura-ring",
@@ -16,10 +16,11 @@
   ],
   "author": "Jordan Burke <jordan.burke@gmail.com>",
   "license": "MIT",
-  "homepage": "https://github.com/jordanburke/oura-ring-mcp-server",
+  "homepage": "https://github.com/sapientsai/mcp-servers/tree/main/servers/oura#readme",
   "repository": {
     "type": "git",
-    "url": "https://github.com/jordanburke/oura-ring-mcp-server"
+    "url": "git+https://github.com/sapientsai/mcp-servers.git",
+    "directory": "servers/oura"
   },
   "bin": {
     "oura-ring-mcp-server": "./dist/index.js"
@@ -41,7 +42,8 @@
     "dev": "ts-builds dev",
     "start": "node dist/index.js",
     "inspect": "npx @modelcontextprotocol/inspector node dist/index.js",
-    "prepublishOnly": "pnpm run ci"
+    "prepublishOnly": "pnpm run ci",
+    "version": "node scripts/stamp-server-json.mjs && git add server.json"
   },
   "dependencies": {
     "@loglayer/transport-pino": "^3.2.0",
@@ -74,5 +76,7 @@
     "dist"
   ],
   "prettier": "ts-builds/prettier",
-  "packageManager": "pnpm@12.21.0+sha512.66fd8278ee28935ce951792d34367ff3af5c432a2756445823029533835b8da529bbe0be5130afd56ed0713fb8789e47bad82d93bd5ae2fe54b15562d6276ef0"
+  "bugs": {
+    "url": "https://github.com/sapientsai/mcp-servers/issues"
+  }
 }

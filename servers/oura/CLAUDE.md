@@ -83,6 +83,4 @@ dataset without a physical ring.
 
 ## Publishing
 
-Publishing is automated: pushing a `v*` tag triggers `.github/workflows/publish.yml`, which runs
-`pnpm validate` and `npm publish --provenance` via npm OIDC trusted publishing (needs Node 24+,
-pinned in `.nvmrc`).
+This server lives in `servers/oura` of the `sapientsai/mcp-servers` monorepo; the root CLAUDE.md has the repo-wide rules. Install from the repo root. Release from the root too: `pnpm release oura <patch|minor|major>` bumps the version, stamps `server.json` through the `version` script, commits and tags `oura-ring-mcp-server@<version>`; `git push --follow-tags` publishes this package alone through the root `.github/workflows/publish.yml` (npm trusted publishing, then the MCP Registry). It moved here from `jordanburke/oura-ring-mcp-server` with its history; its MCP Registry name moved to `io.github.sapientsai/oura-ring-mcp-server`.
