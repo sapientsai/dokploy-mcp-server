@@ -1,6 +1,6 @@
 {
   "name": "beszel-mcp-server",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "A Model Context Protocol (MCP) server for Beszel - read your monitored systems, their metrics over time, containers, systemd services, disk health and alerts.",
   "keywords": [
     "mcp",
