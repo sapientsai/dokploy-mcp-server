@@ -1,7 +1,0 @@
-{
-  "srcDir": "./src",
-  "validateChain": ["format", "lint", "typecheck", "test", "build", "check:server-json"],
-  "commands": {
-    "check:server-json": "node scripts/sync-server-json.mjs --check"
-  }
-}
