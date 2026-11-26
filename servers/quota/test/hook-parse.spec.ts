@@ -112,6 +112,29 @@ group("shell loops", () => {
   })
 })
 
+group("review follow-ups", () => {
+  it("doesn't read a here-string as a heredoc", () => {
+    expect(ghCalls(['jq . <<< "foo"', "gh run watch 5"].join("\n")).map((c) => c.args[0])).toEqual(["run"])
+  })
+
+  it("finds loops inside bash -c, and after then or do", () => {
+    expect(loopRefusal(`bash -c 'while true; do gh pr view 1; done'`).isSome()).toBe(true)
+    expect(loopRefusal("if true; then while true; do gh pr view 1; done; fi").isSome()).toBe(true)
+    expect(loopRefusal("for x in a; do until gh run view 5; do sleep 1; done; done").isSome()).toBe(true)
+  })
+
+  it("finds calls in bash -lc, a quoted watch command, and eval", () => {
+    expect(ghCalls("bash -lc 'gh pr list'").map((c) => c.args.slice(0, 2))).toEqual([["pr", "list"]])
+    expect(one("watch -n 5 'gh run list'")?.refuse).toContain("`watch` around `gh run list` polls every 5 s")
+    expect(ghCalls(`eval "gh issue list"`).map((c) => c.args[0])).toEqual(["issue"])
+  })
+
+  it("treats while read as bounded by its input, and keeps an outer loop open past an inner for", () => {
+    expect(loopRefusal("gh pr list | while read n; do gh pr view $n; done").isNone()).toBe(true)
+    expect(loopRefusal("while true; do for x in a; do echo $x; done; gh pr view 1; done").isSome()).toBe(true)
+  })
+})
+
 group("heredocs", () => {
   it("reads a heredoc body as data, not commands", () => {
     const command = [

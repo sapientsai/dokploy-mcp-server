@@ -25,7 +25,8 @@ export type Described = {
 
 /* ---------- Splitting a command line ---------- */
 
-const HEREDOC = /<<(-?)\s*(['"]?)([A-Za-z_][A-Za-z0-9_]*)\2/g
+/** `<<WORD`, `<<-WORD` or `<<'WORD'`, but not a here-string (`<<<`), whose text is on its own line. */
+const HEREDOC = /(?<!<)<<(?!<)(-?)\s*(['"]?)([A-Za-z_][A-Za-z0-9_]*)\2/g
 
 type Terminator = { readonly word: string; readonly tabs: boolean }
 type Lines = { readonly kept: ReadonlyArray<string>; readonly until: ReadonlyArray<Terminator> }
@@ -171,20 +172,39 @@ const isGh = (word: string): boolean => word === "gh" || word.endsWith("/gh")
 const SHELLS = List.of("bash", "sh", "zsh", "dash")
 const isShell = (word: string): boolean => SHELLS.exists((s) => word === s || word.endsWith(`/${s}`))
 
-/** Every `gh` call in the command, in order, including those inside `bash -c '…'`. */
-export const ghCalls = (command: string): ReadonlyArray<GhCall> =>
+/** The script a shell runs with `-c`, also in combined flags such as `-lc` or `-ec`. */
+const shellScript = (args: ReadonlyArray<string>): Option<string> => {
+  const at = args.findIndex((w) => /^-[a-zA-Z]*c[a-zA-Z]*$/.test(w))
+  return at >= 0 ? Option(args[at + 1]) : Option.none()
+}
+
+/**
+ * The text a segment runs as a command of its own: a shell's `-c` script, `eval`'s arguments, or a
+ * command `watch` (or another wrapper) was given as one quoted string.
+ */
+export const nestedScript = (words: ReadonlyArray<string>): Option<string> => {
+  const head = words.at(0)
+  if (head === undefined) return Option.none()
+  if (isShell(head)) return shellScript(words.slice(1))
+  if (head === "eval") return Option(words.slice(1).join(" "))
+  return words.length === 1 && /\s/.test(head) ? Option(head) : Option.none()
+}
+
+const callsIn = (command: string, repeatEvery: number | undefined): ReadonlyArray<GhCall> =>
   segments(command).flatMap((segment): ReadonlyArray<GhCall> => {
-    const { words, repeatEvery } = unwrap(segment)
+    const unwrapped = unwrap(segment)
+    const every = unwrapped.repeatEvery ?? repeatEvery
+    const { words } = unwrapped
     const head = words.at(0)
-    const args = words.slice(1)
     if (head === undefined) return []
-    if (isShell(head)) {
-      const at = args.indexOf("-c")
-      const script = at >= 0 ? args[at + 1] : undefined
-      return script === undefined ? [] : ghCalls(script)
-    }
-    return isGh(head) ? [{ args, ...(repeatEvery === undefined ? {} : { repeatEvery }) }] : []
+    return nestedScript(words).fold(
+      () => (isGh(head) ? [{ args: words.slice(1), ...(every === undefined ? {} : { repeatEvery: every }) }] : []),
+      (script) => callsIn(script, every),
+    )
   })
+
+/** Every `gh` call in the command, in order, including those inside `bash -c '…'`, `eval` and `watch '…'`. */
+export const ghCalls = (command: string): ReadonlyArray<GhCall> => callsIn(command, undefined)
 
 /* ---------- Loops ---------- */
 
@@ -195,28 +215,57 @@ const sleepSeconds = (arg: string): number => {
   return m === null ? Number.NaN : Number(m[1]) * (SLEEP_UNITS[m[2]] ?? 1)
 }
 
-type LoopScan = { readonly depth: number; readonly ghInLoop: boolean; readonly sleeps: ReadonlyArray<number> }
+type LoopScan = {
+  /** Loops open at this point, innermost last: open-ended, or bounded by a list or its input. */
+  readonly stack: ReadonlyArray<"open" | "bounded">
+  readonly ghInLoop: boolean
+  readonly sleeps: ReadonlyArray<number>
+}
+
+/** Words that can come before a loop keyword in the same segment, as in `then while …` or `do until …`. */
+const LEADERS = List.of("then", "do", "else", "elif", "{", "!", "time")
+
+/** A segment's first word that isn't a leader, and the word after it. */
+const leading = (segment: ReadonlyArray<string>): { readonly head: string; readonly next: string } => {
+  const at = segment.findIndex((w) => !LEADERS.contains(w))
+  return at < 0 ? { head: "", next: "" } : { head: segment[at] ?? "", next: segment[at + 1] ?? "" }
+}
 
 /**
  * Whether `gh` runs inside an open-ended `while` or `until` loop (its condition or its body), and the
- * longest `sleep` inside such a loop. A `for` over a list is bounded, so it isn't counted.
+ * longest `sleep` inside such a loop, looking into `bash -c` scripts too. A `for` over a list and a
+ * `while read` over input are bounded by what they're given, so they aren't counted.
  */
 export const loopOf = (command: string): { readonly loops: boolean; readonly sleepSeconds: number } => {
   const scan = segments(command).reduce<LoopScan>(
     (acc, segment) => {
-      const opens = segment[0] === "while" || segment[0] === "until"
-      const closes = segment[0] === "done"
-      const inside = opens || acc.depth > 0
+      const { head, next } = leading(segment)
+      const opened: ReadonlyArray<"open" | "bounded"> =
+        head === "while" || head === "until"
+          ? [next === "read" ? "bounded" : "open"]
+          : head === "for" || head === "select"
+            ? ["bounded"]
+            : []
+      const stack = acc.stack.concat(opened)
+      const inside = stack.includes("open")
       const { words } = unwrap(segment)
+      const nested = nestedScript(words).map(loopOf)
       const ghHere = inside && words.length > 0 && isGh(words[0] ?? "")
       const sleep = inside && words[0] === "sleep" ? [sleepSeconds(words[1] ?? "")] : []
       return {
-        depth: Math.max(0, acc.depth + (opens ? 1 : 0) - (closes ? 1 : 0)),
-        ghInLoop: acc.ghInLoop || ghHere,
-        sleeps: [...acc.sleeps, ...sleep],
+        stack: head === "done" ? stack.slice(0, -1) : stack,
+        ghInLoop: acc.ghInLoop || ghHere || nested.exists((n) => n.loops),
+        sleeps: [
+          ...acc.sleeps,
+          ...sleep,
+          ...nested.fold(
+            () => [],
+            (n) => (n.loops ? [n.sleepSeconds] : []),
+          ),
+        ],
       }
     },
-    { depth: 0, ghInLoop: false, sleeps: [] },
+    { stack: [], ghInLoop: false, sleeps: [] },
   )
   const sleeps = scan.sleeps.filter((n) => Number.isFinite(n))
   return { loops: scan.ghInLoop, sleepSeconds: sleeps.length === 0 ? 0 : Math.max(...sleeps) }
