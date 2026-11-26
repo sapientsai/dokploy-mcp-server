@@ -29,5 +29,3 @@ publicHoistPattern:
   - "typescript"
   - "*rimraf*"
   - "*cross-env*"
-  # microsoft-todo: its eslint.config.js imports globals, which *eslint* doesn't match.
-  - "globals"
