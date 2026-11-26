@@ -18,6 +18,8 @@ export type Sql = {
 export const RETENTION_MS = 7 * 86_400_000
 /** A call that never says it finished stops counting as in flight after this. */
 export const IN_FLIGHT_TTL_MS = 10 * 60_000
+/** A lease holds budget for this long, then lapses, so a forgotten one doesn't hold it for days. */
+export const LEASE_TTL_MS = 60 * 60_000
 
 const SCHEMA = List.of(
   `CREATE TABLE IF NOT EXISTS observations (
@@ -59,7 +61,11 @@ const filterClause = (filter: SpendFilter): Clause =>
     filter.labelPrefix === undefined
       ? NO_CLAUSE
       : { sql: " AND substr(label, 1, ?) = ?", args: [filter.labelPrefix.length, filter.labelPrefix] },
-    filter.callsOnly === true ? { sql: " AND reserve = 0", args: [] } : NO_CLAUSE,
+    filter.rows === "calls"
+      ? { sql: " AND reserve = 0", args: [] }
+      : filter.rows === "leases"
+        ? { sql: " AND reserve = 1", args: [] }
+        : NO_CLAUSE,
   ).fold(NO_CLAUSE, and)
 
 const first = (rows: ReadonlyArray<Row>): Option<Row> => Option(rows[0])
@@ -147,12 +153,20 @@ export const createStore = (sql: Sql) => {
       )
     },
 
-    /** The different sessions or machines that spent against `resource` after `since`. */
-    activeScopes(kind: "machine" | "session", resource: string, since: number): ReadonlyArray<string> {
+    /** What each session or machine spent against `resource` after `since`, in one scan. */
+    costBy(
+      kind: "machine" | "session",
+      resource: string,
+      since: number,
+    ): ReadonlyArray<{ readonly who: string; readonly cost: number }> {
       return sql
-        .exec(`SELECT DISTINCT ${kind} AS who FROM spends WHERE at > ? AND resource = ?`, since, resource)
+        .exec(
+          `SELECT ${kind} AS who, SUM(cost) AS cost FROM spends WHERE at > ? AND resource = ? GROUP BY ${kind}`,
+          since,
+          resource,
+        )
         .toArray()
-        .map((row) => str(row.who))
+        .map((row) => ({ who: str(row.who), cost: num(row.cost) }))
     },
 
     spend(s: Spend): void {

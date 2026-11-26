@@ -84,14 +84,13 @@ export const createQuotaWorker = (input: QuotaConfigInput = defaultConfigInput) 
         built.set(Option(fresh))
         return fresh
       })
-      const { pathname } = new URL(request.url)
-      if (pathname.startsWith("/v1/")) {
-        if (!sameKey(bearer(request.headers.get("authorization") ?? undefined), key)) {
-          return refuse(401, "Send the broker's key as Authorization: Bearer <QUOTA_KEY>.")
-        }
-        return handleApi(request, config, ledgers)
+      // Every path needs the key, somamcp's /health and /info included: the ledger names sessions and machines.
+      if (!sameKey(bearer(request.headers.get("authorization") ?? undefined), key)) {
+        return refuse(401, "Send the broker's key as Authorization: Bearer <QUOTA_KEY>.")
       }
-      return server.fetch(request)
+      return new URL(request.url).pathname.startsWith("/v1/")
+        ? handleApi(request, config, ledgers)
+        : server.fetch(request)
     },
   }
 }

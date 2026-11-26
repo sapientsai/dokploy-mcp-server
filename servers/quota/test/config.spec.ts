@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest"
 
 import { configSchema, durationMs } from "../src/config"
 import { defaultConfig } from "../src/defaults"
-import { observationsFrom, parseGithubHeaders, parseGithubRateLimit } from "../src/parsers/github"
+import { reportedBy } from "../src/parsers"
+import { parseGithubHeaders, parseGithubRateLimit } from "../src/parsers/github"
 
 describe("config", () => {
   it("reads windows in seconds, minutes, hours and days", () => {
@@ -11,9 +12,9 @@ describe("config", () => {
     ])
   })
 
-  it("parses the defaults, with every policy but the floor and the daily warning in warn mode", () => {
+  it("parses the defaults, with every policy but the floor in warn mode", () => {
     const github = defaultConfig.services.find((s) => s.id === "github")
-    expect(github?.policies.filter((p) => p.mode === "enforce").map((p) => p.id)).toEqual(["floor", "machine-day"])
+    expect(github?.policies.filter((p) => p.mode === "enforce").map((p) => p.id)).toEqual(["floor"])
     expect(github?.probe?.http?.tokenSecret).toBe("GITHUB_PROBE_TOKEN")
   })
 
@@ -110,7 +111,11 @@ describe("GitHub parsers", () => {
   it("combines headers and a body", () => {
     const headers = { "x-ratelimit-limit": "5000", "x-ratelimit-remaining": "1", "x-ratelimit-reset": String(RESET) }
     const body = { resources: { graphql: { limit: 5000, remaining: 2, reset: RESET } } }
-    expect(observationsFrom(["core", "graphql"], headers, body).map((o) => o.resource)).toEqual(["core", "graphql"])
-    expect(observationsFrom(["core"], undefined, undefined)).toEqual([])
+    const github = defaultConfig.services.find((s) => s.id === "github")
+    if (github === undefined) throw new Error("no github")
+    expect(reportedBy(github, headers, body).map((o) => o.resource)).toEqual(["core", "graphql"])
+    expect(reportedBy(github, undefined, undefined)).toEqual([])
+    // A service with no parsers configured reads nothing.
+    expect(reportedBy({ ...github, headers: undefined, probe: undefined }, headers, body)).toEqual([])
   })
 })

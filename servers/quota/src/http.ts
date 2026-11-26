@@ -5,7 +5,7 @@ import { policiesFor, type QuotaConfig, type Service } from "./config"
 import type { StatusAnswer } from "./format"
 import type { CheckResult } from "./ledger/types"
 import { isAccount, ledgerKey, type Ledgers } from "./ledgers"
-import { observationsFrom } from "./parsers/github"
+import { reportedBy } from "./parsers"
 
 // The JSON API the hook calls on every `gh` command. It answers fast, and in words an agent can act on.
 
@@ -142,8 +142,7 @@ const route = (request: Request, config: QuotaConfig, ledgers: Ledgers): IO<neve
   if (pathname === "/v1/report") {
     return parse(request, reportBody).flatMap((body) =>
       serviceOf(config, body.service).flatMap((service) => {
-        const wanted = service.resources.map((r) => r.id)
-        const observations = observationsFrom(wanted, body.headers, body.body)
+        const observations = reportedBy(service, body.headers, body.body)
         if (observations.length === 0) {
           return IO.fail(new Refusal(422, `Nothing in that report names a ${service.id} budget.`))
         }

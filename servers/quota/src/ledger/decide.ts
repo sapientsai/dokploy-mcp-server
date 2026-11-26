@@ -1,7 +1,7 @@
 import { invariant, Option } from "functype"
 
 import { durationMs, type Policy, type Service } from "../config"
-import type { Store } from "./store"
+import { LEASE_TTL_MS, type Store } from "./store"
 import type {
   CheckRequest,
   CheckResult,
@@ -30,20 +30,25 @@ const windowMsOf = (service: Service, resource: string): number =>
   (service.resources.find((r) => r.id === resource)?.windowSeconds ?? 3600) * 1000
 
 /**
- * What's left of one budget: the last observation, less every spend since, booked slots included.
- * Past the observed reset, the budget is full again, less what was spent since that reset.
+ * What's left of one budget: the last reading, less every call since, and less every lease still
+ * outstanding, whenever it was made: a lease is a promise of calls the service hasn't seen yet, so
+ * no reading ever includes it. Past the observed reset, the budget is full again, less what was spent
+ * since that reset.
  */
 export const estimateFor = (store: Store, service: Service, resource: string, now: number): Option<Estimate> =>
   store.observation(resource).map((seen) => {
-    const fleet = { scope: { kind: "fleet" }, resource } as const
-    // Counts a spend made in the same millisecond as the reading: that call can't have reached the service yet.
-    if (now < seen.resetAt) return { ...seen, remaining: seen.remaining - store.sumCost(fleet, seen.observedAt - 1) }
+    const calls = { scope: { kind: "fleet" }, resource, rows: "calls" } as const
+    const leased = store.sumCost({ scope: { kind: "fleet" }, resource, rows: "leases" }, now - LEASE_TTL_MS)
+    // Counts a call made in the same millisecond as the reading: it can't have reached the service yet.
+    if (now < seen.resetAt) {
+      return { ...seen, remaining: seen.remaining - store.sumCost(calls, seen.observedAt - 1) - leased }
+    }
     const windowMs = windowMsOf(service, resource)
     const periods = Math.floor((now - seen.resetAt) / windowMs) + 1
     const lastReset = seen.resetAt + (periods - 1) * windowMs
     return {
       ...seen,
-      remaining: seen.limit - store.sumCost(fleet, lastReset - 1),
+      remaining: seen.limit - store.sumCost(calls, lastReset - 1) - leased,
       resetAt: seen.resetAt + periods * windowMs,
     }
   })
@@ -145,7 +150,7 @@ const evaluate = (store: Store, service: Service, policy: Policy, req: CheckRequ
     resource: policy.match?.resource,
     class: policy.match?.class,
     labelPrefix: policy.match?.label,
-    callsOnly: true,
+    rows: "calls",
   })
 
   switch (policy.kind) {
@@ -179,10 +184,11 @@ const evaluate = (store: Store, service: Service, policy: Policy, req: CheckRequ
           // The service's window, from its first millisecond.
           const windowStart = e.resetAt - windowMsOf(service, resource) - 1
           const me = policy.scope === "machine" ? req.machine : req.session
-          const others = store.activeScopes(policy.scope, resource, windowStart).filter((who) => who !== me)
+          const byWho = store.costBy(policy.scope, resource, windowStart)
+          const others = byWho.filter((w) => w.who !== me && w.cost > 0)
           if (others.length === 0) return OK
           const filter: SpendFilter = { scope: scopeOf(policy.scope, req), resource }
-          const used = store.sumCost(filter, windowStart)
+          const used = byWho.find((w) => w.who === me)?.cost ?? 0
           if (used + budgetCost <= policy.max * e.limit) return OK
           const reason = `${scopeText(filter.scope)} has taken ${used} of ${service.label} ${resource}'s ${e.limit} this window, past its ${Math.round(policy.max * 100)}% share while ${others.length} other ${policy.scope}${others.length === 1 ? " is" : "s are"} working.`
           // A share frees only when the service's window resets, too far off to hold a call for.
@@ -273,9 +279,10 @@ export const check = (
     return { ...base, decision: { kind: "allow", warnings: [] }, spendId: null }
   }
 
+  // A lease covers calls on its own budget, while it's still outstanding.
   const lease = Option(req.drawFrom)
     .flatMap((leaseId) => store.spendById(leaseId))
-    .filter((s) => s.reserve)
+    .filter((s) => s.reserve && s.resource === resource && s.at > now - LEASE_TTL_MS)
   const budgetCost = Math.max(
     0,
     req.cost -
@@ -324,16 +331,34 @@ export const check = (
   }
 }
 
-/**
- * Whether a reading may replace the estimate. The broker's own readings always may. A client's may
- * lower it, or start a new window, but not raise it within one: otherwise a refused agent could report
- * a full budget and pass the floor.
- */
-const trusted = (store: Store, service: Service, o: Observation, source: Source, now: number): boolean =>
-  source === "broker" ||
-  !estimateFor(store, service, o.resource, now).exists((e) => o.resetAt <= e.resetAt && o.remaining > e.remaining)
+/** A reading that could be true: a positive limit, remaining within it, and a reset within one window. */
+const plausible = (o: Observation, windowMs: number, now: number): boolean =>
+  o.limit > 0 &&
+  o.remaining >= 0 &&
+  o.remaining <= o.limit &&
+  o.resetAt > now - windowMs &&
+  o.resetAt <= now + windowMs + 60_000
 
-/** Records what a service said, where it may replace the estimate, and clears the probe claim. */
+/**
+ * What of a reading the ledger keeps. The broker's own readings are kept as they are. A client's may
+ * lower what's left of a live window, keeping that window's limit and reset, and may start a new
+ * window once the last one has reset, at no more than the last limit. So a refused agent can't
+ * report a full budget, a later reset or a bigger limit to pass the floor or its share.
+ */
+const accept = (store: Store, service: Service, o: Observation, source: Source, now: number): Option<Observation> => {
+  if (!plausible(o, windowMsOf(service, o.resource), now)) return Option.none()
+  if (source === "broker") return Option(o)
+  return store.observation(o.resource).fold(
+    () => Option(o),
+    (stored) => {
+      if (now >= stored.resetAt) return o.limit <= stored.limit ? Option(o) : Option.none()
+      const lower = estimateFor(store, service, o.resource, now).exists((e) => o.remaining <= e.remaining)
+      return lower ? Option({ ...o, limit: stored.limit, resetAt: stored.resetAt }) : Option.none()
+    },
+  )
+}
+
+/** Records what a service said, as far as `accept` allows, and clears the probe claim. */
 export const observe = (
   store: Store,
   service: Service,
@@ -342,7 +367,9 @@ export const observe = (
   now: number,
 ): number => {
   const known = service.resources.map((r) => r.id)
-  const kept = observations.filter((o) => known.includes(o.resource) && trusted(store, service, o, source, now))
+  const kept = observations
+    .filter((o) => known.includes(o.resource))
+    .flatMap((o) => accept(store, service, o, source, now).toArray())
   kept.forEach((o) => store.observe({ ...o, observedAt: now, source }))
   if (kept.length > 0) store.setMeta(PROBE_CLAIM_KEY, "0")
   return kept.length

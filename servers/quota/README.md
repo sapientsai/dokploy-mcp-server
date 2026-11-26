@@ -24,7 +24,7 @@ A refusal says which policy refused, why, and when to try again, in words an age
 ## Where the numbers come from
 
 - **Your own limits** are counted exactly, from the checks themselves.
-- **The service's budget** comes from the service. When the Worker holds `GITHUB_PROBE_TOKEN`, the broker reads `GET /rate_limit` itself, at most once a minute and only when its reading is stale. That call is free, and it sees spending the hook never does: CI, your own `gh` use, other apps. Give it a fine-grained token with no repository access; every token of yours sees the same budget.
+- **The service's budget** comes from the service. When the Worker holds `GITHUB_PROBE_TOKEN`, the broker reads `GET /rate_limit` itself, at most once a minute, only when its reading is stale, and after answering, so no check waits on it. That call is free, and it sees spending the hook never does: CI, your own `gh` use, other apps. Give it a fine-grained token with no repository access; every token of yours sees the same budget.
 - **Without that token,** the broker asks one client at a time to run `gh api rate_limit` and report, and clients can report any response's `x-ratelimit-*` headers. Between readings, it subtracts each call it allowed.
 
 ## Policies
@@ -32,7 +32,7 @@ A refusal says which policy refused, why, and when to try again, in words an age
 Policies live in the Worker's config, so a change is a reviewed commit. Nothing a client sends can loosen a limit:
 
 - **No tool changes a policy.**
-- **A client's reading can lower the estimate, or start a new window, but not raise it within one.** The broker's own readings may do either.
+- **A client's reading can only lower what's left of a live window,** keeping that window's limit and reset. It can start a new window only once the last one has reset, at no more than the last limit. The broker's own readings are taken as they are. Readings that can't be true (remaining over the limit, a reset more than a window off) are refused from anyone.
 - **Only a lease can be changed after the fact, and only lowered.** Nothing changes the record of a call.
 
 The broker governs agents that cooperate: an agent can skip the hook, and the hook lets calls through when the broker can't be reached.
@@ -49,7 +49,7 @@ The broker governs agents that cooperate: an agent can skip the hook, and the ho
 - **`action`:** `deny` (the default), `delay` (hold up to `maxDelayMs`, default 10 s, then refuse), or `warn`.
 - **`mode`:** `enforce` (the default), `warn` (say what it would have done, do nothing) or `off`.
 
-The defaults for GitHub sit well under GitHub's own secondary limits, which allow "No more than 100 concurrent requests" and "no more than 80 content-generating requests per minute and no more than 500 content-generating requests per hour". Everything but the floor and the daily warning starts in `warn` mode, so a first week shows what they would have stopped.
+The defaults for GitHub sit well under GitHub's own secondary limits, which allow "No more than 100 concurrent requests" and "no more than 80 content-generating requests per minute and no more than 500 content-generating requests per hour". Everything but the floor starts in `warn` mode, so a first week shows what they would have stopped.
 
 | Policy           | Default                                                  |
 | ---------------- | -------------------------------------------------------- |
@@ -62,11 +62,10 @@ The defaults for GitHub sit well under GitHub's own secondary limits, which allo
 | `writes-hour`    | 300 writes an hour                                       |
 | `in-flight`      | 10 calls at once across the fleet, held past that        |
 | `loop`           | the same command 20 times in 10 minutes from one session |
-| `machine-day`    | warn past 20,000 calls a day from one machine            |
 
 ## Leases
 
-Before a batch, such as a script that will make 200 calls, `quota_acquire` reserves budget and returns a lease. A lease is checked against the budget (`floor`, `share`), not the per-call limits, which its calls meet one at a time. Pass the lease to `/v1/check` with each call, and the call draws from it, so the budget counts it once. `quota_release` lowers a lease to what it used.
+Before a batch, such as a script that will make 200 calls, `quota_acquire` reserves budget and returns a lease. A lease is checked against the budget (`floor`, `share`), not the per-call limits, which its calls meet one at a time. Pass the lease to `/v1/check` with each call on the same budget, and the call draws from it, so the budget counts it once. A lease counts against the budget until it's used, released or an hour old, even across fresh readings, since the service can't have seen its calls yet. `quota_release` lowers a lease to what it used.
 
 ## Tools
 
@@ -126,7 +125,7 @@ Clients connect to `/mcp` with the same bearer key, for example `claude mcp add 
 
 ## What it costs to run
 
-Each `gh` call costs about 2 Durable Object requests and 6 rows written, and each check reads the rows in every window its policies count. At 10,000 calls a day, that's about 140 million rows read with the default policies, against the Workers Free plan's 5 million. **Plan on Workers Paid**, which includes 25 billion rows read a month. Past a free limit, Cloudflare fails the operation, and the hook then lets calls through ungoverned. The spec has the breakdown.
+Each `gh` call costs about 2 Durable Object requests and 6 rows written, and each check reads the rows in every window its policies count. At 10,000 calls a day, that's about 27 million rows read with the default policies, against the Workers Free plan's 5 million; a day-long window would add the day's calls to every check. **Plan on Workers Paid**, which includes 25 billion rows read a month. Past a free limit, Cloudflare fails the operation, and the hook then lets calls through ungoverned. The spec has the breakdown.
 
 ## Development
 

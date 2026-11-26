@@ -7,7 +7,7 @@ import { policiesFor, type QuotaConfig, type Service } from "./config"
 import { formatCheck, formatPolicies, formatStatus, type StatusAnswer } from "./format"
 import type { CheckResult } from "./ledger/types"
 import { isAccount, ledgerKey, type Ledgers } from "./ledgers"
-import { observationsFrom } from "./parsers/github"
+import { reportedBy } from "./parsers"
 
 const serviceParam = z.string().min(1).describe("The service id, such as github. quota_services lists them.")
 const accountParam = z
@@ -233,8 +233,7 @@ export function registerQuotaTools(server: SomaServerInstance, config: QuotaConf
             checkAccount(args.account).map((account) => ({ service, key: ledgerKey(service.id, account) })),
           ),
         ).flatMap(({ service, key }) => {
-          const wanted = service.resources.map((r) => r.id)
-          const observations = observationsFrom(wanted, args.headers, args.body)
+          const observations = reportedBy(service, args.headers, args.body)
           if (observations.length === 0) {
             return IO.fail(new UserError(`Nothing in that report names a ${service.id} budget.`))
           }

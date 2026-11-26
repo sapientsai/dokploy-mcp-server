@@ -40,13 +40,3 @@ export const parseGithubHeaders = (
     ? [{ resource, limit, remaining, resetAt: reset * 1000 }]
     : []
 }
-
-/** Everything a report says, from a response's headers, a status endpoint's body, or both. */
-export const observationsFrom = (
-  wanted: ReadonlyArray<string>,
-  headers: Readonly<Record<string, string>> | undefined,
-  body: unknown,
-): ReadonlyArray<Observation> =>
-  (headers === undefined ? [] : parseGithubHeaders(headers, wanted)).concat(
-    body === undefined ? [] : parseGithubRateLimit(body, wanted),
-  )

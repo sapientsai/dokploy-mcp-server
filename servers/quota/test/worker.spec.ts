@@ -101,6 +101,31 @@ const callTool = async (
   return { status: 200, text: reply.result?.content?.map((c) => c.text).join("\n") ?? raw }
 }
 
+/** Polls until `ready`, for work the broker finishes after answering. */
+const waitFor = async (ready: () => boolean, ms = 5000): Promise<void> => {
+  const deadline = Date.now() + ms
+  while (!ready()) {
+    if (Date.now() > deadline) throw new Error("timed out")
+    await new Promise((resolve) => setTimeout(resolve, 20))
+  }
+}
+
+const waitForCheck = async (
+  body: Record<string, unknown>,
+  ready: (answer: Record<string, unknown>) => boolean,
+): Promise<Record<string, unknown>> => {
+  const answers: Array<Record<string, unknown>> = []
+  await waitFor(() => false, 0).catch(() => undefined)
+  const deadline = Date.now() + 5000
+  while (Date.now() < deadline) {
+    const answer = await checkCall(body)
+    answers.push(answer)
+    if (ready(answer)) return answer
+    await new Promise((resolve) => setTimeout(resolve, 50))
+  }
+  throw new Error(`never ready: ${JSON.stringify(answers.at(-1))}`)
+}
+
 describe("keys", () => {
   it("refuses everything while QUOTA_KEY is unset", async () => {
     const response = await unkeyed.dispatchFetch("http://quota.test/v1/check", { method: "POST", body: "{}" })
@@ -112,21 +137,31 @@ describe("keys", () => {
     expect((await post("/v1/check", {}, "wrong")).status).toBe(401)
     expect((await callTool("quota_services", {}, "wrong")).status).toBe(401)
   })
+
+  it("refuses somamcp's own endpoints without the key", async () => {
+    expect((await mf.dispatchFetch("http://quota.test/health")).status).toBe(401)
+    expect((await mf.dispatchFetch("http://quota.test/info")).status).toBe(401)
+  })
 })
 
 describe("the hook's API", () => {
-  it("reads GitHub itself on the first check, with its token, then counts each call", async () => {
+  it("reads GitHub itself in the background, with its token, then counts each call", async () => {
     github.remaining = 4321
+    const before = github.requests.length
+    // The first check answers at once, with no reading yet; the broker reads GitHub after answering.
     const first = await checkCall({ account: "octo", resource: "core" })
-    expect(first).toMatchObject({ decision: "allow", resource: "core", remaining: 4321, probe: null })
+    expect(first).toMatchObject({ decision: "allow", resource: "core", remaining: null })
+    await waitFor(() => github.requests.length > before)
     expect(github.requests.at(-1)).toEqual({ auth: `Bearer ${PROBE_TOKEN}`, agent: "quota-mcp-server" })
-    const second = await checkCall({ account: "octo", resource: "core" })
+    // The reading is stamped when the probe started, so the first call still counts.
+    const second = await waitForCheck({ account: "octo", resource: "core" }, (a) => a.remaining !== null)
     expect(second).toMatchObject({ decision: "allow", remaining: 4320 })
   })
 
   it("refuses an agent's call under the floor, with when to retry", async () => {
     github.remaining = 900
-    const answer = await checkCall({ account: "low", resource: "core" })
+    await checkCall({ account: "low", resource: "core" })
+    const answer = await waitForCheck({ account: "low", resource: "core" }, (a) => a.decision === "deny")
     expect(answer).toMatchObject({ decision: "deny", policy: "floor" })
     expect(String(answer.reason)).toContain("under the 1000 kept for the owner")
     expect(answer.retryAt).toBe(new Date(RESET * 1000).toISOString())

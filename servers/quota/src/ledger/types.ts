@@ -49,8 +49,8 @@ export type SpendFilter = {
   readonly resource?: string
   readonly class?: CallClass
   readonly labelPrefix?: string
-  /** Leave out reservations, as per-call limits do. */
-  readonly callsOnly?: boolean
+  /** Only calls (per-call limits), only leases (what's reserved), or both (the default). */
+  readonly rows?: "calls" | "leases"
 }
 
 export type Spend = {

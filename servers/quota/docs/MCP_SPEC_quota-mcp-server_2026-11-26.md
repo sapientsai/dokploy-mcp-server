@@ -26,7 +26,7 @@ Not goals: proxying writes, holding any credential beyond an optional read-only 
        └──(MCP tools)──────────────────────────────► /mcp ─────────┘
 ```
 
-- **The broker** is a Cloudflare Worker built on somamcp (WinterTC entry only, as `servers/temporal` does), with a SQLite-backed Durable Object per ledger key `service:account`. A Durable Object handles one request at a time, so every check sees every spend before it. SQLite-backed Durable Objects are on the Workers Free plan (Cloudflare's pricing page: "Workers Free plan: Only Durable Objects with SQLite storage backend are available"), with 5 GB of storage for the account; a ledger needs kilobytes.
+- **The broker** is a Cloudflare Worker built on somamcp (WinterTC entry only, as `servers/temporal` does), with a SQLite-backed Durable Object per ledger key `service:account`. A Durable Object runs one request's code at a time, and a check runs without awaiting anything, so every check sees every spend before it. SQLite-backed Durable Objects are on the Workers Free plan (Cloudflare's pricing page: "Workers Free plan: Only Durable Objects with SQLite storage backend are available"), with 5 GB of storage for the account; a ledger needs kilobytes.
 - **Two doors on one Worker:** `/mcp` for the MCP tools, and a small JSON API (`/v1/check`, `/v1/report`) for the hook, which runs on every Bash call and must answer fast.
 - **Auth:** one bearer key, `QUOTA_KEY`, set with `wrangler secret put` and kept on each machine in envpkt beside `QUOTA_URL`. Without the secret set, the Worker refuses every request rather than run open.
 - **The hook** is a Claude Code `PreToolUse` hook on `Bash`, shipped in the owner's dotfiles so every machine gets it.
@@ -92,8 +92,6 @@ A **policy** is one limit the owner sets. Every check runs every policy that mat
   { "id": "in-flight", "kind": "concurrency", "scope": "fleet", "max": 10, "action": "delay" },
   // The same command from one session more than 20 times in 10 minutes is a loop.
   { "id": "loop", "kind": "repeat", "scope": "session", "max": 20, "per": "10m" },
-  // A machine spending more than 20,000 in a day: say so, but don't stop it.
-  { "id": "machine-day", "kind": "rate", "scope": "machine", "max": 20000, "per": "1d", "action": "warn" },
 ]
 ```
 
@@ -118,7 +116,7 @@ A **policy** is one limit the owner sets. Every check runs every policy that mat
 
 - **The owner's own limits are exact.** Rates, calls in flight, shares and repeats are counted from the checks themselves; no service is asked.
 - **The service's budget comes from the service,** because tallies alone drift: CI, the owner's own `gh` use and other apps spend the same budget without passing the hook, and one `gh` command can make several calls.
-  - **The broker's own probe,** when the Worker holds the secret `probe.http.tokenSecret` names. For GitHub that's `GET /rate_limit`, which is free, and a fine-grained token with no repository access sees the same budget as every other token of the user. The broker reads it at most once per `staleAfterSeconds`, only when its reading is stale, with a 500 ms timeout, so a check never waits long on it.
+  - **The broker's own probe,** when the Worker holds the secret `probe.http.tokenSecret` names. For GitHub that's `GET /rate_limit`, which is free, and a fine-grained token with no repository access sees the same budget as every other token of the user. The broker reads it at most once per `staleAfterSeconds`, only when its reading is stale, and after answering the check that found it stale, so a check never waits on it. The reading is dated when the probe started, so calls allowed while it was in flight still count, and the fetch doesn't follow redirects, so the token goes nowhere else.
   - **Clients,** otherwise. When the ledger is stale, a check answers with `probe`, a command to run and report; the broker asks one client at a time, at most every 30 seconds. Clients can also report any response's `x-ratelimit-*` headers.
   - **Between readings,** each allowed call comes off the last reading.
 
@@ -127,7 +125,7 @@ A **policy** is one limit the owner sets. Every check runs every policy that mat
 The broker governs agents that cooperate: an agent can skip the hook (`QUOTA_HOOK=off`, or calls outside Bash), and the hook fails open. Within that, nothing a client sends can loosen a limit:
 
 - **No tool changes a policy.** Policies come only from the deploy config.
-- **A client's reading can lower the estimate, or start a new window, but not raise it within one.** The broker's own readings may do either. So a refused agent can't report a full budget to pass the floor.
+- **A client's reading can only lower what's left of a live window,** keeping that window's limit and reset. It can start a new window only once the last one has reset, at no more than the last limit. The broker's own readings are taken as they are. Readings that can't be true (remaining over the limit, a reset more than a window off) are refused from anyone. So a refused agent can't report a full budget, a later reset or a bigger limit to pass the floor or its share.
 - **Only leases can be changed after the fact, and only lowered.** `quota_release` and a call drawing from a lease can reduce a lease; nothing can change the record of a call.
 
 ## The ledger
@@ -141,7 +139,7 @@ Per Durable Object (`service:account`):
 
 ## Leases
 
-`quota_acquire` reserves budget for a batch, such as a script that will make 200 calls. A lease is checked against the budget, the `floor` and `share` policies, and not against per-call limits, since a 200-call lease would never fit a 2-a-second rate. Its calls meet those limits one at a time as they run. A call that passes its lease to `/v1/check` draws from it: the lease drops by the call's cost, so the budget counts the call once. `quota_release` lowers a lease to what it used.
+`quota_acquire` reserves budget for a batch, such as a script that will make 200 calls. A lease is checked against the budget, the `floor` and `share` policies, and not against per-call limits, since a 200-call lease would never fit a 2-a-second rate. Its calls meet those limits one at a time as they run. A call on the same budget that passes its lease to `/v1/check` draws from it: the lease drops by the call's cost, so the budget counts the call once. An outstanding lease comes off the estimate whatever its date, because no reading includes calls the service hasn't seen; it lapses after an hour, so a forgotten one doesn't hold budget for the 7 days rows are kept. `quota_release` lowers a lease to what it used.
 
 ## Deciding a check
 
@@ -165,7 +163,7 @@ A deny reaches the agent as the hook's `permissionDecisionReason`, so it reads, 
 - **Prices known loops:** `gh run watch` without an `--interval` of 30 or more is denied outright, since its 3-second default polls about 1,200 times an hour. A command it can't price costs 1.
 - **Waits when told to:** a `delay` answer holds the call for at most `maxDelayMs`, then lets it run. The hook's own timeout in the settings is set above that.
 - **Draws from a lease** when the session holds one, passing it as `lease`.
-- **Fails open:** 800 ms timeout on the check itself, and any error lets the call through. It tells the user once per session that the broker was unreachable. The broker's own probe is capped at 500 ms to stay inside that.
+- **Fails open:** 800 ms timeout on the check itself, and any error lets the call through. It tells the user once per session that the broker was unreachable. The broker's own probe runs after the check answers, so it never adds to that time.
 - **Probes when asked,** in the background, so the agent's call isn't held up.
 - **Off switch:** `QUOTA_HOOK=off`.
 
@@ -196,18 +194,18 @@ The package publishes from this monorepo like the others. Following temporal, th
 
 Cloudflare's Workers Free plan (read 2026-11-26) allows 100,000 Durable Object requests, 5 million rows read and 100,000 rows written a day, and fails further operations of a type past its limit. The hook fails open, so past a limit governance silently stops.
 
-Per `gh` call: about 2 Durable Object requests (the check, and the finish when it sends a `callId`) and about 6 rows written. Rows read is the binding limit, because each check scans every window its policies count: with the defaults, about three times the last hour's calls, plus the day's calls for `machine-day`, plus a few hundred for the short windows.
+Per `gh` call: about 2 Durable Object requests (the check, and the finish when it sends a `callId`) and about 6 rows written. Rows read is the binding limit, because each check scans every window its policies count: with the defaults, about twice the last hour's calls (`writes-hour` and `session-share`), plus a few hundred for the short windows. A day-long window would add the whole day's calls to every check, which is why the defaults have none.
 
-| Day                              | Requests | Rows written | Rows read    |
-| -------------------------------- | -------- | ------------ | ------------ |
-| 10,000 calls, 1,000 at peak hour | 20,000   | 60,000       | ~140 million |
-| Free plan                        | 100,000  | 100,000      | 5 million    |
+| Day                              | Requests | Rows written | Rows read   |
+| -------------------------------- | -------- | ------------ | ----------- |
+| 10,000 calls, 1,000 at peak hour | 20,000   | 60,000       | ~27 million |
+| Free plan                        | 100,000  | 100,000      | 5 million   |
 
 So the free plan fits only light use. Workers Paid includes 25 billion rows read and 50 million rows written a month, which covers this many times over. Running counters for the hour and day windows would cut rows read by about a hundred times; that's the first follow-up if the broker has to fit the free plan.
 
 ## Open questions
 
-- **Default policies:** the example under Governance: a floor of 1,000; the fleet at 60 a minute and 5 a second; a session at 2 a second and 40% of a window; writes at 40 a minute and 300 an hour; 10 in flight; loops at 20 in 10 minutes; a warning past 20,000 a day per machine.
+- **Default policies:** the example under Governance: a floor of 1,000; the fleet at 60 a minute and 5 a second; a session at 2 a second and 40% of a window; writes at 40 a minute and 300 an hour; 10 in flight; loops at 20 in 10 minutes.
 - **First week:** every policy except the floor in `warn` mode, then `enforce`?
 - **Names in the ledger:** sessions are recorded by `session_id` and machine hostname. That stays in the owner's own Worker, but it is still personal data; keep 7 days?
 - **Other accounts:** each account is its own ledger key (`github:<login>`), so sessions signed in as different GitHub users never share or see each other's budget.

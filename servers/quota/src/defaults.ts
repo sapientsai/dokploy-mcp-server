@@ -51,7 +51,6 @@ export const defaultConfigInput: QuotaConfigInput = {
         },
         { id: "in-flight", kind: "concurrency", scope: "fleet", max: 10, action: "delay", mode: "warn" },
         { id: "loop", kind: "repeat", scope: "session", max: 20, per: "10m", mode: "warn" },
-        { id: "machine-day", kind: "rate", scope: "machine", max: 20_000, per: "1d", action: "warn" },
       ],
     },
   ],

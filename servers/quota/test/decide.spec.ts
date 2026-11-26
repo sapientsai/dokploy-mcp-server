@@ -362,30 +362,104 @@ describe("leases", () => {
 })
 
 describe("reports", () => {
-  const report = (l: Ledger, remaining: number, source: "probe" | "broker", resetAt = T0 + HOUR, at = T0 + 1000) =>
-    observe(l.store, l.service, [{ resource: "core", limit: 5000, remaining, resetAt }], source, at)
-  const left = (l: Ledger) => estimateFor(l.store, l.service, "core", T0 + 2000).orNull()?.remaining
+  const report = (
+    l: Ledger,
+    o: { remaining: number; limit?: number; resetAt?: number },
+    source: "probe" | "broker",
+    at = T0 + 1000,
+  ) =>
+    observe(
+      l.store,
+      l.service,
+      [{ resource: "core", limit: o.limit ?? 5000, remaining: o.remaining, resetAt: o.resetAt ?? T0 + HOUR }],
+      source,
+      at,
+    )
+  const left = (l: Ledger, at = T0 + 2000) => estimateFor(l.store, l.service, "core", at).orNull()
 
   it("won't let a client raise the estimate within a window", () => {
     const l = ledger()
     seen(l, 1200)
-    expect(report(l, 5000, "probe")).toBe(0)
-    expect(left(l)).toBe(1200)
+    expect(report(l, { remaining: 5000 }, "probe")).toBe(0)
+    expect(left(l)?.remaining).toBe(1200)
   })
 
-  it("lets a client lower it, or start the next window", () => {
+  it("won't let a client raise it by claiming a later reset", () => {
+    const l = ledger()
+    seen(l, 900)
+    expect(report(l, { remaining: 5000, resetAt: T0 + HOUR + 1000 }, "probe")).toBe(0)
+    expect(left(l)?.remaining).toBe(900)
+  })
+
+  it("keeps the window's limit and reset when a client lowers what's left", () => {
     const l = ledger()
     seen(l, 1200)
-    expect(report(l, 900, "probe")).toBe(1)
-    expect(left(l)).toBe(900)
-    expect(report(l, 5000, "probe", T0 + 2 * HOUR)).toBe(1)
-    expect(left(l)).toBe(5000)
+    // A bigger limit and a later reset come with it; the ledger keeps only the lower count.
+    expect(report(l, { remaining: 800, limit: 1_000_000_000, resetAt: T0 + HOUR + 5000 }, "probe")).toBe(1)
+    expect(left(l)).toMatchObject({ remaining: 800, limit: 5000, resetAt: T0 + HOUR })
+  })
+
+  it("refuses readings that can't be true, from anyone", () => {
+    const l = ledger()
+    expect(report(l, { remaining: 6000 }, "broker")).toBe(0)
+    expect(report(l, { remaining: -1 }, "broker")).toBe(0)
+    expect(report(l, { remaining: 10, resetAt: T0 + 10 * HOUR }, "broker")).toBe(0)
+  })
+
+  it("lets a client start the next window once the last one reset, at no more than its limit", () => {
+    const l = ledger()
+    seen(l, 1200)
+    const after = T0 + HOUR + 1000
+    expect(report(l, { remaining: 5000, limit: 9000, resetAt: T0 + 2 * HOUR }, "probe", after)).toBe(0)
+    expect(report(l, { remaining: 4999, resetAt: T0 + 2 * HOUR }, "probe", after)).toBe(1)
+    expect(left(l, after + 1)?.remaining).toBe(4999)
   })
 
   it("takes the broker's own reading either way", () => {
     const l = ledger()
     seen(l, 1200)
-    expect(report(l, 4000, "broker")).toBe(1)
-    expect(left(l)).toBe(4000)
+    expect(report(l, { remaining: 4000 }, "broker")).toBe(1)
+    expect(left(l)?.remaining).toBe(4000)
+  })
+})
+
+describe("leases and readings", () => {
+  it("keeps counting a lease after a fresh reading, so its calls still meet the floor", () => {
+    const l = ledger([{ id: "floor", kind: "floor", keep: 1000 }])
+    seen(l, 5000)
+    const { spendId: lease } = l.run({ session: "batch", cost: 3000, label: "lease: batch", reserve: true })
+    // A reading after the lease: the service hasn't seen the lease's calls, so it still says 5000.
+    observe(
+      l.store,
+      l.service,
+      [{ resource: "core", limit: 5000, remaining: 5000, resetAt: T0 + HOUR }],
+      "broker",
+      T0 + 10,
+    )
+    expect(estimateFor(l.store, l.service, "core", T0 + 11).orNull()?.remaining).toBe(2000)
+    // Another session spends down to the floor; the lease's calls then still fit, and nothing more does.
+    expect(l.run({ session: "other", cost: 1000 }, T0 + 20).decision.kind).toBe("allow")
+    expect(l.run({ session: "other", cost: 1 }, T0 + 21).decision.kind).toBe("deny")
+    expect(l.run({ session: "batch", cost: 3000, drawFrom: lease ?? "" }, T0 + 30).decision.kind).toBe("allow")
+    expect(estimateFor(l.store, l.service, "core", T0 + 31).orNull()?.remaining).toBe(1000)
+  })
+
+  it("lets a lease lapse after an hour", () => {
+    const l = ledger()
+    seen(l, 5000)
+    l.run({ cost: 3000, label: "lease: forgotten", reserve: true })
+    expect(estimateFor(l.store, l.service, "core", T0 + 1).orNull()?.remaining).toBe(2000)
+    // An hour on, the lease no longer holds budget: without the lapse, this would still read 2000.
+    expect(estimateFor(l.store, l.service, "core", T0 + HOUR + 1).orNull()?.remaining).toBe(5000)
+  })
+
+  it("doesn't let a lease on one budget cover a call on another", () => {
+    const l = ledger([{ id: "floor", kind: "floor", keep: 1000 }])
+    seen(l, 5000, T0, T0 + HOUR, "core")
+    seen(l, 1000, T0, T0 + HOUR, "graphql")
+    const { spendId: lease } = l.run({ resource: "core", cost: 100, label: "lease: core", reserve: true })
+    const call = l.run({ resource: "graphql", cost: 1, drawFrom: lease ?? "" })
+    expect(call.decision).toMatchObject({ kind: "deny", policy: "floor" })
+    expect(l.store.spendById(lease ?? "").orNull()?.cost).toBe(100)
   })
 })

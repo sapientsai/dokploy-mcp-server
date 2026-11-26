@@ -1,17 +1,14 @@
 import { IO, Option, Try, type Wire } from "functype"
 
 import type { Policy, Service } from "../config"
-import { parseGithubRateLimit } from "../parsers/github"
+import { parseProbe } from "../parsers"
 import { check, estimateFor, observe } from "./decide"
 import { createStore, type Sql, type Store } from "./store"
 import type { CheckRequest, Observation } from "./types"
 import { policyUsage } from "./usage"
 
-/**
- * How long the broker waits on a service's status endpoint before giving up for this check. A check
- * waits on it, so it stays well under the hook's own timeout; a slow probe just tries again next window.
- */
-const BROKER_PROBE_TIMEOUT_MS = 500
+/** How long the broker waits on a service's status endpoint. A check never waits on it. */
+const BROKER_PROBE_TIMEOUT_MS = 2_000
 const BROKER_PROBE_KEY = "broker-probe-at"
 const ACCOUNTS_KEY = "accounts"
 
@@ -80,21 +77,15 @@ const brokerProbe = (store: Store, service: Service, env: Env, now: number): IO<
                 authorization: `Bearer ${token}`,
                 "user-agent": "quota-mcp-server",
               },
+              // The token goes to this URL only: a redirect comes back as a 3xx, which isn't ok, and isn't followed.
+              redirect: "manual",
               signal: AbortSignal.timeout(BROKER_PROBE_TIMEOUT_MS),
             }).then((response) => (response.ok ? (response.json() as Promise<unknown>) : undefined)),
           catch: () => undefined,
         })
           .map((body) => {
-            observe(
-              store,
-              service,
-              parseGithubRateLimit(
-                body,
-                service.resources.map((r) => r.id),
-              ),
-              "broker",
-              Date.now(),
-            )
+            // Stamped when the probe started: calls allowed while it was in flight still count.
+            observe(store, service, parseProbe(service, body), "broker", now)
           })
           .recover(undefined)
       },
@@ -120,14 +111,16 @@ export class QuotaLedger {
     const message = (await request.json()) as LedgerMessage
     const now = Date.now()
     switch (message.op) {
-      case "check":
-        await brokerProbe(this.store, message.service, this.env, now).runOrThrow()
-        return json(
-          check(this.store, message.service, message.policies, message.request, {
-            now: Date.now(),
-            id: crypto.randomUUID(),
-          }),
-        )
+      case "check": {
+        // Answer on the estimate as it stands; a stale one is refreshed in the background, so a
+        // check never waits on the service. The object stays alive until the probe settles.
+        const result = check(this.store, message.service, message.policies, message.request, {
+          now,
+          id: crypto.randomUUID(),
+        })
+        void brokerProbe(this.store, message.service, this.env, now).runOrThrow()
+        return json(result)
+      }
       case "finish":
         this.store.finish(message.callId)
         return json({ ok: true })
