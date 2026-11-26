@@ -29,7 +29,13 @@ A refusal says which policy refused, why, and when to try again, in words an age
 
 ## Policies
 
-Policies live in the Worker's config, so a change is a reviewed commit. **No tool can change them**, so an agent that gets refused can't loosen the limit that refused it.
+Policies live in the Worker's config, so a change is a reviewed commit. Nothing a client sends can loosen a limit:
+
+- **No tool changes a policy.**
+- **A client's reading can lower the estimate, or start a new window, but not raise it within one.** The broker's own readings may do either.
+- **Only a lease can be changed after the fact, and only lowered.** Nothing changes the record of a call.
+
+The broker governs agents that cooperate: an agent can skip the hook, and the hook lets calls through when the broker can't be reached.
 
 | Kind          | Limits                                                                | Scopes                  |
 | ------------- | --------------------------------------------------------------------- | ----------------------- |
@@ -57,6 +63,10 @@ The defaults for GitHub sit well under GitHub's own secondary limits, which allo
 | `in-flight`      | 10 calls at once across the fleet, held past that        |
 | `loop`           | the same command 20 times in 10 minutes from one session |
 | `machine-day`    | warn past 20,000 calls a day from one machine            |
+
+## Leases
+
+Before a batch, such as a script that will make 200 calls, `quota_acquire` reserves budget and returns a lease. A lease is checked against the budget (`floor`, `share`), not the per-call limits, which its calls meet one at a time. Pass the lease to `/v1/check` with each call, and the call draws from it, so the budget counts it once. `quota_release` lowers a lease to what it used.
 
 ## Tools
 
@@ -113,6 +123,10 @@ wrangler secret put GITHUB_PROBE_TOKEN   # optional: lets the broker read /rate_
 ```
 
 Clients connect to `/mcp` with the same bearer key, for example `claude mcp add --transport http quota https://<your-worker>/mcp --header "Authorization: Bearer $QUOTA_KEY"`.
+
+## What it costs to run
+
+Each `gh` call costs about 2 Durable Object requests and 6 rows written, and each check reads the rows in every window its policies count. At 10,000 calls a day, that's about 140 million rows read with the default policies, against the Workers Free plan's 5 million. **Plan on Workers Paid**, which includes 25 billion rows read a month. Past a free limit, Cloudflare fails the operation, and the hook then lets calls through ungoverned. The spec has the breakdown.
 
 ## Development
 

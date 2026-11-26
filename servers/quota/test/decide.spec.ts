@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { configSchema, type Policy, type QuotaConfigInput, type Service } from "../src/config"
+import { defaultConfig } from "../src/defaults"
 import { check, estimateFor, observe, slotFreesAt, when } from "../src/ledger/decide"
 import { createStore, RETENTION_MS, type Store } from "../src/ledger/store"
 import type { CheckRequest, CheckResult } from "../src/ledger/types"
@@ -303,11 +304,88 @@ describe("retention", () => {
     expect(l.store.spendById("spend-2").isSome()).toBe(true)
   })
 
-  it("lets a lease's cost be set to what it used", () => {
+  it("never lets a non-lease spend be changed", () => {
     const l = ledger()
-    const { spendId } = l.run({ cost: 200, label: "lease: backfill" })
-    expect(l.store.setCost(spendId ?? "", 37)).toBe(true)
+    const { spendId } = l.run({ cost: 5 })
+    expect(l.store.lowerLease(spendId ?? "", 0)).toBe(false)
+    expect(l.store.spendById(spendId ?? "").orNull()?.cost).toBe(5)
+    expect(l.store.lowerLease("gone", 1)).toBe(false)
+  })
+})
+
+describe("leases", () => {
+  /** The shipped GitHub defaults, every policy enforcing. */
+  const enforcedDefaults = (): Ledger => {
+    const github = defaultConfig.services.find((s) => s.id === "github")
+    const policies = (github?.policies ?? []).map((p) => ({ ...p, mode: "enforce" as const }))
+    return ledger(policies)
+  }
+
+  it("grants a 200-call batch under the shipped defaults, all enforcing", () => {
+    const l = enforcedDefaults()
+    seen(l, 5000)
+    const r = l.run({ cost: 200, label: "lease: backfill", reserve: true })
+    expect(r.decision.kind).toBe("allow")
+    // The reservation doesn't use up the per-call limits: the next call goes through.
+    expect(l.run({ label: "gh pr view" }, T0 + 1000).decision.kind).toBe("allow")
+  })
+
+  it("still refuses a batch that would take the budget under the floor", () => {
+    const l = enforcedDefaults()
+    seen(l, 1100)
+    expect(l.run({ cost: 200, label: "lease: backfill", reserve: true }).decision).toMatchObject({
+      kind: "deny",
+      policy: "floor",
+    })
+  })
+
+  it("counts a call that draws from a lease once, moving cost from the lease to the call", () => {
+    const l = ledger([{ id: "floor", kind: "floor", keep: 1000 }])
+    seen(l, 1100)
+    const { spendId: lease } = l.run({ cost: 100, label: "lease: batch", reserve: true })
+    expect(estimateFor(l.store, l.service, "core", T0).orNull()?.remaining).toBe(1000)
+    // Without the lease this call would cross the floor; drawing from it, it doesn't.
+    const call = l.run({ cost: 3, drawFrom: lease ?? "" }, T0 + 1)
+    expect(call.decision.kind).toBe("allow")
+    expect(l.store.spendById(lease ?? "").orNull()?.cost).toBe(97)
+    expect(estimateFor(l.store, l.service, "core", T0 + 2).orNull()?.remaining).toBe(1000)
+  })
+
+  it("lowers a lease to what it used, and never raises one", () => {
+    const l = ledger()
+    const { spendId } = l.run({ cost: 200, label: "lease: backfill", reserve: true })
+    expect(l.store.lowerLease(spendId ?? "", 37)).toBe(true)
     expect(l.store.spendById(spendId ?? "").orNull()?.cost).toBe(37)
-    expect(l.store.setCost("gone", 1)).toBe(false)
+    expect(l.store.lowerLease(spendId ?? "", 500)).toBe(true)
+    expect(l.store.spendById(spendId ?? "").orNull()?.cost).toBe(37)
+  })
+})
+
+describe("reports", () => {
+  const report = (l: Ledger, remaining: number, source: "probe" | "broker", resetAt = T0 + HOUR, at = T0 + 1000) =>
+    observe(l.store, l.service, [{ resource: "core", limit: 5000, remaining, resetAt }], source, at)
+  const left = (l: Ledger) => estimateFor(l.store, l.service, "core", T0 + 2000).orNull()?.remaining
+
+  it("won't let a client raise the estimate within a window", () => {
+    const l = ledger()
+    seen(l, 1200)
+    expect(report(l, 5000, "probe")).toBe(0)
+    expect(left(l)).toBe(1200)
+  })
+
+  it("lets a client lower it, or start the next window", () => {
+    const l = ledger()
+    seen(l, 1200)
+    expect(report(l, 900, "probe")).toBe(1)
+    expect(left(l)).toBe(900)
+    expect(report(l, 5000, "probe", T0 + 2 * HOUR)).toBe(1)
+    expect(left(l)).toBe(5000)
+  })
+
+  it("takes the broker's own reading either way", () => {
+    const l = ledger()
+    seen(l, 1200)
+    expect(report(l, 4000, "broker")).toBe(1)
+    expect(left(l)).toBe(4000)
   })
 })

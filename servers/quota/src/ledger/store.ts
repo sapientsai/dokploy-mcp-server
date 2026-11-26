@@ -25,7 +25,8 @@ const SCHEMA = List.of(
      reset_at INTEGER NOT NULL, observed_at INTEGER NOT NULL, source TEXT NOT NULL)`,
   `CREATE TABLE IF NOT EXISTS spends (
      id TEXT PRIMARY KEY, at INTEGER NOT NULL, session TEXT NOT NULL, machine TEXT NOT NULL,
-     label TEXT NOT NULL, class TEXT NOT NULL, resource TEXT NOT NULL, cost REAL NOT NULL)`,
+     label TEXT NOT NULL, class TEXT NOT NULL, resource TEXT NOT NULL, cost REAL NOT NULL,
+     reserve INTEGER NOT NULL DEFAULT 0)`,
   `CREATE INDEX IF NOT EXISTS spends_at ON spends (at)`,
   `CREATE TABLE IF NOT EXISTS inflight (
      call_id TEXT PRIMARY KEY, session TEXT NOT NULL, machine TEXT NOT NULL, expires_at INTEGER NOT NULL)`,
@@ -58,6 +59,7 @@ const filterClause = (filter: SpendFilter): Clause =>
     filter.labelPrefix === undefined
       ? NO_CLAUSE
       : { sql: " AND substr(label, 1, ?) = ?", args: [filter.labelPrefix.length, filter.labelPrefix] },
+    filter.callsOnly === true ? { sql: " AND reserve = 0", args: [] } : NO_CLAUSE,
   ).fold(NO_CLAUSE, and)
 
 const first = (rows: ReadonlyArray<Row>): Option<Row> => Option(rows[0])
@@ -71,6 +73,7 @@ const toSpend = (row: Row): Spend => ({
   class: str(row.class) as CallClass,
   resource: str(row.resource),
   cost: num(row.cost),
+  reserve: num(row.reserve) === 1,
 })
 
 /** The ledger's tables, for one service and account. */
@@ -136,7 +139,7 @@ export const createStore = (sql: Sql) => {
     repeats(scope: ScopeFilter, label: string, since: number): number {
       const where = scopeClause(scope)
       return scalar(
-        `SELECT COUNT(*) AS n FROM spends WHERE at > ? AND label = ?${where.sql}`,
+        `SELECT COUNT(*) AS n FROM spends WHERE at > ? AND label = ? AND reserve = 0${where.sql}`,
         "n",
         since,
         label,
@@ -154,8 +157,8 @@ export const createStore = (sql: Sql) => {
 
     spend(s: Spend): void {
       sql.exec(
-        `INSERT INTO spends (id, at, session, machine, label, class, resource, cost) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-         ON CONFLICT (id) DO UPDATE SET cost = excluded.cost`,
+        `INSERT INTO spends (id, at, session, machine, label, class, resource, cost, reserve)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) ON CONFLICT (id) DO UPDATE SET cost = excluded.cost`,
         s.id,
         s.at,
         s.session,
@@ -164,20 +167,27 @@ export const createStore = (sql: Sql) => {
         s.class,
         s.resource,
         s.cost,
+        s.reserve ? 1 : 0,
       )
     },
 
     spendById,
 
-    /** Sets a spend's cost, as `quota_release` does with what a lease didn't use. False when it's gone. */
-    setCost(id: string, cost: number): boolean {
-      return spendById(id).fold(
-        () => false,
-        () => {
-          sql.exec("UPDATE spends SET cost = ? WHERE id = ?", cost, id)
-          return true
-        },
-      )
+    /**
+     * Lowers a lease to `cost`, never raising it: `quota_release` gives back what a lease didn't use,
+     * and a call drawing from a lease moves that part of it onto the call. Only leases can be changed,
+     * so no client can zero the record of a call. False when there's no such lease.
+     */
+    lowerLease(id: string, cost: number): boolean {
+      return spendById(id)
+        .filter((s) => s.reserve)
+        .fold(
+          () => false,
+          (s) => {
+            sql.exec("UPDATE spends SET cost = ? WHERE id = ?", Math.max(0, Math.min(s.cost, cost)), id)
+            return true
+          },
+        )
     },
 
     inFlight(scope: ScopeFilter, now: number): number {

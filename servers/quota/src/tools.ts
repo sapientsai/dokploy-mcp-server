@@ -129,7 +129,7 @@ export function registerQuotaTools(server: SomaServerInstance, config: QuotaConf
   server.addTool({
     name: "quota_acquire",
     description:
-      "Reserve budget before a batch of calls, such as a script that will make 200 GitHub requests. Every policy runs, as for a single call. Granted, it returns a lease; give back what you didn't use with quota_release. Refused or told to wait, it says why and when.",
+      "Reserve budget before a batch of calls, such as a script that will make 200 GitHub requests. The lease is checked against the budget (the floor and per-session share); its calls still meet the per-second and per-minute limits as they run. Pass the lease to the hook's checks so calls draw from it instead of counting twice. Give back what wasn't used with quota_release.",
     parameters: z.object({
       service: serviceParam,
       account: accountParam,
@@ -168,6 +168,7 @@ export function registerQuotaTools(server: SomaServerInstance, config: QuotaConf
                   label: `lease: ${args.purpose}`,
                   class: args.writes ? "write" : "read",
                   cost: args.cost,
+                  reserve: true,
                 },
               })
               .map((result) => formatCheck(result, Date.now())),
@@ -178,7 +179,8 @@ export function registerQuotaTools(server: SomaServerInstance, config: QuotaConf
 
   server.addTool({
     name: "quota_release",
-    description: "Give back what a lease from quota_acquire didn't use, by saying how much it did use.",
+    description:
+      "Give back what a lease from quota_acquire didn't use, by saying how much it did use. It can only lower a lease, and only a lease.",
     parameters: z.object({
       service: serviceParam,
       account: accountParam,
@@ -199,7 +201,11 @@ export function registerQuotaTools(server: SomaServerInstance, config: QuotaConf
           .flatMap((answer) =>
             answer.ok
               ? IO.succeed(`Lease ${args.lease} now counts ${args.used}.`)
-              : IO.fail(new UserError(`No lease ${args.lease}: it may be older than the 7 days the ledger keeps.`)),
+              : IO.fail(
+                  new UserError(
+                    `No lease ${args.lease}: it isn't a quota_acquire lease, or it's older than the 7 days the ledger keeps.`,
+                  ),
+                ),
           ),
       ),
   })

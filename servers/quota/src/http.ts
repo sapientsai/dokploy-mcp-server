@@ -21,6 +21,8 @@ const checkBody = z.object({
   class: z.enum(["read", "write"]).default("read"),
   cost: z.number().positive().max(100_000).default(1),
   callId: z.string().min(1).max(200).optional(),
+  /** A quota_acquire lease this call draws from. */
+  lease: z.uuid().optional(),
 })
 
 const finishBody = z.object({ ...base, callId: z.string().min(1).max(200) })
@@ -120,6 +122,7 @@ const route = (request: Request, config: QuotaConfig, ledgers: Ledgers): IO<neve
                 class: body.class,
                 cost: body.cost,
                 callId: body.callId,
+                drawFrom: body.lease,
               },
             })
             .map(checkAnswer),

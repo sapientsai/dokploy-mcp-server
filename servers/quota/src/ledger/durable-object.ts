@@ -7,8 +7,11 @@ import { createStore, type Sql, type Store } from "./store"
 import type { CheckRequest, Observation } from "./types"
 import { policyUsage } from "./usage"
 
-/** How long the broker waits on a service's status endpoint before giving up for this check. */
-const BROKER_PROBE_TIMEOUT_MS = 2_000
+/**
+ * How long the broker waits on a service's status endpoint before giving up for this check. A check
+ * waits on it, so it stays well under the hook's own timeout; a slow probe just tries again next window.
+ */
+const BROKER_PROBE_TIMEOUT_MS = 500
 const BROKER_PROBE_KEY = "broker-probe-at"
 const ACCOUNTS_KEY = "accounts"
 
@@ -131,7 +134,7 @@ export class QuotaLedger {
       case "report":
         return json({ kept: observe(this.store, message.service, message.observations, message.source, now) })
       case "release":
-        return json({ ok: this.store.setCost(message.lease, message.used) })
+        return json({ ok: this.store.lowerLease(message.lease, message.used) })
       case "status":
         await brokerProbe(this.store, message.service, this.env, now).runOrThrow()
         return json({

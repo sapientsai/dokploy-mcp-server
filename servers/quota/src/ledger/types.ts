@@ -28,6 +28,13 @@ export type CheckRequest = {
   readonly cost: number
   /** Set when the client will say the call finished, for `concurrency` policies. */
   readonly callId?: string
+  /**
+   * True for `quota_acquire`: a reservation for a batch, checked against the budget (`floor`, `share`)
+   * and not against per-call limits, which its calls meet one at a time.
+   */
+  readonly reserve?: boolean
+  /** A lease this call draws from, so the budget counts the call once, not in the lease and again here. */
+  readonly drawFrom?: string
 }
 
 /** Who a policy counts: everyone on the account, one machine, or one session. */
@@ -42,6 +49,8 @@ export type SpendFilter = {
   readonly resource?: string
   readonly class?: CallClass
   readonly labelPrefix?: string
+  /** Leave out reservations, as per-call limits do. */
+  readonly callsOnly?: boolean
 }
 
 export type Spend = {
@@ -53,6 +62,8 @@ export type Spend = {
   readonly class: CallClass
   readonly resource: string
   readonly cost: number
+  /** A reservation from `quota_acquire`, not a single call. */
+  readonly reserve: boolean
 }
 
 export type Decision =

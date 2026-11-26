@@ -128,20 +128,24 @@ export const slotFreesAt = (
         )
         .at.getOrElse(() => now)
 
-const evaluate = (
-  store: Store,
-  service: Service,
-  policy: Policy,
-  req: CheckRequest,
-  resource: string,
-  estimate: Option<Estimate>,
-  now: number,
-): Outcome => {
+/** What a check knows besides the request: the budget it spends from, and what of it the call adds. */
+type Context = {
+  readonly resource: string
+  readonly estimate: Option<Estimate>
+  /** The cost the budget gains: the call's cost, less what a lease it draws from already holds. */
+  readonly budgetCost: number
+  readonly now: number
+}
+
+const evaluate = (store: Store, service: Service, policy: Policy, req: CheckRequest, ctx: Context): Outcome => {
+  const { resource, estimate, budgetCost, now } = ctx
+  // Per-call limits count calls, not reservations: a lease's calls meet them one at a time.
   const scoped = (kind: "fleet" | "machine" | "session"): SpendFilter => ({
     scope: scopeOf(kind, req),
     resource: policy.match?.resource,
     class: policy.match?.class,
     labelPrefix: policy.match?.label,
+    callsOnly: true,
   })
 
   switch (policy.kind) {
@@ -149,7 +153,7 @@ const evaluate = (
       return estimate.fold(
         () => OK,
         (e): Outcome =>
-          e.remaining - req.cost >= policy.keep
+          e.remaining - budgetCost >= policy.keep
             ? OK
             : {
                 kind: "deny",
@@ -179,7 +183,7 @@ const evaluate = (
           if (others.length === 0) return OK
           const filter: SpendFilter = { scope: scopeOf(policy.scope, req), resource }
           const used = store.sumCost(filter, windowStart)
-          if (used + req.cost <= policy.max * e.limit) return OK
+          if (used + budgetCost <= policy.max * e.limit) return OK
           const reason = `${scopeText(filter.scope)} has taken ${used} of ${service.label} ${resource}'s ${e.limit} this window, past its ${Math.round(policy.max * 100)}% share while ${others.length} other ${policy.scope}${others.length === 1 ? " is" : "s are"} working.`
           // A share frees only when the service's window resets, too far off to hold a call for.
           return breach(
@@ -269,11 +273,22 @@ export const check = (
     return { ...base, decision: { kind: "allow", warnings: [] }, spendId: null }
   }
 
-  const decision = combine(
-    policies
-      .filter((p) => matches(p, req, resource))
-      .map((p) => softened(p, evaluate(store, service, p, req, resource, estimate, now))),
+  const lease = Option(req.drawFrom)
+    .flatMap((leaseId) => store.spendById(leaseId))
+    .filter((s) => s.reserve)
+  const budgetCost = Math.max(
+    0,
+    req.cost -
+      lease.fold(
+        () => 0,
+        (l) => l.cost,
+      ),
   )
+  const ctx: Context = { resource, estimate, budgetCost, now }
+  // A reservation is checked against the budget only; its calls meet the per-call limits as they run.
+  const applies = (p: Policy): boolean =>
+    matches(p, req, resource) && (req.reserve !== true || p.kind === "floor" || p.kind === "share")
+  const decision = combine(policies.filter(applies).map((p) => softened(p, evaluate(store, service, p, req, ctx))))
 
   const runsAt: Option<number> =
     decision.kind === "allow"
@@ -292,8 +307,11 @@ export const check = (
       class: req.class,
       resource,
       cost: req.cost,
+      reserve: req.reserve === true,
     })
     Option(req.callId).map((callId) => store.start(callId, req.session, req.machine, now))
+    // The call now carries what it drew from the lease, so the lease gives that part up.
+    lease.map((l) => store.lowerLease(l.id, l.cost - req.cost))
     return at
   })
   return {
@@ -306,7 +324,16 @@ export const check = (
   }
 }
 
-/** Records what a service said. A fresh observation replaces the estimate, and the probe claim is cleared. */
+/**
+ * Whether a reading may replace the estimate. The broker's own readings always may. A client's may
+ * lower it, or start a new window, but not raise it within one: otherwise a refused agent could report
+ * a full budget and pass the floor.
+ */
+const trusted = (store: Store, service: Service, o: Observation, source: Source, now: number): boolean =>
+  source === "broker" ||
+  !estimateFor(store, service, o.resource, now).exists((e) => o.resetAt <= e.resetAt && o.remaining > e.remaining)
+
+/** Records what a service said, where it may replace the estimate, and clears the probe claim. */
 export const observe = (
   store: Store,
   service: Service,
@@ -315,7 +342,7 @@ export const observe = (
   now: number,
 ): number => {
   const known = service.resources.map((r) => r.id)
-  const kept = observations.filter((o) => known.includes(o.resource))
+  const kept = observations.filter((o) => known.includes(o.resource) && trusted(store, service, o, source, now))
   kept.forEach((o) => store.observe({ ...o, observedAt: now, source }))
   if (kept.length > 0) store.setMeta(PROBE_CLAIM_KEY, "0")
   return kept.length

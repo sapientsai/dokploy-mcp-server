@@ -42,7 +42,9 @@ src/
 ## Things that are easy to get wrong
 
 - **workerd treats every named export of `worker.ts` as an entrypoint.** Export only handlers, classes and the factory from it; a string constant there stops the runtime from starting. `test/worker.spec.ts` catches this.
-- **No tool may change a policy.** Policies come from the deploy config, so a refused agent can't loosen its own limit. Keep it that way.
+- **Nothing a client sends may loosen a limit.** No tool changes a policy; a client's reading can't raise the estimate within a window (`trusted` in `decide.ts`); only leases can be changed after the fact, and only lowered (`lowerLease`). Tests cover each; keep it that way.
+- **Leases skip per-call limits.** A `reserve` request meets only `floor` and `share`, and `callsOnly` keeps lease rows out of rate counts. A call with `drawFrom` moves its cost off the lease.
+- **Rows read is the costly resource.** Each check scans every window a policy counts; a new long-window policy multiplies it. See the spec's cost section.
 - **Never record a command's arguments.** The hook sends a `label` of the command's first words; arguments can hold secrets.
 - **The broker holds no service token** except the optional probe token named by `probe.http.tokenSecret`, read from the Worker's env. It must reach only a free, read-only endpoint.
 - **Window edges:** a rate window is `(now − per, now]`. The estimate counts spends from the reading's own millisecond on, since a call checked then can't have reached the service yet.

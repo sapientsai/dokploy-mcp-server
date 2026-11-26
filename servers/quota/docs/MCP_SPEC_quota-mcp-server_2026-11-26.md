@@ -16,7 +16,7 @@ One broker that every session checks before it spends, for any rate-limited API:
 - **Generic:** GitHub first. Each further service is a config entry that names a header scheme and a probe, not new code.
 - **Fails open:** if the broker can't be reached, work goes on as it does today.
 
-Not goals: proxying writes, holding service credentials (until phase 5), or limiting a human's own calls.
+Not goals: proxying writes, holding any credential beyond an optional read-only probe token (until phase 5), or limiting a human's own calls.
 
 ## How it fits together
 
@@ -39,18 +39,25 @@ A service entry:
 {
   "id": "github",
   "label": "GitHub (user)",
-  "resources": ["core", "graphql"], // budgets within the service; a check names one, or all
-  "headers": "github", // which parser reads its rate-limit headers
+  // Budgets within the service, and how long each one's window is.
+  "resources": [
+    { "id": "core", "windowSeconds": 3600 },
+    { "id": "graphql", "windowSeconds": 3600 },
+  ],
+  "headers": "github", // which parser reads its rate-limit headers in quota_report
   "probe": {
-    // how a client learns the truth for free
-    "kind": "command",
-    "command": "gh api rate_limit",
+    "command": "gh api rate_limit", // what a client runs, for free, when asked
     "parse": "github-rate-limit-json",
+    // The broker's own probe, used when the Worker holds the named secret.
+    "http": { "url": "https://api.github.com/rate_limit", "tokenSecret": "GITHUB_PROBE_TOKEN" },
   },
-  "staleAfterSeconds": 60, // older than this, ask a client to probe
+  "free": ["gh api rate_limit", "gh auth status"], // never limited, never recorded
+  "staleAfterSeconds": 60, // older than this, the ledger looks for a fresh reading
   "policies": [/* see Governance */],
 }
 ```
+
+`src/config.ts` holds the schema, and `src/defaults.ts` this service with its default policies.
 
 Header parsers are code, one per scheme, and a service picks one. Phase 2 ships `github`. Phase 4 adds the others, each checked against the service's own docs first, because none is verified yet:
 
@@ -107,27 +114,42 @@ A **policy** is one limit the owner sets. Every check runs every policy that mat
 - **Who sets them:** policies live in the Worker's deploy config, in `sapientsai/somamcp-hosted`, so a change is a reviewed commit. No MCP tool can change a policy, so an agent that gets refused can't loosen the limit that refused it. `quota_policies` only reads them.
 - **The GitHub numbers above** come from GitHub's docs on secondary limits (read 2026-11-26): "No more than 100 concurrent requests," 900 points a minute for REST, and "no more than 80 content-generating requests per minute and no more than 500 content-generating requests per hour." The defaults sit well under each.
 
-## The broker holds no service credentials
+## Where the numbers come from
 
-Clients learn the truth and report it. When the ledger is older than `staleAfterSeconds`, the broker answers a check with `probe: true`, and the client runs the service's probe (for GitHub, `gh api rate_limit`, which is free) and reports the result. The broker asks one client at a time, so a fleet probes about once a minute, not once per call. Between probes, the broker estimates: each allowed call takes its cost off `remaining`.
+- **The owner's own limits are exact.** Rates, calls in flight, shares and repeats are counted from the checks themselves; no service is asked.
+- **The service's budget comes from the service,** because tallies alone drift: CI, the owner's own `gh` use and other apps spend the same budget without passing the hook, and one `gh` command can make several calls.
+  - **The broker's own probe,** when the Worker holds the secret `probe.http.tokenSecret` names. For GitHub that's `GET /rate_limit`, which is free, and a fine-grained token with no repository access sees the same budget as every other token of the user. The broker reads it at most once per `staleAfterSeconds`, only when its reading is stale, with a 500 ms timeout, so a check never waits long on it.
+  - **Clients,** otherwise. When the ledger is stale, a check answers with `probe`, a command to run and report; the broker asks one client at a time, at most every 30 seconds. Clients can also report any response's `x-ratelimit-*` headers.
+  - **Between readings,** each allowed call comes off the last reading.
+
+## Trust
+
+The broker governs agents that cooperate: an agent can skip the hook (`QUOTA_HOOK=off`, or calls outside Bash), and the hook fails open. Within that, nothing a client sends can loosen a limit:
+
+- **No tool changes a policy.** Policies come only from the deploy config.
+- **A client's reading can lower the estimate, or start a new window, but not raise it within one.** The broker's own readings may do either. So a refused agent can't report a full budget to pass the floor.
+- **Only leases can be changed after the fact, and only lowered.** `quota_release` and a call drawing from a lease can reduce a lease; nothing can change the record of a call.
 
 ## The ledger
 
 Per Durable Object (`service:account`):
 
-- **`resources`:** for each, `limit`, `remaining`, `reset`, `observedAt`, and where the number came from (`probe`, `header`, `estimate`).
-- **`spends`:** one row per allowed call: `session`, `machine`, `label` (the command's first words, such as `gh pr create`, never its arguments), `class`, `cost`, `at`. Kept 7 days. Sliding windows of a minute or more count from here; one-second windows are kept in the Durable Object's memory.
-- **`inflight`:** calls started and not yet finished, by `toolUseId`, each with a TTL (default 10 minutes) in case its finish never arrives.
-- **`leases`:** reservations from `quota_acquire`: `session`, `resource`, `cost`, `expiresAt`. Leased cost counts as spent until it expires or is released.
+- **`observations`:** for each resource, the last reading: `limit`, `remaining`, `reset_at`, `observed_at`, and its source (`broker`, `probe`, `header`).
+- **`spends`:** one row per allowed call, and one per lease: `session`, `machine`, `label` (the command's first words, such as `gh pr create`, never its arguments), `class`, `resource`, `cost`, `at`, and `reserve` for a lease. Kept 7 days. A held call's row is dated when it may run.
+- **`inflight`:** calls started and not yet finished, by the client's `callId`, each with a 10-minute TTL in case its finish never arrives.
+- **`meta`:** when a client and the broker last probed, and, in the `__accounts` instance, every ledger key seen.
+
+## Leases
+
+`quota_acquire` reserves budget for a batch, such as a script that will make 200 calls. A lease is checked against the budget, the `floor` and `share` policies, and not against per-call limits, since a 200-call lease would never fit a 2-a-second rate. Its calls meet those limits one at a time as they run. A call that passes its lease to `/v1/check` draws from it: the lease drops by the call's cost, so the budget counts the call once. `quota_release` lowers a lease to what it used.
 
 ## Deciding a check
 
-`check(service, account, resource, session, machine, label, class, cost, toolUseId)` answers `allow`, `allow` after a delay, `deny` with a reason and a `retryAt`, or any of those with `probe: true`. In order:
+`check(service, account, resource, session, machine, label, class, cost, callId, lease)` answers `allow`, `allow` after a delay, `deny` with a reason and a `retryAt`, or any of those with `probe: true`. In order:
 
 1. **Free calls pass:** the probe itself, and a short allowlist per service (`gh auth status`, `gh api rate_limit`).
-2. **The service's own budget:** deny when the call would take `remaining − leased − cost` under the `floor` policy, with `retryAt` at the resource's `reset`.
-3. **Every matching policy,** each answering allow, delay, warn or deny. The strictest wins: deny, then the longest delay, then warn.
-4. **Allow:** take `cost` off the estimate, record the spend and the call in flight, and book any delayed slot.
+2. **Every matching policy,** each answering allow, delay, warn or deny. The `floor` refuses a call that would take the estimate under it, with `retryAt` at the resource's reset. The strictest answer wins: deny, then the longest delay, then warn.
+3. **Allow:** record the spend, dated when the call may run, and the call in flight; draw it from its lease, if any.
 
 A deny names the policy that refused, and for a loop suggests a longer interval or waiting with ScheduleWakeup.
 
@@ -142,7 +164,8 @@ A deny reaches the agent as the hook's `permissionDecisionReason`, so it reads, 
 - **Picks the resource:** `gh api graphql` and the `gh pr`, `gh issue` and `gh repo` families count against `graphql`; other `gh api` paths and `gh run` against `core`; anything unknown against whichever has less left.
 - **Prices known loops:** `gh run watch` without an `--interval` of 30 or more is denied outright, since its 3-second default polls about 1,200 times an hour. A command it can't price costs 1.
 - **Waits when told to:** a `delay` answer holds the call for at most `maxDelayMs`, then lets it run. The hook's own timeout in the settings is set above that.
-- **Fails open:** 800 ms timeout on the check itself, and any error lets the call through. It tells the user once per session that the broker was unreachable.
+- **Draws from a lease** when the session holds one, passing it as `lease`.
+- **Fails open:** 800 ms timeout on the check itself, and any error lets the call through. It tells the user once per session that the broker was unreachable. The broker's own probe is capped at 500 ms to stay inside that.
 - **Probes when asked,** in the background, so the agent's call isn't held up.
 - **Off switch:** `QUOTA_HOOK=off`.
 
@@ -151,8 +174,8 @@ A deny reaches the agent as the hook's `permissionDecisionReason`, so it reads, 
 | Tool             | Does                                                                                           | Writes? |
 | ---------------- | ---------------------------------------------------------------------------------------------- | ------- |
 | `quota_status`   | What's left per service and resource, when it resets, the floor, and the top sessions by spend | no      |
-| `quota_acquire`  | Reserves cost for a batch of work, for a TTL; answers granted, or when to retry                | yes     |
-| `quota_release`  | Returns what's left of a lease                                                                 | yes     |
+| `quota_acquire`  | Reserves budget for a batch; returns a lease, or why not and when                              | yes     |
+| `quota_release`  | Lowers a lease to what it used                                                                 | yes     |
 | `quota_report`   | Records what a response's headers or a probe said                                              | yes     |
 | `quota_services` | Lists the configured services and their resources                                              | no      |
 | `quota_policies` | Lists every policy, its mode, and how close each scope is to it now                            | no      |
@@ -168,6 +191,19 @@ A deny reaches the agent as the hook's `permissionDecisionReason`, so it reads, 
 ## Deploying
 
 The package publishes from this monorepo like the others. Following temporal, the Worker itself would deploy from `sapientsai/somamcp-hosted` through Cloudflare Workers Builds, installing the package from npm, so this repo never holds a Cloudflare token. The owner's steps: connect the Worker in Cloudflare, set `QUOTA_KEY`, and put `QUOTA_URL` and `QUOTA_KEY` in envpkt.
+
+## What it costs to run
+
+Cloudflare's Workers Free plan (read 2026-11-26) allows 100,000 Durable Object requests, 5 million rows read and 100,000 rows written a day, and fails further operations of a type past its limit. The hook fails open, so past a limit governance silently stops.
+
+Per `gh` call: about 2 Durable Object requests (the check, and the finish when it sends a `callId`) and about 6 rows written. Rows read is the binding limit, because each check scans every window its policies count: with the defaults, about three times the last hour's calls, plus the day's calls for `machine-day`, plus a few hundred for the short windows.
+
+| Day                              | Requests | Rows written | Rows read    |
+| -------------------------------- | -------- | ------------ | ------------ |
+| 10,000 calls, 1,000 at peak hour | 20,000   | 60,000       | ~140 million |
+| Free plan                        | 100,000  | 100,000      | 5 million    |
+
+So the free plan fits only light use. Workers Paid includes 25 billion rows read and 50 million rows written a month, which covers this many times over. Running counters for the hour and day windows would cut rows read by about a hundred times; that's the first follow-up if the broker has to fit the free plan.
 
 ## Open questions
 
