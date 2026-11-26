@@ -8,6 +8,8 @@ export type BeszelAuth =
 export type BeszelConfig = {
   readonly baseUrl: string
   readonly auth: BeszelAuth
+  /** `BESZEL_ENABLE_WRITES=true` adds the tools that change systems. Off, the server only reads. */
+  readonly writes: boolean
 }
 
 // eslint-disable-next-line functype/prefer-option -- the shape of process.env
@@ -37,9 +39,16 @@ const readAuth = (env: Env): Either<string, BeszelAuth> => {
   return Either.left("Set BESZEL_EMAIL and BESZEL_PASSWORD, or BESZEL_TOKEN.")
 }
 
-/** Reads the hub URL and one way to sign in, or says what's missing. */
+const readWrites = (env: Env): Either<string, boolean> => {
+  const raw = (env.BESZEL_ENABLE_WRITES ?? "").trim().toLowerCase()
+  if (raw === "" || raw === "false") return Either.right(false)
+  if (raw === "true") return Either.right(true)
+  return Either.left(`BESZEL_ENABLE_WRITES must be true or false, not ${env.BESZEL_ENABLE_WRITES}`)
+}
+
+/** Reads the hub URL, one way to sign in and the writes switch, or says what's wrong. */
 export const readConfig = (env: Env): Either<string, BeszelConfig> =>
   (nonEmpty(env.BESZEL_URL)
     ? parseUrl(env.BESZEL_URL.trim())
     : Either.left<string, string>("BESZEL_URL is required, e.g. https://beszel.example.com")
-  ).flatMap((baseUrl) => readAuth(env).map((auth) => ({ baseUrl, auth })))
+  ).flatMap((baseUrl) => readAuth(env).flatMap((auth) => readWrites(env).map((writes) => ({ baseUrl, auth, writes }))))

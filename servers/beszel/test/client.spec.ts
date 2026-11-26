@@ -23,7 +23,10 @@ const reply = (status: number, body: unknown) =>
   })
 
 const passwordClient = (now = () => NOW) =>
-  new BeszelClient({ baseUrl: BASE, auth: { kind: "password", email: "ro@example.com", password: "pw" } }, now)
+  new BeszelClient(
+    { baseUrl: BASE, auth: { kind: "password", email: "ro@example.com", password: "pw" }, writes: false },
+    now,
+  )
 
 const calls = () => mockFetch.mock.calls.map(([url, init]) => ({ url: String(url), init: (init ?? {}) as RequestInit }))
 const authHeader = (i: number) => (calls()[i]?.init.headers as Record<string, string> | undefined)?.Authorization
@@ -170,6 +173,7 @@ describe("secrets in errors", () => {
       {
         baseUrl: BASE,
         auth: kind === "password" ? { kind, email: "ro@example.com", password: PASSWORD } : { kind, token: TOKEN },
+        writes: false,
       },
       () => NOW,
     )
@@ -192,7 +196,8 @@ describe("secrets in errors", () => {
 })
 
 describe("BESZEL_TOKEN", () => {
-  const tokenClient = () => new BeszelClient({ baseUrl: BASE, auth: { kind: "token", token: "minted" } }, () => NOW)
+  const tokenClient = () =>
+    new BeszelClient({ baseUrl: BASE, auth: { kind: "token", token: "minted" }, writes: false }, () => NOW)
 
   it("sends the configured token without signing in", async () => {
     mockFetch.mockImplementationOnce(() => reply(200, page(systems)))
@@ -212,7 +217,8 @@ describe("BESZEL_TOKEN", () => {
 })
 
 describe("records requests", () => {
-  const tokenClient = () => new BeszelClient({ baseUrl: BASE, auth: { kind: "token", token: "t" } }, () => NOW)
+  const tokenClient = () =>
+    new BeszelClient({ baseUrl: BASE, auth: { kind: "token", token: "t" }, writes: false }, () => NOW)
 
   it("encodes the query", async () => {
     mockFetch.mockImplementationOnce(() => reply(200, page([])))
@@ -261,6 +267,40 @@ describe("records requests", () => {
 
     expect(await failureOf(tokenClient().list("systems"))).toMatch(
       /Couldn't reach the Beszel hub at https:\/\/beszel.example.com: ECONNREFUSED/,
+    )
+  })
+})
+
+describe("record updates", () => {
+  it("sends a PATCH with the fields as JSON and the token", async () => {
+    mockFetch.mockReturnValueOnce(reply(200, { token: jwt(NOW / 1000 + 3600) }))
+    mockFetch.mockReturnValueOnce(reply(200, { id: "sysalpha0000001", name: "charlie" }))
+    const saved = await passwordClient()
+      .update("systems", "sysalpha0000001", { name: "charlie" }, "id,name")
+      .runOrThrow()
+    expect(saved).toEqual({ id: "sysalpha0000001", name: "charlie" })
+    const patch = calls()[1]
+    expect(patch?.url).toBe(`${BASE}/api/collections/systems/records/sysalpha0000001?fields=id%2Cname`)
+    expect(patch?.init.method).toBe("PATCH")
+    expect(patch?.init.body).toBe(JSON.stringify({ name: "charlie" }))
+    expect(authHeader(1)).toBe(jwt(NOW / 1000 + 3600))
+  })
+
+  it("signs in again and resends the PATCH when the hub refuses the token", async () => {
+    mockFetch.mockReturnValueOnce(reply(200, { token: jwt(NOW / 1000 + 3600) }))
+    mockFetch.mockReturnValueOnce(reply(401, {}))
+    mockFetch.mockReturnValueOnce(reply(200, { token: jwt(NOW / 1000 + 3601) }))
+    mockFetch.mockReturnValueOnce(reply(200, { id: "x" }))
+    await passwordClient().update("systems", "x", { status: "paused" }).runOrThrow()
+    expect(calls()[3]?.init.method).toBe("PATCH")
+    expect(calls()[3]?.init.body).toBe(JSON.stringify({ status: "paused" }))
+  })
+
+  it.each([403, 404])("says a readonly user can't change records on a %i", async (status) => {
+    mockFetch.mockReturnValueOnce(reply(status, {}))
+    const client = new BeszelClient({ baseUrl: BASE, auth: { kind: "token", token: "t" }, writes: true }, () => NOW)
+    expect(await failureOf(client.update("systems", "x", { name: "y" }))).toBe(
+      `Beszel refused to change systems record x (HTTP ${status}).`,
     )
   })
 })

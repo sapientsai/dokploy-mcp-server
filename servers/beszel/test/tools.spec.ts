@@ -75,7 +75,10 @@ function hub(collections: Readonly<Record<string, ReadonlyArray<unknown>>>): voi
 beforeEach(() => {
   mockFetch.mockReset()
   vi.stubGlobal("fetch", mockFetch)
-  initializeClient({ baseUrl: "https://beszel.example.com", auth: { kind: "token", token: "t" } }, () => NOW)
+  initializeClient(
+    { baseUrl: "https://beszel.example.com", auth: { kind: "token", token: "t" }, writes: false },
+    () => NOW,
+  )
 })
 
 describe("list_systems", () => {

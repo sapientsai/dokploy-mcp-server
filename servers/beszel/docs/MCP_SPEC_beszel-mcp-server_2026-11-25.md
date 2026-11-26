@@ -6,7 +6,7 @@ An MCP server that reads a [Beszel](https://beszel.dev) hub: the machines it mon
 
 **Version 0.1 is read-only.** Every tool lists or reads records. Nothing pauses a system, changes an alert or touches a user.
 
-**Later, behind a flag.** `BESZEL_ENABLE_WRITES=true` would add tools that pause and resume a system, and create, change and delete alerts and quiet hours. They wait until the read side has been used for a while.
+**Behind a flag.** `BESZEL_ENABLE_WRITES=true` adds `update_system` (name, host, port), `pause_system`, `resume_system` and `reset_system_fingerprint`. Each makes the update Beszel's web UI makes, or a narrower one: `update_system` sets `pending` only for a move and never on a paused system, and the reset sends only `fingerprint`, without re-sending `token`. Creating a system and rotating its token stay in the UI, because both hand out the agent's secret token; deleting a system can't be undone, so it stays there too. Changing alerts and quiet hours may come later.
 
 **Out of scope:** adding or removing systems, managing users, and anything that needs a superuser.
 

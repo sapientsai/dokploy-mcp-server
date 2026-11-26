@@ -53,3 +53,21 @@ export const unreachable = (baseUrl: string, cause: Error): UserError =>
   new UserError(`Couldn't reach the Beszel hub at ${baseUrl}: ${cause.message}`, {
     suggestions: ["Check BESZEL_URL, and that the hub is running."],
   })
+
+/**
+ * Beszel's rules let a user change a system only when it's shared with them, and never when their role is
+ * `readonly`. PocketBase then answers 404 (the rule hides the record) or 403 (only superusers may).
+ */
+export const writeRefused = (collection: string, id: string, status: number): UserError =>
+  new UserError(`Beszel refused to change ${collection} record ${id} (HTTP ${status}).`, {
+    category: "auth",
+    suggestions: [
+      "A Beszel user with the readonly role can't change anything. Sign in as a user with the user or admin role.",
+      "A user can change only the systems shared with it.",
+    ],
+  })
+
+export const writeInvalid = (collection: string, problems: ReadonlyArray<string>): UserError =>
+  new UserError(
+    `Beszel refused the ${collection} change as invalid (HTTP 400)${problems.length === 0 ? "." : `: ${problems.join("; ")}`}`,
+  )

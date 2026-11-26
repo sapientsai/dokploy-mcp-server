@@ -100,6 +100,7 @@ describe("readConfig", () => {
       config: {
         baseUrl: "https://beszel.example.com",
         auth: { kind: "password", email: "a@example.com", password: "p" },
+        writes: false,
       },
     })
   })
@@ -108,7 +109,7 @@ describe("readConfig", () => {
     expect(
       read({ BESZEL_URL: "https://beszel.example.com", BESZEL_TOKEN: "t", BESZEL_EMAIL: "a", BESZEL_PASSWORD: "p" }),
     ).toEqual({
-      config: { baseUrl: "https://beszel.example.com", auth: { kind: "token", token: "t" } },
+      config: { baseUrl: "https://beszel.example.com", auth: { kind: "token", token: "t" }, writes: false },
     })
   })
 
@@ -119,7 +120,24 @@ describe("readConfig", () => {
     [{ BESZEL_URL: "ftp://beszel.example.com", BESZEL_TOKEN: "t" }, /http:\/\/ or https:\/\//],
     [{ BESZEL_URL: "https://beszel.example.com" }, /BESZEL_EMAIL and BESZEL_PASSWORD, or BESZEL_TOKEN/],
     [{ BESZEL_URL: "https://beszel.example.com", BESZEL_EMAIL: "a" }, /BESZEL_PASSWORD is required/],
+    [
+      { BESZEL_URL: "https://beszel.example.com", BESZEL_TOKEN: "t", BESZEL_ENABLE_WRITES: "yes" },
+      /must be true or false/,
+    ],
   ])("says what's missing (%o)", (env, message) => {
     expect(JSON.stringify(read(env))).toMatch(message)
+  })
+
+  it.each([
+    [undefined, false],
+    ["", false],
+    ["false", false],
+    ["true", true],
+    [" TRUE ", true],
+  ])("reads BESZEL_ENABLE_WRITES=%o as %o", (value, writes) => {
+    const env = { BESZEL_URL: "https://beszel.example.com", BESZEL_TOKEN: "t" }
+    expect(read(value === undefined ? env : { ...env, BESZEL_ENABLE_WRITES: value })).toMatchObject({
+      config: { writes },
+    })
   })
 })

@@ -2,7 +2,7 @@
 
 A Model Context Protocol (MCP) server for [Beszel](https://beszel.dev), the lightweight server monitor. It reads your hub: the machines it watches, their metrics over time, their containers and systemd services, disk health, and alerts.
 
-It only reads. It can't pause a system, change an alert or touch a user.
+By default it only reads. With `BESZEL_ENABLE_WRITES=true` it can also rename a system, change its address, pause and resume it, and reset its agent fingerprint. It never changes alerts or users, and never creates or deletes a system.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
@@ -20,6 +20,15 @@ It only reads. It can't pause a system, change an alert or touch a user.
 | **Alerts**     | `list_alerts`           | Your alert rules, their thresholds, and which are triggered now                                     |
 |                | `get_alert_history`     | When alerts fired and resolved (Beszel keeps each user's newest 200–250)                            |
 | **Server**     | `info`                  | Server name, version, build, and capability counts (built into SomaMCP)                             |
+
+With `BESZEL_ENABLE_WRITES=true`:
+
+| Tool                       | What it does                                                                                                  |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `update_system`            | Renames a system, or changes the host or port Beszel reaches its agent on. Refuses a name another system has. |
+| `pause_system`             | Stops Beszel checking a system, and alerting on it, until it's resumed. Its history stays.                    |
+| `resume_system`            | Starts checking a paused system again.                                                                        |
+| `reset_system_fingerprint` | Clears the agent fingerprint stored for a system, so the next agent that connects with its token claims it.   |
 
 Ranges are `1h`, `12h`, `24h`, `7d` and `30d`. Each reads the interval Beszel keeps for it, from 1-minute points for an hour to 8-hour points for 30 days, so a call reads at most about a hundred records.
 
@@ -62,16 +71,26 @@ claude mcp add --transport stdio beszel \
 | `BESZEL_URL`                      | yes         | Your hub's base URL                                                   |
 | `BESZEL_EMAIL`, `BESZEL_PASSWORD` | one sign-in | A Beszel user                                                         |
 | `BESZEL_TOKEN`                    | one sign-in | A PocketBase auth token, instead of an email and password (see below) |
+| `BESZEL_ENABLE_WRITES`            | no          | `true` adds the tools that change systems (default `false`)           |
 | `TRANSPORT_TYPE`                  | no          | `stdio` (default) or `httpStream`                                     |
 | `PORT`                            | no          | HTTP port with `httpStream` (default 3000)                            |
 
 ### Which user to sign in as
 
-**Use a user with Beszel's `readonly` role.** It can read everything these tools show, and can't change systems. Create the user and set its role in the hub's PocketBase admin panel (`/_/` on your hub), then share the systems you want with it. A hub started with `SHARE_ALL_SYSTEMS=true` shares every system with every user.
+**For reading, use a user with Beszel's `readonly` role.** It can read everything these tools show, and can't change systems. **For writes, use a user with the `user` role**: it can change only the systems shared with it. A `readonly` user's changes are refused. Create the user and set its role in the hub's PocketBase admin panel (`/_/` on your hub), then share the systems you want with it. A hub started with `SHARE_ALL_SYSTEMS=true` shares every system with every user.
 
 - **Alerts are per user.** `list_alerts` and `get_alert_history` show the alerts of the user this server signs in as.
 - **Sign-ins are rate-limited.** Beszel allows 10 a minute, so the server signs in once and reuses the token until a minute before it expires.
 - **MFA isn't supported.** For a user with multi-factor sign-in, or a hub started with `DISABLE_PASSWORD_AUTH=true` (OAuth only), set `BESZEL_TOKEN` instead. A superuser can mint a long-lived token for a user with PocketBase's impersonate endpoint ([PocketBase records API](https://pocketbase.io/docs/api-records/)). When it expires, mint another.
+
+### When the wrong machine reports as a system
+
+Beszel ties each system to one agent, by a token and the fingerprint the agent sends the first time it connects. If a second machine's agent is set up with another system's token, it can take that system over: the system keeps its name, and `get_system` shows the other machine's hostname and hardware. To fix it:
+
+1. Rename the system after the machine now reporting into it, with `update_system`.
+2. In Beszel's web UI, add the displaced machine as a new system, and set its agent up with the new token. This step stays in the UI, because it hands out the agent's secret token.
+
+`reset_system_fingerprint` is for the other case: when the right machine was reinstalled, or the wrong one has since been given its own system. Run it while the wrong machine still holds the token, and that machine claims the system again. If its agent was connected over WebSocket, Beszel drops the connection and marks the system down until an agent reconnects, which can send a status alert. This holds for a token that belongs to one system; with a token shared by several systems, Beszel refuses an agent whose fingerprint matches none of them.
 
 ## Beszel versions
 

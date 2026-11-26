@@ -25,9 +25,13 @@ const config = readConfig(process.env).fold(
 initializeClient(config)
 
 const tools = new Map<string, Execute>()
-registerAllTools({
-  addTool: (tool: { readonly name: string; readonly execute: Execute }) => tools.set(tool.name, tool.execute),
-} as unknown as SomaServerInstance)
+// Read tools only, whatever BESZEL_ENABLE_WRITES says: a smoke run never changes the hub.
+registerAllTools(
+  {
+    addTool: (tool: { readonly name: string; readonly execute: Execute }) => tools.set(tool.name, tool.execute),
+  } as unknown as SomaServerInstance,
+  { writes: false },
+)
 
 const call = async (name: string, args: Record<string, unknown>): Promise<string> => {
   const execute = tools.get(name)

@@ -26,7 +26,7 @@
         },
         {
           "name": "BESZEL_EMAIL",
-          "description": "Email of the Beszel user to sign in as, ideally one with the readonly role. Not needed with BESZEL_TOKEN.",
+          "description": "Email of the Beszel user to sign in as, ideally one with the readonly role (the user role for writes). Not needed with BESZEL_TOKEN.",
           "isRequired": false,
           "format": "string",
           "isSecret": false
@@ -44,6 +44,13 @@
           "isRequired": false,
           "format": "string",
           "isSecret": true
+        },
+        {
+          "name": "BESZEL_ENABLE_WRITES",
+          "description": "true adds the tools that rename, move, pause and resume systems and reset their agent fingerprint. Default false: the server only reads.",
+          "isRequired": false,
+          "format": "boolean",
+          "isSecret": false
         }
       ]
     }

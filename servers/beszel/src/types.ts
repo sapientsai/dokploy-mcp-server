@@ -51,6 +51,15 @@ export type SystemRecord = RecordBase & {
   readonly info?: SystemInfo
 }
 
+/**
+ * `fingerprints`: which agent a system's token belongs to. Its `token` field is the agent's secret, so this
+ * server never asks for it (every read names `fields`) and the type leaves it out.
+ */
+export type FingerprintRecord = RecordBase & {
+  readonly system: string
+  readonly fingerprint: string
+}
+
 export type SystemDetailsRecord = RecordBase & {
   readonly system: string
   readonly hostname?: string
