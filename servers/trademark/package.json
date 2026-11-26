@@ -56,7 +56,7 @@
   "homepage": "https://github.com/sapientsai/mcp-servers/tree/main/servers/trademark#readme",
   "dependencies": {
     "fastmcp": "^3.13.0",
-    "zod": "^3.25.76"
+    "zod": "^4.6.6"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
