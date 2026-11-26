@@ -1,0 +1,79 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.sapientsai/oura-ring-mcp-server",
+  "description": "Oura Ring MCP server for the Oura API v2: sleep, readiness, activity, heart rate, and more.",
+  "repository": {
+    "url": "https://github.com/sapientsai/mcp-servers",
+    "source": "github",
+    "subfolder": "servers/oura"
+  },
+  "version": "0.2.0",
+  "packages": [
+    {
+      "registryType": "npm",
+      "identifier": "oura-ring-mcp-server",
+      "version": "0.2.0",
+      "transport": {
+        "type": "stdio"
+      },
+      "environmentVariables": [
+        {
+          "name": "OURA_CLIENT_ID",
+          "description": "Oura OAuth2 client ID (register an app at https://cloud.ouraring.com/oauth/applications, then run `oura-ring-mcp-server login` once to authorize)",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "OURA_CLIENT_SECRET",
+          "description": "Oura OAuth2 client secret from the same application",
+          "isRequired": true,
+          "format": "string",
+          "isSecret": true
+        },
+        {
+          "name": "OURA_SANDBOX",
+          "description": "Use Oura's /sandbox/ demo data instead of real data (true/false, default false)",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "TRANSPORT_TYPE",
+          "description": "Transport: 'stdio' (default) or 'httpStream' for remote/Docker deployments",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "PORT",
+          "description": "HTTP port for httpStream transport (default 3000)",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "HOST",
+          "description": "HTTP host for httpStream transport (default 0.0.0.0)",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "OURA_TELEMETRY_FILE",
+          "description": "Write NDJSON telemetry events to this file path (safe under any transport)",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        },
+        {
+          "name": "OURA_TELEMETRY_CONSOLE",
+          "description": "Console telemetry under httpStream transport: true (default) or false",
+          "isRequired": false,
+          "format": "string",
+          "isSecret": false
+        }
+      ]
+    }
+  ]
+}

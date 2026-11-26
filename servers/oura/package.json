@@ -1,0 +1,82 @@
+{
+  "name": "oura-ring-mcp-server",
+  "version": "0.2.0",
+  "description": "A Model Context Protocol (MCP) server for the Oura Ring API v2 - query sleep, readiness, activity, heart rate, and more from your Oura data.",
+  "mcpName": "io.github.sapientsai/oura-ring-mcp-server",
+  "keywords": [
+    "oura",
+    "oura-ring",
+    "mcp",
+    "model-context-protocol",
+    "somamcp",
+    "health",
+    "sleep",
+    "readiness",
+    "hrv"
+  ],
+  "author": "Jordan Burke <jordan.burke@gmail.com>",
+  "license": "MIT",
+  "homepage": "https://github.com/sapientsai/mcp-servers/tree/main/servers/oura#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/sapientsai/mcp-servers.git",
+    "directory": "servers/oura"
+  },
+  "bin": {
+    "oura-ring-mcp-server": "./dist/index.js"
+  },
+  "scripts": {
+    "validate": "ts-builds validate",
+    "ci": "ts-builds ci",
+    "format": "ts-builds format",
+    "format:check": "ts-builds format:check",
+    "lint": "ts-builds lint",
+    "lint:check": "ts-builds lint:check",
+    "typecheck": "ts-builds typecheck",
+    "test": "ts-builds test",
+    "test:watch": "ts-builds test:watch",
+    "test:coverage": "ts-builds test:coverage",
+    "build": "ts-builds build",
+    "build:mcpb": "node scripts/build-mcpb.mjs",
+    "stamp:server": "node scripts/stamp-server-json.mjs",
+    "dev": "ts-builds dev",
+    "start": "node dist/index.js",
+    "inspect": "npx @modelcontextprotocol/inspector node dist/index.js",
+    "prepublishOnly": "pnpm run ci",
+    "version": "node scripts/stamp-server-json.mjs && git add server.json"
+  },
+  "dependencies": {
+    "@loglayer/transport-pino": "^3.2.0",
+    "dotenv": "^17.4.2",
+    "functype": "^1.6.2",
+    "functype-log": "^1.6.2",
+    "loglayer": "^9.3.0",
+    "pino": "^10.3.1",
+    "somamcp": "^1.1.0",
+    "zod": "^4.4.3"
+  },
+  "devDependencies": {
+    "@types/node": "^24.13.3",
+    "ts-builds": "^4.7.0",
+    "tsdown": "^0.22.5"
+  },
+  "type": "module",
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "lib",
+    "dist"
+  ],
+  "prettier": "ts-builds/prettier",
+  "bugs": {
+    "url": "https://github.com/sapientsai/mcp-servers/issues"
+  }
+}

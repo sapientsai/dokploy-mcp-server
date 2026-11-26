@@ -12,6 +12,7 @@ Small [MCP](https://modelcontextprotocol.io) servers built on [somamcp](https://
 | [beszel](./servers/beszel)                 | [`beszel-mcp-server`](https://www.npmjs.com/package/beszel-mcp-server)                 | Read a [Beszel](https://beszel.dev) hub: systems, metrics, containers, disks, alerts; optional system edits |
 | [quota](./servers/quota)                   | [`quota-mcp-server`](https://www.npmjs.com/package/quota-mcp-server)                   | A shared API-quota broker for agent fleets: one ledger per account, owner-set rate and concurrency limits   |
 | [microsoft-todo](./servers/microsoft-todo) | [`microsoft-todo-mcp-server`](https://www.npmjs.com/package/microsoft-todo-mcp-server) | Microsoft To Do via Graph: task lists, tasks, checklist items and reminders                                 |
+| [oura](./servers/oura)                     | [`oura-ring-mcp-server`](https://www.npmjs.com/package/oura-ring-mcp-server)           | Read your [Oura Ring](https://ouraring.com) data: sleep, readiness, activity, heart rate and more           |
 
 Each server's README covers installing and configuring it.
 
