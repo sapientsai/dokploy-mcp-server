@@ -25,7 +25,8 @@ export type Described = {
 
 /* ---------- Splitting a command line ---------- */
 
-const HEREDOC = /<<(-?)\s*(['"]?)([A-Za-z_][A-Za-z0-9_]*)\2/g
+/** `<<WORD`, `<<-WORD` or `<<'WORD'`, but not a here-string (`<<<`), whose text is on its own line. */
+const HEREDOC = /(?<!<)<<(?!<)(-?)\s*(['"]?)([A-Za-z_][A-Za-z0-9_]*)\2/g
 
 type Terminator = { readonly word: string; readonly tabs: boolean }
 type Lines = { readonly kept: ReadonlyArray<string>; readonly until: ReadonlyArray<Terminator> }
@@ -107,22 +108,10 @@ export const segments = (command: string): ReadonlyArray<ReadonlyArray<string>> 
 /* ---------- Seeing past wrappers ---------- */
 
 const ASSIGNMENT = /^[A-Za-z_][A-Za-z0-9_]*=/
-/** Keywords and wrappers that run the command after them, with no flags of their own to skip. */
-const KEYWORDS = List.of(
-  "then",
-  "do",
-  "else",
-  "elif",
-  "if",
-  "while",
-  "until",
-  "!",
-  "{",
-  "time",
-  "nohup",
-  "exec",
-  "command",
-)
+/** Shell keywords that come before a command. */
+const KEYWORDS = List.of("then", "do", "else", "elif", "if", "while", "until", "!", "{")
+/** Wrappers with no flags of their own to skip, that run the command after them. */
+const PLAIN_WRAPPERS = List.of("time", "nohup", "exec", "command")
 const DURATION = /^\d+(?:\.\d+)?[smhd]?$/
 
 /** Skips a wrapper's flags: `valued` ones take the next word too. Returns the words after them. */
@@ -143,48 +132,76 @@ const watchInterval = (words: ReadonlyArray<string>): number => {
   return Number.isFinite(n) && n > 0 ? n : 2
 }
 
-type Unwrapped = { readonly words: ReadonlyArray<string>; readonly repeatEvery?: number }
+type Unwrapped = {
+  readonly words: ReadonlyArray<string>
+  readonly repeatEvery?: number
+  /** True when a wrapper such as `watch` or `timeout` ran what's left, which may be one quoted command. */
+  readonly wrapped: boolean
+}
 
-const withRepeat = (words: ReadonlyArray<string>, repeatEvery: number | undefined): Unwrapped =>
-  repeatEvery === undefined ? { words } : { words, repeatEvery }
-
-/** Drops what runs a command rather than being it, so `FOO=1 sudo -u me timeout -k 5 30 gh …` is a `gh` call. */
-const unwrap = (words: ReadonlyArray<string>, repeatEvery?: number): Unwrapped => {
+/**
+ * Drops what runs a command rather than being it, so `FOO=1 sudo -u me timeout -k 5 30 gh …` is a
+ * `gh` call. Notes whether a wrapper did the running, and `watch`'s interval.
+ */
+const unwrap = (words: ReadonlyArray<string>, repeatEvery?: number, wrapped = false): Unwrapped => {
   const head = words.at(0)
   const rest = words.slice(1)
-  const again = (next: ReadonlyArray<string>): Unwrapped => unwrap(next, repeatEvery)
-  if (head === undefined) return withRepeat(words, repeatEvery)
-  if (ASSIGNMENT.test(head) || KEYWORDS.contains(head)) return again(rest)
-  if (head === "sudo") return again(skipFlags(rest, ["-u", "-g", "-U", "-C", "-h", "-p", "-r", "-t", "-D"]))
-  if (head === "env") return again(skipFlags(rest, ["-u", "-C", "-S"]))
-  if (head === "nice") return again(skipFlags(rest, ["-n"]))
-  if (head === "xargs") return again(skipFlags(rest, ["-n", "-I", "-P", "-L", "-s", "-d", "-E", "-a"]))
+  const keep = (next: ReadonlyArray<string>): Unwrapped => unwrap(next, repeatEvery, wrapped)
+  const wrap = (next: ReadonlyArray<string>, every = repeatEvery): Unwrapped => unwrap(next, every, true)
+  if (head === undefined) return { words, wrapped, ...(repeatEvery === undefined ? {} : { repeatEvery }) }
+  if (ASSIGNMENT.test(head) || KEYWORDS.contains(head)) return keep(rest)
+  if (PLAIN_WRAPPERS.contains(head)) return wrap(rest)
+  if (head === "sudo") return wrap(skipFlags(rest, ["-u", "-g", "-U", "-C", "-h", "-p", "-r", "-t", "-D"]))
+  if (head === "env") return wrap(skipFlags(rest, ["-u", "-C", "-S"]))
+  if (head === "nice") return wrap(skipFlags(rest, ["-n"]))
+  if (head === "xargs") return wrap(skipFlags(rest, ["-n", "-I", "-P", "-L", "-s", "-d", "-E", "-a"]))
   if (head === "timeout") {
     const after = skipFlags(rest, ["-k", "-s", "--kill-after", "--signal"])
-    return again(DURATION.test(after[0] ?? "") ? after.slice(1) : after)
+    return wrap(DURATION.test(after[0] ?? "") ? after.slice(1) : after)
   }
-  if (head === "watch") return unwrap(skipFlags(rest, ["-n", "--interval"]), watchInterval(rest))
-  return withRepeat(words, repeatEvery)
+  if (head === "watch") return wrap(skipFlags(rest, ["-n", "--interval"]), watchInterval(rest))
+  return { words, wrapped, ...(repeatEvery === undefined ? {} : { repeatEvery }) }
 }
 
 const isGh = (word: string): boolean => word === "gh" || word.endsWith("/gh")
 const SHELLS = List.of("bash", "sh", "zsh", "dash")
 const isShell = (word: string): boolean => SHELLS.exists((s) => word === s || word.endsWith(`/${s}`))
 
-/** Every `gh` call in the command, in order, including those inside `bash -c '…'`. */
-export const ghCalls = (command: string): ReadonlyArray<GhCall> =>
+/** The script a shell runs with `-c`, also in combined flags such as `-lc` or `-ec`. */
+const shellScript = (args: ReadonlyArray<string>): Option<string> => {
+  const at = args.findIndex((w) => /^-[a-zA-Z]*c[a-zA-Z]*$/.test(w))
+  return at >= 0 ? Option(args[at + 1]) : Option.none()
+}
+
+/**
+ * The text a segment runs as a command of its own: a shell's `-c` script, `eval`'s arguments, or a
+ * command `watch` (or another wrapper) was given as one quoted string.
+ */
+export const nestedScript = ({ words, wrapped }: Unwrapped): Option<string> => {
+  const head = words.at(0)
+  if (head === undefined) return Option.none()
+  if (isShell(head)) return shellScript(words.slice(1))
+  if (head === "eval") return Option(words.slice(1).join(" "))
+  // Only a wrapper hands over one quoted command; a lone word with spaces is otherwise just text,
+  // such as what's left of a quoted argument after a $(…) in it.
+  return wrapped && words.length === 1 && /\s/.test(head) ? Option(head) : Option.none()
+}
+
+const callsIn = (command: string, repeatEvery: number | undefined): ReadonlyArray<GhCall> =>
   segments(command).flatMap((segment): ReadonlyArray<GhCall> => {
-    const { words, repeatEvery } = unwrap(segment)
+    const unwrapped = unwrap(segment)
+    const every = unwrapped.repeatEvery ?? repeatEvery
+    const { words } = unwrapped
     const head = words.at(0)
-    const args = words.slice(1)
     if (head === undefined) return []
-    if (isShell(head)) {
-      const at = args.indexOf("-c")
-      const script = at >= 0 ? args[at + 1] : undefined
-      return script === undefined ? [] : ghCalls(script)
-    }
-    return isGh(head) ? [{ args, ...(repeatEvery === undefined ? {} : { repeatEvery }) }] : []
+    return nestedScript(unwrapped).fold(
+      () => (isGh(head) ? [{ args: words.slice(1), ...(every === undefined ? {} : { repeatEvery: every }) }] : []),
+      (script) => callsIn(script, every),
+    )
   })
+
+/** Every `gh` call in the command, in order, including those inside `bash -c '…'`, `eval` and `watch '…'`. */
+export const ghCalls = (command: string): ReadonlyArray<GhCall> => callsIn(command, undefined)
 
 /* ---------- Loops ---------- */
 
@@ -195,28 +212,64 @@ const sleepSeconds = (arg: string): number => {
   return m === null ? Number.NaN : Number(m[1]) * (SLEEP_UNITS[m[2]] ?? 1)
 }
 
-type LoopScan = { readonly depth: number; readonly ghInLoop: boolean; readonly sleeps: ReadonlyArray<number> }
+type LoopScan = {
+  /** Loops open at this point, innermost last: open-ended, or bounded by a list or its input. */
+  readonly stack: ReadonlyArray<"open" | "bounded">
+  readonly ghInLoop: boolean
+  readonly sleeps: ReadonlyArray<number>
+}
+
+/** Words that can come before a loop keyword in the same segment, as in `then while …` or `do until …`. */
+const LEADERS = List.of("then", "do", "else", "elif", "{", "!", "time")
+
+/** A segment's first word that isn't a leader, and the word after it. */
+const leading = (segment: ReadonlyArray<string>): { readonly head: string; readonly next: string } => {
+  const at = segment.findIndex((w) => !LEADERS.contains(w))
+  if (at < 0) return { head: "", next: "" }
+  // The word after the head, past assignments, so `while IFS= read -r n` reads as `while read`.
+  const next = segment.slice(at + 1).find((w) => !ASSIGNMENT.test(w)) ?? ""
+  return { head: segment[at] ?? "", next }
+}
 
 /**
  * Whether `gh` runs inside an open-ended `while` or `until` loop (its condition or its body), and the
- * longest `sleep` inside such a loop. A `for` over a list is bounded, so it isn't counted.
+ * longest `sleep` inside such a loop, looking into `bash -c` scripts too. A `for` over a list and a
+ * `while read` over input are bounded by what they're given, so they aren't counted.
  */
 export const loopOf = (command: string): { readonly loops: boolean; readonly sleepSeconds: number } => {
   const scan = segments(command).reduce<LoopScan>(
     (acc, segment) => {
-      const opens = segment[0] === "while" || segment[0] === "until"
-      const closes = segment[0] === "done"
-      const inside = opens || acc.depth > 0
-      const { words } = unwrap(segment)
-      const ghHere = inside && words.length > 0 && isGh(words[0] ?? "")
+      const { head, next } = leading(segment)
+      const opened: ReadonlyArray<"open" | "bounded"> =
+        head === "while" || head === "until"
+          ? [next === "read" ? "bounded" : "open"]
+          : head === "for" || head === "select"
+            ? ["bounded"]
+            : []
+      const stack = acc.stack.concat(opened)
+      const inside = stack.includes("open")
+      const unwrapped = unwrap(segment)
+      const { words } = unwrapped
+      const script = nestedScript(unwrapped)
+      const nested = script.map(loopOf)
+      // A gh call run through `bash -c` inside the loop counts as one in it.
+      const ghHere =
+        inside && ((words.length > 0 && isGh(words[0] ?? "")) || script.exists((sc) => ghCalls(sc).length > 0))
       const sleep = inside && words[0] === "sleep" ? [sleepSeconds(words[1] ?? "")] : []
       return {
-        depth: Math.max(0, acc.depth + (opens ? 1 : 0) - (closes ? 1 : 0)),
-        ghInLoop: acc.ghInLoop || ghHere,
-        sleeps: [...acc.sleeps, ...sleep],
+        stack: head === "done" ? stack.slice(0, -1) : stack,
+        ghInLoop: acc.ghInLoop || ghHere || nested.exists((n) => n.loops),
+        sleeps: [
+          ...acc.sleeps,
+          ...sleep,
+          ...nested.fold(
+            () => [],
+            (n) => (n.loops ? [n.sleepSeconds] : []),
+          ),
+        ],
       }
     },
-    { depth: 0, ghInLoop: false, sleeps: [] },
+    { stack: [], ghInLoop: false, sleeps: [] },
   )
   const sleeps = scan.sleeps.filter((n) => Number.isFinite(n))
   return { loops: scan.ghInLoop, sleepSeconds: sleeps.length === 0 ? 0 : Math.max(...sleeps) }
