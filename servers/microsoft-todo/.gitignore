@@ -1,0 +1,47 @@
+# Dependencies
+node_modules/
+npm-debug.log
+yarn-debug.log
+yarn-error.log
+package-lock.json
+yarn.lock
+
+# Build output
+build/
+dist/
+lib/
+
+# Test coverage
+coverage/
+
+# vitest 5 JSON/JUnit reporter output, ts-builds lint report
+.vitest/
+.ts-builds/
+
+# Environment variables
+.env*
+.env
+.env.local
+.env.*.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Tokens file (contains sensitive authentication data)
+tokens.json
+
+# Editor directories and files
+.idea/
+.vscode/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+.DS_Store
+
+# MCP Registry publisher binary, downloaded by CI
+mcp-publisher
+
+# Live smoke snapshots (scripts/smoke-live.mjs); they hold account data
+.smoke/
