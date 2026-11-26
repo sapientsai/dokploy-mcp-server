@@ -1,0 +1,172 @@
+import { IO, Option, Try, type Wire } from "functype"
+
+import type { Policy, Service } from "../config"
+import { parseProbe } from "../parsers"
+import { check, estimateFor, observe } from "./decide"
+import { createStore, type Sql, type Store } from "./store"
+import type { CheckRequest, Observation } from "./types"
+import { policyUsage } from "./usage"
+
+/** How long the broker waits on a service's status endpoint. A check never waits on it. */
+const BROKER_PROBE_TIMEOUT_MS = 2_000
+const BROKER_PROBE_KEY = "broker-probe-at"
+const BROKER_OK_KEY = "broker-ok-at"
+/** Stale windows without a broker reading before clients are asked again, as when its token has expired. */
+const BROKER_GRACE_WINDOWS = 3
+const ACCOUNTS_KEY = "accounts"
+
+/** Every message the Worker sends a ledger, as JSON. The service and its policies travel with each one. */
+export type LedgerMessage = Wire<
+  | {
+      readonly op: "check"
+      readonly service: Service
+      readonly policies: ReadonlyArray<Policy>
+      readonly request: CheckRequest
+    }
+  | { readonly op: "finish"; readonly callId: string }
+  | {
+      readonly op: "report"
+      readonly service: Service
+      readonly observations: ReadonlyArray<Observation>
+      readonly source: "probe" | "header" | "report"
+    }
+  | { readonly op: "release"; readonly lease: string; readonly used: number }
+  | { readonly op: "status"; readonly service: Service; readonly policies: ReadonlyArray<Policy> }
+  | { readonly op: "remember-account"; readonly key: string }
+  | { readonly op: "accounts" }
+>
+
+type State = { readonly storage: { readonly sql: Sql } }
+type Env = Readonly<Record<string, unknown>>
+
+const json = (body: unknown, status = 200): Response =>
+  new Response(JSON.stringify(body), { status, headers: { "content-type": "application/json" } })
+
+const accountsIn = (store: Store): ReadonlyArray<string> =>
+  store
+    .meta(ACCOUNTS_KEY)
+    .flatMap((raw) => Try(() => JSON.parse(raw) as Wire<ReadonlyArray<string>>).toOption())
+    .getOrElse(() => [])
+
+/** Whether every budget was read within the service's stale window. */
+const fresh = (store: Store, service: Service, now: number): boolean =>
+  service.resources.every((r) =>
+    estimateFor(store, service, r.id, now).exists((e) => now - e.observedAt <= service.staleAfterSeconds * 1000),
+  )
+
+/**
+ * Asks the service itself, when the Worker holds a token for its free status endpoint and the ledger
+ * is stale. At most once per stale window. While it keeps failing, `clientsAsked` brings clients back in.
+ */
+/** The service's status endpoint and the token for it, when the Worker holds that token. */
+const brokerTarget = (service: Service, env: Env): Option<{ readonly url: string; readonly token: string }> =>
+  Option(service.probe?.http).flatMap((http) =>
+    Option(env[http.tokenSecret])
+      .flatMap((token) => (typeof token === "string" && token !== "" ? Option(token) : Option.none<string>()))
+      .map((token) => ({ url: http.url, token })),
+  )
+
+/**
+ * Whether clients should be asked to probe: when the broker has no token, or its own probe hasn't
+ * produced a reading for a few stale windows, as when the token has expired.
+ */
+const clientsAsked = (store: Store, service: Service, env: Env, now: number): boolean =>
+  brokerTarget(service, env).isNone() ||
+  now - Number(store.meta(BROKER_OK_KEY).getOrElse(() => "0")) > BROKER_GRACE_WINDOWS * service.staleAfterSeconds * 1000
+
+const brokerProbe = (store: Store, service: Service, env: Env, now: number): IO<never, never, void> => {
+  const target = brokerTarget(service, env)
+  const lastTry = Number(store.meta(BROKER_PROBE_KEY).getOrElse(() => "0"))
+  const due = !fresh(store, service, now) && now - lastTry >= service.staleAfterSeconds * 1000
+  return target
+    .filter(() => due)
+    .fold(
+      () => IO.succeed(undefined),
+      ({ url, token }) => {
+        store.setMeta(BROKER_PROBE_KEY, String(now))
+        return IO.tryPromise({
+          try: () =>
+            fetch(url, {
+              headers: {
+                accept: "application/json",
+                authorization: `Bearer ${token}`,
+                "user-agent": "quota-mcp-server",
+              },
+              // The token goes to this URL only: a redirect comes back as a 3xx, which isn't ok, and isn't followed.
+              redirect: "manual",
+              signal: AbortSignal.timeout(BROKER_PROBE_TIMEOUT_MS),
+            }).then((response) => (response.ok ? (response.json() as Promise<unknown>) : undefined)),
+          catch: () => undefined,
+        })
+          .map((body) => {
+            // Stamped when the probe started: calls allowed while it was in flight still count.
+            if (observe(store, service, parseProbe(service, body), "broker", now) > 0) {
+              store.setMeta(BROKER_OK_KEY, String(now))
+            }
+          })
+          .recover(undefined)
+      },
+    )
+}
+
+/**
+ * One ledger per `service:account`, as a SQLite-backed Durable Object. Requests are handled one at a
+ * time, so every check sees every spend before it. One more instance, named `__accounts`, keeps the
+ * list of ledger keys for `quota_status`.
+ */
+export class QuotaLedger {
+  private readonly store: Store
+
+  constructor(
+    state: State,
+    private readonly env: Env,
+  ) {
+    this.store = createStore(state.storage.sql)
+  }
+
+  async fetch(request: Request): Promise<Response> {
+    const message = (await request.json()) as LedgerMessage
+    const now = Date.now()
+    switch (message.op) {
+      case "check": {
+        // Answer on the estimate as it stands; a stale one is refreshed in the background, so a
+        // check never waits on the service. The object stays alive until the probe settles.
+        const result = check(this.store, message.service, message.policies, message.request, {
+          now,
+          id: crypto.randomUUID(),
+          clientProbes: clientsAsked(this.store, message.service, this.env, now),
+        })
+        void brokerProbe(this.store, message.service, this.env, now).runOrThrow()
+        return json(result)
+      }
+      case "finish":
+        this.store.finish(message.callId)
+        return json({ ok: true })
+      case "report":
+        return json({ kept: observe(this.store, message.service, message.observations, message.source, now) })
+      case "release":
+        return json({ ok: this.store.lowerLease(message.lease, message.used) })
+      case "status":
+        await brokerProbe(this.store, message.service, this.env, now).runOrThrow()
+        return json({
+          estimates: message.service.resources.map((r) => ({
+            resource: r.id,
+            estimate: estimateFor(this.store, message.service, r.id, Date.now()).orNull(),
+          })),
+          inFlight: this.store.inFlight({ kind: "fleet" }, now),
+          topSessions: this.store.topSessions(now - 3_600_000, 5),
+          policies: policyUsage(this.store, message.service, message.policies, now),
+          now,
+        })
+      case "remember-account": {
+        const known = accountsIn(this.store)
+        if (!known.includes(message.key)) {
+          this.store.setMeta(ACCOUNTS_KEY, JSON.stringify([...known, message.key].toSorted()))
+        }
+        return json({ ok: true })
+      }
+      case "accounts":
+        return json({ accounts: accountsIn(this.store) })
+    }
+  }
+}

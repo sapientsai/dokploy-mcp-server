@@ -1,0 +1,18 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // For `pnpm cf:dev` only. The live Worker deploys from the hosting repo, with its own config and
+  // policies, by calling createQuotaWorker from "quota-mcp-server/worker".
+  "name": "quota-mcp-server-dev",
+  "main": "src/worker.ts",
+  "compatibility_date": "2026-08-17",
+  // Web-standard APIs only: if a Node built-in ever reaches the bundle, fail loudly.
+  "compatibility_flags": ["no_nodejs_compat", "no_nodejs_compat_v2"],
+  "durable_objects": {
+    "bindings": [{ "name": "LEDGER", "class_name": "QuotaLedger" }],
+  },
+  // SQLite-backed, which the Workers Free plan supports.
+  "migrations": [{ "tag": "v1", "new_sqlite_classes": ["QuotaLedger"] }],
+  // Secrets are set out of band, never committed:
+  //   wrangler secret put QUOTA_KEY
+  //   wrangler secret put GITHUB_PROBE_TOKEN   (optional: lets the broker read /rate_limit itself)
+}
