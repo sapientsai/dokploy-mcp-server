@@ -10,7 +10,11 @@ const KEY = "test-quota-key"
 const PROBE_TOKEN = "test-probe-token"
 const RESET = Math.floor(Date.now() / 1000) + 1800
 
-const github = { remaining: 4321, requests: [] as Array<{ readonly auth: string; readonly agent: string }> }
+const github = {
+  remaining: 4321,
+  failing: false,
+  requests: [] as Array<{ readonly auth: string; readonly agent: string }>,
+}
 
 const bundle = async (): Promise<string> => {
   const result = await build({
@@ -42,6 +46,7 @@ const workerWith = (script: string, bindings: Record<string, string>): Miniflare
         auth: request.headers.get("authorization") ?? "",
         agent: request.headers.get("user-agent") ?? "",
       })
+      if (github.failing) return new Response("Bad credentials", { status: 401 })
       return Response.json({
         resources: {
           core: { limit: 5000, remaining: github.remaining, reset: RESET, used: 5000 - github.remaining },
@@ -156,6 +161,18 @@ describe("the hook's API", () => {
     // The reading is stamped when the probe started, so the first call still counts.
     const second = await waitForCheck({ account: "octo", resource: "core" }, (a) => a.remaining !== null)
     expect(second).toMatchObject({ decision: "allow", remaining: 4320 })
+    // The broker reads GitHub itself now, so no client is asked to.
+    expect(second.probe).toBeNull()
+  })
+
+  it("asks clients to probe when the broker's own probe fails, as with an expired token", async () => {
+    github.failing = true
+    try {
+      const answer = await checkCall({ account: "expired", resource: "core" })
+      expect(answer).toMatchObject({ decision: "allow", remaining: null, probe: "gh api rate_limit" })
+    } finally {
+      github.failing = false
+    }
   })
 
   it("refuses an agent's call under the floor, with when to retry", async () => {

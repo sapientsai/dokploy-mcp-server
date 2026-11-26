@@ -348,7 +348,8 @@ const plausible = (o: Observation, windowMs: number, now: number): boolean =>
  * What of a reading the ledger keeps. The broker's own readings are kept as they are. A client's
  * reading can only ever lower what the ledger thinks is left, in a live window or just after a reset,
  * whose rollover already grants the full budget. It must name a reset still to come, and can't bring
- * that reset sooner or raise the limit: it keeps the later reset and the smaller limit. So a refused
+ * that reset sooner: the later reset is kept. Its limit is ignored once the ledger has one, so a stray
+ * report, such as from an unauthenticated call, can't raise or shrink the budget for good. So a refused
  * agent can't report its way past the floor or its share, once or repeatedly.
  */
 const accept = (store: Store, service: Service, o: Observation, source: Source, now: number): Option<Observation> => {
@@ -360,7 +361,7 @@ const accept = (store: Store, service: Service, o: Observation, source: Source, 
     (stored) =>
       estimateFor(store, service, o.resource, now)
         .filter((e) => o.remaining <= e.remaining)
-        .map((e) => ({ ...o, limit: Math.min(o.limit, stored.limit), resetAt: Math.max(o.resetAt, e.resetAt) })),
+        .map((e) => ({ ...o, limit: stored.limit, resetAt: Math.max(o.resetAt, e.resetAt) })),
   )
 }
 

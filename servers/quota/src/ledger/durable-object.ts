@@ -10,6 +10,9 @@ import { policyUsage } from "./usage"
 /** How long the broker waits on a service's status endpoint. A check never waits on it. */
 const BROKER_PROBE_TIMEOUT_MS = 2_000
 const BROKER_PROBE_KEY = "broker-probe-at"
+const BROKER_OK_KEY = "broker-ok-at"
+/** Stale windows without a broker reading before clients are asked again, as when its token has expired. */
+const BROKER_GRACE_WINDOWS = 3
 const ACCOUNTS_KEY = "accounts"
 
 /** Every message the Worker sends a ledger, as JSON. The service and its policies travel with each one. */
@@ -53,7 +56,7 @@ const fresh = (store: Store, service: Service, now: number): boolean =>
 
 /**
  * Asks the service itself, when the Worker holds a token for its free status endpoint and the ledger
- * is stale. At most once per stale window; a failure leaves the ledger to clients' reports.
+ * is stale. At most once per stale window. While it keeps failing, `clientsAsked` brings clients back in.
  */
 /** The service's status endpoint and the token for it, when the Worker holds that token. */
 const brokerTarget = (service: Service, env: Env): Option<{ readonly url: string; readonly token: string }> =>
@@ -62,6 +65,14 @@ const brokerTarget = (service: Service, env: Env): Option<{ readonly url: string
       .flatMap((token) => (typeof token === "string" && token !== "" ? Option(token) : Option.none<string>()))
       .map((token) => ({ url: http.url, token })),
   )
+
+/**
+ * Whether clients should be asked to probe: when the broker has no token, or its own probe hasn't
+ * produced a reading for a few stale windows, as when the token has expired.
+ */
+const clientsAsked = (store: Store, service: Service, env: Env, now: number): boolean =>
+  brokerTarget(service, env).isNone() ||
+  now - Number(store.meta(BROKER_OK_KEY).getOrElse(() => "0")) > BROKER_GRACE_WINDOWS * service.staleAfterSeconds * 1000
 
 const brokerProbe = (store: Store, service: Service, env: Env, now: number): IO<never, never, void> => {
   const target = brokerTarget(service, env)
@@ -89,7 +100,9 @@ const brokerProbe = (store: Store, service: Service, env: Env, now: number): IO<
         })
           .map((body) => {
             // Stamped when the probe started: calls allowed while it was in flight still count.
-            observe(store, service, parseProbe(service, body), "broker", now)
+            if (observe(store, service, parseProbe(service, body), "broker", now) > 0) {
+              store.setMeta(BROKER_OK_KEY, String(now))
+            }
           })
           .recover(undefined)
       },
@@ -121,8 +134,7 @@ export class QuotaLedger {
         const result = check(this.store, message.service, message.policies, message.request, {
           now,
           id: crypto.randomUUID(),
-          // When the broker reads the service itself, no client is asked to.
-          clientProbes: brokerTarget(message.service, this.env).isNone(),
+          clientProbes: clientsAsked(this.store, message.service, this.env, now),
         })
         void brokerProbe(this.store, message.service, this.env, now).runOrThrow()
         return json(result)

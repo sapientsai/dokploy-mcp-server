@@ -398,10 +398,10 @@ describe("reports", () => {
     expect(left(l)?.remaining).toBe(900)
   })
 
-  it("keeps the smaller limit and the later reset when a client lowers what's left", () => {
+  it("keeps the ledger's limit and the later reset when a client lowers what's left", () => {
     const l = ledger()
     seen(l, 1200)
-    // A later reset only delays the refill, so it's kept; the bigger limit isn't.
+    // A later reset only delays the refill, so it's kept; the client's limit isn't.
     expect(report(l, { remaining: 800, limit: 1_000_000_000, resetAt: T0 + HOUR + 5000 }, "probe")).toBe(1)
     expect(left(l)).toMatchObject({ remaining: 800, limit: 5000, resetAt: T0 + HOUR + 5000 })
     // A sooner reset would bring the refill forward, so the window's own is kept.
@@ -436,7 +436,7 @@ describe("reports", () => {
     seen(l, 1200)
     const after = T0 + HOUR + 1000
     expect(report(l, { remaining: 4000, limit: 9000, resetAt: after + 1000 }, "probe", after)).toBe(1)
-    // The window keeps the rolled-over reset and the smaller limit.
+    // The window keeps the rolled-over reset and the ledger's own limit.
     expect(left(l, after + 1)).toMatchObject({ remaining: 4000, limit: 5000, resetAt: T0 + 2 * HOUR })
     expect(left(l, after + 5000)?.remaining).toBe(4000)
   })
@@ -446,6 +446,27 @@ describe("reports", () => {
     seen(l, 1200)
     expect(report(l, { remaining: 4000 }, "broker")).toBe(1)
     expect(left(l)?.remaining).toBe(4000)
+  })
+})
+
+describe("a stray report", () => {
+  it("can't shrink the limit for good, as an unauthenticated call's 60 an hour would", () => {
+    const l = ledger([{ id: "floor", kind: "floor", keep: 1000 }])
+    seen(l, 4000)
+    expect(
+      observe(
+        l.store,
+        l.service,
+        [{ resource: "core", limit: 60, remaining: 60, resetAt: T0 + HOUR }],
+        "probe",
+        T0 + 1,
+      ),
+    ).toBe(1)
+    // After the reset, the budget is the ledger's limit, not the stray 60.
+    expect(estimateFor(l.store, l.service, "core", T0 + HOUR + 1).orNull()).toMatchObject({
+      limit: 5000,
+      remaining: 5000,
+    })
   })
 })
 
