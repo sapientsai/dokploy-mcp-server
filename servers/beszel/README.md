@@ -93,6 +93,13 @@ pnpm inspect          # build, then open the MCP Inspector
 pnpm smoke:live       # call every tool against a real hub (reads BESZEL_* from the environment)
 ```
 
+A checked-in `.mcp.json`, both here and at the repo root, registers the local build as the `beszel` server. It runs `envpkt exec --skip-audit -- node …/dist/bin.js`, so it needs:
+
+- [envpkt](https://www.npmjs.com/package/envpkt) installed, with your default envpkt config holding `BESZEL_URL` and either `BESZEL_EMAIL` plus `BESZEL_PASSWORD` or `BESZEL_TOKEN`, and the key to decrypt its secrets;
+- a build first: `pnpm --filter beszel-mcp-server build`.
+
+`envpkt exec` passes every entry in that config to the server, not just the Beszel ones.
+
 This server lives in `servers/beszel` of [sapientsai/mcp-servers](https://github.com/sapientsai/mcp-servers).
 
 ## License
