@@ -14,6 +14,7 @@ Small [MCP](https://modelcontextprotocol.io) servers built on [somamcp](https://
 | [microsoft-todo](./servers/microsoft-todo) | [`microsoft-todo-mcp-server`](https://www.npmjs.com/package/microsoft-todo-mcp-server) | Microsoft To Do via Graph: task lists, tasks, checklist items and reminders                                 |
 | [oura](./servers/oura)                     | [`oura-ring-mcp-server`](https://www.npmjs.com/package/oura-ring-mcp-server)           | Read your [Oura Ring](https://ouraring.com) data: sleep, readiness, activity, heart rate and more           |
 | [trademark](./servers/trademark)           | [`trademark-mcp-server`](https://www.npmjs.com/package/trademark-mcp-server)           | USPTO trademark records from the TSDR API: status, images and documents                                     |
+| [dakboard](./servers/dakboard)             | [`dakboard-mcp-server`](https://www.npmjs.com/package/dakboard-mcp-server)             | Manage [DAKboard](https://dakboard.com) dashboards: screens, blocks, devices, loops and metrics             |
 
 Each server's README covers installing and configuring it.
 

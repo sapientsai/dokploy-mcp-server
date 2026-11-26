@@ -4,7 +4,6 @@ A Model Context Protocol (MCP) server for managing DAKboard digital dashboards -
 
 [![npm version](https://img.shields.io/npm/v/dakboard-mcp-server.svg)](https://www.npmjs.com/package/dakboard-mcp-server)
 [![npm downloads](https://img.shields.io/npm/dm/dakboard-mcp-server.svg)](https://www.npmjs.com/package/dakboard-mcp-server)
-[![GitHub stars](https://img.shields.io/github/stars/jordanburke/dakboard-mcp-server.svg?style=flat&logo=github)](https://github.com/jordanburke/dakboard-mcp-server/stargazers)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](https://opensource.org/licenses/MIT)
 
 ## Quick Start

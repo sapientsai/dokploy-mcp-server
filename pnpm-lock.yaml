@@ -237,6 +237,31 @@ importers:
         specifier: ^4.23.15
         version: 4.23.15
 
+  servers/dakboard:
+    dependencies:
+      dotenv:
+        specifier: ^17.4.2
+        version: 17.4.2
+      fastmcp:
+        specifier: ^4.0.1
+        version: 4.28.4(ajv-formats@3.0.1(ajv@8.20.0))(ajv@8.20.0)(jose@6.2.18)(openapi-types@12.1.3)(supports-color@10.2.2)
+      functype:
+        specifier: ^0.60.7
+        version: 0.60.7
+      zod:
+        specifier: ^4.4.3
+        version: 4.6.7
+    devDependencies:
+      '@types/node':
+        specifier: ^24.12.4
+        version: 24.19.2
+      ts-builds:
+        specifier: ^4.7.0
+        version: 4.8.1(@types/node@24.19.2)(@typescript-eslint/eslint-plugin@8.73.0(@typescript-eslint/parser@8.73.0(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(@typescript-eslint/parser@8.73.0(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(jiti@2.7.0)(supports-color@10.2.2)(tsdown@0.22.14(tsx@4.23.15)(typescript@6.0.3))(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))
+      tsdown:
+        specifier: ^0.22.0
+        version: 0.22.14(tsx@4.23.15)(typescript@6.0.3)
+
   servers/dokploy:
     dependencies:
       dotenv:
@@ -3284,6 +3309,10 @@ packages:
     engines: {node: '>=18.17.0'}
     peerDependencies:
       functype: '>=2.0.0'
+
+  functype@0.60.7:
+    resolution: {integrity: sha512-gsr17MX6UPwteSQ6uPm2hhGz0bBubAGE3HcBIw+HQF6nQlU2FFdPxUNAlhg2PYikahCKyw7WABKtVsJ/Glhk3Q==}
+    hasBin: true
 
   functype@1.27.2:
     resolution: {integrity: sha512-cWrqqiO/SBPnsH59LMYmS1sr4Uit1z+9HRMtKUX4BAFhsgEHYXUCCBDVmE3R2JdKksY9yq39m9V6uyv6+Pg5+w==}
@@ -6333,22 +6362,6 @@ snapshots:
       - '@vitest/ui'
       - vite
 
-  '@vitest/coverage-v8@5.1.1(@types/node@22.20.7)(@vitest/ui@5.1.1)(vite@8.3.8(@types/node@22.20.7)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))(vitest@5.1.1)':
-    dependencies:
-      '@bcoe/v8-coverage': 1.0.2
-      '@vitest/istanbul-lib-coverage': 2.1.1
-      '@vitest/istanbul-lib-report': 2.1.1
-      ast-v8-to-istanbul: 1.0.8
-      magicast: 0.5.5
-      obug: 3.0.0
-      std-env: 4.3.0
-      tinyrainbow: 3.2.0
-      vitest: 5.1.1(@types/node@22.20.7)(@vitest/coverage-v8@5.1.1)(@vitest/ui@5.1.1)(vite@8.3.8(@types/node@22.20.7)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))
-    transitivePeerDependencies:
-      - '@types/node'
-      - '@vitest/ui'
-      - vite
-
   '@vitest/coverage-v8@5.1.1(@types/node@24.19.2)(@vitest/ui@5.1.1)(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))(vitest@5.1.1)':
     dependencies:
       '@bcoe/v8-coverage': 1.0.2
@@ -6443,20 +6456,6 @@ snapshots:
       - '@vitest/coverage-v8'
       - vite
     optional: true
-
-  '@vitest/ui@5.1.1(@types/node@22.20.7)(@vitest/coverage-v8@5.1.1)(vite@8.3.8(@types/node@22.20.7)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))(vitest@5.1.1)':
-    dependencies:
-      '@vitest/utils': 5.1.1
-      fflate: 0.8.3
-      flatted: 3.4.4
-      pathe: 2.0.3
-      sirv: 3.0.2
-      tinyrainbow: 3.2.0
-      vitest: 5.1.1(@types/node@22.20.7)(@vitest/coverage-v8@5.1.1)(@vitest/ui@5.1.1)(vite@8.3.8(@types/node@22.20.7)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))
-    transitivePeerDependencies:
-      - '@types/node'
-      - '@vitest/coverage-v8'
-      - vite
 
   '@vitest/ui@5.1.1(@types/node@24.19.2)(@vitest/coverage-v8@5.1.1)(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))(vitest@5.1.1)':
     dependencies:
@@ -7500,6 +7499,8 @@ snapshots:
   functype-os@2.0.0(functype@2.0.0):
     dependencies:
       functype: 2.0.0
+
+  functype@0.60.7: {}
 
   functype@1.27.2: {}
 
@@ -8713,8 +8714,8 @@ snapshots:
   ts-builds@4.8.1(@types/node@22.20.7)(@typescript-eslint/eslint-plugin@8.73.0(@typescript-eslint/parser@8.73.0(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(@typescript-eslint/parser@8.73.0(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(jiti@2.7.0)(supports-color@10.2.2)(tsdown@0.23.7(tsx@4.23.15)(typescript@6.0.3))(vite@8.3.8(@types/node@22.20.7)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)):
     dependencies:
       '@eslint/js': 10.0.1(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2))
-      '@vitest/coverage-v8': 5.1.1(@types/node@22.20.7)(@vitest/ui@5.1.1)(vite@8.3.8(@types/node@22.20.7)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))(vitest@5.1.1)
-      '@vitest/ui': 5.1.1(@types/node@22.20.7)(@vitest/coverage-v8@5.1.1)(vite@8.3.8(@types/node@22.20.7)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))(vitest@5.1.1)
+      '@vitest/coverage-v8': 5.1.1(@types/node@26.6.6)(@vitest/ui@5.1.1)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))(vitest@5.1.1)
+      '@vitest/ui': 5.1.1(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))(vitest@5.1.1)
       dependency-cruiser: 18.8.0
       eslint: 10.15.0(jiti@2.7.0)(supports-color@10.2.2)
       eslint-config-functype: 2.127.2(@typescript-eslint/eslint-plugin@8.73.0(@typescript-eslint/parser@8.73.0(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(@typescript-eslint/parser@8.73.0(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(eslint-plugin-prettier@5.5.7(eslint-config-prettier@10.1.8(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2)))(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2))(prettier@3.10.1))(eslint-plugin-simple-import-sort@14.0.0(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2)))(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2))(prettier@3.10.1)
@@ -8763,8 +8764,8 @@ snapshots:
   ts-builds@4.8.1(@types/node@24.19.2)(@typescript-eslint/eslint-plugin@8.73.0(@typescript-eslint/parser@8.73.0(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(@typescript-eslint/parser@8.73.0(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(jiti@2.7.0)(supports-color@10.2.2)(tsdown@0.22.14(tsx@4.23.15)(typescript@6.0.3))(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15)):
     dependencies:
       '@eslint/js': 10.0.1(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2))
-      '@vitest/coverage-v8': 5.1.1(@types/node@26.6.6)(@vitest/ui@5.1.1)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))(vitest@5.1.1)
-      '@vitest/ui': 5.1.1(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))(vitest@5.1.1)
+      '@vitest/coverage-v8': 5.1.1(@types/node@24.19.2)(@vitest/ui@5.1.1)(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))(vitest@5.1.1)
+      '@vitest/ui': 5.1.1(@types/node@24.19.2)(@vitest/coverage-v8@5.1.1)(vite@8.3.8(@types/node@24.19.2)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))(vitest@5.1.1)
       dependency-cruiser: 18.8.0
       eslint: 10.15.0(jiti@2.7.0)(supports-color@10.2.2)
       eslint-config-functype: 2.127.2(@typescript-eslint/eslint-plugin@8.73.0(@typescript-eslint/parser@8.73.0(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(@typescript-eslint/parser@8.73.0(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2))(supports-color@10.2.2)(typescript@6.0.3))(eslint-plugin-prettier@5.5.7(eslint-config-prettier@10.1.8(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2)))(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2))(prettier@3.10.1))(eslint-plugin-simple-import-sort@14.0.0(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2)))(eslint@10.15.0(jiti@2.7.0)(supports-color@10.2.2))(prettier@3.10.1)
@@ -9397,8 +9398,8 @@ snapshots:
       why-is-node-running: 3.2.1
     optionalDependencies:
       '@types/node': 22.20.7
-      '@vitest/coverage-v8': 5.1.1(@types/node@22.20.7)(@vitest/ui@5.1.1)(vite@8.3.8(@types/node@22.20.7)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))(vitest@5.1.1)
-      '@vitest/ui': 5.1.1(@types/node@22.20.7)(@vitest/coverage-v8@5.1.1)(vite@8.3.8(@types/node@22.20.7)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))(vitest@5.1.1)
+      '@vitest/coverage-v8': 5.1.1(@types/node@26.6.6)(@vitest/ui@5.1.1)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))(vitest@5.1.1)
+      '@vitest/ui': 5.1.1(@types/node@26.6.6)(@vitest/coverage-v8@5.1.1)(vite@8.3.8(@types/node@26.6.6)(esbuild@0.28.2)(jiti@2.7.0)(tsx@4.23.15))(vitest@5.1.1)
     transitivePeerDependencies:
       - msw
 

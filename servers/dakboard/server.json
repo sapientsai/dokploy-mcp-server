@@ -1,17 +1,18 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
-  "name": "io.github.jordanburke/dakboard-mcp-server",
-  "description": "DAKboard MCP server for managing screens, blocks, devices, loops, and metrics on DAKboard digital dashboards.",
+  "name": "io.github.sapientsai/dakboard-mcp-server",
+  "description": "Manage DAKboard digital dashboards: screens, blocks, devices, loops and metrics.",
   "repository": {
-    "url": "https://github.com/jordanburke/dakboard-mcp-server",
-    "source": "github"
+    "url": "https://github.com/sapientsai/mcp-servers",
+    "source": "github",
+    "subfolder": "servers/dakboard"
   },
-  "version": "0.1.0",
+  "version": "1.0.1",
   "packages": [
     {
       "registryType": "npm",
       "identifier": "dakboard-mcp-server",
-      "version": "0.1.0",
+      "version": "1.0.1",
       "transport": {
         "type": "stdio"
       },

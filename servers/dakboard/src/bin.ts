@@ -27,7 +27,7 @@ Environment Variables:
   PORT                 HTTP server port (default: 3000)
   HOST                 HTTP server host (default: 127.0.0.1)
 
-For more information, visit: https://github.com/jordanburke/dakboard-mcp-server
+For more information, visit: https://github.com/sapientsai/mcp-servers/tree/main/servers/dakboard
 `)
   process.exit(0)
 }

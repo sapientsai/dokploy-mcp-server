@@ -37,7 +37,10 @@
     "prepublishOnly": "pnpm run ci",
     "inspect": "pnpm build && npx @modelcontextprotocol/inspector dist/index.js",
     "start": "pnpm build && npx dakboard-mcp-server",
-    "serve": "pnpm build && node dist/index.js"
+    "serve": "pnpm build && node dist/index.js",
+    "sync:server-json": "node scripts/sync-server-json.mjs",
+    "check:server-json": "node scripts/sync-server-json.mjs --check",
+    "version": "node scripts/sync-server-json.mjs && git add server.json"
   },
   "prettier": "ts-builds/prettier",
   "keywords": [
@@ -51,17 +54,18 @@
     "dashboard",
     "fastmcp"
   ],
-  "mcpName": "io.github.jordanburke/dakboard-mcp-server",
+  "mcpName": "io.github.sapientsai/dakboard-mcp-server",
   "author": "Jordan Burke <jordan.burke@gmail.com>",
   "license": "MIT",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/jordanburke/dakboard-mcp-server.git"
+    "url": "git+https://github.com/sapientsai/mcp-servers.git",
+    "directory": "servers/dakboard"
   },
   "bugs": {
-    "url": "https://github.com/jordanburke/dakboard-mcp-server/issues"
+    "url": "https://github.com/sapientsai/mcp-servers/issues"
   },
-  "homepage": "https://github.com/jordanburke/dakboard-mcp-server#readme",
+  "homepage": "https://github.com/sapientsai/mcp-servers/tree/main/servers/dakboard#readme",
   "dependencies": {
     "dotenv": "^17.4.2",
     "fastmcp": "^4.0.1",
@@ -72,6 +76,5 @@
     "@types/node": "^24.12.4",
     "ts-builds": "^4.7.0",
     "tsdown": "^0.22.0"
-  },
-  "packageManager": "pnpm@12.21.0+sha512.66fd8278ee28935ce951792d34367ff3af5c432a2756445823029533835b8da529bbe0be5130afd56ed0713fb8789e47bad82d93bd5ae2fe54b15562d6276ef0"
+  }
 }

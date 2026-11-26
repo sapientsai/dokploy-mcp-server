@@ -95,9 +95,4 @@ DAKboard uses a **non-linear, per-block scaling** to convert API coordinates (x,
 
 ## Publishing
 
-```bash
-npm version patch|minor|major
-npm publish --access public
-```
-
-The `prepublishOnly` hook automatically runs `pnpm run ci` before publishing.
+This server lives in `servers/dakboard` of the `sapientsai/mcp-servers` monorepo; the root CLAUDE.md has the repo-wide rules. It moved here from `jordanburke/dakboard-mcp-server` with its history. Install from the repo root. Release from the root too: `pnpm release dakboard <patch|minor|major>` bumps the version, syncs `server.json` through the `version` script, commits and tags `dakboard-mcp-server@<version>`; `git push --follow-tags` publishes this package alone through the root `.github/workflows/publish.yml` (npm trusted publishing, then the MCP Registry). Never `npm publish` by hand. `ci` runs `check:server-json`, which also fails a description over the MCP Registry's 100 characters.
