@@ -1,6 +1,6 @@
 # quota-mcp-server: a shared API-quota broker for agent fleets
 
-Status: phase 2 (the broker) built, 2026-11-26. The hook (phase 3) is next.
+Status: the broker (phase 2) and the hook (phase 3) built, 2026-11-26. Registering the hook on every machine comes with the first release.
 
 ## The problem
 
@@ -155,7 +155,7 @@ A deny reaches the agent as the hook's `permissionDecisionReason`, so it reads, 
 
 ## The hook
 
-`quota-check.mjs`, registered under `PreToolUse` with matcher `Bash`, and again under `PostToolUse` to mark the call finished for `concurrency` policies. Claude Code sends it `session_id`, `cwd` and `tool_input.command` on stdin, and it blocks a call by printing `hookSpecificOutput` with `permissionDecision: "deny"` and a reason.
+`quota-hook`, registered under `PreToolUse` with matcher `Bash`, and again under `PostToolUse` to mark the call finished for `concurrency` policies. Claude Code sends it `session_id`, `cwd` and `tool_input.command` on stdin, and it blocks a call by printing `hookSpecificOutput` with `permissionDecision: "deny"` and a reason.
 
 - **Finds `gh` calls** in the command, including after `&&`, `|`, `;` and `$(`. A command with none exits at once, so the hook costs nothing for other Bash calls.
 - **Classes each call:** `write` for `gh pr create`, `gh issue create`, `gh issue comment`, `gh release create` and any `gh api` with `-X POST`, `PATCH`, `PUT` or `DELETE`; otherwise `read`.
@@ -182,7 +182,7 @@ A deny reaches the agent as the hook's `permissionDecisionReason`, so it reads, 
 
 1. **This spec,** reviewed.
 2. **The broker (built):** Worker, Durable Object, the `github` parser and probe, `/v1/check`, `/v1/report`, the tools. Tests run the Durable Object in workerd through Miniflare, as openFDA's worker tests do.
-3. **The hook,** in the dotfiles, first in a warn-only mode for a few days (it says what it would deny, and denies nothing), then enforcing.
+3. **The hook (built),** shipped as `quota-hook` in this package and registered from the dotfiles, first in a warn-only mode for a few days (it says what it would deny, and denies nothing), then enforcing.
 4. **More services,** one parser at a time, each checked against that service's docs.
 5. **A GitHub read proxy** with an ETag cache, so repeated reads such as CI polling come back 304. This needs a read-only token in the Worker. Whether GitHub counts a 304 against the limit isn't stated on its rate-limit pages; confirm before relying on it.
 

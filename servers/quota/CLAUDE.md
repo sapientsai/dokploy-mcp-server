@@ -31,6 +31,10 @@ src/
   instructions.ts        the MCP server's instructions
   format.ts              tool output
   parsers/github.ts      GET /rate_limit bodies and x-ratelimit-* headers
+  hook/
+    parse.ts             finds gh calls in a shell command; labels, classes and budgets them
+    run.ts               the hook's logic, with its I/O passed in as Deps
+    main.ts              the quota-hook command: config cache, gh login, background probe; Node only
   ledger/
     durable-object.ts    QuotaLedger: one ledger, and the broker's own probe
     decide.ts            the decision engine: estimate, policies, the strictest answer
@@ -52,4 +56,6 @@ src/
 - **Window edges:** a rate window is `(now − per, now]`. The estimate counts spends from the reading's own millisecond on, since a call checked then can't have reached the service yet.
 - **A booked hold is a spend in the future.** It counts against every window that includes its time, which is what queues held calls in order.
 - **Messages to a Durable Object are JSON.** `Option` doesn't survive that, so `CheckResult`, `LedgerMessage` and `StatusAnswer` are `Wire<…>` shapes with nulls; convert at the edge with `.orNull()`.
+- **The hook builds for Node, apart from the Worker.** `tsdown.config.ts` has two configs, so `src/hook` and its Node built-ins never share a chunk with `dist/worker.js`. Nothing under `src/hook` may import from the rest of `src`.
+- **The hook must never block a command by failing.** Every error path ends in exit 0 with no output, and a refusal comes only from the broker's answer or the local polling rules. `QUOTA_HOOK` defaults to `warn`.
 - **Tests:** `test/helpers/sqlite.ts` runs the store's real SQL on `node:sqlite`. Miniflare's newest compatibility date can lag `wrangler.jsonc`'s; the test pins its own.

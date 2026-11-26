@@ -26,6 +26,9 @@
   "bugs": {
     "url": "https://github.com/sapientsai/mcp-servers/issues"
   },
+  "bin": {
+    "quota-hook": "./dist/hook.js"
+  },
   "scripts": {
     "validate": "ts-builds validate",
     "ci": "ts-builds ci",
