@@ -55,12 +55,16 @@ const fresh = (store: Store, service: Service, now: number): boolean =>
  * Asks the service itself, when the Worker holds a token for its free status endpoint and the ledger
  * is stale. At most once per stale window; a failure leaves the ledger to clients' reports.
  */
-const brokerProbe = (store: Store, service: Service, env: Env, now: number): IO<never, never, void> => {
-  const target = Option(service.probe?.http).flatMap((http) =>
+/** The service's status endpoint and the token for it, when the Worker holds that token. */
+const brokerTarget = (service: Service, env: Env): Option<{ readonly url: string; readonly token: string }> =>
+  Option(service.probe?.http).flatMap((http) =>
     Option(env[http.tokenSecret])
-      .filter((token): token is string => typeof token === "string" && token !== "")
+      .flatMap((token) => (typeof token === "string" && token !== "" ? Option(token) : Option.none<string>()))
       .map((token) => ({ url: http.url, token })),
   )
+
+const brokerProbe = (store: Store, service: Service, env: Env, now: number): IO<never, never, void> => {
+  const target = brokerTarget(service, env)
   const lastTry = Number(store.meta(BROKER_PROBE_KEY).getOrElse(() => "0"))
   const due = !fresh(store, service, now) && now - lastTry >= service.staleAfterSeconds * 1000
   return target
@@ -117,6 +121,8 @@ export class QuotaLedger {
         const result = check(this.store, message.service, message.policies, message.request, {
           now,
           id: crypto.randomUUID(),
+          // When the broker reads the service itself, no client is asked to.
+          clientProbes: brokerTarget(message.service, this.env).isNone(),
         })
         void brokerProbe(this.store, message.service, this.env, now).runOrThrow()
         return json(result)

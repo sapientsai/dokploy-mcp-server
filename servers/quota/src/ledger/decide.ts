@@ -256,7 +256,12 @@ const claimProbe = (store: Store, service: Service, estimate: Option<Estimate>, 
     return true
   })
 
-export type CheckOptions = { readonly now: number; readonly id: string }
+export type CheckOptions = {
+  readonly now: number
+  readonly id: string
+  /** False when the broker reads the service itself, so no client is asked to probe. */
+  readonly clientProbes?: boolean
+}
 
 /**
  * Decides one call: free calls pass, then every matching policy runs and the strictest answer wins.
@@ -267,12 +272,12 @@ export const check = (
   service: Service,
   policies: ReadonlyArray<Policy>,
   req: CheckRequest,
-  { now, id }: CheckOptions,
+  { now, id, clientProbes = true }: CheckOptions,
 ): CheckResult => {
   store.prune(now)
   const resource = pickResource(store, service, req.resource, now)
   const estimate = estimateFor(store, service, resource, now)
-  const probe = claimProbe(store, service, estimate, now).orNull()
+  const probe = clientProbes ? claimProbe(store, service, estimate, now).orNull() : null
   const base = { resource, estimate: estimate.orNull(), probe }
 
   if (service.free.some((label) => req.label === label || req.label.startsWith(`${label} `))) {
@@ -340,21 +345,22 @@ const plausible = (o: Observation, windowMs: number, now: number): boolean =>
   o.resetAt <= now + windowMs + 60_000
 
 /**
- * What of a reading the ledger keeps. The broker's own readings are kept as they are. A client's may
- * lower what's left of a live window, keeping that window's limit and reset, and may start a new
- * window once the last one has reset, at no more than the last limit. So a refused agent can't
- * report a full budget, a later reset or a bigger limit to pass the floor or its share.
+ * What of a reading the ledger keeps. The broker's own readings are kept as they are. A client's
+ * reading can only ever lower what the ledger thinks is left, in a live window or just after a reset,
+ * whose rollover already grants the full budget. It must name a reset still to come, and can't bring
+ * that reset sooner or raise the limit: it keeps the later reset and the smaller limit. So a refused
+ * agent can't report its way past the floor or its share, once or repeatedly.
  */
 const accept = (store: Store, service: Service, o: Observation, source: Source, now: number): Option<Observation> => {
   if (!plausible(o, windowMsOf(service, o.resource), now)) return Option.none()
   if (source === "broker") return Option(o)
+  if (o.resetAt <= now) return Option.none()
   return store.observation(o.resource).fold(
     () => Option(o),
-    (stored) => {
-      if (now >= stored.resetAt) return o.limit <= stored.limit ? Option(o) : Option.none()
-      const lower = estimateFor(store, service, o.resource, now).exists((e) => o.remaining <= e.remaining)
-      return lower ? Option({ ...o, limit: stored.limit, resetAt: stored.resetAt }) : Option.none()
-    },
+    (stored) =>
+      estimateFor(store, service, o.resource, now)
+        .filter((e) => o.remaining <= e.remaining)
+        .map((e) => ({ ...o, limit: Math.min(o.limit, stored.limit), resetAt: Math.max(o.resetAt, e.resetAt) })),
   )
 }
 

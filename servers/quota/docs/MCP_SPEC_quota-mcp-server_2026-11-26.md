@@ -125,7 +125,7 @@ A **policy** is one limit the owner sets. Every check runs every policy that mat
 The broker governs agents that cooperate: an agent can skip the hook (`QUOTA_HOOK=off`, or calls outside Bash), and the hook fails open. Within that, nothing a client sends can loosen a limit:
 
 - **No tool changes a policy.** Policies come only from the deploy config.
-- **A client's reading can only lower what's left of a live window,** keeping that window's limit and reset. It can start a new window only once the last one has reset, at no more than the last limit. The broker's own readings are taken as they are. Readings that can't be true (remaining over the limit, a reset more than a window off) are refused from anyone. So a refused agent can't report a full budget, a later reset or a bigger limit to pass the floor or its share.
+- **A client's reading can only ever lower what's left,** in a live window or just after a reset, whose rollover already grants the full budget. It must name a reset still to come, and keeps the later reset and the smaller limit, so it can't bring a refill sooner or raise the limit. The broker's own readings are taken as they are. Readings that can't be true (remaining over the limit, a reset more than a window off) are refused from anyone. So a refused agent can't report its way past the floor or its share, once or repeatedly.
 - **Only leases can be changed after the fact, and only lowered.** `quota_release` and a call drawing from a lease can reduce a lease; nothing can change the record of a call.
 
 ## The ledger

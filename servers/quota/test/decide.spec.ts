@@ -273,6 +273,13 @@ describe("repeat", () => {
 })
 
 describe("probes", () => {
+  it("asks no client to probe when the broker reads the service itself", () => {
+    const store = createStore(memorySql())
+    const service = serviceWith()
+    const r = check(store, service, [], req(), { now: T0, id: "x", clientProbes: false })
+    expect(r.probe).toBeNull()
+  })
+
   it("asks one client to probe a stale ledger, then nobody else for 30 seconds", () => {
     const l = ledger()
     expect(l.run({}, T0).probe).toBe("gh api rate_limit")
@@ -391,12 +398,15 @@ describe("reports", () => {
     expect(left(l)?.remaining).toBe(900)
   })
 
-  it("keeps the window's limit and reset when a client lowers what's left", () => {
+  it("keeps the smaller limit and the later reset when a client lowers what's left", () => {
     const l = ledger()
     seen(l, 1200)
-    // A bigger limit and a later reset come with it; the ledger keeps only the lower count.
+    // A later reset only delays the refill, so it's kept; the bigger limit isn't.
     expect(report(l, { remaining: 800, limit: 1_000_000_000, resetAt: T0 + HOUR + 5000 }, "probe")).toBe(1)
-    expect(left(l)).toMatchObject({ remaining: 800, limit: 5000, resetAt: T0 + HOUR })
+    expect(left(l)).toMatchObject({ remaining: 800, limit: 5000, resetAt: T0 + HOUR + 5000 })
+    // A sooner reset would bring the refill forward, so the window's own is kept.
+    expect(report(l, { remaining: 700, resetAt: T0 + 30_000 }, "probe")).toBe(1)
+    expect(left(l)).toMatchObject({ remaining: 700, resetAt: T0 + HOUR + 5000 })
   })
 
   it("refuses readings that can't be true, from anyone", () => {
@@ -406,13 +416,29 @@ describe("reports", () => {
     expect(report(l, { remaining: 10, resetAt: T0 + 10 * HOUR }, "broker")).toBe(0)
   })
 
-  it("lets a client start the next window once the last one reset, at no more than its limit", () => {
+  it("won't let a client refill the budget after a reset, once or again and again", () => {
+    const l = ledger([{ id: "floor", kind: "floor", keep: 1000 }])
+    seen(l, 1200)
+    const after = T0 + HOUR + 1000
+    // A reset already passed is refused outright.
+    expect(report(l, { remaining: 5000, resetAt: after - 1000 }, "probe", after)).toBe(0)
+    // The rollover grants the full budget; a client can confirm it, not exceed it.
+    expect(report(l, { remaining: 5000, resetAt: T0 + 2 * HOUR }, "probe", after)).toBe(1)
+    expect(l.run({ session: "other", cost: 4000 }, after + 1).decision.kind).toBe("allow")
+    expect(l.run({}, after + 2).decision).toMatchObject({ kind: "deny", policy: "floor" })
+    // The same report a minute later can't put the 4,000 back.
+    expect(report(l, { remaining: 5000, resetAt: T0 + 2 * HOUR }, "probe", after + 60_000)).toBe(0)
+    expect(left(l, after + 60_001)?.remaining).toBe(1000)
+  })
+
+  it("won't let a client bring a reset sooner or raise the limit, even while lowering", () => {
     const l = ledger()
     seen(l, 1200)
     const after = T0 + HOUR + 1000
-    expect(report(l, { remaining: 5000, limit: 9000, resetAt: T0 + 2 * HOUR }, "probe", after)).toBe(0)
-    expect(report(l, { remaining: 4999, resetAt: T0 + 2 * HOUR }, "probe", after)).toBe(1)
-    expect(left(l, after + 1)?.remaining).toBe(4999)
+    expect(report(l, { remaining: 4000, limit: 9000, resetAt: after + 1000 }, "probe", after)).toBe(1)
+    // The window keeps the rolled-over reset and the smaller limit.
+    expect(left(l, after + 1)).toMatchObject({ remaining: 4000, limit: 5000, resetAt: T0 + 2 * HOUR })
+    expect(left(l, after + 5000)?.remaining).toBe(4000)
   })
 
   it("takes the broker's own reading either way", () => {

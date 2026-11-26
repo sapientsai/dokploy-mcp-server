@@ -32,7 +32,7 @@ A refusal says which policy refused, why, and when to try again, in words an age
 Policies live in the Worker's config, so a change is a reviewed commit. Nothing a client sends can loosen a limit:
 
 - **No tool changes a policy.**
-- **A client's reading can only lower what's left of a live window,** keeping that window's limit and reset. It can start a new window only once the last one has reset, at no more than the last limit. The broker's own readings are taken as they are. Readings that can't be true (remaining over the limit, a reset more than a window off) are refused from anyone.
+- **A client's reading can only ever lower what's left,** in a live window or just after a reset, whose rollover already grants the full budget. It must name a reset still to come, and keeps the later reset and the smaller limit, so it can't bring a refill sooner or raise the limit. The broker's own readings are taken as they are. Readings that can't be true (remaining over the limit, a reset more than a window off) are refused from anyone.
 - **Only a lease can be changed after the fact, and only lowered.** Nothing changes the record of a call.
 
 The broker governs agents that cooperate: an agent can skip the hook, and the hook lets calls through when the broker can't be reached.

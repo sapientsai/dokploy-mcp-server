@@ -42,7 +42,7 @@ src/
 ## Things that are easy to get wrong
 
 - **workerd treats every named export of `worker.ts` as an entrypoint.** Export only handlers, classes and the factory from it; a string constant there stops the runtime from starting. `test/worker.spec.ts` catches this.
-- **Nothing a client sends may loosen a limit.** No tool changes a policy; a client's reading can only lower a live window and can't change its limit or reset (`accept` in `decide.ts`); only leases can be changed after the fact, and only lowered (`lowerLease`). Tests cover each; keep it that way.
+- **Nothing a client sends may loosen a limit.** No tool changes a policy; a client's reading can only ever lower the estimate, must name a future reset, and keeps the later reset and smaller limit (`accept` in `decide.ts`); only leases can be changed after the fact, and only lowered (`lowerLease`). Tests cover each; keep it that way.
 - **Leases skip per-call limits.** A `reserve` request meets only `floor` and `share`, and `rows: "calls"` keeps lease rows out of rate counts. A call with `drawFrom` on the lease's own resource moves its cost off the lease.
 - **An outstanding lease always comes off the estimate,** whatever its date: the service's readings never include its calls. Leases lapse after `LEASE_TTL_MS`.
 - **A check never awaits.** The broker's probe runs after the check answers (the object stays alive until it settles), and its reading is dated when it started. Workers' `fetch` supports `redirect: "manual"` but not `"error"`; the end-to-end test catches the difference.
