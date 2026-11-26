@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "oura": {
+      "command": "node",
+      "args": ["dist/index.js"],
+      "env": {
+        "OURA_CLIENT_ID": "${OURA_CLIENT_ID}",
+        "OURA_CLIENT_SECRET": "${OURA_CLIENT_SECRET}",
+        "OURA_SANDBOX": "${OURA_SANDBOX:-false}"
+      }
+    }
+  }
+}

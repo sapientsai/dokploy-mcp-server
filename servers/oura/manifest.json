@@ -1,0 +1,69 @@
+{
+  "manifest_version": "0.3",
+  "name": "oura-ring-mcp-server",
+  "display_name": "Oura Ring",
+  "version": "0.1.2",
+  "description": "Query your Oura Ring data — sleep, readiness, activity, heart rate, workouts, and more — via the Oura API v2.",
+  "long_description": "A Model Context Protocol server for the Oura Ring API v2. Exposes a single consolidated `oura_data` tool covering every Oura `usercollection` endpoint, so you can ask about sleep, readiness, activity, heart rate, stress, workouts, and more from your own Oura data. Read-only; authenticates via Oura OAuth2 (register an app, then run `oura-ring-mcp-server login` once to authorize).",
+  "author": {
+    "name": "Jordan Burke",
+    "email": "jordan.burke@gmail.com",
+    "url": "https://github.com/jordanburke"
+  },
+  "homepage": "https://github.com/jordanburke/oura-ring-mcp-server",
+  "documentation": "https://github.com/jordanburke/oura-ring-mcp-server#readme",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/jordanburke/oura-ring-mcp-server"
+  },
+  "license": "MIT",
+  "keywords": ["oura", "oura-ring", "health", "sleep", "readiness", "hrv", "mcp"],
+  "server": {
+    "type": "node",
+    "entry_point": "dist/index.js",
+    "mcp_config": {
+      "command": "node",
+      "args": ["${__dirname}/dist/index.js"],
+      "env": {
+        "OURA_CLIENT_ID": "${user_config.oura_client_id}",
+        "OURA_CLIENT_SECRET": "${user_config.oura_client_secret}",
+        "OURA_SANDBOX": "${user_config.sandbox}"
+      }
+    }
+  },
+  "tools": [
+    {
+      "name": "oura_data",
+      "description": "Fetch data from any Oura API v2 usercollection endpoint (sleep, readiness, activity, heart rate, workouts, and more)."
+    }
+  ],
+  "user_config": {
+    "oura_client_id": {
+      "type": "string",
+      "title": "Oura OAuth Client ID",
+      "description": "From your app at https://cloud.ouraring.com/oauth/applications. After setting this, run `oura-ring-mcp-server login` once in a terminal to authorize.",
+      "sensitive": false,
+      "required": true
+    },
+    "oura_client_secret": {
+      "type": "string",
+      "title": "Oura OAuth Client Secret",
+      "description": "Client secret from the same Oura OAuth application.",
+      "sensitive": true,
+      "required": true
+    },
+    "sandbox": {
+      "type": "boolean",
+      "title": "Use Oura sandbox (demo) data",
+      "description": "Query Oura's sandbox demo dataset instead of your real ring data — useful for trying the server out without a physical ring.",
+      "default": false,
+      "required": false
+    }
+  },
+  "compatibility": {
+    "platforms": ["darwin", "win32", "linux"],
+    "runtimes": {
+      "node": ">=18.0.0"
+    }
+  }
+}
