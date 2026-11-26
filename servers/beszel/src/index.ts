@@ -26,11 +26,12 @@ console.error(`[Setup] Beszel MCP Server v${VERSION}`)
 console.error(
   `[Setup] Hub ${config.baseUrl}, signing in with ${config.auth.kind === "token" ? "BESZEL_TOKEN" : "a password"}`,
 )
+console.error(`[Setup] Writes ${config.writes ? "on (BESZEL_ENABLE_WRITES=true)" : "off"}`)
 
 const server = createServer({
   name: "beszel-mcp-server",
   version: VERSION,
-  instructions: `Beszel MCP Server — read-only access to a Beszel monitoring hub: the machines it watches, their metrics, containers, services, disks and alerts.
+  instructions: `Beszel MCP Server — access to a Beszel monitoring hub: the machines it watches, their metrics, containers, services, disks and alerts.
 
 ## Tool Selection Guide
 - **"What's down?" / "How are my servers?"** → list_systems (status, CPU, memory, disk for every system)
@@ -42,15 +43,26 @@ const server = createServer({
 - **"Are my disks healthy?"** → list_smart_devices
 - **"What alerts are set?" / "Is anything alerting?"** → list_alerts (triggered_only=true for what's firing now)
 - **"When did X go down?"** → get_alert_history
-
+${
+  config.writes
+    ? `- **"Rename X" / "X moved to a new address"** → update_system
+- **"Stop watching X for now"** → pause_system, then resume_system
+- **"The wrong machine is reporting as X"** → get_system shows the hostname the agent reports. Rename the system with update_system, or, once the wrong machine has its own system, reset_system_fingerprint
+`
+    : ""
+}
 ## Notes
 - A system is named by its Beszel name or record id; list_systems shows both.
 - Stats come at the interval Beszel keeps for the range, so a 30d range has 8-hour points. Times are UTC.
 - Rates (network, disk I/O) are per second. Memory and disk sizes use 1024-based units, as Beszel shows them.
-- This server only reads. It can't pause systems or change alerts.`,
+- ${
+    config.writes
+      ? "Writes are on: update_system, pause_system, resume_system and reset_system_fingerprint change the hub. Confirm with the user before each one. Alerts can't be changed."
+      : "This server only reads. It can't change systems or alerts (BESZEL_ENABLE_WRITES=true adds tools that change systems)."
+  }`,
 })
 
-registerAllTools(server)
+registerAllTools(server, { writes: config.writes })
 
 /** Starts the server, or exits with the reason when it can't (a port in use, say). */
 const startOrExit = (transport: TransportConfig): Promise<void> =>

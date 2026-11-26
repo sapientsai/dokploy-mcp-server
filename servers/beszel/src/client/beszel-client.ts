@@ -10,6 +10,8 @@ import {
   toError,
   tokenRefused,
   unreachable,
+  writeInvalid,
+  writeRefused,
   wrongCredentials,
 } from "../errors"
 import type { ListResult } from "../types"
@@ -31,7 +33,12 @@ export type ListQuery = {
 
 type Session = { readonly token: string; readonly expiresAt: Option<number> }
 
-type ErrorBody = { readonly message?: unknown; readonly mfaId?: unknown }
+type ErrorBody = { readonly message?: unknown; readonly mfaId?: unknown; readonly data?: unknown }
+
+/** A records request: a read, or an update of one record. */
+type RecordsRequest =
+  | { readonly kind: "read" }
+  | { readonly kind: "update"; readonly id: string; readonly body: Readonly<Record<string, unknown>> }
 
 /** The `exp` claim of a PocketBase JWT, in milliseconds. */
 export const tokenExpiry = (token: string): Option<number> =>
@@ -57,6 +64,15 @@ const readBody = (response: Response): IO<never, never, ErrorBody> =>
 
 const messageOf = (body: ErrorBody): string =>
   typeof body.message === "string" && body.message !== "" ? `: ${body.message.slice(0, 200)}` : ""
+
+/** PocketBase's per-field validation messages, as "field: message". */
+const fieldProblems = (body: ErrorBody): ReadonlyArray<string> =>
+  typeof body.data === "object" && body.data !== null
+    ? Object.entries(body.data as Readonly<Record<string, unknown>>).map(([field, problem]) => {
+        const message = (problem as { readonly message?: unknown } | null)?.message
+        return `${field}: ${typeof message === "string" ? message.slice(0, 200) : "invalid"}`
+      })
+    : []
 
 const queryString = (query: ListQuery): string =>
   Object.entries({
@@ -90,9 +106,24 @@ export class BeszelClient {
   /** One page of a collection's records. */
   list<T>(collection: string, query: ListQuery = {}): IO<never, Error, ListResult<T>> {
     const qs = queryString({ perPage: PAGE_SIZE, ...query })
-    return this.authorized(`/api/collections/${collection}/records?${qs}`, collection).map(
+    return this.authorized(`/api/collections/${collection}/records?${qs}`, collection, { kind: "read" }).map(
       (body) => body as ListResult<T>,
     )
+  }
+
+  /** Changes the given fields of one record, and returns the record as the hub saved it. */
+  update<T>(
+    collection: string,
+    id: string,
+    body: Readonly<Record<string, unknown>>,
+    fields?: string,
+  ): IO<never, Error, T> {
+    const qs = fields === undefined ? "" : `?fields=${encodeURIComponent(fields)}`
+    return this.authorized(`/api/collections/${collection}/records/${encodeURIComponent(id)}${qs}`, collection, {
+      kind: "update",
+      id,
+      body,
+    }).map((saved) => saved as T)
   }
 
   /**
@@ -120,29 +151,59 @@ export class BeszelClient {
     return step(1, [])
   }
 
-  private send(path: string, token: string): IO<never, Error, Response> {
+  private send(path: string, token: string, request: RecordsRequest): IO<never, Error, Response> {
+    const init: RequestInit =
+      request.kind === "read"
+        ? { headers: { Authorization: token, Accept: "application/json" } }
+        : {
+            method: "PATCH",
+            headers: { Authorization: token, Accept: "application/json", "Content-Type": "application/json" },
+            body: JSON.stringify(request.body),
+          }
     return IO.tryPromise({
-      try: () =>
-        fetch(`${this.config.baseUrl}${path}`, { headers: { Authorization: token, Accept: "application/json" } }),
+      try: () => fetch(`${this.config.baseUrl}${path}`, init),
       catch: (e) => unreachable(this.config.baseUrl, toError(e)),
     })
   }
 
   /** A records request, signing in first if needed, and once more if the hub refuses the token. */
-  private authorized(path: string, collection: string): IO<never, Error, unknown> {
+  private authorized(path: string, collection: string, request: RecordsRequest): IO<never, Error, unknown> {
     const usingPassword = this.config.auth.kind === "password"
     return this.currentToken()
-      .flatMap((token) => this.send(path, token).map((response) => ({ response, token })))
+      .flatMap((token) => this.send(path, token, request).map((response) => ({ response, token })))
       .flatMap(({ response, token }) => {
         if (response.status !== 401) return IO.succeed(response)
         if (!usingPassword) return IO.fail<Error>(tokenRefused(true))
         // Drop only the refused token: a call running alongside may already have signed in afresh.
         if (this.session.get().exists((s) => s.token === token)) this.session.set(Option.none())
         return this.currentToken()
-          .flatMap((token) => this.send(path, token))
+          .flatMap((token) => this.send(path, token, request))
           .flatMap((retry) => (retry.status === 401 ? IO.fail<Error>(tokenRefused(false)) : IO.succeed(retry)))
       })
-      .flatMap((response) => this.checkResponse(response, collection))
+      .flatMap((response) =>
+        request.kind === "read"
+          ? this.checkResponse(response, collection)
+          : this.checkUpdate(response, collection, request.id),
+      )
+  }
+
+  /**
+   * PocketBase answers an update with 404 when the record is missing or the update rule doesn't let this user
+   * change it, and with 403 when only superusers may. Beszel's rules refuse every change by a `readonly` user.
+   */
+  private checkUpdate(response: Response, collection: string, id: string): IO<never, Error, unknown> {
+    if (response.ok) return IO.tryPromise({ try: () => response.json() as Promise<unknown>, catch: toError })
+    if (response.status === 403 || response.status === 404) {
+      return IO.fail(writeRefused(collection, id, response.status))
+    }
+    if (response.status === 429) return IO.fail(rateLimited())
+    return readBody(response).flatMap((body) =>
+      IO.fail(
+        response.status === 400
+          ? writeInvalid(collection, fieldProblems(body))
+          : new Error(`Beszel answered HTTP ${response.status} to a ${collection} change${messageOf(body)}`),
+      ),
+    )
   }
 
   private checkResponse(response: Response, collection: string): IO<never, Error, unknown> {

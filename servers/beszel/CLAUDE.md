@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Beszel MCP Server — a read-only Model Context Protocol server for a [Beszel](https://beszel.dev) monitoring hub. Built with SomaMCP, functype (IO, Option, Either, Ref) and Zod. The spec is `docs/MCP_SPEC_beszel-mcp-server_2026-11-25.md`.
+Beszel MCP Server — a Model Context Protocol server for a [Beszel](https://beszel.dev) monitoring hub. It reads by default; `BESZEL_ENABLE_WRITES=true` adds the tools in `tools/write-tools.ts`, which change systems. Built with SomaMCP, functype (IO, Option, Either, Ref) and Zod. The spec is `docs/MCP_SPEC_beszel-mcp-server_2026-11-25.md`.
 
 This server lives in `servers/beszel` of the `sapientsai/mcp-servers` monorepo; the root CLAUDE.md has the repo-wide rules. Install from the repo root. Release from the root too: `pnpm release beszel <patch|minor|major>` tags `beszel-mcp-server@<version>`, and `git push --follow-tags` publishes this package alone. The `version` script keeps `server.json` in step.
 
@@ -24,11 +24,11 @@ pnpm smoke:live      # every tool against a real hub, from BESZEL_* in the envir
 src/
   index.ts                 createServer from somamcp/node, instructions, start
   bin.ts                   CLI entry: --version, --help, stdio by default
-  config.ts                reads BESZEL_URL and one sign-in from the environment
+  config.ts                reads BESZEL_URL, one sign-in and BESZEL_ENABLE_WRITES from the environment
   errors.ts                UserError helpers for each failure
   types.ts                 readonly record shapes, Beszel 0.21.x
   client/
-    beszel-client.ts       sign-in, the token Ref, records requests as IO
+    beszel-client.ts       sign-in, the token Ref, records reads and updates as IO
     filter.ts              PocketBase filter quoting and date layout
   tools/                   one file per area; shared.ts resolves a system by name or id
   utils/                   units and tables, ranges, summaries
@@ -41,5 +41,8 @@ src/
 - **Sign in as rarely as possible.** Beszel limits sign-ins to 10 a minute. The client reuses its token until a minute before `exp`, shares one sign-in between concurrent calls, and signs in again only after a 401.
 - **A 401 means the token is bad.** PocketBase 0.42 rejects unknown or expired tokens outright rather than treating them as a guest.
 - **Units:** `b`, `bb`, `dio` and a container's `net` are bytes per second. Container memory is MB. Disk `d` and `du` are GB. `mem` and `swap` are byte arrays; older agents send `m` and `mu` in GB instead. Sizes print 1024-based, as Beszel does.
+- **Write tools are registered only when writes are on.** `registerAllTools` takes `{ writes }`; `smoke:live` always passes `false`, so a smoke run never changes the hub.
+- **Never read a fingerprint's `token`.** It's the agent's secret. Every `fingerprints` request names `fields` without it, and `FingerprintRecord` has no `token` field.
+- **Do what Beszel's web UI does.** A moved system is set to `pending` so the hub reconnects; resume sets `pending` too; a fingerprint reset sets `fingerprint` to `""`. Changing any `fingerprints` record makes the hub drop that agent's connection.
 - **No real hub in the repo.** Tests, docs and examples use `beszel.example.com` and made-up systems.
 - **Beszel's API may change in a minor release.** When the hub moves past 0.21, read its `internal/migrations` and `internal/hub/collections.go` for new fields and access rules.
