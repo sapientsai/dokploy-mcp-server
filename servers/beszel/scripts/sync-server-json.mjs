@@ -34,6 +34,15 @@ const synced = {
   packages: server.packages.map((p) => (p.registryType === "npm" ? { ...p, version: pkg.version } : p)),
 }
 
+// The MCP registry refuses a description over 100 characters (HTTP 422), after npm has already published.
+const MAX_DESCRIPTION = 100
+if (typeof synced.description !== "string" || synced.description.length > MAX_DESCRIPTION) {
+  console.error(
+    `✗ ${TARGET} description is ${synced.description?.length ?? 0} characters; the MCP registry allows ${MAX_DESCRIPTION}.`,
+  )
+  process.exit(1)
+}
+
 const contents = `${JSON.stringify(synced, null, 2)}\n`
 const check = process.argv.includes("--check")
 
