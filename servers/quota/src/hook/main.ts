@@ -10,7 +10,7 @@
 
 import { execFile, execFileSync, spawn } from "node:child_process"
 import { createHash } from "node:crypto"
-import { existsSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, readdirSync, readFileSync, renameSync, rmSync, statSync, writeFileSync } from "node:fs"
 import { homedir, hostname } from "node:os"
 import { join } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -33,9 +33,12 @@ const readJson = <T>(path: string): Option<T> =>
     .filter(existsSync)
     .flatMap((p) => Try(() => JSON.parse(readFileSync(p, "utf8")) as T).toOption())
 
+/** Writes a file only this user can read, whole: a temp file with mode 600, renamed into place. */
 const writePrivate = (path: string, body: string): void => {
   mkdirSync(cacheDir(), { recursive: true, mode: 0o700 })
-  writeFileSync(path, body, { mode: 0o600 })
+  const temp = `${path}.${process.pid}.tmp`
+  writeFileSync(temp, body, { mode: 0o600 })
+  renameSync(temp, path)
 }
 
 /**
@@ -46,6 +49,8 @@ const fromEnvpkt = (): Cached =>
   Try(() => {
     const script = "process.stdout.write(JSON.stringify({url:process.env.QUOTA_URL,key:process.env.QUOTA_KEY}))"
     const out = execFileSync("envpkt", ["exec", "--skip-audit", "--", process.execPath, "-e", script], {
+      // From the home folder, so every session finds the same (global) config, whatever repo it's in.
+      cwd: homedir(),
       encoding: "utf8",
       stdio: ["ignore", "pipe", "ignore"],
       timeout: ENVPKT_TIMEOUT_MS,
@@ -61,17 +66,20 @@ const complete = (c: Cached): Option<Broker> =>
     ? Option({ url: c.url, key: c.key })
     : Option.none()
 
-const loadBroker = (): Promise<Option<Broker>> => {
+const loadBrokerNow = (): Option<Broker> => {
   const fromEnv = complete({ url: process.env.QUOTA_URL, key: process.env.QUOTA_KEY, at: Date.now() })
-  if (fromEnv.isSome()) return Promise.resolve(fromEnv)
+  if (fromEnv.isSome()) return fromEnv
   const cached = readJson<Cached>(brokerFile()).filter((c) => complete(c).isSome() || Date.now() - c.at < ABSENT_TTL_MS)
   const entry = cached.getOrElse(() => {
     const fresh = fromEnvpkt()
     writePrivate(brokerFile(), JSON.stringify(fresh))
     return fresh
   })
-  return Promise.resolve(complete(entry))
+  return complete(entry)
 }
+
+/** As a promise, so a failure anywhere (an unwritable cache, say) is a rejection the caller can fail open on. */
+const loadBroker = (): Promise<Option<Broker>> => Promise.resolve().then(loadBrokerNow)
 
 const HOSTS_USER = /^github\.com:\s*\n(?:[ \t]+.*\n)*?[ \t]+user:\s*(\S+)/m
 
@@ -81,13 +89,28 @@ const ghAccount = (): Option<string> =>
     .filter(existsSync)
     .flatMap((path) => Option(HOSTS_USER.exec(readFileSync(path, "utf8"))?.[1]))
 
-/** True the first time for this session and key, by leaving a marker file. */
-const firstTime = (session: string, key: string): boolean => {
-  const marker = join(cacheDir(), `seen-${createHash("sha256").update(session).digest("hex").slice(0, 16)}-${key}`)
-  if (existsSync(marker)) return false
-  writePrivate(marker, "")
-  return true
+const MARKER_TTL_MS = 7 * 86_400_000
+
+/** Removes session markers older than a week. */
+const pruneMarkers = (now: number): void => {
+  readdirSync(cacheDir())
+    .filter((name) => name.startsWith("seen-"))
+    .map((name) => join(cacheDir(), name))
+    .filter((path) => now - statSync(path).mtimeMs > MARKER_TTL_MS)
+    .forEach((path) => {
+      rmSync(path, { force: true })
+    })
 }
+
+/** True the first time for this session and key, by leaving a marker file. */
+const firstTime = (session: string, key: string): boolean =>
+  Try(() => {
+    const marker = join(cacheDir(), `seen-${createHash("sha256").update(session).digest("hex").slice(0, 16)}-${key}`)
+    if (existsSync(marker)) return false
+    writePrivate(marker, "")
+    pruneMarkers(Date.now())
+    return true
+  }).getOrElse(() => false)
 
 const startProbe = (account: string): void => {
   spawn(process.execPath, [fileURLToPath(import.meta.url), "probe", account], {

@@ -57,6 +57,8 @@ const CHECK_TIMEOUT_MS = 800
 const FINISH_TIMEOUT_MS = 500
 /** The longest the hook holds one command for the broker's delays, in total. */
 const MAX_HOLD_MS = 10_000
+/** The shortest wait before asking again about calls in flight, so a bad answer can't spin. */
+const MIN_RECHECK_MS = 250
 
 type Verdict = {
   readonly refusals: ReadonlyArray<string>
@@ -64,9 +66,11 @@ type Verdict = {
   readonly unreachable: boolean
   readonly probe: boolean
   readonly heldMs: number
+  /** Calls the broker allowed and recorded as in flight. */
+  readonly booked: ReadonlyArray<number>
 }
 
-const EMPTY: Verdict = { refusals: [], notes: [], unreachable: false, probe: false, heldMs: 0 }
+const EMPTY: Verdict = { refusals: [], notes: [], unreachable: false, probe: false, heldMs: 0, booked: [] }
 
 const merge = (a: Verdict, b: Verdict): Verdict => ({
   refusals: [...a.refusals, ...b.refusals],
@@ -74,6 +78,7 @@ const merge = (a: Verdict, b: Verdict): Verdict => ({
   unreachable: a.unreachable || b.unreachable,
   probe: a.probe || b.probe,
   heldMs: a.heldMs + b.heldMs,
+  booked: [...a.booked, ...b.booked],
 })
 
 type Call = { readonly index: number; readonly described: Described }
@@ -137,14 +142,17 @@ const ask = async (
     return { ...EMPTY, refusals: [answer.reason ?? `The quota broker refused ${call.described.label}.`], notes, probe }
   }
   if (answer.decision === "wait") {
-    const waitMs = Math.max(0, Math.min(answer.waitMs ?? 0, holdLeftMs))
+    const asked = typeof answer.waitMs === "number" && Number.isFinite(answer.waitMs) ? answer.waitMs : 0
+    // A booked slot is ours after the wait; an unbooked one (calls in flight) means asking again,
+    // never sooner than MIN_RECHECK_MS, so the hold always runs down.
+    const waitMs = Math.min(answer.booked === true ? Math.max(0, asked) : Math.max(MIN_RECHECK_MS, asked), holdLeftMs)
     await deps.sleep(waitMs)
     const held: Verdict = { ...EMPTY, notes, probe, heldMs: waitMs }
-    // A booked slot is ours after the wait; an unbooked one (calls in flight) means asking again.
-    if (answer.booked === true || holdLeftMs - waitMs <= 0) return held
+    if (answer.booked === true) return { ...held, booked: [call.index] }
+    if (holdLeftMs - waitMs <= 0) return held
     return merge(held, await ask(deps, broker, input, account, call, holdLeftMs - waitMs))
   }
-  return { ...EMPTY, notes, probe }
+  return { ...EMPTY, notes, probe, booked: [call.index] }
 }
 
 const output = (deps: Deps, verdict: Verdict, input: HookInput): Option<HookOutput> => {
@@ -212,35 +220,57 @@ export const runPre = async (input: HookInput, deps: Deps): Promise<Option<HookO
     async ({ broker, account }) => {
       const verdict = await calls.reduce<Promise<Verdict>>(async (done, call) => {
         const sofar = await done
-        // One refusal settles the command; the rest needn't spend a check.
-        if (sofar.refusals.length > 0 && deps.mode === "enforce") return sofar
+        // One refusal settles the command, and a broker that didn't answer won't answer the next
+        // call either: the rest needn't wait on it.
+        if ((sofar.refusals.length > 0 && deps.mode === "enforce") || sofar.unreachable) return sofar
         return merge(sofar, await ask(deps, broker, input, account, call, MAX_HOLD_MS - sofar.heldMs))
       }, Promise.resolve(local))
       if (verdict.probe) deps.probe(account)
+      // A refused command never runs, so PostToolUse won't free the calls already booked: free them now.
+      if (deps.mode === "enforce" && verdict.refusals.length > 0) {
+        await finish(deps, broker, account, input, verdict.booked)
+      }
       return output(deps, verdict, input)
     },
   )
 }
+
+/** Tells the broker these calls finished, by the same ids `ask` used. Best effort. */
+const finish = (
+  deps: Deps,
+  broker: Broker,
+  account: string,
+  input: HookInput,
+  indexes: ReadonlyArray<number>,
+): Promise<void> =>
+  Promise.all(
+    indexes.map((index) =>
+      post(
+        deps,
+        broker,
+        "/v1/finish",
+        { service: "github", account, callId: `${input.tool_use_id ?? "call"}:${index}` },
+        FINISH_TIMEOUT_MS,
+      ),
+    ),
+  ).then(() => undefined)
 
 /** PostToolUse: tells the broker each `gh` call finished, for `concurrency` policies. Best effort. */
 export const runPost = async (input: HookInput, deps: Deps): Promise<void> => {
   const command = commandOf(input)
   const calls = command === "" ? [] : callsIn(command)
   if (calls.length === 0) return
-  const found = await target(deps)
-  await found.fold(
+  await (
+    await target(deps)
+  ).fold(
     () => Promise.resolve(),
     ({ broker, account }) =>
-      Promise.all(
-        calls.map((call) =>
-          post(
-            deps,
-            broker,
-            "/v1/finish",
-            { service: "github", account, callId: `${input.tool_use_id ?? "call"}:${call.index}` },
-            FINISH_TIMEOUT_MS,
-          ),
-        ),
-      ).then(() => undefined),
+      finish(
+        deps,
+        broker,
+        account,
+        input,
+        calls.map((c) => c.index),
+      ),
   )
 }

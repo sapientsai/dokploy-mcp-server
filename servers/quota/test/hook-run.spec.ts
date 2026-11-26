@@ -155,7 +155,7 @@ describe("PreToolUse", () => {
     const { deps, sent } = fakeDeps([], { broker: () => Promise.resolve(Option.none()) })
     const out = (await runPre(bash("gh run watch 9"), deps)).orNull()
     expect(out?.hookSpecificOutput.permissionDecision).toBe("deny")
-    expect(out?.hookSpecificOutput.permissionDecisionReason).toContain("--interval 30")
+    expect(out?.hookSpecificOutput.permissionDecisionReason).toContain("polls every 3 s")
     expect(sent).toEqual([])
   })
 
@@ -164,6 +164,39 @@ describe("PreToolUse", () => {
     const out = (await runPre(bash("while true; do gh pr view 1; sleep 2; done"), deps)).orNull()
     expect(out?.hookSpecificOutput.permissionDecisionReason).toContain("sleeps 2 s")
     expect(sent).toEqual([])
+  })
+})
+
+describe("staying within the hook's time", () => {
+  it("rechecks no sooner than 250 ms, however the broker answers, and stops at 10 s", async () => {
+    const replies = Array.from({ length: 100 }, () => ({ body: { decision: "wait", booked: false } }))
+    const { deps, slept, sent } = fakeDeps(replies)
+    await runPre(bash("gh pr list"), deps)
+    expect(slept.every((ms) => ms >= 250)).toBe(true)
+    expect(slept.reduce((a, b) => a + b, 0)).toBe(10_000)
+    expect(sent).toHaveLength(40)
+  })
+
+  it("stops asking once the broker didn't answer", async () => {
+    const { deps, sent } = fakeDeps(["down", "down", "down"])
+    await runPre(bash("gh pr view 1; gh pr view 2; gh pr view 3"), deps)
+    expect(sent).toHaveLength(1)
+  })
+
+  it("frees calls already booked when it refuses the command", async () => {
+    const { deps, sent } = fakeDeps([{ body: { decision: "allow" } }, { body: { decision: "deny", reason: "No." } }])
+    const out = (await runPre(bash("gh pr view 1 && gh pr create"), deps)).orNull()
+    expect(out?.hookSpecificOutput.permissionDecision).toBe("deny")
+    expect(sent.map((s) => [s.url.replace("https://quota.example.com", ""), s.body.callId])).toEqual([
+      ["/v1/check", "tu1:0"],
+      ["/v1/check", "tu1:1"],
+      ["/v1/finish", "tu1:0"],
+    ])
+  })
+
+  it("still refuses fast polling when loading the broker fails", async () => {
+    const { deps } = fakeDeps([], { broker: () => Promise.reject(new Error("EACCES")) })
+    expect((await runPre(bash("gh run watch 9"), deps)).orNull()?.hookSpecificOutput.permissionDecision).toBe("deny")
   })
 })
 

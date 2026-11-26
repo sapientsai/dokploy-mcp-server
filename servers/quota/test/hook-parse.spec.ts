@@ -97,13 +97,87 @@ group("describing a call", () => {
 })
 
 group("shell loops", () => {
-  it("refuses a loop around gh that doesn't sleep 30 s", () => {
+  it("refuses an open-ended loop around gh that doesn't sleep 30 s, with gh in its condition or body", () => {
     expect(loopRefusal("while true; do gh run list; done").orNull()).toContain("sleeps not at all")
-    expect(loopRefusal("for i in 1 2 3; do gh pr view $i; sleep 5; done").orNull()).toContain("sleeps 5 s")
+    expect(loopRefusal("until gh run view 5 --exit-status; do sleep 5; done").orNull()).toContain("sleeps 5 s")
+    expect(loopRefusal("while ! gh pr checks 12; do sleep 10; done").orNull()).toContain("sleeps 10 s")
   })
 
-  it("allows a loop that sleeps 30 s or more, and plain commands", () => {
+  it("allows a loop that sleeps 30 s or more, a bounded for loop, and loops without gh", () => {
     expect(loopRefusal("while [ $SECONDS -lt 600 ]; do gh pr view 1; sleep 30; done").isNone()).toBe(true)
-    expect(loopRefusal("gh pr view 1 && sleep 1").isNone()).toBe(true)
+    expect(loopRefusal("until gh run view 5; do sleep 1m; done").isNone()).toBe(true)
+    expect(loopRefusal("for r in a b c; do gh repo view $r; done").isNone()).toBe(true)
+    expect(loopRefusal("while read f; do echo $f; done < list; gh pr view 1").isNone()).toBe(true)
+    expect(loopRefusal("gh pr view 1 # for later, while waiting").isNone()).toBe(true)
+  })
+})
+
+group("heredocs", () => {
+  it("reads a heredoc body as data, not commands", () => {
+    const command = [
+      `gh pr create --title x --body "$(cat <<'EOF'`,
+      "while true; do",
+      "  gh run watch 5",
+      "done",
+      "for later",
+      "EOF",
+      `)"`,
+    ].join("\n")
+    expect(ghCalls(command).map((c) => describe(c).orNull()?.label)).toEqual(["gh pr create"])
+    expect(loopRefusal(command).isNone()).toBe(true)
+  })
+
+  it("doesn't refuse a commit whose message mentions gh run watch", () => {
+    const command = ["git commit -F - <<'MSG'", "gh run watch 5 now refuses", "MSG"].join("\n")
+    expect(ghCalls(command)).toEqual([])
+    const tabbed = ["cat <<-END", "\tgh run watch 5", "\tEND", "gh pr view 1"].join("\n")
+    expect(ghCalls(tabbed).map((c) => c.args[0])).toEqual(["pr"])
+  })
+})
+
+group("wrappers", () => {
+  it.each([
+    ["if gh pr view 1; then echo ok; fi", "gh pr view"],
+    ["{ gh pr view 1; }", "gh pr view"],
+    ["bash -c 'gh pr list --limit 5'", "gh pr list"],
+    ["sudo -u me gh pr list", "gh pr list"],
+    ["timeout -k 5 30 gh pr list", "gh pr list"],
+    ["env -u X FOO=1 gh run list", "gh run list"],
+    ["xargs -n1 gh pr view", "gh pr view"],
+  ])("finds the gh call in %s", (command, label) => {
+    expect(ghCalls(command).map((c) => describe(c).orNull()?.label)).toEqual([label])
+  })
+
+  it("refuses watch around gh under 30 s, and allows it at 30 s or more", () => {
+    expect(one("watch -n 5 gh pr checks 1")?.refuse).toContain("`watch` around `gh pr checks` polls every 5 s")
+    expect(one("watch gh pr view 1")?.refuse).toContain("polls every 2 s")
+    expect(one("watch -n 60 gh pr view 1")?.refuse).toBeUndefined()
+  })
+})
+
+group("labels never carry arguments", () => {
+  it("labels an unknown subcommand by its family, and an unknown family as gh", () => {
+    expect(one("gh browse src/secret-file.ts")?.label).toBe("gh browse")
+    expect(one("gh pr secret-subcommand")?.label).toBe("gh pr")
+    expect(one("gh my-extension private-arg")?.label).toBe("gh")
+  })
+
+  it("names only known HTTP methods, and counts an unknown one as a write", () => {
+    expect(one(`gh api -X "weird value" repos/a/b`)).toEqual({ label: "gh api", class: "write", resource: "core" })
+  })
+
+  it("finds the subcommand past -R and its value", () => {
+    expect(one("gh pr -R me/repo merge 5")).toMatchObject({ label: "gh pr merge", class: "write" })
+  })
+
+  it("classes inline fields as a POST write, and the new write subcommands", () => {
+    expect(one("gh api repos/a/b/issues -ftitle=x")).toMatchObject({ label: "gh api POST", class: "write" })
+    expect(one("gh api repos/a/b/issues -Fbody=@f")).toMatchObject({ class: "write" })
+    expect(one("gh pr update-branch 5")?.class).toBe("write")
+    expect(one("gh project item-add 1")?.class).toBe("write")
+  })
+
+  it("falls back to the default interval for --interval 0", () => {
+    expect(one("gh run watch 1 --interval 0")?.refuse).toContain("polls every 3 s")
   })
 })
